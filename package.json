@@ -1,0 +1,42 @@
+{
+  "name": "appconto",
+  "version": "1.0.0",
+  "description": "Personal Finance Tracker",
+  "directories": {
+    "doc": "docs"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev:backend",
+    "dev:backend": "tsx watch apps/backend/src/main.ts",
+    "start:backend": "tsx apps/backend/src/main.ts",
+    "typecheck:backend": "tsc -p apps/backend/tsconfig.json --noEmit",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "tsx --test \"apps/backend/src/**/*.test.ts\"",
+    "test:frontend": "npm test --prefix apps/frontend -- --watch=false",
+    "db:generate": "drizzle-kit generate --config apps/backend/drizzle.config.ts",
+    "dev:frontend": "npm start --prefix apps/frontend",
+    "build:frontend": "npm run build --prefix apps/frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
+    "papaparse": "^5.5.4",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.2",
+    "@types/papaparse": "^5.5.2",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.10",
+    "typescript": "^7.0.2"
+  }
+}

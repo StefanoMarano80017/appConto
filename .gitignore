@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.angular/
+
+# Database
+apps/backend/data/*.db
+apps/backend/data/*.sqlite
+apps/backend/data/*.sqlite3
+
+# Runtime data
+apps/backend/data/
+
+# Environment
+.env
+.env.*

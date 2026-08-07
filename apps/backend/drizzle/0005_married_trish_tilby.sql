@@ -1,0 +1,1 @@
+ALTER TABLE `merchants` ADD `display_name` text;

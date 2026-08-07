@@ -1,0 +1,58 @@
+<section class="panel">
+  <h2>Impostazioni</h2>
+  <p class="hint">
+    Il saldo iniziale viene usato come punto di partenza per il calcolo della liquidità.
+  </p>
+
+  @if (error(); as message) {
+    <p class="message error">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="message">Caricamento in corso…</p>
+  } @else {
+    <form class="settings-form" (ngSubmit)="save()">
+      <label>
+        <span class="field-label">Data saldo iniziale</span>
+        <input
+          type="date"
+          name="balanceDate"
+          [ngModel]="form().balanceDate"
+          (ngModelChange)="update('balanceDate', $event)"
+          [attr.aria-invalid]="errors().balanceDate ? 'true' : null"
+        />
+        @if (errors().balanceDate; as message) {
+          <span class="field-error">{{ message }}</span>
+        }
+        <span class="field-hint">Il giorno di cui conosci il saldo del conto.</span>
+      </label>
+
+      <label>
+        <span class="field-label">Importo iniziale</span>
+        <input
+          type="text"
+          inputmode="decimal"
+          name="initialBalance"
+          placeholder="0,00"
+          [ngModel]="form().initialBalance"
+          (ngModelChange)="update('initialBalance', $event)"
+          [attr.aria-invalid]="errors().initialBalance ? 'true' : null"
+        />
+        @if (errors().initialBalance; as message) {
+          <span class="field-error">{{ message }}</span>
+        }
+        <span class="field-hint">Sono ammessi valori negativi, se il conto è in rosso.</span>
+      </label>
+
+      <div class="actions">
+        <button type="submit" [disabled]="saving()">
+          {{ saving() ? 'Salvataggio…' : 'Salva' }}
+        </button>
+        @if (saved()) {
+          <span class="message saved">Impostazioni salvate.</span>
+          <a routerLink="/">Vai al riepilogo →</a>
+        }
+      </div>
+    </form>
+  }
+</section>

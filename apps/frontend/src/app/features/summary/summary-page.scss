@@ -1,0 +1,155 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.subtitle {
+  margin: 0.125rem 0 0;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.month-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+
+  input {
+    font: inherit;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .label {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .value {
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .value.positive {
+    color: var(--positive);
+  }
+
+  .value.negative {
+    color: var(--negative);
+  }
+}
+
+h3 {
+  margin: 2rem 0 1rem;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li + li {
+    margin-top: 1.125rem;
+  }
+}
+
+.category-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+
+  .name {
+    flex: 1;
+  }
+
+  .count {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .amount {
+    min-width: 6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--background);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--text-muted);
+  }
+}
+
+.uncategorized {
+  .name,
+  .amount {
+    color: var(--text-muted);
+  }
+
+  .bar span {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--border),
+      var(--border) 4px,
+      var(--background) 4px,
+      var(--background) 8px
+    );
+  }
+}
+
+.message {
+  color: var(--text-muted);
+}
+
+.message.error {
+  color: var(--negative);
+}

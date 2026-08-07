@@ -1,0 +1,58 @@
+<section class="panel">
+  <h2>Import CSV</h2>
+  <p class="hint">
+    Seleziona l'estratto conto esportato dalla banca. Sono richieste le colonne
+    <strong>data</strong>, <strong>descrizione</strong> e <strong>importo</strong>.
+  </p>
+
+  <div class="actions">
+    <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
+    <button type="button" (click)="importCsv()" [disabled]="selectedFile() === null || importing()">
+      {{ importing() ? 'Importazione in corso…' : 'Importa' }}
+    </button>
+  </div>
+
+  @if (error(); as message) {
+    <p class="message error">{{ message }}</p>
+  }
+
+  @if (result(); as importResult) {
+    <div class="result">
+      <div class="report">
+        <h3>Import completato</h3>
+        <dl>
+          <div>
+            <dt>Righe lette</dt>
+            <dd>{{ importResult.rowsRead }}</dd>
+          </div>
+          <div>
+            <dt>Transazioni nuove</dt>
+            <dd class="highlight">{{ importResult.imported }}</dd>
+          </div>
+          <div>
+            <dt>Transazioni duplicate</dt>
+            <dd>{{ importResult.duplicates }}</dd>
+          </div>
+          <div>
+            <dt>Righe scartate</dt>
+            <dd [class.warning]="importResult.failed > 0">{{ importResult.failed }}</dd>
+          </div>
+          <div>
+            <dt>Merchant creati</dt>
+            <dd>{{ importResult.merchantsCreated }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      @if (importResult.errors.length > 0) {
+        <ul class="row-errors">
+          @for (rowError of importResult.errors; track rowError.line) {
+            <li>Riga {{ rowError.line }}: {{ rowError.message }}</li>
+          }
+        </ul>
+      }
+
+      <a routerLink="/">Vai al riepilogo →</a>
+    </div>
+  }
+</section>
