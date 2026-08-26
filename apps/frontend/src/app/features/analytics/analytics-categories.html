@@ -1,0 +1,42 @@
+<section class="panel">
+  <h2>Spese per categoria</h2>
+
+  @if (categories().length === 0) {
+    <p class="message">
+      Nessuna spesa nel periodo selezionato.
+    </p>
+  } @else {
+    <ul>
+      @for (category of categories(); track category.categoryId ?? 'none') {
+        <li>
+          <button
+            type="button"
+            class="row"
+            (click)="categorySelected.emit(category.categoryId)"
+            [attr.aria-label]="'Filtra per ' + category.name"
+          >
+            <span class="count">
+              {{ category.transactionCount }}
+            </span>
+            <span class="name">
+              {{ category.name }}
+            </span>
+            <span class="percentage">
+              {{ formatPercent(category.percentage) }}
+            </span>
+            <span class="amount">
+              {{ formatAmount(category.amount) }}
+            </span>
+            <span class="navigation-hint" aria-hidden="true"> → </span>
+          </button>
+          <span class="bar">
+            <span
+              [style.width.%]="barWidth(category.amount)"
+              [style.background]="category.color ?? 'var(--text-muted)'"
+            ></span>
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

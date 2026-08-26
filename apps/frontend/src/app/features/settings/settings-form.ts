@@ -1,3 +1,4 @@
+import { parseAmount } from '../../core/amount';
 import { Settings } from './settings.model';
 
 /** Valori così come li digita l'utente. */
@@ -14,32 +15,6 @@ export interface SettingsFormErrors {
 export type SettingsFormResult =
   | { valid: true; settings: Settings }
   | { valid: false; errors: SettingsFormErrors };
-
-/** Accetta sia `1234.56` sia `1.234,56`, con o senza simbolo di valuta. */
-function parseAmount(raw: string): number | null {
-  const value = raw.trim().replace(/[€\s]/g, '');
-  if (value === '') {
-    return null;
-  }
-
-  const lastComma = value.lastIndexOf(',');
-  const lastDot = value.lastIndexOf('.');
-
-  let normalized: string;
-  if (lastComma >= 0 && lastDot >= 0) {
-    const [decimal, thousands] = lastComma > lastDot ? [',', '.'] : ['.', ','];
-    normalized = value.split(thousands).join('').replace(decimal, '.');
-  } else if (lastComma >= 0) {
-    normalized = value.replace(',', '.');
-  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(value)) {
-    normalized = value.split('.').join('');
-  } else {
-    normalized = value;
-  }
-
-  const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : null;
-}
 
 /**
  * Validazione del modulo impostazioni.

@@ -1,0 +1,101 @@
+<section class="panel toolbar-panel">
+  <div class="toolbar">
+    <div>
+      <h2>Riepilogo</h2>
+      <p class="subtitle">{{ formatMonth(filters.month()) }}</p>
+    </div>
+
+    <div class="controls">
+      <label class="control">
+        <span>Mese</span>
+        <input type="month" [value]="filters.month()" (change)="onMonthChange($event)" />
+      </label>
+
+      <label class="control">
+        <span>Tipo</span>
+        <select [value]="filters.filters().type ?? ''" (change)="onTypeChange($any($event.target).value)">
+          <option value="">Tutti</option>
+          @for (type of transactionTypes; track type) {
+            <option [value]="type">{{ typeLabels[type] }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  @if (activeFilters().length > 0) {
+    <div class="chips">
+      @for (chip of activeFilters(); track chip.kind) {
+        <button type="button" class="chip" (click)="removeFilter(chip.kind)">
+          {{ chip.label }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      <button type="button" class="clear" (click)="filters.clearFilters()">Azzera filtri</button>
+    </div>
+  }
+
+  @if (error(); as message) {
+    <p class="message error">{{ message }}</p>
+  }
+
+  @if (dashboard(); as data) {
+    <div class="cards">
+      <div class="card">
+        <span class="label">Entrate</span>
+        <span class="value positive">{{ formatAmount(data.summary.income) }}</span>
+      </div>
+      <div class="card">
+        <span class="label">Uscite</span>
+        <span class="value negative">{{ formatAmount(data.summary.expenses) }}</span>
+      </div>
+      <div class="card">
+        <span class="label">Saldo</span>
+        <span
+          class="value"
+          [class.positive]="data.summary.balance > 0"
+          [class.negative]="data.summary.balance < 0"
+        >{{ formatAmount(data.summary.balance) }}</span>
+      </div>
+      <div class="card">
+        <span class="label">Transazioni</span>
+        <span class="value">{{ data.summary.transactionCount }}</span>
+      </div>
+      <div class="card">
+        <span class="label">Merchant</span>
+        <span class="value">{{ data.summary.merchantCount }}</span>
+      </div>
+    </div>
+  } @else if (loading()) {
+    <p class="message">Caricamento in corso…</p>
+  }
+</section>
+
+@if (dashboard(); as data) {
+  <app-cash-flow-card [cashFlow]="data.cashFlow" />
+
+  <app-category-breakdown
+    [categories]="data.categories"
+    (categorySelected)="filters.setCategory($event)"
+    (merchantSelected)="filters.setMerchant($event)"
+  />
+
+  <app-top-merchants
+    [merchants]="data.topMerchants"
+    (merchantSelected)="filters.setMerchant($event)"
+  />
+
+  <app-month-comparison [comparison]="data.comparison" />
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Transazioni</h2>
+      <p class="count">{{ data.transactions.length }} nel periodo selezionato</p>
+    </div>
+
+    @if (data.transactions.length === 0) {
+      <p class="message">Nessuna transazione corrisponde ai filtri.</p>
+    } @else {
+      <app-transactions-table [transactions]="data.transactions" (changed)="reload()" />
+    }
+  </section>
+}

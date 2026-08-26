@@ -5,6 +5,7 @@ import { logger } from '../logger.js';
 const STATUS_BY_CODE: Record<DomainErrorCode, number> = {
   VALIDATION: 400,
   NOT_FOUND: 404,
+  CONFLICT: 409,
 };
 
 export const notFoundHandler: RequestHandler = (req, res) => {

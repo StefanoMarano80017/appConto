@@ -1,0 +1,126 @@
+<nav class="breadcrumb">
+  <a routerLink="/loans">← Prestiti</a>
+</nav>
+
+<section class="panel">
+  <h2>Crea prestito</h2>
+
+  @if (error(); as message) {
+    <p class="message error">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="message">Caricamento in corso…</p>
+  } @else if (transaction(); as transaction) {
+    <p class="hint">
+      Il movimento resta com'è: quello che nasce qui è il credito verso una persona.
+    </p>
+
+    <div class="origin">
+      <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
+      <span class="description">{{ transaction.description }}</span>
+      <span class="type">{{ typeLabels[transaction.type] }}</span>
+      <span class="amount negative">{{ formatAmount(transaction.amount) }}</span>
+    </div>
+
+    @if (alreadyLent() > 0) {
+      <p class="hint">
+        Di questo movimento {{ formatAmount(alreadyLent()) }} sono già attribuiti ad altri
+        prestiti: restano {{ formatAmount(maxAmount() ?? 0) }} da attribuire.
+      </p>
+    }
+
+    @if (wrongType()) {
+      <p class="message error">
+        Questo movimento è di tipo «{{ typeLabels[transaction.type] }}». Un prestito può nascere
+        solo da un movimento di tipo «Prestito»: correggi prima la natura del movimento
+        nell'<a routerLink="/transactions">elenco dei movimenti</a>.
+      </p>
+    } @else {
+      <form class="loan-form" (ngSubmit)="save()">
+        <label>
+          <span class="field-label">Persona</span>
+          <input
+            type="text"
+            name="borrowerName"
+            placeholder="Mamma"
+            autocomplete="off"
+            [ngModel]="form().borrowerName"
+            (ngModelChange)="update('borrowerName', $event)"
+            [attr.aria-invalid]="errors().borrowerName ? 'true' : null"
+          />
+          @if (errors().borrowerName; as message) {
+            <span class="field-error">{{ message }}</span>
+          }
+        </label>
+
+        <label>
+          <span class="field-label">Descrizione</span>
+          <input
+            type="text"
+            name="description"
+            placeholder="Acquisto fatto per lei"
+            autocomplete="off"
+            [ngModel]="form().description"
+            (ngModelChange)="update('description', $event)"
+          />
+          <span class="field-hint">Facoltativa.</span>
+        </label>
+
+        <label>
+          <span class="field-label">Importo</span>
+          <input
+            type="text"
+            inputmode="decimal"
+            name="amount"
+            placeholder="0,00"
+            [ngModel]="form().amount"
+            (ngModelChange)="update('amount', $event)"
+            [attr.aria-invalid]="errors().amount ? 'true' : null"
+          />
+          @if (errors().amount; as message) {
+            <span class="field-error">{{ message }}</span>
+          }
+          <span class="field-hint">
+            Quanto hai anticipato per questa persona. Può essere meno dell'intero movimento:
+            lo stesso pagamento può coprire anche cose tue.
+          </span>
+        </label>
+
+        <!-- Zero è un valore, non un'assenza: "tutto prestato" va detto. -->
+        @let own = ownExpense();
+        @if (own !== null) {
+          <p class="split" [class.own]="own > 0">
+            @if (own > 0) {
+              Gli altri <strong>{{ formatAmount(own) }}</strong> restano una tua spesa: entrano
+              nelle uscite del mese e nella categoria del movimento.
+            } @else {
+              Tutto il movimento è un credito: non entrerà fra le uscite del mese.
+            }
+          </p>
+        }
+
+        <label>
+          <span class="field-label">Data</span>
+          <input
+            type="date"
+            name="lentAt"
+            [ngModel]="form().lentAt"
+            (ngModelChange)="update('lentAt', $event)"
+            [attr.aria-invalid]="errors().lentAt ? 'true' : null"
+          />
+          @if (errors().lentAt; as message) {
+            <span class="field-error">{{ message }}</span>
+          }
+        </label>
+
+        <div class="actions">
+          <button type="submit" [disabled]="saving()">
+            {{ saving() ? 'Salvataggio…' : 'Crea prestito' }}
+          </button>
+          <a routerLink="/loans" class="cancel">Annulla</a>
+        </div>
+      </form>
+    }
+  }
+</section>

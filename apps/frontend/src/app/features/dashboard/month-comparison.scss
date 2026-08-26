@@ -1,0 +1,95 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.month-name {
+  text-transform: capitalize;
+}
+
+.message {
+  color: var(--text-muted);
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .label {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .value {
+    font-size: 1.375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .value.muted {
+    color: var(--text-muted);
+  }
+
+  small {
+    font-size: 0.875rem;
+  }
+}
+
+/* Spendere di più è il segnale a cui prestare attenzione. */
+.up {
+  color: var(--negative);
+}
+
+.down {
+  color: var(--positive);
+}
+
+.categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+
+  .name {
+    flex: 1;
+  }
+
+  .previous,
+  .current,
+  .difference {
+    min-width: 6rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .previous,
+  .arrow {
+    color: var(--text-muted);
+  }
+}

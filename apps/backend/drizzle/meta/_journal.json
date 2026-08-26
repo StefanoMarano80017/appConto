@@ -57,6 +57,13 @@
       "when": 1786102111065,
       "tag": "0007_transaction_types_and_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787738595112,
+      "tag": "0008_loans_and_repayments",
+      "breakpoints": true
     }
   ]
 }

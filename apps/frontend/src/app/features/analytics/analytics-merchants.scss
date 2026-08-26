@@ -1,0 +1,92 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  height: 100%;
+
+  h2 {
+    margin: 0 0 1.25rem;
+    font-size: 1.125rem;
+  }
+}
+
+.message {
+  color: var(--text-muted);
+}
+
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: merchant;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.4375rem 0;
+    border-bottom: 1px solid var(--border);
+    counter-increment: merchant;
+  }
+
+  li::before {
+    content: counter(merchant);
+    min-width: 1.25rem;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* `min-width: 0` permette ai nomi lunghi di restringersi invece di sfondare la riga. */
+.link {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link.disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.category,
+.count {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.amount {
+  min-width: 6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.more {
+  margin-top: 0.875rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: underline;
+}

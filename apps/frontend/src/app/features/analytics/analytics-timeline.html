@@ -1,0 +1,205 @@
+<section class="panel">
+  <div class="header">
+    <div>
+      <h2>Andamento nel tempo</h2>
+      <p class="subtitle">
+        Stessi movimenti del resto della pagina, raggruppati per
+        {{ granularity() === 'day' ? 'giorno' : granularity() === 'week' ? 'settimana' : 'mese' }}.
+      </p>
+    </div>
+
+    <div class="steps" role="group" aria-label="Passo dell'andamento">
+      @for (step of granularities; track step.id) {
+        <button
+          type="button"
+          [class.active]="granularity() === step.id"
+          [attr.aria-pressed]="granularity() === step.id"
+          (click)="granularitySelected.emit(step.id)"
+        >{{ step.label }}</button>
+      }
+    </div>
+  </div>
+
+  @if (buckets().length === 0) {
+    <p class="message">Nessun movimento nel periodo selezionato.</p>
+  } @else {
+    <ul class="legend">
+      @for (item of series(); track item.key) {
+        <li>
+          <button
+            type="button"
+            [class.off]="!item.visible"
+            [attr.aria-pressed]="item.visible"
+            (click)="toggleSeries(item.key)"
+          >
+            <span class="key" [attr.data-series]="item.key" aria-hidden="true"></span>
+            {{ item.label }}
+          </button>
+        </li>
+      }
+    </ul>
+
+    <div class="chart">
+      <div class="plot">
+        <svg
+          [attr.viewBox]="'0 0 ' + view.width + ' ' + view.height"
+          role="img"
+          [attr.aria-label]="
+            'Andamento di entrate e uscite su ' + buckets().length + ' intervalli. I valori sono anche disponibili nella tabella sotto il grafico.'
+          "
+        >
+          <!-- Linee guida: tratto continuo e sottile, un passo sopra la superficie. -->
+          @for (line of gridLines(); track line.value) {
+            <line
+              class="grid"
+              [attr.x1]="pad.left"
+              [attr.x2]="pad.left + plot.width"
+              [attr.y1]="line.y"
+              [attr.y2]="line.y"
+            />
+            <text class="tick" [attr.x]="pad.left - 10" [attr.y]="line.y + 4">
+              {{ formatAmount(line.value) }}
+            </text>
+          }
+
+          @if (hovered() !== null) {
+            <line
+              class="crosshair"
+              [attr.x1]="x(hovered()!)"
+              [attr.x2]="x(hovered()!)"
+              [attr.y1]="pad.top"
+              [attr.y2]="pad.top + plot.height"
+            />
+          }
+
+          @for (item of plotted(); track item.key) {
+            <polyline class="line" [attr.data-series]="item.key" [attr.points]="item.path" />
+          }
+
+          @for (item of plotted(); track item.key) {
+            @for (point of item.points; track $index) {
+              @if (point.marked) {
+                <circle
+                  class="point"
+                  [class.partial]="point.partial"
+                  [attr.data-series]="item.key"
+                  [attr.cx]="point.x"
+                  [attr.cy]="point.y"
+                  r="4"
+                />
+              }
+            }
+          }
+
+          @for (label of endLabels(); track label.key) {
+            <text
+              class="end-label"
+              [attr.data-series]="label.key"
+              [attr.x]="pad.left + plot.width + 10"
+              [attr.y]="label.y + 4"
+            >{{ formatAmount(label.value) }}</text>
+          }
+
+          @for (label of timeLabels(); track label.x) {
+            <text class="time" [attr.x]="label.x" [attr.y]="view.height - 12">{{ label.label }}</text>
+          }
+
+        </svg>
+
+        <!--
+          Lo strato che riceve mouse e tastiera è HTML, non SVG: su un <rect>
+          l'evento di fuoco non viene emesso, e il grafico resterebbe fuori
+          portata da tastiera.
+        -->
+        <div
+          class="hit"
+          tabindex="0"
+          role="group"
+          [attr.aria-label]="
+            'Valori dell\'andamento: usa le freccie per scorrere i ' + buckets().length + ' intervalli'
+          "
+          (pointermove)="onPointerMove($event)"
+          (pointerleave)="hovered.set(null)"
+          (keydown)="onKeyDown($event)"
+          (focus)="hovered.set(hovered() ?? 0)"
+          (blur)="hovered.set(null)"
+        ></div>
+
+        @if (hoveredBucket(); as bucket) {
+          <div
+            class="tooltip"
+            role="status"
+            [style.left.%]="(x(hovered()!) / view.width) * 100"
+          >
+            <p class="when">{{ longLabel(bucket) }}</p>
+            <ul>
+              @for (item of series(); track item.key) {
+                @if (item.visible) {
+                  <li>
+                    <span class="key" [attr.data-series]="item.key" aria-hidden="true"></span>
+                    <span class="amount">{{ formatAmount(value(item.key, bucket)) }}</span>
+                    <span class="name">{{ item.label }}</span>
+                  </li>
+                }
+              }
+            </ul>
+            @if (bucket.partial) {
+              <p class="note">Intervallo incompleto</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="footer">
+      @if (hasPartial()) {
+        <p class="note">
+          I punti vuoti sono intervalli coperti solo in parte dai movimenti: il primo e
+          l'ultimo di solito lo sono.
+        </p>
+      }
+      <button type="button" class="table-toggle" (click)="showTable.set(!showTable())">
+        {{ showTable() ? 'Nascondi la tabella' : 'Mostra i valori in tabella' }}
+      </button>
+    </div>
+
+    @if (showTable()) {
+      <div class="scroller">
+        <table class="values">
+          <caption>Valori dell'andamento nel tempo</caption>
+          <thead>
+            <tr>
+              <th scope="col">Intervallo</th>
+              <th scope="col" class="numeric">Entrate</th>
+              <th scope="col" class="numeric">Uscite</th>
+              <th scope="col" class="numeric">Saldo netto</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bucket of buckets(); track bucket.period) {
+              <tr>
+                <th scope="row">
+                  {{ longLabel(bucket) }}
+                  @if (bucket.partial) {
+                    <span class="incomplete">incompleto</span>
+                  }
+                </th>
+                <td class="numeric">{{ formatAmount(bucket.income) }}</td>
+                <td class="numeric">{{ formatAmount(bucket.expenses) }}</td>
+                <td class="numeric">{{ formatAmount(bucket.netMovement) }}</td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row">Totale</th>
+              <td class="numeric">{{ formatAmount(totals().income) }}</td>
+              <td class="numeric">{{ formatAmount(totals().expenses) }}</td>
+              <td class="numeric"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  }
+</section>

@@ -1,0 +1,33 @@
+<section class="panel">
+  <h2>Merchant principali</h2>
+
+  @if (merchants().length === 0) {
+    <p class="message">Nessuna spesa nel periodo selezionato.</p>
+  } @else {
+    <ol>
+      @for (merchant of visible(); track merchant.merchantId ?? 'none') {
+        <li>
+          @if (merchant.merchantId; as merchantId) {
+            <button
+              type="button"
+              class="link"
+              (click)="merchantSelected.emit(merchantId)"
+              [attr.aria-label]="'Filtra per ' + merchant.name"
+            >{{ merchant.name }}</button>
+          } @else {
+            <span class="link disabled">{{ merchant.name }}</span>
+          }
+          <span class="category">{{ merchant.category ?? 'Senza categoria' }}</span>
+          <span class="count">{{ merchant.transactionCount }}</span>
+          <span class="amount">{{ formatAmount(merchant.amount) }}</span>
+        </li>
+      }
+    </ol>
+
+    @if (hidden() > 0) {
+      <button type="button" class="more" (click)="expanded.set(!expanded())">
+        {{ expanded() ? 'Mostra solo i primi 10' : 'Mostra tutti (' + hidden() + ' in più)' }}
+      </button>
+    }
+  }
+</section>

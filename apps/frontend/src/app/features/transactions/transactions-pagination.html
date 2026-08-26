@@ -1,0 +1,53 @@
+<div class="pagination">
+  <p class="range">
+    @if (range(); as shown) {
+      {{ shown.first }}–{{ shown.last }} di {{ shown.total }} transazioni
+    } @else {
+      Nessuna transazione
+    }
+  </p>
+
+  @if (pagination().totalPages > 1) {
+    <nav class="pages" aria-label="Pagine dei risultati">
+      <button
+        type="button"
+        class="step"
+        [disabled]="pagination().page === 1"
+        (click)="pageSelected.emit(pagination().page - 1)"
+      >← Precedente</button>
+
+      @for (slot of slots(); track $index) {
+        @if (slot.kind === 'page') {
+          <button
+            type="button"
+            class="page"
+            [class.current]="slot.page === pagination().page"
+            [attr.aria-current]="slot.page === pagination().page ? 'page' : null"
+            (click)="pageSelected.emit(slot.page)"
+          >{{ slot.page }}</button>
+        } @else {
+          <span class="gap" aria-hidden="true">…</span>
+        }
+      }
+
+      <button
+        type="button"
+        class="step"
+        [disabled]="pagination().page === pagination().totalPages"
+        (click)="pageSelected.emit(pagination().page + 1)"
+      >Successiva →</button>
+    </nav>
+  }
+
+  <label class="size">
+    <span>Per pagina</span>
+    <select
+      [value]="pagination().pageSize"
+      (change)="pageSizeSelected.emit(+$any($event.target).value)"
+    >
+      @for (size of pageSizes; track size) {
+        <option [value]="size">{{ size }}</option>
+      }
+    </select>
+  </label>
+</div>

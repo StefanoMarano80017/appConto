@@ -1,0 +1,41 @@
+<section class="panel">
+  <h2>Confronto con <span class="month-name">{{ formatMonth(comparison().previousMonth) }}</span></h2>
+
+  <div class="totals">
+    <div class="figure">
+      <span class="label">Spese del mese</span>
+      <span class="value">{{ formatAmount(comparison().currentExpenses) }}</span>
+    </div>
+    <div class="figure">
+      <span class="label">Mese precedente</span>
+      <span class="value muted">{{ formatAmount(comparison().previousExpenses) }}</span>
+    </div>
+    <div class="figure">
+      <span class="label">Variazione</span>
+      <span class="value" [class.up]="comparison().difference > 0" [class.down]="comparison().difference < 0">
+        {{ signed(comparison().difference) }}
+        @if (comparison().percentChange !== null) {
+          <small>({{ signedPercent(comparison().percentChange ?? 0) }})</small>
+        }
+      </span>
+    </div>
+  </div>
+
+  @if (comparison().byCategory.length === 0) {
+    <p class="message">Nessuna spesa in nessuno dei due mesi.</p>
+  } @else {
+    <ul class="categories">
+      @for (category of comparison().byCategory; track category.id ?? 'none') {
+        <li>
+          <span class="name">{{ category.name }}</span>
+          <span class="previous">{{ formatAmount(category.previous) }}</span>
+          <span class="arrow" aria-hidden="true">→</span>
+          <span class="current">{{ formatAmount(category.current) }}</span>
+          <span class="difference" [class.up]="category.difference > 0" [class.down]="category.difference < 0">
+            {{ signed(category.difference) }}
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

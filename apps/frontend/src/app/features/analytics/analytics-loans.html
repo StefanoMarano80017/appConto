@@ -1,0 +1,38 @@
+<section class="panel">
+  <div class="header">
+    <h2>Prestiti</h2>
+    <div class="totals">
+      <span class="figure">
+        <span class="label">Prestato nel periodo</span>
+        <span class="value">{{ formatAmount(loans().lent) }}</span>
+      </span>
+      <span class="figure">
+        <span class="label">Movimenti</span>
+        <span class="value">{{ loans().transactionCount }}</span>
+      </span>
+    </div>
+  </div>
+
+  @if (loans().entries.length === 0) {
+    <p class="message">Nessun prestito nel periodo selezionato.</p>
+  } @else {
+    <p class="explore">
+      <a class="workspace" routerLink="/loans">Apri il workspace dei prestiti →</a>
+      <a class="movements" routerLink="/transactions" [queryParams]="explorerParams()">Vedi i movimenti →</a>
+    </p>
+    <ul>
+      @for (entry of loans().entries; track entry.id) {
+        <li>
+          <span class="date">{{ formatBookingDate(entry.bookingDate) }}</span>
+          <span class="name">{{ entry.merchant ?? entry.description }}</span>
+          <span class="description">{{ entry.description }}</span>
+          <span class="amount">{{ formatAmount(entry.amount) }}</span>
+        </li>
+      }
+    </ul>
+    <p class="note">
+      Il denaro prestato esce dal conto ma non dal patrimonio: non compare fra le uscite.
+      Restituzioni e credito residuo si gestiscono nei <a routerLink="/loans">prestiti</a>.
+    </p>
+  }
+</section>

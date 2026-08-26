@@ -1,0 +1,164 @@
+<section class="panel">
+  <label class="search">
+    <span class="icon" aria-hidden="true">🔎</span>
+    <input
+      type="search"
+      placeholder="Cerca transazioni…"
+      aria-label="Cerca transazioni"
+      [value]="searchText()"
+      (input)="searchTyped.emit($any($event.target).value)"
+    />
+  </label>
+
+  <div class="dropdowns">
+    <details class="dropdown">
+      <summary>Periodo <span class="value">{{ periodLabel() }}</span></summary>
+      <div class="panel-body">
+        <div class="options">
+          @for (option of presets; track option.id) {
+            <button
+              type="button"
+              [class.active]="preset() === option.id"
+              (click)="selectPreset(option.id)"
+            >{{ option.label }}</button>
+          }
+        </div>
+        <div class="dates">
+          <label>
+            <span>Dal</span>
+            <input
+              type="date"
+              [value]="query().from ?? ''"
+              (change)="changed.emit({ from: $any($event.target).value || null })"
+            />
+          </label>
+          <label>
+            <span>Al</span>
+            <input
+              type="date"
+              [value]="query().to ?? ''"
+              (change)="changed.emit({ to: $any($event.target).value || null })"
+            />
+          </label>
+        </div>
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary>Tipo @if (query().types.length > 0) { <span class="badge">{{ query().types.length }}</span> }</summary>
+      <div class="panel-body">
+        <div class="options">
+          @for (type of transactionTypes; track type) {
+            <button
+              type="button"
+              [class.active]="query().types.includes(type)"
+              (click)="toggleType(type)"
+            >{{ typeLabels[type] }}</button>
+          }
+        </div>
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary>Categoria @if (query().categoryIds.length > 0) { <span class="badge">{{ query().categoryIds.length }}</span> }</summary>
+      <div class="panel-body">
+        <div class="options">
+          @for (category of categories(); track category.id) {
+            <button
+              type="button"
+              [class.active]="query().categoryIds.includes(category.id)"
+              (click)="toggleCategory(category.id)"
+            >{{ category.name }}</button>
+          }
+          <button
+            type="button"
+            class="unclassified"
+            [class.active]="query().classification === 'unclassified'"
+            (click)="changed.emit({ classification: query().classification === 'unclassified' ? 'all' : 'unclassified' })"
+          >Da classificare</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary>Merchant @if (query().merchantIds.length > 0) { <span class="badge">{{ query().merchantIds.length }}</span> }</summary>
+      <div class="panel-body">
+        <input
+          type="search"
+          class="filter"
+          placeholder="Cerca un merchant…"
+          aria-label="Cerca un merchant"
+          [value]="merchantSearch()"
+          (input)="merchantSearch.set($any($event.target).value)"
+        />
+        <div class="options">
+          @for (merchant of suggestedMerchants(); track merchant.id) {
+            <button
+              type="button"
+              [class.active]="query().merchantIds.includes(merchant.id)"
+              (click)="toggleMerchant(merchant.id)"
+              [title]="merchant.displayName === null ? merchant.name : merchant.name + ' (rinominato)'"
+            >{{ merchant.label }}</button>
+          } @empty {
+            <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+          }
+        </div>
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary>Classificazione</summary>
+      <div class="panel-body">
+        <div class="options">
+          @for (option of classifications; track option) {
+            <button
+              type="button"
+              [class.active]="query().classification === option"
+              (click)="changed.emit({ classification: option })"
+            >{{ classificationLabels[option] }}</button>
+          }
+        </div>
+      </div>
+    </details>
+
+    <details class="dropdown">
+      <summary>Importo</summary>
+      <div class="panel-body">
+        <div class="dates">
+          <label>
+            <span>Minimo</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="query().minAmount"
+              (change)="changed.emit({ minAmount: $any($event.target).value })"
+            />
+          </label>
+          <label>
+            <span>Massimo</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [value]="query().maxAmount"
+              (change)="changed.emit({ maxAmount: $any($event.target).value })"
+            />
+          </label>
+        </div>
+        <p class="message">Il confronto è sul valore assoluto: vale per entrate e uscite.</p>
+      </div>
+    </details>
+  </div>
+
+  @if (activeFilters().length > 0) {
+    <div class="chips">
+      @for (filter of activeFilters(); track filter.key) {
+        <button type="button" class="chip" (click)="changed.emit(filter.removal)">
+          {{ filter.label }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      <button type="button" class="clear" (click)="cleared.emit()">Reset filtri</button>
+    </div>
+  }
+</section>

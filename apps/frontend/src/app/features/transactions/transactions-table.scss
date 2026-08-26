@@ -1,0 +1,173 @@
+:host {
+  display: block;
+}
+
+.message {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+}
+
+.message.error {
+  color: var(--negative);
+}
+
+/* Su schermi stretti scorre la tabella, non la pagina. */
+.scroller {
+  overflow-x: auto;
+}
+
+.transactions {
+  width: 100%;
+  min-width: 44rem;
+  border-collapse: collapse;
+
+  thead {
+    border-top: 1px solid var(--border);
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .date {
+    white-space: nowrap;
+  }
+
+  .merchant {
+    color: var(--text-muted);
+  }
+
+  /* Il nome della banca resta visibile quando il merchant è stato rinominato. */
+  .merchant .original {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+
+  .category select,
+  .type select {
+    font: inherit;
+    max-width: 12rem;
+    padding: 0.25rem 0.375rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .category select:disabled,
+  .type select:disabled {
+    opacity: 0.5;
+  }
+
+  .type select {
+    max-width: 9rem;
+  }
+
+  .numeric {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--positive);
+  }
+
+  th.numeric {
+    color: var(--text-muted);
+  }
+
+  .numeric.negative {
+    color: var(--negative);
+  }
+}
+
+.sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.sort:hover {
+  color: var(--text);
+}
+
+th.numeric .sort {
+  float: right;
+}
+
+.arrow {
+  margin-left: 0.25rem;
+  color: var(--accent);
+}
+
+/* La colonna dei prestiti: un'azione, non un dato del movimento. */
+.transactions .loan {
+  white-space: nowrap;
+
+  .loan-link {
+    display: block;
+    color: var(--text);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+
+  .loan-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .loan-link .remaining {
+    margin-left: 0.375rem;
+    color: var(--negative);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loan-link .remaining.zero {
+    color: var(--text-muted);
+  }
+
+  .loan-link.repayment {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  /* La quota del movimento rimasta a carico proprio: entra fra le uscite. */
+  .own-expense {
+    display: block;
+    color: var(--negative);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .create {
+    display: inline-block;
+    margin-top: 0.125rem;
+    color: var(--accent);
+    font-size: 0.8125rem;
+    text-decoration: none;
+  }
+
+  .create:hover {
+    text-decoration: underline;
+  }
+
+  .none {
+    color: var(--text-muted);
+  }
+}

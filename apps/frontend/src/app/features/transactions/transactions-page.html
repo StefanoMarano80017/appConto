@@ -1,71 +1,60 @@
-<section class="panel">
-  <div class="panel-header">
-    <h2>Transazioni</h2>
-    <button type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
-  </div>
+<app-transactions-toolbar
+  [query]="query()"
+  [categories]="categories()"
+  [merchants]="merchants()"
+  [searchText]="searchText()"
+  (changed)="apply($event)"
+  (searchTyped)="onSearchTyped($event)"
+  (cleared)="resetFilters()"
+/>
 
-  @if (error(); as message) {
+@if (error(); as message) {
+  <section class="panel">
     <p class="message error">{{ message }}</p>
-  }
+    <button type="button" class="retry" (click)="transactions.reload()">Riprova</button>
+  </section>
+}
 
-  @if (loading()) {
-    <p class="message">Caricamento in corso…</p>
-  } @else if (transactions().length === 0) {
-    <p class="message">Nessuna transazione importata. Carica un file CSV dalla schermata Import.</p>
-  } @else {
-    <p class="count">{{ transactions().length }} transazioni</p>
-    <table class="transactions">
-      <thead>
-        <tr>
-          <th scope="col">Data</th>
-          <th scope="col">Descrizione</th>
-          <th scope="col">Merchant</th>
-          <th scope="col">Tipo</th>
-          <th scope="col">Categoria</th>
-          <th scope="col" class="numeric">Importo</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (transaction of transactions(); track transaction.id) {
-          <tr>
-            <td class="date">{{ formatBookingDate(transaction.bookingDate) }}</td>
-            <td>{{ transaction.description }}</td>
-            <td class="merchant">{{ transaction.merchant?.label ?? '—' }}</td>
-            <td class="type">
-              <select
-                [ngModel]="transaction.type"
-                (ngModelChange)="changeType(transaction, $event)"
-                [disabled]="savingTransactionId() === transaction.id"
-                [attr.aria-label]="'Tipo di ' + transaction.description"
-              >
-                @for (type of transactionTypes; track type) {
-                  <option [value]="type">{{ typeLabels[type] }}</option>
-                }
-              </select>
-            </td>
-            <td class="category">
-              @if (transaction.merchant; as merchant) {
-                <select
-                  [ngModel]="merchant.category?.id ?? ''"
-                  (ngModelChange)="changeCategory(merchant, $event)"
-                  [disabled]="savingMerchantId() === merchant.id"
-                  [attr.aria-label]="'Categoria di ' + merchant.name"
-                >
-                  <option value="">—</option>
-                  @for (category of categories(); track category.id) {
-                    <option [value]="category.id">{{ category.name }}</option>
-                  }
-                </select>
-              } @else {
-                —
-              }
-            </td>
-            <td class="numeric" [class.negative]="transaction.amount < 0">
-              {{ formatAmount(transaction.amount) }}
-            </td>
-          </tr>
+@if (page(); as data) {
+  <section class="panel" [class.updating]="transactions.isLoading()">
+    @if (data.items.length === 0) {
+      <div class="empty">
+        <p class="message">Nessuna transazione trovata.</p>
+        <p class="hint">Prova a modificare o rimuovere uno dei filtri.</p>
+        @if (hasFilters()) {
+          <button type="button" class="retry" (click)="resetFilters()">Reset filtri</button>
         }
-      </tbody>
-    </table>
-  }
-</section>
+      </div>
+    } @else {
+      <app-transactions-pagination
+        [pagination]="data.pagination"
+        (pageSelected)="goToPage($event)"
+        (pageSizeSelected)="apply({ pageSize: $event })"
+      />
+
+      <app-transactions-table
+        [transactions]="data.items"
+        [sortBy]="query().sortBy"
+        [sortDirection]="query().sortDirection"
+        [loanLinks]="links()"
+        (sortSelected)="sortBy($event)"
+        (changed)="reload()"
+      />
+
+      <app-transactions-pagination
+        [pagination]="data.pagination"
+        (pageSelected)="goToPage($event)"
+        (pageSizeSelected)="apply({ pageSize: $event })"
+      />
+    }
+  </section>
+} @else if (transactions.isLoading()) {
+  <section class="panel" aria-busy="true">
+    <p class="message">Caricamento in corso…</p>
+    <div class="skeleton">
+      @for (row of skeletonRows; track $index) {
+        <span class="line"></span>
+      }
+    </div>
+  </section>
+}

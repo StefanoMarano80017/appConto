@@ -1,0 +1,26 @@
+<section class="panel">
+  <div class="header">
+    <h2>Top merchant del mese</h2>
+    <a routerLink="/merchants">Tutti i merchant →</a>
+  </div>
+
+  @if (merchants().length === 0) {
+    <p class="message">Nessuna spesa nel periodo selezionato.</p>
+  } @else {
+    <ol class="merchants">
+      @for (merchant of merchants(); track merchant.id) {
+        <li>
+          <button
+            type="button"
+            class="link"
+            (click)="merchantSelected.emit(merchant.id)"
+            [attr.aria-label]="'Filtra per ' + merchant.label"
+          >{{ merchant.label }}</button>
+          <span class="category">{{ merchant.categoryName ?? 'Senza categoria' }}</span>
+          <span class="count">{{ merchant.transactionCount }}</span>
+          <span class="amount">{{ formatAmount(merchant.amount) }}</span>
+        </li>
+      }
+    </ol>
+  }
+</section>

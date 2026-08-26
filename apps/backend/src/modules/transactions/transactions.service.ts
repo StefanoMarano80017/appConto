@@ -1,5 +1,6 @@
 import { NotFoundError } from '../../shared/errors.js';
 import { merchantsService, type MerchantWithCategory } from '../merchants/index.js';
+import type { TransactionQuery } from './transaction-query.js';
 import { transactionFingerprint } from './transaction-fingerprint.js';
 import { transactionTypeSchema, type TransactionType } from './transaction-type.js';
 import { createTransaction, type NewTransaction, type Transaction } from './transaction.model.js';
@@ -21,6 +22,17 @@ export interface TypeTotal {
 export interface TransactionWithMerchant {
   transaction: Transaction;
   merchant: MerchantWithCategory | null;
+}
+
+/** Una pagina di risultati, con quanti ce ne sono in tutto. */
+export interface TransactionPage {
+  transactions: TransactionWithMerchant[];
+  /** Pagina effettivamente restituita: una richiesta oltre l'ultima viene riportata all'ultima. */
+  page: number;
+  pageSize: number;
+  /** Transazioni che soddisfano i criteri, non quelle di questa pagina. */
+  total: number;
+  totalPages: number;
 }
 
 /** Totali delle transazioni di un merchant, sempre ricalcolati. */
@@ -72,14 +84,64 @@ export const transactionsService = {
     return transactionsRepository.findAll();
   },
 
-  /** Le transazioni arricchite con il merchant, letto dalla feature `merchants`. */
-  listAllWithMerchant(): TransactionWithMerchant[] {
-    return withMerchant(transactionsRepository.findAll());
+  /**
+   * Una singola transazione, oppure `null`.
+   *
+   * Serve alle feature che vi si appoggiano per validare un riferimento: un
+   * prestito nasce da un movimento, e deve poter verificare che esista e che
+   * natura abbia.
+   */
+  findById(id: string): Transaction | null {
+    return transactionsRepository.findById(id);
+  },
+
+  /** Una singola transazione con il proprio merchant, oppure `null`. */
+  findByIdWithMerchant(id: string): TransactionWithMerchant | null {
+    const transaction = transactionsRepository.findById(id);
+
+    return transaction === null ? null : (withMerchant([transaction])[0] ?? null);
   },
 
   /** Le transazioni di un mese (`YYYY-MM`), arricchite con il merchant. */
   listByMonthWithMerchant(month: string): TransactionWithMerchant[] {
     return withMerchant(transactionsRepository.findByMonth(month));
+  },
+
+  /**
+   * Le transazioni comprese fra due date contabili (`YYYY-MM-DD`), estremi
+   * inclusi, arricchite con il merchant. `null` significa "nessun limite".
+   *
+   * È la lettura su cui si appoggia l'analisi per periodo: la selezione avviene
+   * nel database, così le feature a valle non devono conoscerlo.
+   */
+  listBetweenWithMerchant(from: string | null, to: string | null): TransactionWithMerchant[] {
+    return withMerchant(transactionsRepository.findBetween(from, to));
+  },
+
+  /**
+   * Cerca le transazioni che soddisfano i criteri, una pagina alla volta.
+   *
+   * Filtri, ordinamento e paginazione sono eseguiti dal database; qui resta la
+   * sola composizione con il merchant, la stessa usata da tutte le altre
+   * letture. Una pagina oltre l'ultima viene riportata all'ultima: un
+   * segnalibro vecchio continua a mostrare qualcosa.
+   */
+  search(query: TransactionQuery): TransactionPage {
+    const firstAttempt = transactionsRepository.search(query);
+    const totalPages = Math.max(Math.ceil(firstAttempt.total / query.pageSize), 1);
+
+    const { transactions, total } =
+      query.page <= totalPages
+        ? firstAttempt
+        : transactionsRepository.search({ ...query, page: totalPages });
+
+    return {
+      transactions: withMerchant(transactions),
+      page: Math.min(query.page, totalPages),
+      pageSize: query.pageSize,
+      total,
+      totalPages,
+    };
   },
 
   /**

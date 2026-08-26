@@ -1,5 +1,5 @@
 /** API pubblica della feature `summary`. */
-export { summaryService } from './summary.service.js';
+export { summaryService, summarizeEntries, requireMonth } from './summary.service.js';
 export { summaryRouter } from './summary.routes.js';
 export type {
   SummaryViewModel,

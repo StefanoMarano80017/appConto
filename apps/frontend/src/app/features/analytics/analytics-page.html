@@ -1,0 +1,62 @@
+<app-analytics-toolbar [categories]="categories()" [merchants]="merchants()" />
+
+@if (error(); as message) {
+  <section class="panel">
+    <p class="message error">{{ message }}</p>
+  </section>
+}
+
+@if (data(); as data) {
+  <section class="panel">
+    <div class="cards">
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="card">
+          <span class="label">{{ kpi.label }}</span>
+          <span class="value" [class]="kpi.tone">{{ kpi.value }}</span>
+        </div>
+      }
+    </div>
+    @if (analytics.isLoading()) {
+      <p class="message">Aggiornamento in corso…</p>
+    }
+  </section>
+
+  @if (isEmpty()) {
+    <section class="panel">
+      <p class="message">Nessun dato disponibile per il periodo selezionato.</p>
+      <p class="hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
+    </section>
+  } @else {
+    <app-analytics-timeline
+      [timeline]="data.timeline"
+      [granularity]="store.granularity()"
+      (granularitySelected)="store.setGranularity($event)"
+    />
+
+    <div class="columns">
+      <app-analytics-categories
+        [categories]="data.byCategory"
+        (categorySelected)="onCategorySelected($event)"
+      />
+      <app-analytics-merchants
+        [merchants]="data.byMerchant"
+        (merchantSelected)="onMerchantSelected($event)"
+      />
+    </div>
+
+    <app-analytics-loans
+      [loans]="data.loans"
+      [explorerParams]="explorerParams({ types: ['LOAN'] })"
+    />
+
+    <p class="explore all">
+      <a routerLink="/transactions" [queryParams]="explorerParams()">
+        Vedi le {{ data.counts.transactions }} transazioni del periodo →
+      </a>
+    </p>
+  }
+} @else if (analytics.isLoading()) {
+  <section class="panel">
+    <p class="message">Caricamento in corso…</p>
+  </section>
+}

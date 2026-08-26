@@ -1,0 +1,120 @@
+<section class="panel">
+  <div class="head">
+    <div>
+      <h2>Analytics</h2>
+      <p class="subtitle">Come sono andate le mie finanze nel periodo che scelgo.</p>
+    </div>
+    <button type="button" class="toggle" (click)="showFilters.set(!showFilters())">
+      {{ showFilters() ? 'Nascondi filtri' : 'Filtri' }}
+      @if (store.hasFilters()) {
+        <span class="badge">{{ activeFilters().length }}</span>
+      }
+    </button>
+  </div>
+
+  <div class="periods" role="group" aria-label="Periodo">
+    @for (preset of presets; track preset.id) {
+      <button
+        type="button"
+        [class.active]="store.preset() === preset.id"
+        (click)="store.selectPreset(preset.id)"
+      >{{ preset.label }}</button>
+    }
+  </div>
+
+  <div class="custom">
+    <label>
+      <span>Dal</span>
+      <input
+        type="date"
+        [value]="store.dateRange().from ?? ''"
+        (change)="onFromChange($any($event.target).value)"
+      />
+    </label>
+    <label>
+      <span>Al</span>
+      <input
+        type="date"
+        [value]="store.dateRange().to ?? ''"
+        (change)="onToChange($any($event.target).value)"
+      />
+    </label>
+    <span class="selected">{{ store.selectedPeriodLabel() }}</span>
+  </div>
+
+  @if (showFilters()) {
+    <div class="filters">
+      <div class="group">
+        <h3>Tipo di movimento</h3>
+        <div class="options">
+          @for (type of transactionTypes; track type) {
+            <button
+              type="button"
+              [class.active]="store.filters().types.includes(type)"
+              (click)="store.toggleType(type)"
+            >{{ typeLabels[type] }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Categoria</h3>
+        <div class="options">
+          @for (category of categories(); track category.id) {
+            <button
+              type="button"
+              [class.active]="store.filters().categoryIds.includes(category.id)"
+              (click)="store.toggleCategory(category.id)"
+            >{{ category.name }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Merchant</h3>
+        <input
+          type="search"
+          class="search"
+          placeholder="Cerca un merchant…"
+          [value]="merchantSearch()"
+          (input)="merchantSearch.set($any($event.target).value)"
+        />
+        <div class="options">
+          @for (merchant of suggestedMerchants(); track merchant.id) {
+            <button
+              type="button"
+              [class.active]="store.filters().merchantIds.includes(merchant.id)"
+              (click)="store.toggleMerchant(merchant.id)"
+            >{{ merchant.label }}</button>
+          } @empty {
+            <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+          }
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Classificazione</h3>
+        <div class="options">
+          @for (option of classifications; track option.id) {
+            <button
+              type="button"
+              [class.active]="store.filters().classification === option.id"
+              (click)="store.setClassification(option.id)"
+            >{{ option.label }}</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (activeFilters().length > 0) {
+    <div class="chips">
+      @for (filter of activeFilters(); track filter.key) {
+        <button type="button" class="chip" (click)="filter.remove()">
+          {{ filter.label }} <span aria-hidden="true">×</span>
+        </button>
+      }
+      <button type="button" class="clear" (click)="store.resetFilters()">Reset filtri</button>
+    </div>
+  }
+</section>

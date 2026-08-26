@@ -1,0 +1,119 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 1.25rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.totals {
+  display: flex;
+  gap: 2rem;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+
+  .label {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .value {
+    font-size: 1.125rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.message {
+  color: var(--text-muted);
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+}
+
+.date {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* `min-width: 0` permette al testo lungo di restringersi invece di sfondare la riga. */
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.description {
+  flex: 2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.amount {
+  min-width: 6rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 1rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+
+  a {
+    color: var(--accent);
+  }
+}
+
+.explore {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}

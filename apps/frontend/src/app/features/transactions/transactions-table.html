@@ -1,0 +1,116 @@
+@if (error(); as message) {
+  <p class="message error">{{ message }}</p>
+}
+
+<div class="scroller">
+  <table class="transactions">
+    <thead>
+      <tr>
+        @for (column of columns(); track column.label) {
+          <th
+            scope="col"
+            [class.numeric]="column.numeric"
+            [attr.aria-sort]="ariaSort(column.field)"
+          >
+            @if (sortBy() !== null && column.field; as field) {
+              <button type="button" class="sort" (click)="sortSelected.emit(field)">
+                {{ column.label }}
+                @if (sortBy() === field) {
+                  <span class="arrow" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                }
+              </button>
+            } @else {
+              {{ column.label }}
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (transaction of transactions(); track transaction.id) {
+        <tr [class.saving]="savingId() === transaction.id">
+          <td class="date">{{ formatBookingDate(transaction.bookingDate) }}</td>
+          <td>{{ transaction.description }}</td>
+          <td class="merchant">
+            @if (transaction.merchant; as merchant) {
+              {{ merchant.label }}
+              @if (merchant.displayName !== null) {
+                <span class="original">{{ merchant.name }}</span>
+              }
+            } @else {
+              —
+            }
+          </td>
+          <td class="type">
+            <select
+              [ngModel]="transaction.type"
+              (ngModelChange)="changeType(transaction, $event)"
+              [disabled]="savingId() === transaction.id"
+              [attr.aria-label]="'Tipo di ' + transaction.description"
+            >
+              @for (type of transactionTypes; track type) {
+                <option [value]="type">{{ typeLabels[type] }}</option>
+              }
+            </select>
+          </td>
+          <td class="category">
+            @if (transaction.merchant; as merchant) {
+              <select
+                [ngModel]="merchant.category?.id ?? ''"
+                (ngModelChange)="changeCategory(transaction, $event)"
+                [disabled]="savingId() === transaction.id"
+                [attr.aria-label]="'Categoria di ' + merchant.label"
+              >
+                <option value="">—</option>
+                @for (category of categories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+            } @else {
+              —
+            }
+          </td>
+          <td class="numeric" [class.negative]="transaction.amount < 0">
+            {{ formatAmount(transaction.amount) }}
+          </td>
+          @if (showLoans()) {
+            @let loans = loanCell(transaction);
+            <td class="loan">
+              @for (link of loans.origins; track link.loanId) {
+                <a class="loan-link" [routerLink]="['/loans', link.loanId]">
+                  {{ link.borrowerName }}
+                  <span class="remaining" [class.zero]="link.remainingAmount === 0">{{
+                    link.remainingAmount === 0 ? 'chiuso' : formatAmount(link.remainingAmount)
+                  }}</span>
+                </a>
+              }
+
+              @for (link of loans.repayments; track link.loanId) {
+                <a class="loan-link repayment" [routerLink]="['/loans', link.loanId]">
+                  Restituzione · {{ link.borrowerName }}
+                </a>
+              }
+
+              @if (loans.ownExpense > 0) {
+                <span class="own-expense"
+                  >{{ formatAmount(loans.ownExpense) }} spesa tua</span
+                >
+              }
+
+              @if (loans.creatable) {
+                <a
+                  class="create"
+                  routerLink="/loans/new"
+                  [queryParams]="{ transactionId: transaction.id }"
+                  >{{ loans.origins.length === 0 ? 'Crea prestito' : '+ Aggiungi' }}</a
+                >
+              } @else if (loans.origins.length === 0 && loans.repayments.length === 0) {
+                <span class="none">—</span>
+              }
+            </td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

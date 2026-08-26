@@ -5,9 +5,15 @@ const dateFormatter = new Intl.DateTimeFormat('it-IT', {
   year: 'numeric'
 });
 const monthFormatter = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' });
+const percentFormatter = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
 
 export function formatAmount(amount: number): string {
   return amountFormatter.format(amount);
+}
+
+/** Una percentuale già calcolata: `38.1` diventa `38,1%`. */
+export function formatPercent(value: number): string {
+  return `${percentFormatter.format(value)}%`;
 }
 
 /** Da `YYYY-MM-DD` a `GG/MM/AAAA`. */

@@ -14,3 +14,15 @@ export interface Transaction {
   /** Null per le transazioni importate prima dell'introduzione dei merchant. */
   merchant: Merchant | null;
 }
+
+/** Una pagina di risultati, con le informazioni per navigare fra le altre. */
+export interface TransactionPage {
+  items: Transaction[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    /** Transazioni che soddisfano i criteri, non quelle di questa pagina. */
+    total: number;
+    totalPages: number;
+  };
+}

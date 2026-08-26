@@ -1,0 +1,90 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+
+  a {
+    color: var(--accent);
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+}
+
+.message {
+  color: var(--text-muted);
+}
+
+.merchants {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: rank;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    counter-increment: rank;
+  }
+
+  li::before {
+    content: counter(rank);
+    min-width: 1rem;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  li:last-child {
+    border-bottom: 0;
+  }
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.category {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.count {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.amount {
+  min-width: 6.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

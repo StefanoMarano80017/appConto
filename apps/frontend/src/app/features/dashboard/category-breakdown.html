@@ -1,0 +1,66 @@
+<section class="panel">
+  <h2>Spese per categoria</h2>
+
+  @if (categories().length === 0) {
+    <p class="message">Nessuna spesa nel periodo selezionato.</p>
+  } @else {
+    <ul class="categories">
+      @for (category of categories(); track category.id ?? 'none') {
+        <li>
+          <details>
+            <summary>
+              <span class="row">
+                <span class="name">{{ category.name }}</span>
+                <button
+                  type="button"
+                  class="filter"
+                  (click)="categorySelected.emit(category.id); $event.preventDefault()"
+                  [attr.aria-label]="'Filtra per ' + category.name"
+                >filtra</button>
+                <span class="count">{{ category.transactionCount }}</span>
+                <span class="amount">{{ formatAmount(category.amount) }}</span>
+              </span>
+              <span class="bar">
+                <span
+                  [style.width.%]="barWidth(category.amount)"
+                  [style.background]="category.color ?? 'var(--text-muted)'"
+                ></span>
+              </span>
+            </summary>
+
+            <ul class="merchants">
+              @for (merchant of category.merchants; track merchant.id) {
+                <li>
+                  <details>
+                    <summary>
+                      <span class="row">
+                        <button
+                          type="button"
+                          class="link"
+                          (click)="merchantSelected.emit(merchant.id); $event.preventDefault()"
+                          [attr.aria-label]="'Filtra per ' + merchant.label"
+                        >{{ merchant.label }}</button>
+                        <span class="count">{{ merchant.transactionCount }}</span>
+                        <span class="amount">{{ formatAmount(merchant.amount) }}</span>
+                      </span>
+                    </summary>
+
+                    <ul class="transactions">
+                      @for (transaction of merchant.transactions; track transaction.id) {
+                        <li>
+                          <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
+                          <span class="description">{{ transaction.description }}</span>
+                          <span class="amount">{{ formatAmount(transaction.amount) }}</span>
+                        </li>
+                      }
+                    </ul>
+                  </details>
+                </li>
+              }
+            </ul>
+          </details>
+        </li>
+      }
+    </ul>
+  }
+</section>

@@ -11,15 +11,36 @@ export { fingerprintAll, transactionFingerprint } from './transaction-fingerprin
 export {
   TRANSACTION_TYPES,
   transactionTypeSchema,
-  affectsNetWorth,
-  isExpense,
+  creditCents,
+  expenseCents,
+  hasExpense,
   isIncome,
+  netWorthCents,
   type TransactionType,
 } from './transaction-type.js';
 export {
+  CLASSIFICATION_FILTERS,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_QUERY,
+  PAGE_SIZES,
+  TRANSACTION_SORT_FIELDS,
+  parseTransactionQuery,
+  type ClassificationFilter,
+  type SortDirection,
+  type TransactionQuery,
+  type TransactionSortField,
+} from './transaction-query.js';
+export {
   transactionsService,
+  type TransactionPage,
   type TransactionWithMerchant,
   type MerchantTransactionStats,
   type TypeTotal,
 } from './transactions.service.js';
+export {
+  toTransactionDto,
+  toTransactionPageDto,
+  type TransactionDto,
+  type TransactionPageDto,
+} from './transactions.dto.js';
 export { transactionsRouter } from './transactions.routes.js';

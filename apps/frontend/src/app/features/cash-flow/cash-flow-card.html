@@ -1,71 +1,67 @@
 <section class="panel cash-flow">
   <div class="header">
     <h2>Liquidità</h2>
-    @if (cashFlow(); as data) {
-      @if (data.balanceDate !== null) {
-        <p class="subtitle">Saldo noto al {{ formatBookingDate(data.balanceDate) }}</p>
-      }
+    @if (cashFlow().balanceDate; as balanceDate) {
+      <p class="subtitle">Saldo noto al {{ formatBookingDate(balanceDate) }}</p>
     }
   </div>
 
-  @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-  } @else if (loading() && cashFlow() === null) {
-    <p class="message">Caricamento in corso…</p>
-  } @else if (cashFlow(); as data) {
-    <dl class="calculation">
-      <div class="row">
-        <dt>Saldo iniziale</dt>
-        <dd>{{ formatAmount(data.openingBalance) }}</dd>
-      </div>
-      <div class="row">
-        <dt>Movimenti <span class="month-name">{{ formatMonth(data.month ?? month()) }}</span></dt>
-        <dd [class.negative]="data.netMovement < 0" [class.positive]="data.netMovement > 0">
-          {{ formatAmount(data.netMovement) }}
-        </dd>
-      </div>
-      <div class="row total">
-        <dt>Disponibile</dt>
-        <dd [class.negative]="data.closingBalance < 0">
-          {{ formatAmount(data.closingBalance) }}
-        </dd>
-      </div>
-    </dl>
+  <dl class="calculation">
+    <div class="row">
+      <dt>Saldo iniziale</dt>
+      <dd>{{ formatAmount(cashFlow().openingBalance) }}</dd>
+    </div>
+    <div class="row">
+      <dt>
+        Movimenti
+        <span class="month-name">{{ formatMonth(cashFlow().month ?? '') }}</span>
+      </dt>
+      <dd [class.negative]="cashFlow().netMovement < 0" [class.positive]="cashFlow().netMovement > 0">
+        {{ formatAmount(cashFlow().netMovement) }}
+      </dd>
+    </div>
+    <div class="row total">
+      <dt>Disponibile</dt>
+      <dd [class.negative]="cashFlow().closingBalance < 0">
+        {{ formatAmount(cashFlow().closingBalance) }}
+      </dd>
+    </div>
+  </dl>
 
-    @if (!isConfigured(data)) {
-      <p class="message hint">
-        Nessun saldo di partenza impostato: il disponibile riflette solo i movimenti importati.
-        <a routerLink="/settings">Imposta il saldo iniziale →</a>
-      </p>
-    }
+  @if (!isConfigured()) {
+    <p class="message hint">
+      Nessun saldo di partenza impostato: il disponibile riflette solo i movimenti importati.
+      <a routerLink="/settings">Imposta il saldo iniziale →</a>
+    </p>
+  }
 
-    @if (showsNetWorth(data)) {
-      <p class="net-worth">
-        <span>Variazione patrimonio</span>
-        <strong [class.negative]="data.netWorthChange < 0" [class.positive]="data.netWorthChange > 0">
-          {{ formatAmount(data.netWorthChange) }}
-        </strong>
-        <span class="note">
-          esclude prelievi, trasferimenti e prestiti: quel denaro è ancora tuo, solo altrove.
-        </span>
-      </p>
-    }
+  @if (showsNetWorth()) {
+    <p class="net-worth">
+      <span>Variazione patrimonio</span>
+      <strong
+        [class.negative]="cashFlow().netWorthChange < 0"
+        [class.positive]="cashFlow().netWorthChange > 0"
+      >{{ formatAmount(cashFlow().netWorthChange) }}</strong>
+      <span class="note">
+        esclude prelievi, trasferimenti e prestiti: quel denaro è ancora tuo, solo altrove.
+      </span>
+    </p>
+  }
 
-    @if (data.byType.length > 0) {
-      <details class="breakdown">
-        <summary>Distribuzione movimenti per tipo</summary>
-        <ul>
-          @for (entry of data.byType; track entry.type) {
-            <li>
-              <span class="label">{{ typeLabels[entry.type] }}</span>
-              <span class="count">{{ entry.transactionCount }}</span>
-              <span class="amount" [class.negative]="entry.amount < 0" [class.positive]="entry.amount > 0">
-                {{ formatAmount(entry.amount) }}
-              </span>
-            </li>
-          }
-        </ul>
-      </details>
-    }
+  @if (cashFlow().byType.length > 0) {
+    <details class="breakdown">
+      <summary>Distribuzione movimenti per tipo</summary>
+      <ul>
+        @for (entry of cashFlow().byType; track entry.type) {
+          <li>
+            <span class="label">{{ typeLabels[entry.type] }}</span>
+            <span class="count">{{ entry.transactionCount }}</span>
+            <span class="amount" [class.negative]="entry.amount < 0" [class.positive]="entry.amount > 0">
+              {{ formatAmount(entry.amount) }}
+            </span>
+          </li>
+        }
+      </ul>
+    </details>
   }
 </section>
