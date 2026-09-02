@@ -1,11 +1,53 @@
 import { atomically } from '../../db/client.js';
-import { NotFoundError } from '../../shared/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import { merchantsService, type MerchantWithCategory } from '../merchants/index.js';
 import type { TransactionQuery } from './transaction-query.js';
 import { transactionFingerprint } from './transaction-fingerprint.js';
 import { transactionTypeSchema, type TransactionType } from './transaction-type.js';
 import { createTransaction, type NewTransaction, type Transaction } from './transaction.model.js';
 import { transactionsRepository, type TypeTotalRow } from './transactions.repository.js';
+
+/**
+ * Un movimento che qualcosa d'altro sta usando, e perché non si può eliminare.
+ *
+ * `usedBy` è testo destinato all'utente — «prestito a Marco» — non un codice:
+ * chi lo produce sa cosa significa quel legame, chi lo mostra no.
+ */
+export interface TransactionUsage {
+  readonly transactionId: string;
+  readonly usedBy: string;
+}
+
+/**
+ * Chi altro, nell'applicazione, si appoggia a un movimento.
+ *
+ * Perché è una porta e non un `import`: le transazioni sono a monte di tutto —
+ * i prestiti le indicano, non il contrario — e un modulo non deve conoscere i
+ * propri consumatori. Se `transactions` importasse `loans` per fare questo
+ * controllo, il grafo delle dipendenze diventerebbe circolare, e la prossima
+ * feature che si appoggia ai movimenti costringerebbe a modificarli.
+ *
+ * Chi compone l'applicazione la collega: è in `app.ts` che le feature si
+ * incontrano.
+ */
+export interface TransactionDependents {
+  readonly usagesOf: (ids: readonly string[]) => readonly TransactionUsage[];
+}
+
+/** L'esito di un'eliminazione. */
+export interface RemovalOutcome {
+  /** Quanti identificativi erano stati chiesti. */
+  readonly requested: number;
+  readonly deleted: number;
+  /**
+   * Gli identificativi che non esistevano.
+   *
+   * Non è un errore: l'utente lavora su un elenco che ha davanti, e ciò che
+   * non c'è più è già nello stato che voleva ottenere. Va però riportato,
+   * perché significa che quella schermata era vecchia.
+   */
+  readonly notFound: readonly string[];
+}
 
 /** Totale dei movimenti di un certo tipo. */
 export interface TypeTotal {
@@ -160,6 +202,65 @@ export const transactionsService = {
     transactionsRepository.updateType(id, type);
 
     return { ...transaction, type };
+  },
+
+  /**
+   * Elimina i movimenti indicati, tutti o nessuno.
+   *
+   * ## Tutti o nessuno, e non «quelli che si possono»
+   *
+   * Se anche un solo movimento della selezione è usato da qualcos'altro,
+   * l'operazione non avviene. Eliminare gli altri sarebbe un esito peggiore di
+   * un rifiuto: l'utente ha scelto un insieme, e si troverebbe metà del lavoro
+   * fatto senza sapere quale metà — con nulla da annullare.
+   *
+   * Il messaggio dice quali e perché, così la selezione si corregge in un
+   * colpo invece che per tentativi.
+   *
+   * ## Cosa NON viene eliminato
+   *
+   * I merchant che restano senza movimenti. Sono l'anagrafica su cui vive la
+   * categorizzazione: cancellarli in silenzio butterebbe via il lavoro di
+   * classificazione dell'utente, e reimportando lo stesso estratto conto le
+   * categorie andrebbero rifatte a mano. Un merchant senza movimenti non
+   * sporca nessun conto — non compare in nessun totale.
+   */
+  remove(ids: readonly string[], dependents: TransactionDependents): RemovalOutcome {
+    if (ids.length === 0) {
+      throw new ValidationError('Nessun movimento indicato da eliminare.');
+    }
+
+    const richiesti = [...new Set(ids)];
+
+    const usages = dependents.usagesOf(richiesti);
+    if (usages.length > 0) {
+      const elenco = [...new Set(usages.map((usage) => usage.usedBy))].join(', ');
+      const quanti = new Set(usages.map((usage) => usage.transactionId)).size;
+
+      throw new ConflictError(
+        quanti === 1
+          ? `Un movimento selezionato è collegato a: ${elenco}. Elimina prima quel collegamento, oppure togli il movimento dalla selezione.`
+          : `${String(quanti)} movimenti selezionati sono collegati a: ${elenco}. Elimina prima quei collegamenti, oppure togli quei movimenti dalla selezione.`,
+      );
+    }
+
+    /*
+     * L'esistenza si guarda e si elimina nella **stessa** transazione.
+     *
+     * Fuori da essa, fra il conteggio e l'eliminazione ci sarebbe un istante in
+     * cui l'archivio può cambiare, e il numero riportato all'utente non
+     * sarebbe quello dell'operazione appena avvenuta.
+     */
+    return atomically(() => {
+      const esistenti = new Set(transactionsRepository.findExistingIds(richiesti));
+      const deleted = transactionsRepository.deleteMany([...esistenti]);
+
+      return {
+        requested: richiesti.length,
+        deleted,
+        notFound: richiesti.filter((id) => !esistenti.has(id)),
+      };
+    });
   },
 
   /** Totali per tipo dei movimenti di un mese (`YYYY-MM`). */

@@ -201,8 +201,16 @@ nuove, duplicate, righe scartate e merchant creati.
 | POST   | `/loans/:id/repayments`      | Registra una restituzione (`amount`, `repaymentDate`, `note`, `transactionId` opzionale) |
 | PATCH  | `/loans/:id/repayments/:rid` | Corregge una restituzione                                     |
 | DELETE | `/loans/:id/repayments/:rid` | Elimina una restituzione: il credito torna a comprenderla     |
+| DELETE | `/transactions`              | Elimina i movimenti indicati (`{"ids": ["…"]}`), tutti o nessuno: `409` se uno è collegato a un prestito |
 | GET    | `/settings`                  | Saldo iniziale e sua data                                    |
 | PATCH  | `/settings`                  | Aggiorna `initialBalance` e/o `balanceDate`                  |
+| GET    | `/backups`                   | I backup presenti e un eventuale ripristino in attesa        |
+| POST   | `/backups`                   | Crea un backup verificato, che la ritenzione non cancella    |
+| GET    | `/backups/:name`             | Scarica un backup, per portarlo fuori dal computer           |
+| GET    | `/restore`                   | Lo stato di un ripristino preparato                          |
+| POST   | `/restore`                   | **Prepara** il ripristino (`{"name": "…"}`): si applica al riavvio |
+| DELETE | `/restore`                   | Annulla un ripristino preparato e non ancora applicato       |
+| POST   | `/reset`                     | Azzera l'archivio (`{"confirm": "AZZERA"}`): crea prima una copia `pre-reset` |
 | GET    | `/health`                    | Stato del servizio                                           |
 
 ## Comandi
@@ -218,3 +226,12 @@ nuove, duplicate, righe scartate e merchant creati.
 | `npm run db:generate`        | Genera le migrazioni Drizzle dallo schema     |
 | `npm run dev:frontend`       | Dev server Angular                            |
 | `npm run build:frontend`     | Build di produzione del frontend              |
+| `npm run build:backend`      | Build di produzione del backend (bundle unico) |
+| `npm run build`              | Frontend + backend                            |
+| `npm start`                  | Esegue la build di produzione                 |
+| `npm run package`            | Costruisce e confeziona `dist-package\MyFinance` |
+| `npm run verify:package`     | Prova la cartella confezionata, fuori dal repository |
+
+Per la procedura completa — dal codice alla cartella da consegnare, e come
+aggiornare un'installazione senza toccare i dati — vedi
+[docs/rilascio.md](docs/rilascio.md).

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams, HttpResourceRequest } from '@angular/common/htt
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api';
-import { Transaction, TransactionPage } from './transaction.model';
+import { Transaction, TransactionPage, TransactionRemoval } from './transaction.model';
 import { TransactionQueryState, toQueryParams } from './transaction-query';
 import { TransactionType } from './transaction-type';
 
@@ -38,6 +38,21 @@ export class TransactionsApi {
   /** Una singola transazione, con il proprio merchant. */
   get(transactionId: string): Observable<Transaction> {
     return this.http.get<Transaction>(`${API_BASE_URL}/transactions/${transactionId}`);
+  }
+
+  /**
+   * Elimina i movimenti indicati, tutti o nessuno.
+   *
+   * Una sola richiesta per l'intera selezione, e non una per riga: se fossero
+   * richieste indipendenti, un guasto a metà lascerebbe la selezione eliminata
+   * in parte, e non ci sarebbe nulla da annullare. Il corpo su una `DELETE` è
+   * inusuale ma legittimo, ed è la forma che descrive l'operazione: si elimina
+   * dalla collezione.
+   */
+  deleteMany(ids: readonly string[]): Observable<TransactionRemoval> {
+    return this.http.delete<TransactionRemoval>(`${API_BASE_URL}/transactions`, {
+      body: { ids }
+    });
   }
 
   /** Corregge la natura del movimento. */

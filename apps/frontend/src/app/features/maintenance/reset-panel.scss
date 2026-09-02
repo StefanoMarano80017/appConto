@@ -1,0 +1,114 @@
+:host {
+  display: block;
+}
+
+/*
+ * L'area distruttiva si distingue dal resto della pagina.
+ *
+ * Non per drammatizzare: perché sta sotto le impostazioni, e chi scorre fino
+ * in fondo deve capire che ha cambiato zona prima di leggere i pulsanti.
+ */
+.danger-zone {
+  border-color: color-mix(in srgb, var(--negative) 40%, var(--border));
+}
+
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.hint {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+}
+
+.resta {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.conferma {
+  display: block;
+  margin-bottom: 1rem;
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  input {
+    width: 100%;
+    max-width: 16rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    /* Maiuscole: la parola da scrivere è in maiuscole. */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  font-size: 0.9em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+button {
+  padding: 0.4rem 0.85rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+button.danger {
+  border-color: var(--negative);
+  color: var(--negative);
+  font-weight: 600;
+}
+
+button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--negative) 12%, transparent);
+}
+
+button.ghost {
+  color: var(--text-muted);
+}
+
+.message {
+  margin: 0 0 0.75rem;
+}
+
+.message.error {
+  color: var(--negative);
+}
+
+.message.done {
+  color: var(--positive, var(--accent));
+  font-weight: 600;
+}

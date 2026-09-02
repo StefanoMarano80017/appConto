@@ -18,6 +18,14 @@ import { BACKUP_KINDS, parseBackupName, type BackupKind, type ParsedBackupName }
 export const RETENTION: Record<BackupKind, { readonly days: number; readonly weeks: number } | number | null> = {
   'pre-migration': 5,
   'pre-restore': 3,
+  /**
+   * Mai cancellato, come un backup manuale.
+   *
+   * È l'unica copia di un archivio che l'utente ha chiesto di azzerare: se una
+   * politica automatica lo eliminasse, il ripensamento non sarebbe più
+   * possibile.
+   */
+  'pre-reset': null,
   auto: { days: 7, weeks: 4 },
   /** Mai cancellato: lo ha chiesto l'utente. */
   manual: null,

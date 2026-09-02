@@ -1417,6 +1417,145 @@ await prova('Q — arresto ordinato, app/ e runtime/ sostituite, i dati restano'
   ];
 });
 
+// ── R — eliminazione e azzeramento sul package reale ────────────────────────
+
+await prova('R — eliminare movimenti e azzerare l-archivio dal package', async () => {
+  const pacchetto = copiaFuoriDalRepo('azzeramento');
+  const dati = path.join(temporanea('appconto-azz-'), 'Archivio Utente');
+
+  const processo = await avvia(pacchetto, { dataRoot: dati });
+  await esigiIsolamento(processo, dati);
+
+  await importa(processo.porta, [
+    '01/09/2026,MOVIMENTO UNO,-11.00',
+    '02/09/2026,MOVIMENTO DUE,-22.00',
+    '03/09/2026,MOVIMENTO TRE,-33.00',
+    '04/09/2026,MOVIMENTO QUATTRO,-44.00',
+  ]);
+  if ((await quante(processo.porta)) !== 4) {
+    throw new Error('le quattro righe non sono state importate');
+  }
+
+  // ── eliminazione di una selezione ─────────────────────────────────────────
+
+  const pagina = await chiediJson(processo.porta, '/api/transactions?pageSize=25');
+  const daEliminare = pagina.items
+    .filter((riga) => /UNO|TRE/.test(riga.description))
+    .map((riga) => riga.id);
+  if (daEliminare.length !== 2) {
+    throw new Error(`selezionati ${daEliminare.length} movimenti invece di 2`);
+  }
+
+  const eliminazione = await fetch(`http://127.0.0.1:${processo.porta}/api/transactions`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: daEliminare }),
+  });
+  const esitoEliminazione = await eliminazione.json();
+  if (eliminazione.status !== 200) {
+    throw new Error(`DELETE ha risposto ${eliminazione.status}: ${JSON.stringify(esitoEliminazione)}`);
+  }
+  if (esitoEliminazione.deleted !== 2) {
+    throw new Error(`eliminati ${esitoEliminazione.deleted} movimenti invece di 2`);
+  }
+
+  const rimasti = await chiediJson(processo.porta, '/api/transactions?pageSize=25');
+  if (rimasti.pagination.total !== 2) {
+    throw new Error(`restano ${rimasti.pagination.total} movimenti invece di 2`);
+  }
+  const descrizioni = rimasti.items.map((riga) => riga.description).join(' ');
+  if (/UNO|TRE/.test(descrizioni) || !/DUE/.test(descrizioni) || !/QUATTRO/.test(descrizioni)) {
+    throw new Error(`sono rimasti i movimenti sbagliati: ${descrizioni}`);
+  }
+
+  // ── azzeramento ───────────────────────────────────────────────────────────
+
+  // Senza la parola di conferma non deve accadere niente.
+  const senzaConferma = await fetch(`http://127.0.0.1:${processo.porta}/api/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirm: 'per favore' }),
+  });
+  if (senzaConferma.status !== 400) {
+    throw new Error(`un azzeramento senza conferma ha risposto ${senzaConferma.status}`);
+  }
+  if ((await quante(processo.porta)) !== 2) {
+    throw new Error("l'archivio è stato toccato da una richiesta rifiutata");
+  }
+
+  const azzeramento = await fetch(`http://127.0.0.1:${processo.porta}/api/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirm: 'AZZERA' }),
+  });
+  const esitoReset = await azzeramento.json();
+  if (azzeramento.status !== 200) {
+    throw new Error(`POST /api/reset ha risposto ${azzeramento.status}: ${JSON.stringify(esitoReset)}`);
+  }
+
+  // La copia di sicurezza esiste su disco, con il suo manifest.
+  const backups = readdirSync(path.join(dati, 'backups'));
+  if (!backups.includes(esitoReset.backupName)) {
+    throw new Error(`la copia ${esitoReset.backupName} non è su disco: ${backups.join(', ')}`);
+  }
+  const manifest = `${esitoReset.backupName.slice(0, -'.sqlite'.length)}.json`;
+  if (!backups.includes(manifest)) {
+    throw new Error('la copia di sicurezza non ha il proprio manifest');
+  }
+
+  // L'archivio è come al primo avvio.
+  if ((await quante(processo.porta)) !== 0) {
+    throw new Error('restano dei movimenti dopo l-azzeramento');
+  }
+  const categorie = await chiediJson(processo.porta, '/api/categories');
+  if (categorie.length !== 22) {
+    throw new Error(`dopo l-azzeramento ci sono ${categorie.length} categorie invece di 22`);
+  }
+  const impostazioni = await chiediJson(processo.porta, '/api/settings');
+  if (impostazioni.initialBalance !== 0 || impostazioni.balanceDate !== null) {
+    throw new Error(`le impostazioni non sono tornate a zero: ${JSON.stringify(impostazioni)}`);
+  }
+
+  // La copia è verificabile e ripristinabile: contiene ciò che c'era.
+  const elenco = await chiediJson(processo.porta, '/api/backups');
+  const copia = elenco.backups.find((voce) => voce.name === esitoReset.backupName);
+  if (copia === undefined || copia.status !== 'completo') {
+    throw new Error(`la copia non è completa: ${JSON.stringify(copia)}`);
+  }
+  if (copia.rowCounts.transactions !== 2) {
+    throw new Error(`la copia contiene ${copia.rowCounts.transactions} movimenti invece di 2`);
+  }
+
+  // ── e i dati azzerati restano azzerati dopo un riavvio ────────────────────
+
+  await arrestaOrdinato(processo);
+
+  const secondo = await avvia(pacchetto, { dataRoot: dati });
+  await esigiIsolamento(secondo, dati);
+  const dopoRiavvio = await quante(secondo.porta);
+  const categorieDopo = await chiediJson(secondo.porta, '/api/categories');
+  const backupDopo = await chiediJson(secondo.porta, '/api/backups');
+  await arrestaOrdinato(secondo);
+
+  if (dopoRiavvio !== 0) {
+    throw new Error(`dopo il riavvio ci sono ${dopoRiavvio} movimenti`);
+  }
+  if (categorieDopo.length !== 22) {
+    throw new Error('le migrazioni sono state riapplicate, o il seed è andato perduto');
+  }
+  if (backupDopo.backups.length !== 1) {
+    throw new Error(`i backup sono ${backupDopo.backups.length} invece di 1`);
+  }
+
+  return [
+    `eliminati 2 movimenti su 4 con una sola richiesta; i 2 rimasti sono quelli giusti`,
+    'un azzeramento senza la parola di conferma: 400, archivio intatto',
+    `azzerato: copia ${esitoReset.backupName} su disco con manifest, 2 movimenti dentro`,
+    '0 movimenti, 22 categorie, saldo iniziale sconosciuto — come al primo avvio',
+    'e dopo il riavvio: ancora azzerato, con la copia al suo posto',
+  ];
+});
+
 // ── Chiusura ─────────────────────────────────────────────────────────────────
 
 for (const processo of inEsecuzione) {

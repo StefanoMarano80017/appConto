@@ -32,12 +32,49 @@
         (pageSizeSelected)="apply({ pageSize: $event })"
       />
 
+      @if (selectedCount() > 0 || deleteError() || deleteDone()) {
+        <div class="selection" role="group" aria-label="Azioni sulla selezione">
+          @if (selectedCount() > 0) {
+            <span class="count">
+              {{ selectedCount() }}
+              {{ selectedCount() === 1 ? 'movimento selezionato' : 'movimenti selezionati' }}
+            </span>
+
+            @if (confirmingDelete()) {
+              <span class="ask">Eliminare definitivamente?</span>
+              <button type="button" class="danger" [disabled]="deleting()" (click)="deleteSelected()">
+                {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+              </button>
+              <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
+                Annulla
+              </button>
+            } @else {
+              <button type="button" class="danger" (click)="askDelete()">Elimina</button>
+              <button type="button" class="ghost" (click)="clearSelection()">
+                Deseleziona
+              </button>
+            }
+          }
+
+          @if (deleteError(); as message) {
+            <p class="message error">{{ message }}</p>
+          }
+          @if (deleteDone(); as message) {
+            <p class="message done">{{ message }}</p>
+          }
+        </div>
+      }
+
       <app-transactions-table
         [transactions]="data.items"
         [sortBy]="query().sortBy"
         [sortDirection]="query().sortDirection"
         [loanLinks]="links()"
+        [selectable]="true"
+        [selectedIds]="selected()"
         (sortSelected)="sortBy($event)"
+        (selectionToggled)="toggleSelection($event)"
+        (allToggled)="toggleAll($event)"
         (changed)="reload()"
       />
 

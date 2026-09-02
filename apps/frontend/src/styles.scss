@@ -38,3 +38,17 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/*
+ * Il testo che non deve allargare ciò che lo contiene.
+ *
+ * La applica la direttiva `appTruncate` (`app/core/truncate.ts`), che sul solo
+ * testo tagliato aggiunge il tooltip col contenuto intero. Sta fra gli stili
+ * globali perché troncare non è il problema di una schermata sola, e perché
+ * l'attributo di scoping di un componente non arriverebbe alla direttiva.
+ */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

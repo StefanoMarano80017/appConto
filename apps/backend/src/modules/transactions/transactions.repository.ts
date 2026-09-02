@@ -172,6 +172,57 @@ export const transactionsRepository = {
     });
   },
 
+  /**
+   * Elimina le transazioni indicate, tutte o nessuna.
+   *
+   * Restituisce quante righe sono state davvero eliminate, che può essere meno
+   * degli identificativi ricevuti: chi chiama lavora su un elenco che l'utente
+   * vedeva a schermo, e nel frattempo qualcosa può essere già stato eliminato.
+   *
+   * I blocchi, come per l'inserimento, sono il limite di SQLite sul numero di
+   * parametri per statement — e la transazione è ciò che impedisce che
+   * un'eliminazione di duecento movimenti riesca a metà.
+   */
+  deleteMany(ids: readonly string[]): number {
+    if (ids.length === 0) {
+      return 0;
+    }
+
+    return atomically(() => {
+      let eliminate = 0;
+
+      for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        const chunk = ids.slice(i, i + CHUNK_SIZE);
+        const esito = db.delete(transactions).where(inArray(transactions.id, chunk)).run();
+        eliminate += esito.changes;
+      }
+
+      return eliminate;
+    });
+  },
+
+  /** Quali fra questi identificativi esistono davvero. */
+  findExistingIds(ids: readonly string[]): string[] {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const trovati: string[] = [];
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      trovati.push(
+        ...db
+          .select({ id: transactions.id })
+          .from(transactions)
+          .where(inArray(transactions.id, chunk))
+          .all()
+          .map((row) => row.id),
+      );
+    }
+
+    return trovati;
+  },
+
   findAll(): Transaction[] {
     return db
       .select()

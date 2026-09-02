@@ -1,6 +1,11 @@
 import type { z } from 'zod';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
-import { toAmountCents, transactionsService, type Transaction } from '../transactions/index.js';
+import {
+  toAmountCents,
+  transactionsService,
+  type Transaction,
+  type TransactionUsage,
+} from '../transactions/index.js';
 import { DEFAULT_LOAN_QUERY, type LoanQuery } from './loan-query.js';
 import {
   createLoan,
@@ -362,6 +367,31 @@ export const loansService = {
     }
 
     return { links };
+  },
+
+  /**
+   * Quali fra questi movimenti un prestito sta usando, e come.
+   *
+   * Serve a chi vuole eliminarli: l'integrità referenziale glielo vieterebbe
+   * comunque, ma con un errore di database invece di una frase. Qui la frase
+   * la scrive chi conosce il legame — «prestito a Marco» — perché la feature
+   * `transactions` non sa cosa sia un prestito, e non deve saperlo.
+   *
+   * L'indice completo dei legami è già la lettura più semplice: i prestiti
+   * sono pochi, uno per movimento e non uno per transazione.
+   */
+  transactionUsages(transactionIds: readonly string[]): TransactionUsage[] {
+    const cercati = new Set(transactionIds);
+
+    return this.links()
+      .links.filter((link) => cercati.has(link.transactionId))
+      .map((link) => ({
+        transactionId: link.transactionId,
+        usedBy:
+          link.role === 'ORIGIN'
+            ? `prestito a ${link.borrowerName}`
+            : `restituzione del prestito a ${link.borrowerName}`,
+      }));
   },
 
   /** Crea il credito nato da un movimento di tipo prestito. */

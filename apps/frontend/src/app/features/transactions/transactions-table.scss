@@ -44,8 +44,26 @@
     white-space: nowrap;
   }
 
+  /*
+   * Le colonne di testo libero: un tetto, poi l'ellissi.
+   *
+   * Senza un massimo è la descrizione più lunga a decidere la larghezza
+   * della tabella, e a trascinare nello scorrimento orizzontale anche gli
+   * schermi larghi. Il testo intero non si perde: `appTruncate` lo mette nel
+   * tooltip di ciò che ha tagliato.
+   */
+  .description {
+    max-width: 26rem;
+  }
+
   .merchant {
+    max-width: 16rem;
     color: var(--text-muted);
+  }
+
+  /* Le due righe del merchant troncano una per una, non insieme. */
+  .merchant .label {
+    display: block;
   }
 
   /* Il nome della banca resta visibile quando il merchant è stato rinominato. */
@@ -59,6 +77,8 @@
   .type select {
     font: inherit;
     max-width: 12rem;
+    /* Un nome di categoria lungo lo taglia il controllo nativo: che si veda. */
+    text-overflow: ellipsis;
     padding: 0.25rem 0.375rem;
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -117,6 +137,7 @@ th.numeric .sort {
 
 /* La colonna dei prestiti: un'azione, non un dato del movimento. */
 .transactions .loan {
+  max-width: 16rem;
   white-space: nowrap;
 
   .loan-link {
@@ -126,12 +147,29 @@ th.numeric .sort {
     text-decoration: none;
   }
 
+  /*
+   * Il nome si stringe, la cifra no.
+   *
+   * Un nome lungo mangerebbe altrimenti l'importo rimasto, che è il dato per
+   * cui questa colonna si guarda.
+   */
+  .loan-link.origin {
+    display: flex;
+    align-items: baseline;
+  }
+
+  .loan-link .name {
+    /* In un flex nulla scende sotto il proprio contenuto: qui invece deve. */
+    min-width: 0;
+  }
+
   .loan-link:hover {
     color: var(--accent);
     text-decoration: underline;
   }
 
   .loan-link .remaining {
+    flex: none;
     margin-left: 0.375rem;
     color: var(--negative);
     font-size: 0.8125rem;
@@ -169,5 +207,34 @@ th.numeric .sort {
 
   .none {
     color: var(--text-muted);
+  }
+}
+
+/* La colonna di selezione: presente solo dove selezionare ha un senso. */
+.transactions {
+  th.select,
+  td.select {
+    width: 2.5rem;
+    padding-right: 0;
+    text-align: center;
+  }
+
+  td.select input,
+  th.select input {
+    /* Il bersaglio del clic deve essere comodo: si seleziona a ripetizione. */
+    width: 1.05rem;
+    height: 1.05rem;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+
+  /*
+   * La riga selezionata si distingue da sola.
+   *
+   * Non solo dalla casella spuntata: con venticinque righe a schermo, capire
+   * cosa sta per essere eliminato deve costare un colpo d'occhio.
+   */
+  tr.selected {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
   }
 }

@@ -18,7 +18,14 @@ import path from 'node:path';
  * nessuna parte del sistema ha bisogno di interpretare una data per ordinare.
  */
 
-export const BACKUP_KINDS = ['pre-migration', 'pre-restore', 'auto', 'manual'] as const;
+export const BACKUP_KINDS = [
+  'pre-migration',
+  'pre-restore',
+  /** Prima di azzerare l'archivio: l'unica copia di tutto ciò che c'era. */
+  'pre-reset',
+  'auto',
+  'manual',
+] as const;
 
 export type BackupKind = (typeof BACKUP_KINDS)[number];
 
@@ -28,7 +35,16 @@ export const BACKUP_EXTENSION = '.sqlite';
 /** Il suffisso di un backup non ancora verificato, che vive solo in `tmp/`. */
 export const PARTIAL_SUFFIX = '.partial';
 
-const NAME_PATTERN = /^(pre-migration|pre-restore|auto|manual)-(\d{8})-(\d{6})\.sqlite$/;
+/**
+ * Il riconoscitore dei nomi, **derivato** dai tipi.
+ *
+ * Scritto a mano, aggiungere un tipo significherebbe ricordarsi di aggiornare
+ * anche questa riga — e dimenticarselo produrrebbe un backup che il sistema
+ * crea e poi non riconosce più: invisibile nell'elenco, mai eliminato dalla
+ * ritenzione, rifiutato dal ripristino. Derivandolo, la dimenticanza non è
+ * possibile.
+ */
+const NAME_PATTERN = new RegExp(`^(${BACKUP_KINDS.join('|')})-(\\d{8})-(\\d{6})\\.sqlite$`);
 
 /** Le componenti di un nome valido. */
 export interface ParsedBackupName {

@@ -81,3 +81,75 @@ app-transactions-table {
     animation: none;
   }
 }
+
+/*
+ * La barra della selezione.
+ *
+ * Appare solo quando c'è qualcosa selezionato: una barra di azioni sempre
+ * presente ma quasi sempre inerte è rumore, e sposta la tabella verso il basso
+ * senza motivo.
+ */
+.selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+
+  .count {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* La domanda di conferma sta accanto ai pulsanti, non in una finestra. */
+  .ask {
+    color: var(--text-muted);
+  }
+
+  button {
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  /* L'azione distruttiva si riconosce prima di leggerla. */
+  button.danger {
+    border-color: var(--negative);
+    color: var(--negative);
+    font-weight: 600;
+  }
+
+  button.danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--negative) 12%, transparent);
+  }
+
+  button.ghost {
+    color: var(--text-muted);
+  }
+
+  .message {
+    margin: 0;
+    flex-basis: 100%;
+  }
+
+  .message.error {
+    color: var(--negative);
+  }
+
+  .message.done {
+    color: var(--text-muted);
+  }
+}

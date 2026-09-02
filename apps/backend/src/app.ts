@@ -5,12 +5,12 @@ import { cashFlowRouter } from './modules/cash-flow/index.js';
 import { categoriesRouter } from './modules/categories/index.js';
 import { dashboardRouter } from './modules/dashboard/index.js';
 import { importRouter } from './modules/import/index.js';
-import { loansRouter } from './modules/loans/index.js';
-import { backupsRouter, restoreRouter } from './modules/maintenance/index.js';
+import { loansRouter, loansService } from './modules/loans/index.js';
+import { backupsRouter, resetRouter, restoreRouter } from './modules/maintenance/index.js';
 import { merchantsRouter } from './modules/merchants/index.js';
 import { settingsRouter } from './modules/settings/index.js';
 import { summaryRouter } from './modules/summary/index.js';
-import { transactionsRouter } from './modules/transactions/index.js';
+import { createTransactionsRouter } from './modules/transactions/index.js';
 import { errorHandler, notFoundHandler } from './shared/http/error-handler.js';
 import { hostAllowlist, sameOriginMutations } from './shared/http/local-only.js';
 import { spaFallback, staticAssets } from './shared/http/static-frontend.js';
@@ -31,6 +31,8 @@ function createApiRouter(): Router {
 
   api.use('/analytics', analyticsRouter);
   api.use('/backups', backupsRouter);
+  // Azzeramento dell'archivio: una copia di sicurezza, poi tutto a zero.
+  api.use('/reset', resetRouter);
   api.use('/cash-flow', cashFlowRouter);
   api.use('/categories', categoriesRouter);
   api.use('/dashboard', dashboardRouter);
@@ -42,7 +44,21 @@ function createApiRouter(): Router {
   // all'avvio successivo, quando il database non è aperto da nessuno.
   api.use('/restore', restoreRouter);
   api.use('/summary', summaryRouter);
-  api.use('/transactions', transactionsRouter);
+  /*
+   * Qui le due feature si incontrano, e non altrove.
+   *
+   * Eliminare un movimento richiede di sapere se un prestito lo sta usando. I
+   * prestiti conoscono i movimenti; i movimenti non conoscono i prestiti, e
+   * non devono — sono a monte, e la prossima feature che vi si appoggia non
+   * deve costringere a modificarli. Il collegamento è quindi wiring, e il
+   * wiring sta nella radice di composizione.
+   */
+  api.use(
+    '/transactions',
+    createTransactionsRouter({
+      usagesOf: (ids) => loansService.transactionUsages(ids),
+    }),
+  );
 
   // Una rotta inesistente sotto `/api` è un errore dell'API, non uno stato
   // dell'interfaccia: va chiusa qui, prima che il fallback le risponda con

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
+import { ResetPanel } from '../maintenance/reset-panel';
 import { SettingsApi } from './settings.api';
 import {
   SettingsFormErrors,
@@ -11,7 +12,7 @@ import {
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, ResetPanel, RouterLink],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss'
 })

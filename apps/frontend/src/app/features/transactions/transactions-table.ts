@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
+import { Truncate } from '../../core/truncate';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { LoanLink, indexLinksByTransaction } from '../loans/loan.model';
@@ -61,7 +62,7 @@ interface LoanCell {
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, Truncate],
   templateUrl: './transactions-table.html',
   styleUrl: './transactions-table.scss'
 })
@@ -83,10 +84,33 @@ export class TransactionsTable implements OnInit {
    */
   readonly loanLinks = input<LoanLink[] | null>(null);
 
+  /**
+   * Mostra la colonna di selezione.
+   *
+   * Predefinito a `false`: la tabella è usata anche dove selezionare non ha
+   * senso — nella dashboard, dove i movimenti sono un riepilogo e non un
+   * elenco su cui agire — e quelle schermate non devono cambiare.
+   */
+  readonly selectable = input(false);
+
+  /**
+   * Gli identificativi selezionati.
+   *
+   * La selezione **non** vive qui: la tabella la riceve e segnala le
+   * intenzioni. Chi la ospita è l'unico che può conservarla attraverso un
+   * ricaricamento dei dati o un cambio di pagina, e la tabella non sa nulla
+   * di nessuno dei due.
+   */
+  readonly selectedIds = input<ReadonlySet<string>>(new Set<string>());
+
   /** Segnala che i dati sono cambiati e vanno ricaricati. */
   readonly changed = output<void>();
   /** Richiesta di ordinare per una colonna. */
   readonly sortSelected = output<TransactionSortField>();
+  /** Richiesta di invertire la selezione di una riga. */
+  readonly selectionToggled = output<string>();
+  /** Richiesta di selezionare o deselezionare tutte le righe mostrate. */
+  readonly allToggled = output<boolean>();
 
   protected readonly showLoans = computed(() => this.loanLinks() !== null);
 
@@ -127,6 +151,31 @@ export class TransactionsTable implements OnInit {
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
   protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
+
+  /** Se la riga è selezionata. */
+  protected isSelected(transaction: Transaction): boolean {
+    return this.selectedIds().has(transaction.id);
+  }
+
+  /** Tutte le righe mostrate sono selezionate. */
+  protected readonly allSelected = computed(() => {
+    const righe = this.transactions();
+
+    return righe.length > 0 && righe.every((riga) => this.selectedIds().has(riga.id));
+  });
+
+  /**
+   * Alcune sì e altre no.
+   *
+   * Serve alla casella dell'intestazione: uno stato indeterminato dice «una
+   * parte», che è diverso sia da «nessuna» sia da «tutte».
+   */
+  protected readonly someSelected = computed(() => {
+    const righe = this.transactions();
+    const selezionate = righe.filter((riga) => this.selectedIds().has(riga.id)).length;
+
+    return selezionate > 0 && selezionate < righe.length;
+  });
 
   /** Il valore di `aria-sort` della colonna, per chi usa uno screen reader. */
   protected ariaSort(field: TransactionSortField | null): 'ascending' | 'descending' | 'none' {

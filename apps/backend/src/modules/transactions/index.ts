@@ -32,7 +32,10 @@ export {
 } from './transaction-query.js';
 export {
   transactionsService,
+  type RemovalOutcome,
+  type TransactionDependents,
   type TransactionPage,
+  type TransactionUsage,
   type TransactionWithMerchant,
   type MerchantTransactionStats,
   type TypeTotal,
@@ -43,4 +46,4 @@ export {
   type TransactionDto,
   type TransactionPageDto,
 } from './transactions.dto.js';
-export { transactionsRouter } from './transactions.routes.js';
+export { createTransactionsRouter } from './transactions.routes.js';

@@ -6,6 +6,17 @@
   <table class="transactions">
     <thead>
       <tr>
+        @if (selectable()) {
+          <th scope="col" class="select">
+            <input
+              type="checkbox"
+              [checked]="allSelected()"
+              [indeterminate]="someSelected()"
+              (change)="allToggled.emit(!allSelected())"
+              aria-label="Seleziona tutti i movimenti mostrati"
+            />
+          </th>
+        }
         @for (column of columns(); track column.label) {
           <th
             scope="col"
@@ -28,14 +39,31 @@
     </thead>
     <tbody>
       @for (transaction of transactions(); track transaction.id) {
-        <tr [class.saving]="savingId() === transaction.id">
-          <td class="date">{{ formatBookingDate(transaction.bookingDate) }}</td>
-          <td>{{ transaction.description }}</td>
+        <tr
+          [class.saving]="savingId() === transaction.id"
+          [class.selected]="isSelected(transaction)"
+        >
+          @if (selectable()) {
+            <td class="select">
+              <input
+                type="checkbox"
+                [checked]="isSelected(transaction)"
+                (change)="selectionToggled.emit(transaction.id)"
+                [attr.aria-label]="'Seleziona ' + transaction.description"
+              />
+            </td>
+          }
+          <td class="date">
+            {{ formatBookingDate(transaction.bookingDate) }}
+          </td>
+          <td class="description" appTruncate>
+            {{ transaction.description }}
+          </td>
           <td class="merchant">
             @if (transaction.merchant; as merchant) {
-              {{ merchant.label }}
+              <span class="label" appTruncate>{{ merchant.label }}</span>
               @if (merchant.displayName !== null) {
-                <span class="original">{{ merchant.name }}</span>
+                <span class="original" appTruncate>{{ merchant.name }}</span>
               }
             } @else {
               —
@@ -77,8 +105,8 @@
             @let loans = loanCell(transaction);
             <td class="loan">
               @for (link of loans.origins; track link.loanId) {
-                <a class="loan-link" [routerLink]="['/loans', link.loanId]">
-                  {{ link.borrowerName }}
+                <a class="loan-link origin" [routerLink]="['/loans', link.loanId]">
+                  <span class="name" appTruncate>{{ link.borrowerName }}</span>
                   <span class="remaining" [class.zero]="link.remainingAmount === 0">{{
                     link.remainingAmount === 0 ? 'chiuso' : formatAmount(link.remainingAmount)
                   }}</span>
@@ -86,7 +114,7 @@
               }
 
               @for (link of loans.repayments; track link.loanId) {
-                <a class="loan-link repayment" [routerLink]="['/loans', link.loanId]">
+                <a class="loan-link repayment" appTruncate [routerLink]="['/loans', link.loanId]">
                   Restituzione · {{ link.borrowerName }}
                 </a>
               }

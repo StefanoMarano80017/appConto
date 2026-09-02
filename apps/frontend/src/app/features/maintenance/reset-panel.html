@@ -1,0 +1,66 @@
+<section class="panel danger-zone">
+  <h2>Ricomincia da zero</h2>
+
+  @if (done(); as esito) {
+    <p class="message done">
+      Archivio azzerato: {{ totaleEliminate() }}
+      {{ totaleEliminate() === 1 ? 'riga eliminata' : 'righe eliminate' }}.
+    </p>
+    <p class="hint">
+      Prima di procedere è stata creata la copia <code>{{ esito.backupName }}</code
+      >: da lì si torna indietro, e nessuna politica automatica la cancella.
+    </p>
+  } @else {
+    <p class="hint">
+      Riporta l'applicazione allo stato del primo avvio: movimenti, esercenti,
+      prestiti e impostazioni vengono eliminati, e le categorie iniziali tornano
+      come erano.
+    </p>
+
+    <ul class="resta">
+      <li><strong>I backup restano tutti</strong>, e prima di azzerare ne viene creato uno.</li>
+      <li>Il registro delle operazioni resta.</li>
+      <li>Se la copia di sicurezza non riesce, l'archivio non viene toccato.</li>
+    </ul>
+
+    @if (error(); as message) {
+      <p class="message error">{{ message }}</p>
+    }
+
+    @if (aperto()) {
+      <label class="conferma">
+        <span class="field-label">
+          Scrivi <code>{{ parola }}</code> per confermare
+        </span>
+        <input
+          type="text"
+          name="conferma"
+          autocomplete="off"
+          spellcheck="false"
+          [ngModel]="digitato()"
+          (ngModelChange)="digitato.set($event)"
+          [disabled]="running()"
+          [attr.aria-label]="'Scrivi ' + parola + ' per confermare'"
+        />
+      </label>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="danger"
+          [disabled]="!confermato() || running()"
+          (click)="azzera()"
+        >
+          {{ running() ? 'Azzeramento…' : 'Azzera adesso' }}
+        </button>
+        <button type="button" class="ghost" [disabled]="running()" (click)="annulla()">
+          Annulla
+        </button>
+      </div>
+    } @else {
+      <div class="actions">
+        <button type="button" class="danger" (click)="apri()">Ricomincia da zero…</button>
+      </div>
+    }
+  }
+</section>

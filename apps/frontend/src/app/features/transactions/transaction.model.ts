@@ -15,6 +15,19 @@ export interface Transaction {
   merchant: Merchant | null;
 }
 
+/** L'esito di un'eliminazione, così come lo riporta il backend. */
+export interface TransactionRemoval {
+  /** Quanti identificativi erano stati chiesti, senza ripetizioni. */
+  requested: number;
+  deleted: number;
+  /**
+   * Gli identificativi che non esistevano più.
+   *
+   * Non è un errore: significa che la schermata era vecchia, e vale dirlo.
+   */
+  notFound: string[];
+}
+
 /** Una pagina di risultati, con le informazioni per navigare fra le altre. */
 export interface TransactionPage {
   items: Transaction[];

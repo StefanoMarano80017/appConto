@@ -4,6 +4,7 @@ import { config } from '../../config.js';
 import { ValidationError } from '../../shared/errors.js';
 import { resolveBackupFile } from './backup.naming.js';
 import { backupService } from './backup.service.js';
+import { resetService } from './reset.service.js';
 import { restoreService } from './restore.service.js';
 import {
   toBackupDto,
@@ -100,4 +101,35 @@ restoreRouter.post('/', json(), (req, res) => {
 restoreRouter.delete('/', (_req, res) => {
   const cancelled = restoreService.cancel();
   res.status(cancelled ? 200 : 404).json({ cancelled });
+});
+
+export const resetRouter = Router();
+
+/**
+ * La conferma richiesta per azzerare l'archivio.
+ *
+ * Non è teatro: questo endpoint sta sulla stessa origine dell'interfaccia, e
+ * una richiesta senza corpo — un `POST` partito per sbaglio, un client che
+ * riprova — cancellerebbe l'archivio di una vita. Chiedere una parola precisa
+ * rende impossibile arrivarci senza averla scritta.
+ */
+const RESET_CONFIRMATION = 'AZZERA';
+
+const resetRequestSchema = z.object({ confirm: z.literal(RESET_CONFIRMATION) });
+
+// POST /reset — riporta l'archivio allo stato del primo avvio
+resetRouter.post('/', json(), (req, res) => {
+  const parsed = resetRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new ValidationError(
+      `Per azzerare l'archivio il corpo della richiesta deve contenere {"confirm": "${RESET_CONFIRMATION}"}.`,
+    );
+  }
+
+  const outcome = resetService.run();
+
+  res.json({
+    ...outcome,
+    message: `Archivio azzerato. Prima di procedere è stata creata la copia "${outcome.backupName}", che puoi ripristinare dalla sezione dei backup.`,
+  });
 });

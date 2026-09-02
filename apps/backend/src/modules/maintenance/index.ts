@@ -31,5 +31,6 @@ export {
   type RestoreOutcome,
 } from './restore-pending.js';
 export { restoreService, type StagedRestore } from './restore.service.js';
-export { backupsRouter, restoreRouter } from './maintenance.routes.js';
+export { backupsRouter, resetRouter, restoreRouter } from './maintenance.routes.js';
+export { resetService, userTables, ResetFailedError, type ResetOutcome } from './reset.service.js';
 export { toBackupDto, type BackupDto, type BackupsDto } from './maintenance.view-model.js';

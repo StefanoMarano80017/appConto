@@ -87,6 +87,26 @@ export function vacuumInto(destination: string): void {
   sqlite.prepare('VACUUM INTO ?').run(destination);
 }
 
+/**
+ * Ricompatta il database, restituendo al disco lo spazio delle righe eliminate.
+ *
+ * SQLite non restituisce da sé le pagine liberate: dopo aver cancellato
+ * novecento movimenti il file resta della dimensione di prima, con dentro dello
+ * spazio riutilizzabile. Per un archivio in uso è la scelta giusta — quello
+ * spazio verrà riempito di nuovo — ma dopo un azzeramento è ciò che rende falsa
+ * la parola «da zero»: la cartella dei dati peserebbe come prima.
+ *
+ * Come `VACUUM INTO`, non si può eseguire dentro una transazione: SQLite
+ * riscrive l'intero file, e lo fa atomicamente per conto proprio.
+ */
+export function vacuum(): void {
+  if (sqlite.inTransaction) {
+    throw new Error('Impossibile ricompattare il database durante una transazione.');
+  }
+
+  sqlite.prepare('VACUUM').run();
+}
+
 /** La versione dello schema registrata nel database attivo. */
 export function databaseSchema(): SchemaVersion {
   return readDatabaseSchema(sqlite);

@@ -30,6 +30,7 @@ const { closeDatabase, runMigrations } = await import('../../db/client.js');
 const { importService } = await import('../import/index.js');
 const { restoreService } = await import('./restore.service.js');
 const { backupService } = await import('./backup.service.js');
+const { transactionsService } = await import('../transactions/index.js');
 const { CANDIDATE_FILE, PENDING_RESTORE_FILE } = await import('./restore-pending.js');
 
 runMigrations();
@@ -344,6 +345,97 @@ describe('POST /api/restore', () => {
     assert.equal(risposta.status, 403);
     assert.ok(!existsSync(marker));
     assert.equal(restoreService.pending(), null);
+  });
+});
+
+describe('POST /api/reset', () => {
+  it('senza la parola di conferma non azzera niente', async () => {
+    svuotaBackup();
+    const primaTransazioni = transactionsService.listAll().length;
+    assert.ok(primaTransazioni > 0);
+
+    // Corpi leggibili ma senza la conferma giusta: il messaggio dice quale
+    // parola serve, perché è un'informazione che l'utente può usare.
+    for (const corpo of [{}, { confirm: '' }, { confirm: 'azzera' }, { confirm: 'SI' }]) {
+      const risposta = await inviaJson('/api/reset', 'POST', corpo);
+
+      assert.equal(risposta.status, 400, `avrebbe dovuto rifiutare ${JSON.stringify(corpo)}`);
+      assert.match(risposta.body, /AZZERA/);
+    }
+
+    // Un corpo che non è nemmeno un oggetto JSON non arriva al gestore: lo
+    // rifiuta il lettore del corpo, e la risposta è comunque 400 — non 500,
+    // come accadeva prima di WP-P6.
+    for (const grezzo of ['null', '"AZZERA"', '{ rotto', '']) {
+      const risposta = await invia('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: grezzo,
+      });
+
+      assert.equal(risposta.status, 400, `avrebbe dovuto rifiutare il corpo grezzo "${grezzo}"`);
+    }
+
+    // Nessun tentativo ha toccato l'archivio, e nessuno ha creato un backup.
+    assert.equal(transactionsService.listAll().length, primaTransazioni);
+    assert.equal(readdirSync(config.backupsDir).length, 0);
+  });
+
+  it('con la conferma azzera, e dice da dove si torna indietro', async () => {
+    const primaTransazioni = transactionsService.listAll().length;
+    assert.ok(primaTransazioni > 0);
+
+    const risposta = await inviaJson('/api/reset', 'POST', { confirm: 'AZZERA' });
+
+    assert.equal(risposta.status, 200);
+    const corpo = JSON.parse(risposta.body) as {
+      backupName: string;
+      removed: Record<string, number>;
+      seededCategories: number;
+      message: string;
+    };
+
+    assert.match(corpo.backupName, /^pre-reset-\d{8}-\d{6}\.sqlite$/);
+    assert.equal(corpo.removed.transactions, primaTransazioni);
+    assert.equal(corpo.seededCategories, 22);
+    // Il messaggio nomina la copia: è l'unica informazione che serve a chi ha
+    // cambiato idea.
+    assert.match(corpo.message, new RegExp(corpo.backupName.replace(/\./g, '\\.')));
+
+    assert.equal(transactionsService.listAll().length, 0);
+  });
+
+  it('la copia di sicurezza è nell-elenco dei backup, e si può ripristinare', async () => {
+    const stato = JSON.parse((await invia('/api/backups')).body) as {
+      backups: { name: string; kind: string; status: string; rowCounts: Record<string, number> }[];
+    };
+
+    const preReset = stato.backups.filter((voce) => voce.kind === 'pre-reset');
+    assert.equal(preReset.length, 1);
+    assert.equal(preReset[0]?.status, 'completo');
+    // Contiene ciò che c'era prima dell'azzeramento.
+    assert.ok((preReset[0]?.rowCounts.transactions ?? 0) > 0);
+
+    // Ed è accettata dal ripristino: il tipo nuovo non è invisibile al resto
+    // del sistema.
+    const preparato = await inviaJson('/api/restore', 'POST', { name: preReset[0]?.name });
+    assert.equal(preparato.status, 202);
+
+    // Annullato subito: questo test prova che il ripristino lo accetta, non
+    // che venga applicato.
+    assert.equal((await invia('/api/restore', { method: 'DELETE' })).status, 200);
+  });
+
+  it('non è raggiungibile da un-altra origine', async () => {
+    // La stessa difesa di ogni altra mutazione: senza di essa una pagina
+    // qualsiasi aperta nel browser potrebbe azzerare l'archivio.
+    const risposta = await invia('/api/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Sec-Fetch-Site': 'cross-site' },
+      body: JSON.stringify({ confirm: 'AZZERA' }),
+    });
+
+    assert.equal(risposta.status, 403);
   });
 });
 
