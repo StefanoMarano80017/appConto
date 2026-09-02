@@ -56,3 +56,27 @@
     </form>
   }
 </section>
+
+<section class="panel appearance">
+  <h2>Aspetto</h2>
+  <p class="hint">
+    Vale per questo computer: non finisce nell'archivio, quindi non viaggia con i backup.
+  </p>
+
+  <fieldset class="theme-choice">
+    <legend class="field-label">Tema</legend>
+    <div class="options">
+      @for (option of themeOptions; track option.mode) {
+        <label>
+          <input
+            type="radio"
+            name="theme"
+            [checked]="themeMode() === option.mode"
+            (change)="selectTheme(option.mode)"
+          />
+          <span>{{ option.label }}</span>
+        </label>
+      }
+    </div>
+  </fieldset>
+</section>

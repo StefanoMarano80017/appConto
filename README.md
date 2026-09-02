@@ -60,7 +60,9 @@ già presenti. Per ripartire da zero è sufficiente eliminare la cartella
 
 1. Aprire <http://localhost:4200>. In **Impostazioni** indicare il saldo del
    conto ad una certa data: è il punto di partenza del calcolo della liquidità.
-2. Nella schermata **Import CSV** selezionare un estratto conto e premere *Importa*.
+2. Nella schermata **Import CSV** selezionare un estratto conto: la pagina mostra
+   subito quali colonne ha riconosciuto. Se sono giuste basta premere *Importa*;
+   altrimenti si passa alla modalità **Manuale** e le si indica a mano.
 3. Nel **Riepilogo** scegliere il mese: tutte le sezioni — liquidità, spese per
    categoria, top merchant, confronto col mese precedente e tabella dei
    movimenti — seguono la stessa selezione. Cliccando un merchant o *filtra* su
@@ -91,6 +93,12 @@ già presenti. Per ripartire da zero è sufficiente eliminare la cartella
    agli esercenti non ancora classificati, partendo da quelli su cui si è speso
    di più. Qui è anche possibile rinominarli: il nome originale della banca
    resta comunque memorizzato.
+
+Il pulsante **Modalità notte**, in alto a destra, passa al tema scuro; in
+*Impostazioni → Aspetto* si può anche lasciare che il tema segua quello del
+sistema operativo, che è il comportamento di partenza. La scelta resta su questo
+computer — è una preferenza dello schermo, non un dato del conto, quindi non
+finisce nell'archivio né nei backup.
 
 ### Prestiti e liquidità sono due cose diverse
 
@@ -143,23 +151,53 @@ Un file di esempio è disponibile in [samples/estratto-conto-esempio.csv](sample
 
 ### Formato CSV atteso
 
-Sono richieste tre informazioni; le colonne vengono riconosciute tramite alias
-(maiuscole/minuscole e suffissi di valuta indifferenti, quindi `Importo ( € )`
-e `Importo (EUR)` valgono come `Importo`):
+Ogni banca esporta l'estratto conto a modo suo, con nomi di colonna, ordine e
+numero di colonne diversi: le colonne vengono quindi riconosciute dal loro
+**contenuto**, non dall'intestazione. Una colonna di date è la data, una di
+numeri è un importo, il testo libero è la descrizione. L'intestazione resta un
+indizio, utile solo a sciogliere i casi ambigui (`Data contabile` viene
+preferita a `Data valuta`, `Importo` al `Saldo`).
 
-| Campo       | Intestazioni accettate, in ordine di preferenza                               |
-|-------------|--------------------------------------------------------------------------------|
-| data        | `Data contabile`, `Data operazione`, `Data`, `Date`, `Data valuta`             |
-| descrizione | `Descrizione`, `Causale`, `Description`, `Dettagli`, `Nome`, `Tipologia`       |
-| importo     | `Importo`, `Amount`, `Valore`                                                  |
+Servono tre informazioni: **data**, **descrizione** e **importo**. Le colonne in
+più — divisa, IBAN, saldo, categoria della banca — vengono ignorate. L'esito
+dell'import elenca le colonne che sono state usate per ogni campo, così il
+riconoscimento è verificabile.
 
-Se il file contiene più colonne compatibili con lo stesso campo, per ogni riga
-viene usato il **primo valore non vuoto** nell'ordine indicato: una riga con
-`Descrizione` vuota ricade su `Nome` invece di essere scartata.
+### Modalità automatica e manuale
+
+Scelto il file, la schermata **Import CSV** lo legge e mostra quali colonne ha
+riconosciuto **prima** di importare qualsiasi cosa. Da lì si scelgono le colonne
+da leggere:
+
+- **Automatica** — quelle riconosciute dal contenuto. È la modalità di
+  partenza, quando il riconoscimento è completo.
+- **Manuale** — le indichi tu, con una tendina per campo. Accanto a ogni
+  tendina compare un valore d'esempio preso dal file: è quel che permette di
+  riconoscere la colonna giusta anche quando l'intestazione non dice niente
+  (`F3`, `Column2`). Le tendine partono già dalla proposta automatica, quindi
+  di solito basta correggere un campo.
+
+La modalità manuale serve in due casi: quando il riconoscimento **non arriva**
+a un campo obbligatorio — e allora è l'unica strada, la pagina ci si porta da sé
+— e quando arriva ma **sceglie male**, per esempio prendendo il saldo
+progressivo al posto dell'importo del movimento. Per questo resta disponibile
+sempre, non solo quando qualcosa non funziona.
+
+La strada seguita non cambia l'identità dei movimenti: un file importato a mano
+e poi reimportato in automatico non crea duplicati.
 
 - separatore `,` oppure `;` (riconosciuto automaticamente);
 - date `31/12/2025`, `31-12-2025`, `31.12.2025` oppure `2025-12-31`;
-- importi `-1.234,56`, `1234.56`, `€ 12,00` — negativo = uscita.
+- importi `-1.234,56`, `1234.56`, `€ 12,00`, `120,00-` — negativo = uscita;
+- l'importo può anche stare su **due colonne** mutuamente esclusive
+  (`Uscite`/`Entrate`, `Dare`/`Avere`, `Debit`/`Credit`): il segno lo dà la
+  colonna in cui compare il valore;
+- se il file ha più colonne compatibili con lo stesso campo, per ogni riga viene
+  usato il **primo valore non vuoto**: una riga con `Descrizione` vuota ricade
+  sulla colonna di testo successiva invece di essere scartata;
+- una colonna con la dicitura del movimento (`Tipo operazione`, `Tipologia`)
+  viene usata per distinguere prelievi e accrediti; in sua assenza decide il
+  segno dell'importo.
 
 Le righe non convertibili vengono scartate e segnalate nell'esito dell'import;
 le altre vengono comunque importate.
@@ -179,7 +217,9 @@ nuove, duplicate, righe scartate e merchant creati.
 
 | Metodo | Rotta                        | Descrizione                                                  |
 |--------|------------------------------|--------------------------------------------------------------|
-| POST   | `/import/csv`                | Importa un CSV (body testuale, `text/csv`)                   |
+| POST   | `/import/csv/analysis`       | Dice quali colonne contiene il file e quali sono state riconosciute, senza importare (body testuale, `text/csv`) |
+| POST   | `/import/csv`                | Importa un CSV con le colonne riconosciute dal contenuto (body testuale, `text/csv`) |
+| POST   | `/import/csv/mapped`         | Importa un CSV con le colonne indicate a mano (`{"content": "…", "mapping": {…}}`, `application/json`) |
 | GET    | `/transactions`              | Ricerca paginata: `from`, `to`, `search`, `types`, `categoryIds`, `merchantIds`, `classification`, `minAmount`, `maxAmount`, `page`, `pageSize`, `sortBy`, `sortDirection` |
 | GET    | `/transactions/:id`          | Una singola transazione, con il proprio merchant             |
 | GET    | `/merchants`                 | Elenco dei merchant, con la categoria assegnata              |

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
+import { ThemeMode, ThemeStore } from '../../core/theme';
 import { SettingsApi } from './settings.api';
 import {
   SettingsFormErrors,
@@ -17,6 +18,14 @@ import {
 })
 export class SettingsPage implements OnInit {
   private readonly api = inject(SettingsApi);
+  private readonly themeStore = inject(ThemeStore);
+
+  protected readonly themeMode = this.themeStore.mode;
+  protected readonly themeOptions: { mode: ThemeMode; label: string }[] = [
+    { mode: 'system', label: 'Come il sistema' },
+    { mode: 'light', label: 'Chiara' },
+    { mode: 'dark', label: 'Scura' }
+  ];
 
   protected readonly form = signal<SettingsFormValue>({ balanceDate: '', initialBalance: '' });
   protected readonly errors = signal<SettingsFormErrors>({});
@@ -41,6 +50,10 @@ export class SettingsPage implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  protected selectTheme(mode: ThemeMode): void {
+    this.themeStore.select(mode);
   }
 
   protected update(field: keyof SettingsFormValue, value: string): void {

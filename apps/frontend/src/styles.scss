@@ -1,14 +1,76 @@
-:root {
+/*
+ * Tema chiaro e modalità notte.
+ *
+ * Tutta l'interfaccia legge questi token e nessun colore proprio: cambiare
+ * tema significa quindi ridefinire solo quanto segue.
+ *
+ * Il tema scuro non è un'inversione automatica di quello chiaro: i colori sono
+ * scelti sul fondo scuro e verificati lì. Le tre serie del grafico, in
+ * particolare, mantengono la separazione in deuteranopia che il tema chiaro
+ * documenta in `analytics-timeline.scss`, e sul fondo scuro superano i 3:1 di
+ * contrasto che il verde acqua chiaro non raggiungeva.
+ *
+ * `data-theme` sull'elemento radice è la scelta esplicita dell'utente; se non
+ * ha scelto l'attributo non c'è e decide `prefers-color-scheme`, cioè il
+ * sistema operativo.
+ */
+
+@mixin light-theme {
   --background: #f6f7f9;
   --surface: #ffffff;
   --border: #dfe3e8;
   --text: #1b1f24;
   --text-muted: #5c6672;
   --accent: #2f6feb;
+  --accent-text: #ffffff;
   --negative: #b4232a;
   --positive: #1f7a45;
 
+  --series-income: #2f6feb;
+  --series-expenses: #eb6834;
+  --series-net: #1baf7a;
+
+  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 12%);
+  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 18%);
+
   color-scheme: light;
+}
+
+@mixin dark-theme {
+  --background: #12161c;
+  --surface: #1a1f27;
+  --border: #2c333d;
+  --text: #e6e9ee;
+  --text-muted: #9aa4b2;
+  --accent: #6b9bff;
+  --accent-text: #10151c;
+  --negative: #f4756f;
+  --positive: #4cc98a;
+
+  --series-income: #508cfc;
+  --series-expenses: #ed5c19;
+  --series-net: #0fab76;
+
+  // Su fondo scuro un'ombra tenue non si vede: serve più densa.
+  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 55%);
+  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 65%);
+
+  color-scheme: dark;
+}
+
+:root {
+  @include light-theme;
+}
+
+:root[data-theme='dark'] {
+  @include dark-theme;
+}
+
+@media (prefers-color-scheme: dark) {
+  // `:not` perché la scelta esplicita del tema chiaro vince sul sistema.
+  :root:not([data-theme='light']) {
+    @include dark-theme;
+  }
 }
 
 * {
@@ -30,7 +92,7 @@ button {
   border: 1px solid transparent;
   border-radius: 6px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-text);
   cursor: pointer;
 }
 
