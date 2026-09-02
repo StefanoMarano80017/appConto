@@ -6,12 +6,11 @@
  * diventerebbero indistinguibili. Blu (l'accento dell'app) e arancio passano
  * tutti i controlli con ampio margine; l'acqua del saldo netto sta sotto 3:1 di
  * contrasto, e per questo il grafico porta con sé legenda e tabella.
+ *
+ * I valori stanno in `styles.scss`, insieme a quelli della modalità notte: là
+ * sono scelti sul fondo scuro e verificati lì, non ricavati da questi.
  */
 .panel {
-  --series-income: #2f6feb;
-  --series-expenses: #eb6834;
-  --series-net: #1baf7a;
-
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -214,7 +213,7 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 12%);
+  box-shadow: var(--shadow-tooltip);
   pointer-events: none;
 
   .when {

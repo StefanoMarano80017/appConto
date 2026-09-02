@@ -115,6 +115,104 @@ describe('import idempotente', () => {
   });
 });
 
+describe('anteprima del file', () => {
+  it('dice cosa contiene il file e cosa ha riconosciuto, senza importare nulla', () => {
+    const file = csv('01/04/2026,S9 ANTEPRIMA,-11.00', '02/04/2026,S9 ALTRA,-12.00');
+
+    const analysis = importService.analyzeCsv(file);
+
+    assert.deepEqual(analysis.headers, ['Data contabile', 'Descrizione', 'Importo']);
+    assert.equal(analysis.rowsRead, 2);
+    assert.deepEqual(analysis.proposal, {
+      bookingDate: 'Data contabile',
+      description: 'Descrizione',
+      amount: { kind: 'single', column: 'Importo' },
+      typeHint: null,
+    });
+    assert.deepEqual(analysis.sample[0], ['01/04/2026', 'S9 ANTEPRIMA', '-11.00']);
+    assert.equal(archived('S9 '), 0, 'l\'anteprima non tocca l\'archivio');
+  });
+
+  it('propone quel che riconosce anche su un file che non saprebbe importare', () => {
+    const analysis = importService.analyzeCsv(
+      ['Descrizione;Note', 'S10 SENZA DATA;prima'].join('\r\n'),
+    );
+
+    assert.equal(analysis.proposal.bookingDate, null);
+    assert.equal(analysis.proposal.amount, null);
+    assert.deepEqual(analysis.headers, ['Descrizione', 'Note']);
+  });
+});
+
+describe('import con le colonne indicate a mano', () => {
+  it('corregge una colonna che il rilevamento aveva scelto male', () => {
+    /*
+     * Due colonne numeriche, nessuna delle due con un'intestazione nota, e un
+     * saldo che non torna coi movimenti (righe non consecutive): il
+     * rilevamento non ha di che riconoscere il saldo e prende la prima
+     * colonna, cioè quella sbagliata. È il caso per cui esiste la modalità
+     * manuale — non un file illeggibile, ma un file letto male.
+     */
+    const file = [
+      'C1;C2;C3;C4',
+      '10/05/2026;S11 CAFFE DEL CORSO;1.000,00;-3,50',
+      '11/05/2026;S11 LIBRERIA CENTRALE;2.500,00;-18,90',
+    ].join('\r\n');
+
+    const automatico = importService.importCsv(file);
+    assert.equal(automatico.columns.amount, 'C3', 'in automatico prende il saldo');
+
+    const manuale = importService.importCsvWithMapping({
+      content: file,
+      mapping: {
+        bookingDate: 'C1',
+        description: 'C2',
+        amount: { kind: 'single', column: 'C4' },
+        typeHint: null,
+      },
+    });
+
+    assert.equal(manuale.imported, 2);
+    assert.deepEqual(manuale.columns, {
+      bookingDate: 'C1',
+      description: 'C2',
+      amount: 'C4',
+      typeHint: null,
+    });
+
+    const importi = transactionsService
+      .listAll()
+      .filter((t) => t.description === 'S11 CAFFE DEL CORSO')
+      .map((t) => t.amount);
+    assert.ok(importi.includes(-3.5), 'in archivio c\'è il movimento, non il saldo');
+  });
+
+  it('riconosce come duplicate le righe già importate in automatico', () => {
+    // La strada seguita non cambia l'identità di un movimento.
+    const automatico = csv('01/06/2026,S12 STESSA RIGA,-9.99');
+    importService.importCsv(automatico);
+
+    const manuale = importService.importCsvWithMapping({
+      content: automatico,
+      mapping: {
+        bookingDate: 'Data contabile',
+        description: 'Descrizione',
+        amount: { kind: 'single', column: 'Importo' },
+        typeHint: null,
+      },
+    });
+
+    assert.equal(manuale.imported, 0);
+    assert.equal(manuale.duplicates, 1);
+    assert.equal(archived('S12 '), 1);
+  });
+
+  it('rifiuta una richiesta senza il file o senza la scelta', () => {
+    assert.throws(() => importService.importCsvWithMapping({ mapping: {} }), /mancante/);
+    assert.throws(() => importService.importCsvWithMapping({ content: 'x' }), /non indicate/);
+  });
+});
+
 describe('duplicate detection', () => {
   it('riconosce come già presenti solo le transazioni archiviate', () => {
     importService.importCsv(csv('01/10/2026,S6 GIA PRESENTE,-7.00'));

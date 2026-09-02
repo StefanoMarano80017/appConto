@@ -1,5 +1,5 @@
-import type { z } from 'zod';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
+import { parseOrThrow } from '../../shared/validation.js';
 import { toAmountCents, transactionsService, type Transaction } from '../transactions/index.js';
 import { DEFAULT_LOAN_QUERY, type LoanQuery } from './loan-query.js';
 import {
@@ -47,11 +47,6 @@ import type {
 /** Un importo in centesimi come lo si scrive in italiano. */
 function euro(cents: number): string {
   return `${(cents / 100).toFixed(2).replace('.', ',')} €`;
-}
-
-/** Il primo messaggio utile di una validazione fallita. */
-function firstIssue(error: z.ZodError, fallback: string): string {
-  return error.issues[0]?.message ?? fallback;
 }
 
 /**
@@ -366,21 +361,18 @@ export const loansService = {
 
   /** Crea il credito nato da un movimento di tipo prestito. */
   create(input: unknown): LoanDetailViewModel {
-    const parsed = newLoanSchema.safeParse(input);
-    if (!parsed.success) {
-      throw new ValidationError(firstIssue(parsed.error, 'Dati del prestito non validi.'));
-    }
+    const data = parseOrThrow(newLoanSchema, input, 'Dati del prestito non validi.');
 
-    const amountCents = requirePositiveCents(parsed.data.amount, 'del prestito');
-    const transaction = requireLoanTransaction(parsed.data.transactionId);
+    const amountCents = requirePositiveCents(data.amount, 'del prestito');
+    const transaction = requireLoanTransaction(data.transactionId);
     assertFitsTransaction(transaction, amountCents);
 
     const loan: Loan = createLoan({
       transactionId: transaction.id,
-      borrowerName: parsed.data.borrowerName,
-      description: parsed.data.description,
+      borrowerName: data.borrowerName,
+      description: data.description,
       amountCents,
-      lentAt: parsed.data.lentAt,
+      lentAt: data.lentAt,
     });
 
     loansRepository.insert(loan);
@@ -398,15 +390,12 @@ export const loansService = {
   update(id: string, input: unknown): LoanDetailViewModel {
     const aggregate = requireLoan(id);
 
-    const parsed = loanUpdateSchema.safeParse(input);
-    if (!parsed.success) {
-      throw new ValidationError(firstIssue(parsed.error, 'Dati del prestito non validi.'));
-    }
+    const data = parseOrThrow(loanUpdateSchema, input, 'Dati del prestito non validi.');
 
     const amountCents =
-      parsed.data.amount === undefined
+      data.amount === undefined
         ? aggregate.amountCents
-        : requirePositiveCents(parsed.data.amount, 'del prestito');
+        : requirePositiveCents(data.amount, 'del prestito');
 
     if (amountCents < aggregate.repaidCents) {
       throw new ValidationError(
@@ -422,9 +411,9 @@ export const loansService = {
     }
 
     loansRepository.update(id, {
-      ...(parsed.data.borrowerName === undefined ? {} : { borrowerName: parsed.data.borrowerName }),
-      ...(parsed.data.description === undefined ? {} : { description: parsed.data.description }),
-      ...(parsed.data.lentAt === undefined ? {} : { lentAt: parsed.data.lentAt }),
+      ...(data.borrowerName === undefined ? {} : { borrowerName: data.borrowerName }),
+      ...(data.description === undefined ? {} : { description: data.description }),
+      ...(data.lentAt === undefined ? {} : { lentAt: data.lentAt }),
       amountCents,
     });
 
@@ -454,14 +443,11 @@ export const loansService = {
   addRepayment(loanId: string, input: unknown): LoanDetailViewModel {
     const aggregate = requireLoan(loanId);
 
-    const parsed = newRepaymentSchema.safeParse(input);
-    if (!parsed.success) {
-      throw new ValidationError(firstIssue(parsed.error, 'Dati della restituzione non validi.'));
-    }
+    const data = parseOrThrow(newRepaymentSchema, input, 'Dati della restituzione non validi.');
 
-    const amountCents = requirePositiveCents(parsed.data.amount, 'della restituzione');
-    if (parsed.data.transactionId !== null) {
-      requireRepaymentTransaction(parsed.data.transactionId);
+    const amountCents = requirePositiveCents(data.amount, 'della restituzione');
+    if (data.transactionId !== null) {
+      requireRepaymentTransaction(data.transactionId);
     }
 
     const remaining = remainingCents(aggregate.amountCents, aggregate.repaidCents);
@@ -476,10 +462,10 @@ export const loansService = {
     loansRepository.insertRepayment(
       createRepayment({
         loanId,
-        transactionId: parsed.data.transactionId,
+        transactionId: data.transactionId,
         amountCents,
-        repaymentDate: parsed.data.repaymentDate,
-        note: parsed.data.note,
+        repaymentDate: data.repaymentDate,
+        note: data.note,
       }),
     );
 
@@ -496,15 +482,12 @@ export const loansService = {
     const aggregate = requireLoan(loanId);
     const repayment = requireRepayment(loanId, repaymentId);
 
-    const parsed = repaymentUpdateSchema.safeParse(input);
-    if (!parsed.success) {
-      throw new ValidationError(firstIssue(parsed.error, 'Dati della restituzione non validi.'));
-    }
+    const data = parseOrThrow(repaymentUpdateSchema, input, 'Dati della restituzione non validi.');
 
     const amountCents =
-      parsed.data.amount === undefined
+      data.amount === undefined
         ? repayment.amountCents
-        : requirePositiveCents(parsed.data.amount, 'della restituzione');
+        : requirePositiveCents(data.amount, 'della restituzione');
 
     const others = loansRepository.repaidCents(loanId, repaymentId);
     if (others + amountCents > aggregate.amountCents) {
@@ -513,18 +496,18 @@ export const loansService = {
       );
     }
 
-    if (parsed.data.transactionId !== undefined && parsed.data.transactionId !== null) {
-      requireRepaymentTransaction(parsed.data.transactionId);
+    if (data.transactionId !== undefined && data.transactionId !== null) {
+      requireRepaymentTransaction(data.transactionId);
     }
 
     loansRepository.updateRepayment(repaymentId, {
-      ...(parsed.data.repaymentDate === undefined
+      ...(data.repaymentDate === undefined
         ? {}
-        : { repaymentDate: parsed.data.repaymentDate }),
-      ...(parsed.data.note === undefined ? {} : { note: parsed.data.note }),
-      ...(parsed.data.transactionId === undefined
+        : { repaymentDate: data.repaymentDate }),
+      ...(data.note === undefined ? {} : { note: data.note }),
+      ...(data.transactionId === undefined
         ? {}
-        : { transactionId: parsed.data.transactionId }),
+        : { transactionId: data.transactionId }),
       amountCents,
     });
 

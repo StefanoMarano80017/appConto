@@ -8,6 +8,23 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    /*
+     * Il tema scelto va applicato prima del primo disegno: aspettare Angular
+     * farebbe lampeggiare il tema chiaro ad ogni avvio dell'app.
+     *
+     * Qui c'è solo l'applicazione della scelta già salvata; a interpretarla e a
+     * seguire il sistema pensa `app/core/theme.ts`.
+     */
+    try {
+      var mode = localStorage.getItem('appconto.theme');
+      if (mode === 'dark' || mode === 'light') {
+        document.documentElement.dataset.theme = mode;
+      }
+    } catch (error) {
+      // localStorage non disponibile: decide `prefers-color-scheme`
+    }
+  </script>
 </head>
 <body>
   <app-root></app-root>
