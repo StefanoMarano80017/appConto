@@ -7,9 +7,17 @@ apps/backend/data/*.db
 apps/backend/data/*.sqlite
 apps/backend/data/*.sqlite3
 
-# Runtime data
+# Runtime data (posizione storica, precedente a DATA_ROOT)
 apps/backend/data/
+
+# DATA_ROOT: database, backup, log e temporanei dell'utente
+/data/
+
+# Configurazione locale: settings.example.json e' invece versionato
+/config/settings.json
 
 # Environment
 .env
 .env.*
+# Package portatile prodotto da "npm run package"
+/dist-package/

@@ -8,7 +8,7 @@ export function toErrorMessage(error: unknown): string {
       return backendMessage;
     }
     if (error.status === 0) {
-      return 'Backend non raggiungibile. Verifica che sia in esecuzione su http://localhost:3000.';
+      return 'Backend non raggiungibile. Verifica che l\'applicazione sia in esecuzione.';
     }
     return error.message;
   }

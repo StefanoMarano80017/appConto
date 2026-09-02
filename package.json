@@ -9,14 +9,19 @@
   "scripts": {
     "dev": "npm run dev:backend",
     "dev:backend": "tsx watch apps/backend/src/main.ts",
+    "dev:frontend": "npm start --prefix apps/frontend",
     "start:backend": "tsx apps/backend/src/main.ts",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:backend": "node scripts/build-backend.mjs",
+    "build:frontend": "npm run build --prefix apps/frontend",
+    "start": "node apps/backend/dist/server.js",
+    "package": "npm run build && node scripts/package-windows.mjs",
+    "verify:package": "node scripts/verify-package.mjs",
     "typecheck:backend": "tsc -p apps/backend/tsconfig.json --noEmit",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "tsx --test \"apps/backend/src/**/*.test.ts\"",
     "test:frontend": "npm test --prefix apps/frontend -- --watch=false",
-    "db:generate": "drizzle-kit generate --config apps/backend/drizzle.config.ts",
-    "dev:frontend": "npm start --prefix apps/frontend",
-    "build:frontend": "npm run build --prefix apps/frontend"
+    "db:generate": "drizzle-kit generate --config apps/backend/drizzle.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +41,7 @@
     "@types/node": "^26.1.2",
     "@types/papaparse": "^5.5.2",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.28.1",
     "tsx": "^4.23.10",
     "typescript": "^7.0.2"
   }

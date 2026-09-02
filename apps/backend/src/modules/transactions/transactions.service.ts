@@ -1,3 +1,4 @@
+import { atomically } from '../../db/client.js';
 import { NotFoundError } from '../../shared/errors.js';
 import { merchantsService, type MerchantWithCategory } from '../merchants/index.js';
 import type { TransactionQuery } from './transaction-query.js';
@@ -217,27 +218,35 @@ export const transactionsService = {
    *
    * Il progressivo è il primo libero: transazioni identiche già presenti
    * ricevono gli stessi fingerprint che avrebbe prodotto un import.
+   *
+   * L'intera operazione è una sola transazione, letture comprese. Non è solo
+   * per non lasciarla a metà: i fingerprint vengono assegnati evitando quelli
+   * già presi, quindi l'elenco dei presi e le scritture che lo estendono
+   * devono vedere lo stesso archivio. Interrotta a metà, l'operazione
+   * riprenderebbe da un insieme diverso da quello su cui aveva deciso.
    */
   backfillFingerprints(): number {
-    const pending = transactionsRepository.findWithoutFingerprint();
-    if (pending.length === 0) {
-      return 0;
-    }
-
-    const taken = new Set(transactionsRepository.findAllFingerprints());
-
-    for (const transaction of pending) {
-      let occurrence = 0;
-      let fingerprint = transactionFingerprint(transaction, occurrence);
-      while (taken.has(fingerprint)) {
-        occurrence += 1;
-        fingerprint = transactionFingerprint(transaction, occurrence);
+    return atomically(() => {
+      const pending = transactionsRepository.findWithoutFingerprint();
+      if (pending.length === 0) {
+        return 0;
       }
 
-      taken.add(fingerprint);
-      transactionsRepository.updateFingerprint(transaction.id, fingerprint);
-    }
+      const taken = new Set(transactionsRepository.findAllFingerprints());
 
-    return pending.length;
+      for (const transaction of pending) {
+        let occurrence = 0;
+        let fingerprint = transactionFingerprint(transaction, occurrence);
+        while (taken.has(fingerprint)) {
+          occurrence += 1;
+          fingerprint = transactionFingerprint(transaction, occurrence);
+        }
+
+        taken.add(fingerprint);
+        transactionsRepository.updateFingerprint(transaction.id, fingerprint);
+      }
+
+      return pending.length;
+    });
   },
 };

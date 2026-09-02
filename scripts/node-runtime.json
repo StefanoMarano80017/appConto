@@ -1,0 +1,8 @@
+{
+  "comment": "Il runtime Node incorporato nel package portatile. Fissato esplicitamente: il confezionamento verifica che il node.exe da includere sia esattamente questo e si ferma altrimenti. Per cambiarlo, scarica https://nodejs.org/dist/<version>/win-x64/node.exe e indicane il percorso con MYFINANCE_NODE_EXE.",
+  "version": "v24.11.1",
+  "platform": "win32",
+  "arch": "x64",
+  "expectedNodeModuleVersion": "137",
+  "downloadUrl": "https://nodejs.org/dist/v24.11.1/win-x64/node.exe"
+}

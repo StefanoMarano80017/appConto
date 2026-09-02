@@ -1,3 +1,4 @@
+import { atomically } from '../../db/client.js';
 import { ValidationError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
 import { merchantResolver } from '../merchants/index.js';
@@ -42,34 +43,61 @@ export const importService = {
     const { transactions, errors } = mapRowsToTransactions(headers, rows);
 
     const fingerprinted = fingerprintAll(transactions);
-    const { toImport, duplicates } = detectDuplicates(fingerprinted);
 
-    // La descrizione della banca è, per ora, il nome dell'esercente.
-    const merchants = merchantResolver.resolveAll(
-      toImport.map((transaction) => transaction.description),
-    );
+    /*
+     * Da qui in avanti si tocca l'archivio, e lo si fa in una sola transazione.
+     *
+     * Non perché le singole scritture non siano già atomiche — lo sono — ma
+     * perché sono **due**: prima nascono i merchant, poi le transazioni che li
+     * citano. Separate, un guasto fra le due lascerebbe in archivio degli
+     * esercenti senza alcun movimento: nessun errore visibile, un elenco
+     * sporco per sempre. Insieme, o si importa tutto o non è successo niente.
+     *
+     * Nella transazione entra anche il riconoscimento dei duplicati: decide
+     * cosa inserire in base a cosa c'è già, quindi deve guardare lo stesso
+     * archivio su cui poi scrive.
+     */
+    const persisted = atomically(() => {
+      const { toImport, duplicates } = detectDuplicates(fingerprinted);
 
-    const toPersist: NewTransaction[] = toImport.map((transaction) => {
-      const merchant = merchants.byName.get(transaction.description);
-      if (merchant === undefined) {
-        throw new Error(`Merchant non risolto per la transazione "${transaction.description}".`);
-      }
+      // La descrizione della banca è, per ora, il nome dell'esercente.
+      const merchants = merchantResolver.resolveAll(
+        toImport.map((transaction) => transaction.description),
+      );
 
-      return { ...transaction, merchantId: merchant.id };
+      const toPersist: NewTransaction[] = toImport.map((transaction) => {
+        const merchant = merchants.byName.get(transaction.description);
+        if (merchant === undefined) {
+          throw new Error(`Merchant non risolto per la transazione "${transaction.description}".`);
+        }
+
+        return { ...transaction, merchantId: merchant.id };
+      });
+
+      transactionsService.saveAll(toPersist);
+
+      return { imported: toPersist.length, duplicates, merchantsCreated: merchants.created };
     });
-
-    transactionsService.saveAll(toPersist);
 
     const result: ImportCsvResult = {
       rowsRead: rows.length,
-      imported: toPersist.length,
-      duplicates,
+      imported: persisted.imported,
+      duplicates: persisted.duplicates,
       failed: errors.length,
-      merchantsCreated: merchants.created,
+      merchantsCreated: persisted.merchantsCreated,
       errors: errors.slice(0, MAX_REPORTED_ERRORS),
     };
 
-    logger.info('Import CSV completato', result);
+    // Nel log finiscono i soli conteggi: i messaggi in `errors` riportano i
+    // valori grezzi della riga scartata — importi compresi — e appartengono
+    // alla risposta per l'utente, non a un file su disco.
+    logger.info('Import CSV completato', {
+      rowsRead: result.rowsRead,
+      imported: result.imported,
+      duplicates: result.duplicates,
+      failed: result.failed,
+      merchantsCreated: result.merchantsCreated,
+    });
 
     return result;
   },

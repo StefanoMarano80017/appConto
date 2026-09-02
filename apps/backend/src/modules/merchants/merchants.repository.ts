@@ -1,5 +1,5 @@
 import { asc, eq, inArray } from 'drizzle-orm';
-import { db } from '../../db/client.js';
+import { atomically, db } from '../../db/client.js';
 import type { Merchant } from './merchant.model.js';
 import { merchants } from './merchants.schema.js';
 
@@ -28,12 +28,15 @@ export const merchantsRepository = {
     return found;
   },
 
+  /** Archivia i merchant indicati, tutti o nessuno. */
   insertMany(items: readonly Merchant[]): void {
-    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-      db.insert(merchants)
-        .values(items.slice(i, i + CHUNK_SIZE))
-        .run();
-    }
+    atomically(() => {
+      for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        db.insert(merchants)
+          .values(items.slice(i, i + CHUNK_SIZE))
+          .run();
+      }
+    });
   },
 
   updateCategory(id: string, categoryId: string | null): void {

@@ -16,7 +16,7 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import { db } from '../../db/client.js';
+import { atomically, db } from '../../db/client.js';
 import { escapeLike } from '../../shared/sql.js';
 import { categories } from '../categories/categories.schema.js';
 import { merchants } from '../merchants/merchants.schema.js';
@@ -155,11 +155,21 @@ function typeTotalsQuery(where: SQL | undefined): TypeTotalRow[] {
 }
 
 export const transactionsRepository = {
+  /**
+   * Archivia le transazioni indicate, tutte o nessuna.
+   *
+   * I blocchi sono un limite di SQLite sul numero di parametri per statement,
+   * non un modo di procedere a rate: senza la transazione, un errore al terzo
+   * blocco lascerebbe archiviati i primi due, e un archivio riempito per metà
+   * è indistinguibile — guardandolo dopo — da un archivio completo.
+   */
   insertMany(items: readonly Transaction[]): void {
-    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-      const chunk = items.slice(i, i + CHUNK_SIZE).map(toRow);
-      db.insert(transactions).values(chunk).run();
-    }
+    atomically(() => {
+      for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        const chunk = items.slice(i, i + CHUNK_SIZE).map(toRow);
+        db.insert(transactions).values(chunk).run();
+      }
+    });
   },
 
   findAll(): Transaction[] {
