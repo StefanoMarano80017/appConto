@@ -1,0 +1,83 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  label.inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  select {
+    font: inherit;
+    max-width: 20rem;
+    padding: 0.4375rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  select[aria-invalid='true'] {
+    border-color: var(--negative);
+  }
+
+  input[type='radio'] {
+    accent-color: var(--accent);
+  }
+}
+
+.field-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.field-hint {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.field-error {
+  color: var(--negative);
+  font-size: 0.8125rem;
+}
+
+/* Il valore d'esempio è un dato del file, non un'etichetta: font tabellare. */
+.example {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.amount {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.875rem 1rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+
+  legend {
+    padding: 0 0.25rem;
+  }
+
+  .options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+  }
+
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+  }
+}

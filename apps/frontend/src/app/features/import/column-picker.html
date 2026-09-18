@@ -1,0 +1,128 @@
+<div class="picker">
+  <label>
+    <span class="field-label">Data</span>
+    <select
+      [value]="form().bookingDate"
+      (change)="update('bookingDate', $any($event.target).value)"
+      [attr.aria-invalid]="errors().bookingDate ? 'true' : null"
+    >
+      <option value="">— scegli la colonna —</option>
+      @for (header of analysis().headers; track header) {
+        <option [value]="header">{{ header }}</option>
+      }
+    </select>
+    @if (example(form().bookingDate); as value) {
+      <span class="example">es. {{ value }}</span>
+    }
+    @if (errors().bookingDate; as message) {
+      <span class="field-error">{{ message }}</span>
+    }
+  </label>
+
+  <label>
+    <span class="field-label">Descrizione</span>
+    <select
+      [value]="form().description"
+      (change)="update('description', $any($event.target).value)"
+      [attr.aria-invalid]="errors().description ? 'true' : null"
+    >
+      <option value="">— scegli la colonna —</option>
+      @for (header of analysis().headers; track header) {
+        <option [value]="header">{{ header }}</option>
+      }
+    </select>
+    @if (example(form().description); as value) {
+      <span class="example">es. {{ value }}</span>
+    }
+    @if (errors().description; as message) {
+      <span class="field-error">{{ message }}</span>
+    }
+  </label>
+
+  <fieldset class="amount">
+    <legend class="field-label">Importo</legend>
+
+    <div class="options">
+      <label class="inline">
+        <input
+          type="radio"
+          name="amountKind"
+          [checked]="form().amountKind === 'single'"
+          (change)="update('amountKind', 'single')"
+        />
+        <span>Una sola colonna</span>
+      </label>
+      <label class="inline">
+        <input
+          type="radio"
+          name="amountKind"
+          [checked]="form().amountKind === 'debitCredit'"
+          (change)="update('amountKind', 'debitCredit')"
+        />
+        <span>Uscite ed entrate separate</span>
+      </label>
+    </div>
+
+    @if (form().amountKind === 'single') {
+      <label>
+        <span class="field-hint">Colonna dell'importo, col segno che porta</span>
+        <select [value]="form().amount" (change)="update('amount', $any($event.target).value)">
+          <option value="">— scegli la colonna —</option>
+          @for (header of analysis().headers; track header) {
+            <option [value]="header">{{ header }}</option>
+          }
+        </select>
+        @if (example(form().amount); as value) {
+          <span class="example">es. {{ value }}</span>
+        }
+      </label>
+    } @else {
+      <div class="pair">
+        <label>
+          <span class="field-hint">Uscite</span>
+          <select [value]="form().debit" (change)="update('debit', $any($event.target).value)">
+            <option value="">— scegli la colonna —</option>
+            @for (header of analysis().headers; track header) {
+              <option [value]="header">{{ header }}</option>
+            }
+          </select>
+          @if (example(form().debit); as value) {
+            <span class="example">es. {{ value }}</span>
+          }
+        </label>
+        <label>
+          <span class="field-hint">Entrate</span>
+          <select [value]="form().credit" (change)="update('credit', $any($event.target).value)">
+            <option value="">— scegli la colonna —</option>
+            @for (header of analysis().headers; track header) {
+              <option [value]="header">{{ header }}</option>
+            }
+          </select>
+          @if (example(form().credit); as value) {
+            <span class="example">es. {{ value }}</span>
+          }
+        </label>
+      </div>
+    }
+
+    @if (errors().amount; as message) {
+      <span class="field-error">{{ message }}</span>
+    }
+  </fieldset>
+
+  <label>
+    <span class="field-label">Tipo movimento</span>
+    <select [value]="form().typeHint" (change)="update('typeHint', $any($event.target).value)">
+      <option value="">Nessuna colonna</option>
+      @for (header of analysis().headers; track header) {
+        <option [value]="header">{{ header }}</option>
+      }
+    </select>
+    @if (example(form().typeHint); as value) {
+      <span class="example">es. {{ value }}</span>
+    }
+    <span class="field-hint">
+      Facoltativa: distingue prelievi e accrediti. Senza, decide il segno dell'importo.
+    </span>
+  </label>
+</div>

@@ -1,19 +1,89 @@
 <section class="panel">
   <h2>Import CSV</h2>
   <p class="hint">
-    Seleziona l'estratto conto esportato dalla banca. Sono richieste le colonne
-    <strong>data</strong>, <strong>descrizione</strong> e <strong>importo</strong>.
+    Seleziona l'estratto conto esportato dalla banca. Le colonne vengono riconosciute dal loro
+    contenuto: non importa come sono intitolate, in che ordine sono, né quante ne contiene il file.
+    Se il riconoscimento non riesce — o sceglie la colonna sbagliata — le colonne si indicano a
+    mano prima di importare.
   </p>
 
   <div class="actions">
     <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
-    <button type="button" (click)="importCsv()" [disabled]="selectedFile() === null || importing()">
+    <button
+      type="button"
+      (click)="importCsv()"
+      [disabled]="analysis() === null || analyzing() || importing()"
+    >
       {{ importing() ? 'Importazione in corso…' : 'Importa' }}
     </button>
   </div>
 
+  @if (analyzing()) {
+    <p class="message">Lettura del file in corso…</p>
+  }
+
   @if (error(); as message) {
     <p class="message error">{{ message }}</p>
+  }
+
+  @if (analysis(); as csv) {
+    <div class="mapping">
+      <p class="file-summary">
+        <strong>{{ fileName() }}</strong> — {{ csv.rowsRead }}
+        {{ csv.rowsRead === 1 ? 'riga' : 'righe' }}, {{ csv.headers.length }}
+        {{ csv.headers.length === 1 ? 'colonna' : 'colonne' }}.
+      </p>
+
+      @if (unrecognized().length > 0) {
+        <p class="message warning">
+          Non ho riconosciuto la colonna di: <strong>{{ unrecognized().join(', ') }}</strong>.
+          Indicala qui sotto.
+        </p>
+      }
+
+      <fieldset class="mode">
+        <legend class="field-label">Colonne da leggere</legend>
+        <div class="options">
+          <label class="inline">
+            <input
+              type="radio"
+              name="mode"
+              [checked]="mode() === 'auto'"
+              [disabled]="!canImportAutomatically()"
+              (change)="selectMode('auto')"
+            />
+            <span>Automatica</span>
+          </label>
+          <label class="inline">
+            <input
+              type="radio"
+              name="mode"
+              [checked]="mode() === 'manual'"
+              (change)="selectMode('manual')"
+            />
+            <span>Manuale</span>
+          </label>
+        </div>
+      </fieldset>
+
+      @if (mode() === 'auto') {
+        <ul class="columns">
+          @for (bound of proposed(); track bound.label) {
+            <li>
+              <span class="field">{{ bound.label }}</span>
+              <span class="column">{{ bound.column }}</span>
+            </li>
+          }
+        </ul>
+      } @else if (form(); as value) {
+        <app-column-picker
+          [analysis]="csv"
+          [form]="value"
+          [errors]="errors()"
+          (changed)="updateForm($event)"
+        />
+      }
+    </div>
   }
 
   @if (result(); as importResult) {
@@ -43,6 +113,20 @@
           </div>
         </dl>
       </div>
+
+      @if (columns().length > 0) {
+        <div class="used-columns">
+          <h3>Colonne usate</h3>
+          <ul class="columns">
+            @for (bound of columns(); track bound.label) {
+              <li>
+                <span class="field">{{ bound.label }}</span>
+                <span class="column">{{ bound.column }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
 
       @if (importResult.errors.length > 0) {
         <ul class="row-errors">

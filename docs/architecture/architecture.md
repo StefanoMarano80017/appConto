@@ -247,6 +247,10 @@ CSV Parser
 
 ↓
 
+Column Binding          ← rilevato dal contenuto, oppure indicato dall'utente
+
+↓
+
 Normalized Transaction
 
 ↓
@@ -267,6 +271,13 @@ Analytics
 ```
 
 Ogni fase ha una responsabilità ben definita.
+
+Il **binding delle colonne** è il solo punto con due strade: il rilevamento
+guarda i valori e propone, l'utente può indicare le colonne a mano quando il
+rilevamento non arriva a un campo obbligatorio o sceglie la colonna sbagliata.
+Da `Normalized Transaction` in avanti la pipeline non sa quale delle due strade
+è stata percorsa — riceve un binding completo — e l'identità dei movimenti non
+dipende da essa.
 
 ---
 
@@ -353,6 +364,8 @@ Le API sono orientate ai casi d'uso.
 Esempi:
 
 ```
+POST /import/csv/analysis
+
 POST /import/csv
 
 GET /transactions

@@ -9,6 +9,11 @@
     <a routerLink="/import" routerLinkActive="active">Import CSV</a>
     <a routerLink="/settings" routerLinkActive="active">Impostazioni</a>
   </nav>
+
+  <button type="button" class="theme-toggle" (click)="toggleTheme()">
+    <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
+    {{ themeAction() }}
+  </button>
 </header>
 
 <main class="app-main">

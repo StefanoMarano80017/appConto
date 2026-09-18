@@ -36,6 +36,28 @@
   }
 }
 
+.theme-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  .glyph {
+    font-size: 1rem;
+    line-height: 1;
+  }
+}
+
 .app-main {
   max-width: 100rem;
   margin: 0 auto;
