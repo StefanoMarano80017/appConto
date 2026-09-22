@@ -11,4 +11,12 @@ export const categoriesRepository = {
   findById(id: string): Category | null {
     return db.select().from(categories).where(eq(categories.id, id)).get() ?? null;
   },
+
+  findByName(name: string): Category | null {
+    return db.select().from(categories).where(eq(categories.name, name)).get() ?? null;
+  },
+
+  insert(category: Category): void {
+    db.insert(categories).values(category).run();
+  },
 };
