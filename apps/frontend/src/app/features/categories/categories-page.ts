@@ -2,28 +2,15 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
-import { PanelActionsDirective, SectionHeader } from '../../shared/layout/section-header';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { CategoriesApi } from './categories.api';
 import { CategoryWithUsage } from './category.model';
 
-/**
- * L'id fisso di "Da classificare": non rinominabile né eliminabile.
- *
- * Duplicato rispetto a `FALLBACK_CATEGORY_ID` nel backend
- * (`categories.service.ts`) perché il progetto non condivide codice fra le
- * due app.
- */
 const FALLBACK_CATEGORY_ID = 'c9bfcd74-e342-4a3f-8b0c-116f89236d51';
 
-/**
- * Gestione delle categorie di spesa.
- *
- * Crea, rinomina, ricolora ed elimina: le categorie sono configurazione a
- * runtime, non più un elenco fisso deciso al primo avvio.
- */
 @Component({
   selector: 'app-categories-page',
-  imports: [FormsModule, Panel, SectionHeader, PanelActionsDirective],
+  imports: [FormsModule, Panel, SectionHeader],
   templateUrl: './categories-page.html',
   styleUrl: './categories-page.scss'
 })
@@ -33,6 +20,13 @@ export class CategoriesPage implements OnInit {
   protected readonly categories = signal<CategoryWithUsage[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly newName = signal('');
+  protected readonly newColor = signal('#9aa3af');
+  protected readonly creating = signal(false);
+  protected readonly createError = signal<string | null>(null);
+
+  protected readonly savingId = signal<string | null>(null);
 
   ngOnInit(): void {
     this.load();
@@ -56,5 +50,65 @@ export class CategoriesPage implements OnInit {
 
   protected isProtected(id: string): boolean {
     return id === FALLBACK_CATEGORY_ID;
+  }
+
+  protected create(event: Event): void {
+    event.preventDefault();
+    const name = this.newName().trim();
+    if (name === '' || this.creating()) {
+      return;
+    }
+
+    this.creating.set(true);
+    this.createError.set(null);
+
+    this.api.create({ name, color: this.newColor() }).subscribe({
+      next: (created) => {
+        this.categories.update((categories) => [...categories, { ...created, merchantCount: 0 }]);
+        this.newName.set('');
+        this.newColor.set('#9aa3af');
+        this.creating.set(false);
+      },
+      error: (error: unknown) => {
+        this.createError.set(toErrorMessage(error));
+        this.creating.set(false);
+      }
+    });
+  }
+
+  protected rename(category: CategoryWithUsage, value: string): void {
+    const name = value.trim();
+    if (name === '' || name === category.name) {
+      return;
+    }
+
+    this.save(category.id, this.api.update(category.id, { name }));
+  }
+
+  protected recolor(category: CategoryWithUsage, value: string): void {
+    if (value === category.color) {
+      return;
+    }
+
+    this.save(category.id, this.api.update(category.id, { color: value }));
+  }
+
+  private save(categoryId: string, request: ReturnType<CategoriesApi['update']>): void {
+    this.savingId.set(categoryId);
+    this.error.set(null);
+
+    request.subscribe({
+      next: (updated) => {
+        this.categories.update((categories) =>
+          categories.map((category) => (category.id === updated.id ? updated : category))
+        );
+        this.savingId.set(null);
+      },
+      error: (error: unknown) => {
+        this.error.set(toErrorMessage(error));
+        this.savingId.set(null);
+        this.load();
+      }
+    });
   }
 }
