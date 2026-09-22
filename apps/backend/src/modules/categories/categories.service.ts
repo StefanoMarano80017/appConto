@@ -59,4 +59,26 @@ export const categoriesService = {
 
     return categoriesRepository.countMerchantsForCategory(id);
   },
+
+  update(id: string, patch: { name?: string; color?: string | null }): Category {
+    const category = requireCategory(id);
+
+    const name = patch.name === undefined ? undefined : patch.name.trim();
+    if (name !== undefined && name === '') {
+      throw new ValidationError('Il nome della categoria non può essere vuoto.');
+    }
+
+    if (id === FALLBACK_CATEGORY_ID && name !== undefined && name !== category.name) {
+      throw new ConflictError('«Da classificare» non può essere rinominata.');
+    }
+
+    if (name !== undefined && name !== category.name && categoriesRepository.findByName(name) !== null) {
+      throw new ConflictError(`Esiste già una categoria con il nome "${name}".`);
+    }
+
+    const nextPatch = { ...patch, ...(name === undefined ? {} : { name }) };
+    categoriesRepository.update(id, nextPatch);
+
+    return { ...category, ...nextPatch };
+  },
 };

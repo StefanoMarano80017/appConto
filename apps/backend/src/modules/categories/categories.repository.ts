@@ -21,6 +21,10 @@ export const categoriesRepository = {
     db.insert(categories).values(category).run();
   },
 
+  update(id: string, patch: { name?: string; color?: string | null }): void {
+    db.update(categories).set(patch).where(eq(categories.id, id)).run();
+  },
+
   /** Quanti merchant sono assegnati a ciascuna categoria, per id. */
   countMerchantsByCategory(): Map<string, number> {
     const rows = db

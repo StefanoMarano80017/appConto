@@ -106,3 +106,75 @@ describe('utilizzo di una categoria', () => {
     );
   });
 });
+
+describe('modifica di una categoria', () => {
+  it('rinomina e cambia colore', () => {
+    const categoria = categoriesService.create({ name: 'Da rinominare', color: '#111111' });
+
+    const aggiornata = categoriesService.update(categoria.id, { name: 'Rinominata', color: '#222222' });
+
+    assert.equal(aggiornata.name, 'Rinominata');
+    assert.equal(aggiornata.color, '#222222');
+  });
+
+  it('non protesta se il nome resta lo stesso', () => {
+    const categoria = categoriesService.create({ name: 'Nome stabile', color: null });
+
+    const aggiornata = categoriesService.update(categoria.id, { name: 'Nome stabile', color: '#333333' });
+
+    assert.equal(aggiornata.name, 'Nome stabile');
+    assert.equal(aggiornata.color, '#333333');
+  });
+
+  it('rifiuta un nome già usato da un-altra categoria', () => {
+    categoriesService.create({ name: 'Prima', color: null });
+    const seconda = categoriesService.create({ name: 'Seconda', color: null });
+
+    assert.throws(
+      () => categoriesService.update(seconda.id, { name: 'Prima' }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+
+  it('rifiuta un nome vuoto', () => {
+    const categoria = categoriesService.create({ name: 'Nome da svuotare', color: null });
+
+    assert.throws(
+      () => categoriesService.update(categoria.id, { name: '   ' }),
+      (error: unknown) => {
+        assert.ok(error instanceof ValidationError);
+        return true;
+      },
+    );
+  });
+
+  it('non permette di rinominare «Da classificare»', () => {
+    assert.throws(
+      () => categoriesService.update(FALLBACK_CATEGORY_ID, { name: 'Nuovo nome' }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+
+  it('permette di cambiare il colore di «Da classificare»', () => {
+    const aggiornata = categoriesService.update(FALLBACK_CATEGORY_ID, { color: '#abcdef' });
+
+    assert.equal(aggiornata.color, '#abcdef');
+    assert.equal(aggiornata.name, 'Da classificare');
+  });
+
+  it('lancia NotFoundError per un id inesistente', () => {
+    assert.throws(
+      () => categoriesService.update('id-che-non-esiste', { name: 'X' }),
+      (error: unknown) => {
+        assert.ok(error instanceof NotFoundError);
+        return true;
+      },
+    );
+  });
+});
