@@ -63,3 +63,28 @@ describe('creazione di una categoria', () => {
     }
   });
 });
+
+importService.importCsv(
+  ['Data contabile,Descrizione,Importo', '01/05/2026,ESERCENTE DI PROVA,-10.00'].join('\r\n'),
+);
+
+describe('categorie con il numero di merchant assegnati', () => {
+  it('conta zero merchant per una categoria appena creata', () => {
+    const categoria = categoriesService.create({ name: 'Categoria vuota', color: null });
+
+    const trovata = categoriesService.listAllWithUsage().find((c) => c.id === categoria.id);
+    assert.ok(trovata);
+    assert.equal(trovata.merchantCount, 0);
+  });
+
+  it('conta i merchant assegnati', () => {
+    const categoria = categoriesService.create({ name: 'Categoria con merchant', color: null });
+    const merchant = merchantsService.listAll().find((m) => m.name === 'ESERCENTE DI PROVA');
+    assert.ok(merchant);
+    merchantsService.assignCategory(merchant.id, categoria.id);
+
+    const trovata = categoriesService.listAllWithUsage().find((c) => c.id === categoria.id);
+    assert.ok(trovata);
+    assert.equal(trovata.merchantCount, 1);
+  });
+});

@@ -1,5 +1,6 @@
-import { asc, eq } from 'drizzle-orm';
+import { asc, count, eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
+import { merchants } from '../merchants/merchants.schema.js';
 import type { Category } from './category.model.js';
 import { categories } from './categories.schema.js';
 
@@ -18,5 +19,23 @@ export const categoriesRepository = {
 
   insert(category: Category): void {
     db.insert(categories).values(category).run();
+  },
+
+  /** Quanti merchant sono assegnati a ciascuna categoria, per id. */
+  countMerchantsByCategory(): Map<string, number> {
+    const rows = db
+      .select({ categoryId: merchants.categoryId, total: count() })
+      .from(merchants)
+      .groupBy(merchants.categoryId)
+      .all();
+
+    const result = new Map<string, number>();
+    for (const row of rows) {
+      if (row.categoryId !== null) {
+        result.set(row.categoryId, row.total);
+      }
+    }
+
+    return result;
   },
 };

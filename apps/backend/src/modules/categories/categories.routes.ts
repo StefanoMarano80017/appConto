@@ -1,7 +1,7 @@
 import { Router, json } from 'express';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors.js';
-import { toCategoryDto } from './categories.dto.js';
+import { toCategoryDto, toCategoryWithUsageDto } from './categories.dto.js';
 import { categoriesService } from './categories.service.js';
 
 export const categoriesRouter = Router();
@@ -13,7 +13,7 @@ const createCategoryBodySchema = z.object({
 
 // GET /categories
 categoriesRouter.get('/', (_req, res) => {
-  res.json(categoriesService.listAll().map(toCategoryDto));
+  res.json(categoriesService.listAllWithUsage().map(toCategoryWithUsageDto));
 });
 
 // POST /categories

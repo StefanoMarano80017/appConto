@@ -1,5 +1,5 @@
 import { ConflictError, ValidationError } from '../../shared/errors.js';
-import { type Category, type NewCategory, createCategory } from './category.model.js';
+import { type Category, type CategoryWithUsage, type NewCategory, createCategory } from './category.model.js';
 import { categoriesRepository } from './categories.repository.js';
 
 /**
@@ -17,6 +17,16 @@ export const categoriesService = {
 
   findById(id: string): Category | null {
     return categoriesRepository.findById(id);
+  },
+
+  /** Le categorie con il numero di merchant assegnati a ciascuna. */
+  listAllWithUsage(): CategoryWithUsage[] {
+    const counts = categoriesRepository.countMerchantsByCategory();
+
+    return categoriesRepository.findAll().map((category) => ({
+      ...category,
+      merchantCount: counts.get(category.id) ?? 0,
+    }));
   },
 
   create(input: NewCategory): Category {
