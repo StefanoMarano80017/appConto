@@ -1,11 +1,13 @@
 import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { formatAmount } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { TopMerchant } from './dashboard.model';
 
 @Component({
   selector: 'app-top-merchants',
-  imports: [RouterLink],
+  imports: [RouterLink, Panel, SectionHeader],
   templateUrl: './top-merchants.html',
   styleUrl: './top-merchants.scss'
 })

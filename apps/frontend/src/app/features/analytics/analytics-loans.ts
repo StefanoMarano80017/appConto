@@ -1,6 +1,8 @@
 import { Component, input } from '@angular/core';
 import { Params, RouterLink } from '@angular/router';
 import { formatAmount, formatBookingDate } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { LoansSection } from './analytics.model';
 
 /**
@@ -12,7 +14,7 @@ import { LoansSection } from './analytics.model';
  */
 @Component({
   selector: 'app-analytics-loans',
-  imports: [RouterLink],
+  imports: [Panel, RouterLink, SectionHeader],
   templateUrl: './analytics-loans.html',
   styleUrl: './analytics-loans.scss'
 })

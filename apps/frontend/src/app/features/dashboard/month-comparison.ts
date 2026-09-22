@@ -1,9 +1,11 @@
 import { Component, input } from '@angular/core';
 import { formatAmount, formatMonth, formatPercent } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
 import { MonthComparison } from './dashboard.model';
 
 @Component({
   selector: 'app-month-comparison',
+  imports: [Panel],
   templateUrl: './month-comparison.html',
   styleUrl: './month-comparison.scss'
 })

@@ -1,5 +1,8 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { formatAmount, formatBookingDate } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
+import { SegmentedControl } from '../../shared/ui/segmented-control';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { timelineScale } from './timeline-scale';
 
@@ -79,6 +82,7 @@ interface PlottedSeries {
  */
 @Component({
   selector: 'app-analytics-timeline',
+  imports: [Panel, SectionHeader, SegmentedControl],
   templateUrl: './analytics-timeline.html',
   styleUrl: './analytics-timeline.scss'
 })
@@ -93,6 +97,12 @@ export class AnalyticsTimeline {
   protected readonly plot = PLOT;
   protected readonly granularities = GRANULARITIES;
   protected readonly formatAmount = formatAmount;
+
+  protected readonly subtitle = computed(() => {
+    const unit =
+      this.granularity() === 'day' ? 'giorno' : this.granularity() === 'week' ? 'settimana' : 'mese';
+    return `Stessi movimenti del resto della pagina, raggruppati per ${unit}.`;
+  });
 
   protected readonly hidden = signal<ReadonlySet<SeriesKey>>(new Set(['net']));
   protected readonly hovered = signal<number | null>(null);

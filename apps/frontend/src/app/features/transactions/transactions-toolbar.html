@@ -1,28 +1,23 @@
-<section class="panel">
-  <label class="search">
-    <span class="icon" aria-hidden="true">🔎</span>
-    <input
-      type="search"
-      placeholder="Cerca transazioni…"
-      aria-label="Cerca transazioni"
-      [value]="searchText()"
-      (input)="searchTyped.emit($any($event.target).value)"
-    />
-  </label>
+<app-panel>
+  <app-search-input
+    class="search"
+    [icon]="true"
+    [value]="searchText()"
+    placeholder="Cerca transazioni…"
+    ariaLabel="Cerca transazioni"
+    (valueChange)="searchTyped.emit($event)"
+  />
 
   <div class="dropdowns">
     <details class="dropdown">
       <summary>Periodo <span class="value">{{ periodLabel() }}</span></summary>
       <div class="panel-body">
-        <div class="options">
-          @for (option of presets; track option.id) {
-            <button
-              type="button"
-              [class.active]="preset() === option.id"
-              (click)="selectPreset(option.id)"
-            >{{ option.label }}</button>
-          }
-        </div>
+        <app-segmented-control
+          [options]="presets"
+          [value]="preset()"
+          ariaLabel="Periodo"
+          (valueChange)="selectPreset($event)"
+        />
         <div class="dates">
           <label>
             <span>Dal</span>
@@ -47,15 +42,11 @@
     <details class="dropdown">
       <summary>Tipo @if (query().types.length > 0) { <span class="badge">{{ query().types.length }}</span> }</summary>
       <div class="panel-body">
-        <div class="options">
-          @for (type of transactionTypes; track type) {
-            <button
-              type="button"
-              [class.active]="query().types.includes(type)"
-              (click)="toggleType(type)"
-            >{{ typeLabels[type] }}</button>
-          }
-        </div>
+        <app-toggle-button-group
+          [options]="transactionTypeOptions"
+          [value]="query().types"
+          (toggled)="toggleType($event)"
+        />
       </div>
     </details>
 
@@ -83,41 +74,34 @@
     <details class="dropdown">
       <summary>Merchant @if (query().merchantIds.length > 0) { <span class="badge">{{ query().merchantIds.length }}</span> }</summary>
       <div class="panel-body">
-        <input
-          type="search"
+        <app-search-input
           class="filter"
-          placeholder="Cerca un merchant…"
-          aria-label="Cerca un merchant"
           [value]="merchantSearch()"
-          (input)="merchantSearch.set($any($event.target).value)"
+          placeholder="Cerca un merchant…"
+          ariaLabel="Cerca un merchant"
+          (valueChange)="merchantSearch.set($event)"
         />
-        <div class="options">
-          @for (merchant of suggestedMerchants(); track merchant.id) {
-            <button
-              type="button"
-              [class.active]="query().merchantIds.includes(merchant.id)"
-              (click)="toggleMerchant(merchant.id)"
-              [title]="merchant.displayName === null ? merchant.name : merchant.name + ' (rinominato)'"
-            >{{ merchant.label }}</button>
-          } @empty {
-            <p class="message">Nessun merchant corrisponde alla ricerca.</p>
-          }
-        </div>
+        @if (merchantOptions().length === 0) {
+          <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+        } @else {
+          <app-toggle-button-group
+            [options]="merchantOptions()"
+            [value]="query().merchantIds"
+            (toggled)="toggleMerchant($event)"
+          />
+        }
       </div>
     </details>
 
     <details class="dropdown">
       <summary>Classificazione</summary>
       <div class="panel-body">
-        <div class="options">
-          @for (option of classifications; track option) {
-            <button
-              type="button"
-              [class.active]="query().classification === option"
-              (click)="changed.emit({ classification: option })"
-            >{{ classificationLabels[option] }}</button>
-          }
-        </div>
+        <app-segmented-control
+          [options]="classificationOptions"
+          [value]="query().classification"
+          ariaLabel="Classificazione"
+          (valueChange)="changed.emit({ classification: $event })"
+        />
       </div>
     </details>
 
@@ -152,13 +136,6 @@
   </div>
 
   @if (activeFilters().length > 0) {
-    <div class="chips">
-      @for (filter of activeFilters(); track filter.key) {
-        <button type="button" class="chip" (click)="changed.emit(filter.removal)">
-          {{ filter.label }} <span aria-hidden="true">×</span>
-        </button>
-      }
-      <button type="button" class="clear" (click)="cleared.emit()">Reset filtri</button>
-    </div>
+    <app-filter-chips class="chips" [chips]="activeFilters()" (removed)="removeFilter($event)" (cleared)="cleared.emit()" />
   }
-</section>
+</app-panel>

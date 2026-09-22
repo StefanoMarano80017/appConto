@@ -12,6 +12,8 @@ import {
   TransactionQueryState,
   toQueryParams
 } from '../transactions/transaction-query';
+import { Panel } from '../../shared/layout/panel';
+import { StatCardGrid } from '../../shared/ui/stat-card-grid';
 import { Analytics } from './analytics.model';
 import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
@@ -44,7 +46,9 @@ interface Kpi {
     AnalyticsMerchants,
     AnalyticsTimeline,
     AnalyticsToolbar,
-    RouterLink
+    Panel,
+    RouterLink,
+    StatCardGrid
   ],
   templateUrl: './analytics-page.html',
   styleUrl: './analytics-page.scss'

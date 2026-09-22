@@ -1,0 +1,31 @@
+/*
+ * Pillola dei gruppi di pulsanti.
+ *
+ * Lo stile condiviso da `SegmentedControl` (selezione singola) e
+ * `ToggleButtonGroup` (selezione multipla): il comportamento dei due resta
+ * separato (docs/architecture/frontend-shared-components-proposal.md, §16.2),
+ * lo stile del singolo pulsante no.
+ *
+ * Non include `padding` né lo spaziamento del contenitore (`gap`): i due usi
+ * migrati in questa fase hanno valori diversi fra loro (0,3125rem 0,6875rem
+ * contro 0,3125rem 0,75rem), quindi restano dichiarati da chi include il mixin.
+ */
+@mixin pill-button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+  }
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--surface);
+  }
+}

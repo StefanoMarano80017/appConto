@@ -1,31 +1,24 @@
 <app-analytics-toolbar [categories]="categories()" [merchants]="merchants()" />
 
 @if (error(); as message) {
-  <section class="panel">
+  <app-panel>
     <p class="message error">{{ message }}</p>
-  </section>
+  </app-panel>
 }
 
 @if (data(); as data) {
-  <section class="panel">
-    <div class="cards">
-      @for (kpi of kpis(); track kpi.label) {
-        <div class="card">
-          <span class="label">{{ kpi.label }}</span>
-          <span class="value" [class]="kpi.tone">{{ kpi.value }}</span>
-        </div>
-      }
-    </div>
+  <app-panel>
+    <app-stat-card-grid [items]="kpis()" />
     @if (analytics.isLoading()) {
       <p class="message">Aggiornamento in corso…</p>
     }
-  </section>
+  </app-panel>
 
   @if (isEmpty()) {
-    <section class="panel">
+    <app-panel>
       <p class="message">Nessun dato disponibile per il periodo selezionato.</p>
       <p class="hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
-    </section>
+    </app-panel>
   } @else {
     <app-analytics-timeline
       [timeline]="data.timeline"
@@ -56,7 +49,7 @@
     </p>
   }
 } @else if (analytics.isLoading()) {
-  <section class="panel">
+  <app-panel>
     <p class="message">Caricamento in corso…</p>
-  </section>
+  </app-panel>
 }

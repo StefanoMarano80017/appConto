@@ -2,7 +2,7 @@
   <a routerLink="/loans">← Prestiti</a>
 </nav>
 
-<section class="panel">
+<app-panel>
   <h2>Crea prestito</h2>
 
   @if (error(); as message) {
@@ -38,54 +38,51 @@
       </p>
     } @else {
       <form class="loan-form" (ngSubmit)="save()">
-        <label>
-          <span class="field-label">Persona</span>
+        <app-form-field [id]="'borrowerName'" label="Persona" [error]="errors().borrowerName">
           <input
             type="text"
+            id="borrowerName"
             name="borrowerName"
             placeholder="Mamma"
             autocomplete="off"
             [ngModel]="form().borrowerName"
             (ngModelChange)="update('borrowerName', $event)"
             [attr.aria-invalid]="errors().borrowerName ? 'true' : null"
+            [attr.aria-describedby]="borrowerNameDescribedBy()"
           />
-          @if (errors().borrowerName; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Descrizione</span>
+        <app-form-field [id]="'description'" label="Descrizione" hint="Facoltativa.">
           <input
             type="text"
+            id="description"
             name="description"
             placeholder="Acquisto fatto per lei"
             autocomplete="off"
             [ngModel]="form().description"
             (ngModelChange)="update('description', $event)"
+            [attr.aria-describedby]="descriptionDescribedBy()"
           />
-          <span class="field-hint">Facoltativa.</span>
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Importo</span>
+        <app-form-field
+          [id]="'amount'"
+          label="Importo"
+          [error]="errors().amount"
+          hint="Quanto hai anticipato per questa persona. Può essere meno dell'intero movimento: lo stesso pagamento può coprire anche cose tue."
+        >
           <input
             type="text"
             inputmode="decimal"
+            id="amount"
             name="amount"
             placeholder="0,00"
             [ngModel]="form().amount"
             (ngModelChange)="update('amount', $event)"
             [attr.aria-invalid]="errors().amount ? 'true' : null"
+            [attr.aria-describedby]="amountDescribedBy()"
           />
-          @if (errors().amount; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-          <span class="field-hint">
-            Quanto hai anticipato per questa persona. Può essere meno dell'intero movimento:
-            lo stesso pagamento può coprire anche cose tue.
-          </span>
-        </label>
+        </app-form-field>
 
         <!-- Zero è un valore, non un'assenza: "tutto prestato" va detto. -->
         @let own = ownExpense();
@@ -100,19 +97,17 @@
           </p>
         }
 
-        <label>
-          <span class="field-label">Data</span>
+        <app-form-field [id]="'lentAt'" label="Data" [error]="errors().lentAt">
           <input
             type="date"
+            id="lentAt"
             name="lentAt"
             [ngModel]="form().lentAt"
             (ngModelChange)="update('lentAt', $event)"
             [attr.aria-invalid]="errors().lentAt ? 'true' : null"
+            [attr.aria-describedby]="lentAtDescribedBy()"
           />
-          @if (errors().lentAt; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
         <div class="actions">
           <button type="submit" [disabled]="saving()">
@@ -123,4 +118,4 @@
       </form>
     }
   }
-</section>
+</app-panel>

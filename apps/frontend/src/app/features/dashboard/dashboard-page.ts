@@ -1,6 +1,10 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { formatAmount, formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
+import { FilterChips } from '../../shared/ui/filter-chips';
+import { StatCardGrid, StatCardItem } from '../../shared/ui/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
 import {
   TRANSACTION_TYPES,
@@ -27,7 +31,11 @@ import { TopMerchantsSection } from './top-merchants';
   imports: [
     CashFlowCard,
     CategoryBreakdownSection,
+    FilterChips,
     MonthComparisonSection,
+    Panel,
+    SectionHeader,
+    StatCardGrid,
     TopMerchantsSection,
     TransactionsTable
   ],
@@ -56,22 +64,43 @@ export class DashboardPage {
       return [];
     }
 
-    const chips: { kind: 'type' | 'category' | 'merchant'; label: string }[] = [];
+    const chips: { key: 'type' | 'category' | 'merchant'; label: string }[] = [];
     const { type, categoryId, merchantId } = this.filters.filters();
 
     if (type !== null) {
-      chips.push({ kind: 'type', label: TRANSACTION_TYPE_LABELS[type] });
+      chips.push({ key: 'type', label: TRANSACTION_TYPE_LABELS[type] });
     }
     if (categoryId !== null) {
       const category = data.categories.find((c) => c.id === categoryId);
-      chips.push({ kind: 'category', label: category?.name ?? 'Categoria' });
+      chips.push({ key: 'category', label: category?.name ?? 'Categoria' });
     }
     if (merchantId !== null) {
       const merchant = data.transactions.find((t) => t.merchant?.id === merchantId)?.merchant;
-      chips.push({ kind: 'merchant', label: merchant?.label ?? 'Merchant' });
+      chips.push({ key: 'merchant', label: merchant?.label ?? 'Merchant' });
     }
 
     return chips;
+  });
+
+  protected readonly summaryCards = computed<StatCardItem[]>(() => {
+    const data = this.dashboard();
+    if (data === null) {
+      return [];
+    }
+
+    const { balance } = data.summary;
+
+    return [
+      { label: 'Entrate', value: formatAmount(data.summary.income), tone: 'positive' },
+      { label: 'Uscite', value: formatAmount(data.summary.expenses), tone: 'negative' },
+      {
+        label: 'Saldo',
+        value: formatAmount(balance),
+        tone: balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral'
+      },
+      { label: 'Transazioni', value: String(data.summary.transactionCount), tone: 'neutral' },
+      { label: 'Merchant', value: String(data.summary.merchantCount), tone: 'neutral' }
+    ];
   });
 
   constructor() {
@@ -108,10 +137,10 @@ export class DashboardPage {
     this.filters.setType(value === '' ? null : (value as TransactionType));
   }
 
-  protected removeFilter(kind: 'type' | 'category' | 'merchant'): void {
-    if (kind === 'type') {
+  protected removeFilter(key: 'type' | 'category' | 'merchant'): void {
+    if (key === 'type') {
       this.filters.setType(null);
-    } else if (kind === 'category') {
+    } else if (key === 'category') {
       this.filters.setCategory(null);
     } else {
       this.filters.setMerchant(null);

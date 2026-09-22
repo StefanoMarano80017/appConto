@@ -1,4 +1,4 @@
-<section class="panel toolbar-panel">
+<app-panel>
   <div class="toolbar">
     <div>
       <h2>Riepilogo</h2>
@@ -24,51 +24,25 @@
   </div>
 
   @if (activeFilters().length > 0) {
-    <div class="chips">
-      @for (chip of activeFilters(); track chip.kind) {
-        <button type="button" class="chip" (click)="removeFilter(chip.kind)">
-          {{ chip.label }} <span aria-hidden="true">×</span>
-        </button>
-      }
-      <button type="button" class="clear" (click)="filters.clearFilters()">Azzera filtri</button>
-    </div>
+    <app-filter-chips
+      class="chips"
+      [chips]="activeFilters()"
+      clearLabel="Azzera filtri"
+      (removed)="removeFilter($event)"
+      (cleared)="filters.clearFilters()"
+    />
   }
 
   @if (error(); as message) {
     <p class="message error">{{ message }}</p>
   }
 
-  @if (dashboard(); as data) {
-    <div class="cards">
-      <div class="card">
-        <span class="label">Entrate</span>
-        <span class="value positive">{{ formatAmount(data.summary.income) }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Uscite</span>
-        <span class="value negative">{{ formatAmount(data.summary.expenses) }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Saldo</span>
-        <span
-          class="value"
-          [class.positive]="data.summary.balance > 0"
-          [class.negative]="data.summary.balance < 0"
-        >{{ formatAmount(data.summary.balance) }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Transazioni</span>
-        <span class="value">{{ data.summary.transactionCount }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Merchant</span>
-        <span class="value">{{ data.summary.merchantCount }}</span>
-      </div>
-    </div>
+  @if (dashboard()) {
+    <app-stat-card-grid [items]="summaryCards()" />
   } @else if (loading()) {
     <p class="message">Caricamento in corso…</p>
   }
-</section>
+</app-panel>
 
 @if (dashboard(); as data) {
   <app-cash-flow-card [cashFlow]="data.cashFlow" />
@@ -86,16 +60,15 @@
 
   <app-month-comparison [comparison]="data.comparison" />
 
-  <section class="panel">
-    <div class="panel-header">
-      <h2>Transazioni</h2>
-      <p class="count">{{ data.transactions.length }} nel periodo selezionato</p>
-    </div>
+  <app-panel>
+    <app-section-header title="Transazioni">
+      <p panelActions class="count">{{ data.transactions.length }} nel periodo selezionato</p>
+    </app-section-header>
 
     @if (data.transactions.length === 0) {
       <p class="message">Nessuna transazione corrisponde ai filtri.</p>
     } @else {
       <app-transactions-table [transactions]="data.transactions" (changed)="reload()" />
     }
-  </section>
+  </app-panel>
 }

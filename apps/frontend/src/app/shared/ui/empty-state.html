@@ -1,0 +1,7 @@
+<p class="message">{{ message() }}</p>
+@if (hint(); as text) {
+  <p class="hint">{{ text }}</p>
+}
+@if (actionLabel(); as label) {
+  <button type="button" class="retry" (click)="action.emit()">{{ label }}</button>
+}

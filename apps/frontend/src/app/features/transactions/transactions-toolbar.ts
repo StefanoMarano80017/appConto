@@ -1,6 +1,11 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { PERIOD_PRESETS, PeriodPreset, matchingPreset, resolvePeriod } from '../../core/period';
+import { Panel } from '../../shared/layout/panel';
+import { FilterChips } from '../../shared/ui/filter-chips';
+import { SearchInput } from '../../shared/ui/search-input';
+import { SegmentedControl } from '../../shared/ui/segmented-control';
+import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
 import {
@@ -29,6 +34,7 @@ interface ActiveFilter {
  */
 @Component({
   selector: 'app-transactions-toolbar',
+  imports: [FilterChips, Panel, SearchInput, SegmentedControl, ToggleButtonGroup],
   templateUrl: './transactions-toolbar.html',
   styleUrl: './transactions-toolbar.scss'
 })
@@ -47,12 +53,20 @@ export class TransactionsToolbar {
   protected readonly presets = PERIOD_PRESETS;
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
+  protected readonly transactionTypeOptions = TRANSACTION_TYPES.map((type) => ({
+    id: type,
+    label: TRANSACTION_TYPE_PLURAL_LABELS[type]
+  }));
   protected readonly classificationLabels = CLASSIFICATION_LABELS;
   protected readonly classifications: ClassificationFilter[] = [
     'all',
     'classified',
     'unclassified'
   ];
+  protected readonly classificationOptions = this.classifications.map((id) => ({
+    id,
+    label: this.classificationLabels[id]
+  }));
 
   /** Quale pulsante di periodo evidenziare: dedotto dalle date, non memorizzato. */
   protected readonly preset = computed(() => matchingPreset(this.query(), new Date()));
@@ -90,6 +104,10 @@ export class TransactionsToolbar {
 
     return [...chosen, ...rest.slice(0, SUGGESTED_MERCHANTS)];
   });
+
+  protected readonly merchantOptions = computed(() =>
+    this.suggestedMerchants().map((merchant) => ({ id: merchant.id, label: merchant.label }))
+  );
 
   /** I criteri attivi, con i nomi risolti: un identificativo non dice nulla a video. */
   protected readonly activeFilters = computed<ActiveFilter[]>(() => {
@@ -145,6 +163,13 @@ export class TransactionsToolbar {
 
     return filters;
   });
+
+  protected removeFilter(key: string): void {
+    const filter = this.activeFilters().find((candidate) => candidate.key === key);
+    if (filter !== undefined) {
+      this.changed.emit(filter.removal);
+    }
+  }
 
   protected selectPreset(preset: PeriodPreset): void {
     this.changed.emit(resolvePeriod(preset, new Date()));

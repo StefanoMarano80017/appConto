@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { formatAmount, formatPercent } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
 import { CategoryDistribution } from './analytics.model';
 
 /**
@@ -10,6 +11,7 @@ import { CategoryDistribution } from './analytics.model';
  */
 @Component({
   selector: 'app-analytics-categories',
+  imports: [Panel],
   templateUrl: './analytics-categories.html',
   styleUrl: './analytics-categories.scss'
 })

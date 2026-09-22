@@ -1,0 +1,182 @@
+{
+  "$schema": "design-tokens/v1",
+  "meta": {
+    "name": "Saldo — design tokens",
+    "variant": "A · Restrained",
+    "source": "Foundations.dc.html / Themes.dc.html mockup, Sept 2026",
+    "themes": ["dark", "light"],
+    "note": "Ogni valore qui è quello effettivamente usato nel mockup approvato. Non arrotondare, non 'migliorare': implementare esattamente questi numeri ed esadecimali."
+  },
+
+  "color": {
+    "dark": {
+      "neutral": {
+        "background":       "#0A0B0D",
+        "panel":            "#0D0F12",
+        "surface":          "#121418",
+        "surface-elevated": "#171A1F",
+        "surface-hover":    "#1D2026",
+        "surface-active":   "#23272E",
+        "border":           "#24272E",
+        "border-strong":    "#343941",
+        "row-divider":      "#16191D",
+        "text-primary":     "#E8EAED",
+        "text-secondary":   "#A5ACB8",
+        "text-muted":       "#777E8B",
+        "disabled":         "#4C525C"
+      },
+      "brand": {
+        "primary":         "#5F5BA8",
+        "primary-hover":   "#8A86C9",
+        "primary-active":  "#4F4B95",
+        "primary-subtle":  "rgba(95,91,168,0.14)",
+        "primary-border":  "rgba(95,91,168,0.34)",
+        "on-primary":      "#F2F1FA",
+        "focus-ring":      "rgba(95,91,168,0.22)"
+      },
+      "semantic": {
+        "income":  "#61B08D",
+        "expense": "#CB8B93",
+        "warning": "#B3924F",
+        "error":   "#F0555F",
+        "info":    "#7793B8"
+      },
+      "chart": {
+        "chart-1":       "#7090B4",
+        "chart-2":       "#96A66E",
+        "chart-3":       "#5F968F",
+        "chart-4":       "#B08290",
+        "chart-5":       "#B3924F",
+        "chart-6":       "#8A86C9",
+        "chart-7":       "#A28BB2",
+        "chart-neutral": "#4C525C"
+      }
+    },
+
+    "light": {
+      "neutral": {
+        "background":       "#F3F3F1",
+        "panel":            "#EBEBE8",
+        "surface":          "#FFFFFF",
+        "surface-elevated": "#F7F7F4",
+        "surface-hover":    "#EFEFEC",
+        "surface-active":   "#E4E4E0",
+        "border":           "#E3E3DF",
+        "border-strong":    "#C6C6C0",
+        "row-divider":      "#F0F0ED",
+        "text-primary":     "#1A1B19",
+        "text-secondary":   "#4E5359",
+        "text-muted":       "#6B7077",
+        "disabled":         "#8B939B"
+      },
+      "brand": {
+        "primary":         "#5B55C4",
+        "primary-hover":   "#625CC0",
+        "primary-active":  "#4A44A8",
+        "primary-subtle":  "rgba(91,85,196,0.14)",
+        "primary-border":  "rgba(91,85,196,0.34)",
+        "on-primary":      "#F2F1FA",
+        "focus-ring":      "rgba(91,85,196,0.22)"
+      },
+      "semantic": {
+        "income":  "#17794F",
+        "expense": "#AE3F51",
+        "warning": "#8A6A15",
+        "error":   "#C22B33",
+        "info":    "#2D6394"
+      },
+      "chart": {
+        "chart-1":       "#3D6B99",
+        "chart-2":       "#5F7A33",
+        "chart-3":       "#2F6E68",
+        "chart-4":       "#97505F",
+        "chart-5":       "#8A6A15",
+        "chart-6":       "#625CC0",
+        "chart-7":       "#7A5F8C",
+        "chart-neutral": "#8B939B"
+      }
+    }
+  },
+
+  "typography": {
+    "fontFamily": {
+      "ui": "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif",
+      "mono": "'Geist Mono', ui-monospace, monospace"
+    },
+    "rule": "Ogni valore numerico finanziario (importi, percentuali, date in tabella) usa SEMPRE fontFamily.mono con font-variant-numeric: tabular-nums. Il resto dell'interfaccia usa fontFamily.ui. La gerarchia fra i numeri è data dal contrasto colore, non dalla dimensione: nessun numero supera 25px.",
+    "scale": {
+      "display-kpi":    { "fontFamily": "mono", "size": "25px",   "weight": 600, "letterSpacing": "-0.02em", "use": "saldo/KPI principale" },
+      "page-title":     { "fontFamily": "ui",   "size": "15px",   "weight": 600, "letterSpacing": "-0.01em", "use": "titolo pagina" },
+      "section-title":  { "fontFamily": "ui",   "size": "13px",   "weight": 600, "use": "titolo sezione/card" },
+      "body":           { "fontFamily": "ui",   "size": "12.5px", "weight": 500, "use": "testo principale" },
+      "secondary":      { "fontFamily": "ui",   "size": "12px",   "weight": 400, "color": "text-secondary", "use": "sottotitolo, metadati" },
+      "label":          { "fontFamily": "ui",   "size": "10px",   "weight": 600, "letterSpacing": "0.08em", "transform": "uppercase", "color": "text-muted", "use": "etichetta di campo/sezione" },
+      "caption":        { "fontFamily": "ui",   "size": "11px",   "weight": 400, "color": "text-muted", "use": "didascalia, timestamp" },
+      "table-text":     { "fontFamily": "ui",   "size": "12px",   "weight": 400, "color": "text-secondary", "use": "celle di tabella non numeriche" },
+      "financial-row":  { "fontFamily": "mono", "size": "12.5px", "weight": 500, "tabularNums": true, "use": "importi in riga (colore = income o expense)" }
+    }
+  },
+
+  "spacing": {
+    "base": "4px",
+    "scale": [2, 4, 6, 8, 12, 16, 20, 24, 32, 40],
+    "usage": {
+      "betweenCards": [12, 16],
+      "insideCard": 14,
+      "betweenNearbyElements": [6, 10]
+    }
+  },
+
+  "radius": {
+    "badge":       "4px",
+    "smallControl":"6px",
+    "input":       "7px",
+    "button":      "7px",
+    "card":        "10px",
+    "pillTag":     "999px",
+    "rule": "999px riservato esclusivamente a tag/filtri. Mai come default per bottoni o card."
+  },
+
+  "border": {
+    "width": "1px",
+    "rule": "Sempre 1px, mai 0 o >1px.",
+    "tokens": {
+      "default":    "color.<theme>.neutral.border",
+      "strong":     "color.<theme>.neutral.border-strong",
+      "rowDivider": "color.<theme>.neutral.row-divider"
+    },
+    "focusRing": {
+      "border": "1px solid color.<theme>.brand.primary",
+      "shadow": "0 0 0 3px color.<theme>.brand.focus-ring"
+    }
+  },
+
+  "accessibility": {
+    "minContrastText": 4.5,
+    "incomeExpenseRule": "Entrate e uscite non si distinguono MAI solo per colore: sempre accompagnate da segno (+/−), triangolo direzionale, o posizione rispetto all'asse zero nei grafici."
+  },
+
+  "componentStatesReference": {
+    "note": "Stati verificati sul mockup dark (Foundations.dc.html / Components.dc.html). Per il tema light, sostituire ogni token secondo la tabella color.light qui sopra; i due valori segnati 'literal' sono tinte intermedie non presenti nella tabella dei token principali — vedi DESIGN_SYSTEM.md per l'equivalente light verificato.",
+    "primaryButton": {
+      "default":  { "border": "primary-hover", "background": "primary",        "text": "on-primary" },
+      "hover":    { "border": "literal:#A5A1DA (light: #7B74D6)", "background": "primary-hover", "text": "literal:#0A0B0D (dark theme only — verificare contrasto in light)" },
+      "active":   { "border": "primary", "background": "primary-active", "text": "on-primary" },
+      "focus":    { "border": "primary-hover", "background": "primary", "text": "on-primary", "shadow": "0 0 0 3px rgba(primary, 0.28)" },
+      "disabled": { "border": "border", "background": "literal:#1A1C21 (light: #F0F0ED)", "text": "disabled" }
+    },
+    "input": {
+      "default":  { "border": "border", "background": "surface", "text": "text-primary" },
+      "hover":    { "border": "border-strong", "background": "surface-elevated", "text": "text-primary" },
+      "focus":    { "border": "primary", "background": "surface-elevated", "text": "text-primary", "shadow": "focusRing" },
+      "error":    { "border": "error", "background": "rgba(error, 0.07)", "text": "text-primary" },
+      "disabled": { "border": "border", "background": "literal:#101216 (light: #F2F2EF)", "text": "disabled" }
+    },
+    "tableRow": {
+      "default":  { "background": "transparent", "borderBottom": "row-divider" },
+      "hover":    { "background": "surface-elevated" },
+      "selected": { "background": "primary-subtle", "insetShadow": "2px 0 0 primary" },
+      "disabled": { "text": "disabled", "amountText": "disabled" }
+    }
+  }
+}

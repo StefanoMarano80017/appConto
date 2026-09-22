@@ -1,0 +1,17 @@
+.badge {
+  display: inline-block;
+  padding: 0.0625rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.badge.negative {
+  background: color-mix(in srgb, var(--negative) 12%, transparent);
+  color: var(--negative);
+}
+
+.badge.positive {
+  background: color-mix(in srgb, var(--positive) 12%, transparent);
+  color: var(--positive);
+}

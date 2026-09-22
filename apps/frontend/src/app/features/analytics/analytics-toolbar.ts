@@ -7,6 +7,12 @@ import {
 } from '../transactions/transaction-type';
 import { ClassificationFilter } from './analytics.model';
 import { PERIOD_PRESETS } from '../../core/period';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
+import { FilterChips } from '../../shared/ui/filter-chips';
+import { SearchInput } from '../../shared/ui/search-input';
+import { SegmentedControl } from '../../shared/ui/segmented-control';
+import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
 import { AnalyticsStore } from './analytics.store';
 
 /** Quanti merchant proporre alla volta: l'elenco completo è quasi sempre lungo. */
@@ -33,6 +39,7 @@ interface ActiveFilter {
  */
 @Component({
   selector: 'app-analytics-toolbar',
+  imports: [FilterChips, Panel, SearchInput, SectionHeader, SegmentedControl, ToggleButtonGroup],
   templateUrl: './analytics-toolbar.html',
   styleUrl: './analytics-toolbar.scss'
 })
@@ -46,6 +53,10 @@ export class AnalyticsToolbar {
   protected readonly classifications = CLASSIFICATIONS;
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
+  protected readonly transactionTypeOptions = TRANSACTION_TYPES.map((type) => ({
+    id: type,
+    label: TRANSACTION_TYPE_PLURAL_LABELS[type]
+  }));
 
   protected readonly merchantSearch = signal('');
   /** I filtri sono aperti solo su richiesta: su schermi stretti occupano molto. */
@@ -61,6 +72,14 @@ export class AnalyticsToolbar {
 
     return merchants.slice(0, SUGGESTED_MERCHANTS);
   });
+
+  protected readonly categoryOptions = computed(() =>
+    this.categories().map((category) => ({ id: category.id, label: category.name }))
+  );
+
+  protected readonly merchantOptions = computed(() =>
+    this.suggestedMerchants().map((merchant) => ({ id: merchant.id, label: merchant.label }))
+  );
 
   /** I criteri attivi, con i nomi risolti: un identificativo non dice nulla a video. */
   protected readonly activeFilters = computed<ActiveFilter[]>(() => {
@@ -102,5 +121,9 @@ export class AnalyticsToolbar {
 
   protected onToChange(value: string): void {
     this.store.setCustomRange(this.store.dateRange().from, value);
+  }
+
+  protected removeFilter(key: string): void {
+    this.activeFilters().find((filter) => filter.key === key)?.remove();
   }
 }

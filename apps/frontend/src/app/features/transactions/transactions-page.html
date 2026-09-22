@@ -10,8 +10,7 @@
 
 @if (error(); as message) {
   <section class="panel">
-    <p class="message error">{{ message }}</p>
-    <button type="button" class="retry" (click)="transactions.reload()">Riprova</button>
+    <app-error-retry [message]="message" (retry)="transactions.reload()" />
   </section>
 }
 
@@ -19,11 +18,12 @@
   <section class="panel" [class.updating]="transactions.isLoading()">
     @if (data.items.length === 0) {
       <div class="empty">
-        <p class="message">Nessuna transazione trovata.</p>
-        <p class="hint">Prova a modificare o rimuovere uno dei filtri.</p>
-        @if (hasFilters()) {
-          <button type="button" class="retry" (click)="resetFilters()">Reset filtri</button>
-        }
+        <app-empty-state
+          message="Nessuna transazione trovata."
+          hint="Prova a modificare o rimuovere uno dei filtri."
+          [actionLabel]="hasFilters() ? 'Reset filtri' : undefined"
+          (action)="resetFilters()"
+        />
       </div>
     } @else {
       <app-transactions-pagination

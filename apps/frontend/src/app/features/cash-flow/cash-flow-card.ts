@@ -1,6 +1,8 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { formatAmount, formatBookingDate, formatMonth } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { TRANSACTION_TYPE_PLURAL_LABELS } from '../transactions/transaction-type';
 import { CashFlow } from './cash-flow.model';
 
@@ -12,7 +14,7 @@ import { CashFlow } from './cash-flow.model';
  */
 @Component({
   selector: 'app-cash-flow-card',
-  imports: [RouterLink],
+  imports: [Panel, RouterLink, SectionHeader],
   templateUrl: './cash-flow-card.html',
   styleUrl: './cash-flow-card.scss'
 })
@@ -26,6 +28,11 @@ export class CashFlowCard {
 
   /** Il saldo disponibile ha senso solo se l'utente ha indicato un punto di partenza. */
   protected readonly isConfigured = computed(() => this.cashFlow().balanceDate !== null);
+
+  protected readonly subtitle = computed(() => {
+    const balanceDate = this.cashFlow().balanceDate;
+    return balanceDate === null ? undefined : `Saldo noto al ${formatBookingDate(balanceDate)}`;
+  });
 
   /**
    * Il patrimonio si muove diversamente dal conto quando ci sono prelievi,

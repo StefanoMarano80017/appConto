@@ -2,6 +2,9 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
+import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
+import { SearchInput } from '../../shared/ui/search-input';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { MerchantFilter, filterMerchants } from './merchant-filter';
@@ -10,7 +13,7 @@ import { MerchantsApi } from './merchants.api';
 
 @Component({
   selector: 'app-merchants-page',
-  imports: [FormsModule],
+  imports: [FormsModule, Panel, SearchInput, SectionHeader],
   templateUrl: './merchants-page.html',
   styleUrl: './merchants-page.scss'
 })

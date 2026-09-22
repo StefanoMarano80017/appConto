@@ -1,0 +1,6 @@
+@for (chip of chips(); track chip.key) {
+  <button type="button" class="chip" (click)="removed.emit(chip.key)">
+    {{ chip.label }} <span aria-hidden="true">×</span>
+  </button>
+}
+<button type="button" class="clear" (click)="cleared.emit()">{{ clearLabel() }}</button>

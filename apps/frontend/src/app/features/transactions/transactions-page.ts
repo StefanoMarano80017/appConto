@@ -9,6 +9,8 @@ import { LoanLinks } from '../loans/loan.model';
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
 import { MerchantsApi } from '../merchants/merchants.api';
+import { EmptyState } from '../../shared/ui/empty-state';
+import { ErrorRetry } from '../../shared/ui/error-retry';
 import {
   TransactionQueryState,
   hasFilters,
@@ -37,7 +39,7 @@ const SKELETON_ROWS = 8;
  */
 @Component({
   selector: 'app-transactions-page',
-  imports: [TransactionsPagination, TransactionsTable, TransactionsToolbar],
+  imports: [EmptyState, ErrorRetry, TransactionsPagination, TransactionsTable, TransactionsToolbar],
   templateUrl: './transactions-page.html',
   styleUrl: './transactions-page.scss'
 })

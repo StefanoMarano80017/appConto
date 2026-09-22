@@ -1,0 +1,36 @@
+:host {
+  display: block;
+}
+
+input {
+  width: 100%;
+  font: inherit;
+  padding: 0.4375rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+
+  input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    outline: none;
+  }
+}
+
+.icon {
+  opacity: 0.6;
+}

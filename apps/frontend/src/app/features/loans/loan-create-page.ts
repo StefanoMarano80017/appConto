@@ -9,6 +9,9 @@ import { TRANSACTION_TYPE_LABELS } from '../transactions/transaction-type';
 import { TransactionsApi } from '../transactions/transactions.api';
 import { LoanFormErrors, LoanFormValue, validateLoanForm } from './loan-form';
 import { LoansApi } from './loans.api';
+import { Panel } from '../../shared/layout/panel';
+import { FormField } from '../../shared/ui/form-field';
+import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 
 /**
  * Creazione di un prestito a partire da un movimento.
@@ -22,7 +25,7 @@ import { LoansApi } from './loans.api';
  */
 @Component({
   selector: 'app-loan-create-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormField, FormsModule, Panel, RouterLink],
   templateUrl: './loan-create-page.html',
   styleUrl: './loan-detail-page.scss'
 })
@@ -48,6 +51,19 @@ export class LoanCreatePage implements OnInit {
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
   protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
+
+  protected readonly borrowerNameDescribedBy = computed(() =>
+    formFieldDescribedBy('borrowerName', { error: this.errors().borrowerName != null, hint: false })
+  );
+  protected readonly descriptionDescribedBy = computed(() =>
+    formFieldDescribedBy('description', { error: false, hint: true })
+  );
+  protected readonly amountDescribedBy = computed(() =>
+    formFieldDescribedBy('amount', { error: this.errors().amount != null, hint: true })
+  );
+  protected readonly lentAtDescribedBy = computed(() =>
+    formFieldDescribedBy('lentAt', { error: this.errors().lentAt != null, hint: false })
+  );
 
   /**
    * Il movimento indicato dall'indirizzo.

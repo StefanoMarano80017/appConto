@@ -1,7 +1,6 @@
-<section class="panel">
-  <div class="header">
-    <h2>Prestiti</h2>
-    <div class="totals">
+<app-panel>
+  <app-section-header title="Prestiti">
+    <div panelActions class="totals">
       <span class="figure">
         <span class="label">Prestato nel periodo</span>
         <span class="value">{{ formatAmount(loans().lent) }}</span>
@@ -11,7 +10,7 @@
         <span class="value">{{ loans().transactionCount }}</span>
       </span>
     </div>
-  </div>
+  </app-section-header>
 
   @if (loans().entries.length === 0) {
     <p class="message">Nessun prestito nel periodo selezionato.</p>
@@ -35,4 +34,4 @@
       Restituzioni e credito residuo si gestiscono nei <a routerLink="/loans">prestiti</a>.
     </p>
   }
-</section>
+</app-panel>

@@ -1,13 +1,6 @@
 @if (data(); as data) {
-  <section class="panel">
-    <div class="cards">
-      @for (kpi of kpis(); track kpi.label) {
-        <div class="card">
-          <span class="label">{{ kpi.label }}</span>
-          <span class="value" [class]="kpi.tone">{{ kpi.value }}</span>
-        </div>
-      }
-    </div>
+  <app-panel>
+    <app-stat-card-grid [items]="kpis()" />
     <p class="note">
       Il prestito dice quanto denaro devi ancora ricevere. Quanto è passato dal conto lo
       racconta la <a routerLink="/">liquidità</a>: sono due cose diverse.
@@ -15,17 +8,15 @@
     @if (loans.isLoading()) {
       <p class="message">Aggiornamento in corso…</p>
     }
-  </section>
+  </app-panel>
 }
 
-<section class="panel">
+<app-panel>
   <div class="toolbar">
-    <input
-      type="search"
-      class="search"
-      placeholder="Cerca una persona o una descrizione…"
+    <app-search-input
       [value]="searchText()"
-      (input)="onSearchTyped($any($event.target).value)"
+      placeholder="Cerca una persona o una descrizione…"
+      (valueChange)="onSearchTyped($event)"
     />
 
     <div class="filters" role="group" aria-label="Stato del prestito">
@@ -63,16 +54,18 @@
   </div>
 
   @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-    <button type="button" class="retry" (click)="loans.reload()">Riprova</button>
+    <app-error-retry [message]="message" (retry)="loans.reload()" />
   }
 
   @if (data(); as data) {
     @if (data.items.length === 0) {
       <div class="empty">
         @if (hasFilters()) {
-          <p class="message">Nessun prestito corrisponde ai criteri.</p>
-          <button type="button" class="retry" (click)="resetFilters()">Azzera filtri</button>
+          <app-empty-state
+            message="Nessun prestito corrisponde ai criteri."
+            actionLabel="Azzera filtri"
+            (action)="resetFilters()"
+          />
         } @else {
           <p class="message">Nessun prestito registrato.</p>
           <p class="hint">
@@ -131,9 +124,10 @@
                   {{ formatAmount(loan.remainingAmount) }}
                 </td>
                 <td>
-                  <span class="badge" [class]="loan.status.toLowerCase()">
-                    {{ statusLabels[loan.status] }}
-                  </span>
+                  <app-badge
+                    [label]="statusLabels[loan.status]"
+                    [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+                  />
                 </td>
               </tr>
             }
@@ -148,4 +142,4 @@
   } @else if (loans.isLoading()) {
     <p class="message">Caricamento in corso…</p>
   }
-</section>
+</app-panel>

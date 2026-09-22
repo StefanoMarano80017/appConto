@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { formatAmount, formatBookingDate } from '../../core/format';
+import { Panel } from '../../shared/layout/panel';
 import { CategoryBreakdown } from './dashboard.model';
 
 /** Larghezza minima della barra, perché anche un importo piccolo resti visibile. */
@@ -7,6 +8,7 @@ const MIN_BAR_WIDTH = 2;
 
 @Component({
   selector: 'app-category-breakdown',
+  imports: [Panel],
   templateUrl: './category-breakdown.html',
   styleUrl: './category-breakdown.scss'
 })

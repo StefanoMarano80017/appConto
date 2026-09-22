@@ -1,8 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { ThemeMode, ThemeStore } from '../../core/theme';
+import { FormField } from '../../shared/ui/form-field';
+import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 import { ResetPanel } from '../maintenance/reset-panel';
 import { SettingsApi } from './settings.api';
 import {
@@ -13,7 +15,7 @@ import {
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, ResetPanel, RouterLink],
+  imports: [FormsModule, FormField, ResetPanel, RouterLink],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss'
 })
@@ -34,6 +36,16 @@ export class SettingsPage implements OnInit {
   protected readonly saving = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly balanceDateDescribedBy = computed(() =>
+    formFieldDescribedBy('balanceDate', { error: this.errors().balanceDate != null, hint: true })
+  );
+  protected readonly initialBalanceDescribedBy = computed(() =>
+    formFieldDescribedBy('initialBalance', {
+      error: this.errors().initialBalance != null,
+      hint: true
+    })
+  );
 
   ngOnInit(): void {
     this.loading.set(true);

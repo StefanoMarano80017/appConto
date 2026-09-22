@@ -20,6 +20,12 @@ import {
 } from './loan-form';
 import { LOAN_STATUS_LABELS, LoanDetail } from './loan.model';
 import { LoansApi, loanRequest } from './loans.api';
+import { Panel } from '../../shared/layout/panel';
+import { Badge } from '../../shared/ui/badge';
+import { ErrorRetry } from '../../shared/ui/error-retry';
+import { FormField } from '../../shared/ui/form-field';
+import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
+import { StatCardGrid, StatCardItem } from '../../shared/ui/stat-card-grid';
 
 /** Il giorno corrente in formato `YYYY-MM-DD`: la data più probabile per una restituzione. */
 function today(): string {
@@ -54,7 +60,7 @@ const CANDIDATE_PAGE_SIZE = 100;
  */
 @Component({
   selector: 'app-loan-detail-page',
-  imports: [FormsModule, RouterLink],
+  imports: [Badge, ErrorRetry, FormField, FormsModule, Panel, RouterLink, StatCardGrid],
   templateUrl: './loan-detail-page.html',
   styleUrl: './loan-detail-page.scss'
 })
@@ -93,6 +99,19 @@ export class LoanDetailPage {
   /** I movimenti in entrata a cui la restituzione può essere collegata. */
   protected readonly repaymentCandidates = signal<Transaction[]>([]);
 
+  protected readonly repaymentAmountDescribedBy = computed(() =>
+    formFieldDescribedBy('repaymentAmount', { error: this.repaymentErrors().amount != null, hint: true })
+  );
+  protected readonly repaymentDateDescribedBy = computed(() =>
+    formFieldDescribedBy('repaymentDate', {
+      error: this.repaymentErrors().repaymentDate != null,
+      hint: false
+    })
+  );
+  protected readonly repaymentTransactionIdDescribedBy = computed(() =>
+    formFieldDescribedBy('repaymentTransactionId', { error: false, hint: true })
+  );
+
   protected readonly editing = signal(false);
   protected readonly loanForm = signal<LoanFormValue>({
     borrowerName: '',
@@ -102,6 +121,16 @@ export class LoanDetailPage {
   });
   protected readonly loanErrors = signal<LoanFormErrors>({});
 
+  protected readonly editBorrowerNameDescribedBy = computed(() =>
+    formFieldDescribedBy('editBorrowerName', { error: this.loanErrors().borrowerName != null, hint: false })
+  );
+  protected readonly editAmountDescribedBy = computed(() =>
+    formFieldDescribedBy('editAmount', { error: this.loanErrors().amount != null, hint: false })
+  );
+  protected readonly editLentAtDescribedBy = computed(() =>
+    formFieldDescribedBy('editLentAt', { error: this.loanErrors().lentAt != null, hint: false })
+  );
+
   /** L'eliminazione chiede una conferma sul posto, senza finestre di sistema. */
   protected readonly confirmingDelete = signal(false);
 
@@ -109,6 +138,18 @@ export class LoanDetailPage {
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
   protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
+
+  protected summaryCards(loan: LoanDetail): StatCardItem[] {
+    return [
+      { label: 'Importo originale', value: formatAmount(loan.amount), tone: 'neutral' },
+      { label: 'Restituito', value: formatAmount(loan.repaidAmount), tone: 'positive' },
+      {
+        label: 'Residuo',
+        value: formatAmount(loan.remainingAmount),
+        tone: loan.remainingAmount > 0 ? 'negative' : 'positive'
+      }
+    ];
+  }
 
   /** Quanto del movimento d'origine è credito: la barra della ripartizione. */
   protected readonly lentPercent = computed(() => {

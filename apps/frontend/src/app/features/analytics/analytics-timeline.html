@@ -1,24 +1,13 @@
-<section class="panel">
-  <div class="header">
-    <div>
-      <h2>Andamento nel tempo</h2>
-      <p class="subtitle">
-        Stessi movimenti del resto della pagina, raggruppati per
-        {{ granularity() === 'day' ? 'giorno' : granularity() === 'week' ? 'settimana' : 'mese' }}.
-      </p>
-    </div>
-
-    <div class="steps" role="group" aria-label="Passo dell'andamento">
-      @for (step of granularities; track step.id) {
-        <button
-          type="button"
-          [class.active]="granularity() === step.id"
-          [attr.aria-pressed]="granularity() === step.id"
-          (click)="granularitySelected.emit(step.id)"
-        >{{ step.label }}</button>
-      }
-    </div>
-  </div>
+<app-panel>
+  <app-section-header title="Andamento nel tempo" [subtitle]="subtitle()">
+    <app-segmented-control
+      panelActions
+      [options]="granularities"
+      [value]="granularity()"
+      ariaLabel="Passo dell'andamento"
+      (valueChange)="granularitySelected.emit($event)"
+    />
+  </app-section-header>
 
   @if (buckets().length === 0) {
     <p class="message">Nessun movimento nel periodo selezionato.</p>
@@ -202,4 +191,4 @@
       </div>
     }
   }
-</section>
+</app-panel>

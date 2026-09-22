@@ -1,4 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
+import { FormField } from '../../shared/ui/form-field';
+import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 import {
   ColumnMappingErrors,
   ColumnMappingFormValue,
@@ -18,6 +20,7 @@ import {
  */
 @Component({
   selector: 'app-column-picker',
+  imports: [FormField],
   templateUrl: './column-picker.html',
   styleUrl: './column-picker.scss'
 })
@@ -26,6 +29,16 @@ export class ColumnPicker {
   readonly form = input.required<ColumnMappingFormValue>();
   readonly errors = input.required<ColumnMappingErrors>();
   readonly changed = output<ColumnMappingFormValue>();
+
+  protected readonly bookingDateDescribedBy = computed(() =>
+    formFieldDescribedBy('bookingDate', { error: this.errors().bookingDate != null, hint: false })
+  );
+  protected readonly descriptionDescribedBy = computed(() =>
+    formFieldDescribedBy('description', { error: this.errors().description != null, hint: false })
+  );
+  protected readonly typeHintDescribedBy = computed(() =>
+    formFieldDescribedBy('typeHint', { error: false, hint: true })
+  );
 
   /** Primo valore non vuoto della colonna, fra le righe dell'anteprima. */
   protected example(column: string): string {

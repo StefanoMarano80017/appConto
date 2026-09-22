@@ -201,7 +201,7 @@ describe('AnalyticsTimeline', () => {
     const emitted: TimelineGranularity[] = [];
     fixture.componentInstance.granularitySelected.subscribe((step) => emitted.push(step));
 
-    [...host().querySelectorAll<HTMLButtonElement>('.steps button')]
+    [...host().querySelectorAll<HTMLButtonElement>('app-segmented-control button')]
       .find((button) => button.textContent?.includes('Mese'))
       ?.click();
 

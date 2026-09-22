@@ -16,6 +16,12 @@ import {
 } from './loan-query';
 import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
+import { Panel } from '../../shared/layout/panel';
+import { Badge } from '../../shared/ui/badge';
+import { EmptyState } from '../../shared/ui/empty-state';
+import { ErrorRetry } from '../../shared/ui/error-retry';
+import { SearchInput } from '../../shared/ui/search-input';
+import { StatCardGrid } from '../../shared/ui/stat-card-grid';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -47,7 +53,7 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
  */
 @Component({
   selector: 'app-loans-page',
-  imports: [RouterLink],
+  imports: [Badge, EmptyState, ErrorRetry, Panel, RouterLink, SearchInput, StatCardGrid],
   templateUrl: './loans-page.html',
   styleUrl: './loans-page.scss'
 })

@@ -10,59 +10,6 @@
  * I valori stanno in `styles.scss`, insieme a quelli della modalità notte: là
  * sono scelti sul fondo scuro e verificati lì, non ricavati da questi.
  */
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-
-  h2 {
-    margin: 0;
-    font-size: 1.125rem;
-  }
-}
-
-.subtitle {
-  margin: 0.125rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.steps {
-  display: flex;
-  gap: 0.25rem;
-
-  button {
-    padding: 0.3125rem 0.6875rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text-muted);
-    font: inherit;
-    font-size: 0.8125rem;
-    cursor: pointer;
-  }
-
-  button:hover {
-    color: var(--text);
-  }
-
-  button.active {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--surface);
-  }
-}
-
 .legend {
   display: flex;
   flex-wrap: wrap;

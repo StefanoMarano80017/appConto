@@ -3,10 +3,9 @@
 </nav>
 
 @if (loadError(); as message) {
-  <section class="panel">
-    <p class="message error">{{ message }}</p>
-    <button type="button" class="retry" (click)="loan.reload()">Riprova</button>
-  </section>
+  <app-panel>
+    <app-error-retry [message]="message" (retry)="loan.reload()" />
+  </app-panel>
 }
 
 @if (data(); as loan) {
@@ -17,25 +16,13 @@
         <p class="subtitle">{{ loan.description ?? 'Nessuna descrizione' }}</p>
         <p class="lent-at">Prestato il {{ formatBookingDate(loan.lentAt) }}</p>
       </div>
-      <span class="badge" [class]="loan.status.toLowerCase()">{{ statusLabels[loan.status] }}</span>
+      <app-badge
+        [label]="statusLabels[loan.status]"
+        [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+      />
     </div>
 
-    <div class="cards">
-      <div class="card">
-        <span class="label">Importo originale</span>
-        <span class="value">{{ formatAmount(loan.amount) }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Restituito</span>
-        <span class="value positive">{{ formatAmount(loan.repaidAmount) }}</span>
-      </div>
-      <div class="card">
-        <span class="label">Residuo</span>
-        <span class="value" [class]="loan.remainingAmount > 0 ? 'negative' : 'positive'">
-          {{ formatAmount(loan.remainingAmount) }}
-        </span>
-      </div>
-    </div>
+    <app-stat-card-grid [items]="summaryCards(loan)" />
 
     <div
       class="progress"
@@ -84,60 +71,54 @@
 
     @if (editing()) {
       <form class="loan-form inline" (ngSubmit)="saveLoan()">
-        <label>
-          <span class="field-label">Persona</span>
+        <app-form-field [id]="'editBorrowerName'" label="Persona" [error]="loanErrors().borrowerName">
           <input
             type="text"
+            id="editBorrowerName"
             name="editBorrowerName"
             autocomplete="off"
             [ngModel]="loanForm().borrowerName"
             (ngModelChange)="updateLoanField('borrowerName', $event)"
             [attr.aria-invalid]="loanErrors().borrowerName ? 'true' : null"
+            [attr.aria-describedby]="editBorrowerNameDescribedBy()"
           />
-          @if (loanErrors().borrowerName; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Descrizione</span>
+        <app-form-field [id]="'editDescription'" label="Descrizione">
           <input
             type="text"
+            id="editDescription"
             name="editDescription"
             autocomplete="off"
             [ngModel]="loanForm().description"
             (ngModelChange)="updateLoanField('description', $event)"
           />
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Importo</span>
+        <app-form-field [id]="'editAmount'" label="Importo" [error]="loanErrors().amount">
           <input
             type="text"
             inputmode="decimal"
+            id="editAmount"
             name="editAmount"
             [ngModel]="loanForm().amount"
             (ngModelChange)="updateLoanField('amount', $event)"
             [attr.aria-invalid]="loanErrors().amount ? 'true' : null"
+            [attr.aria-describedby]="editAmountDescribedBy()"
           />
-          @if (loanErrors().amount; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Data</span>
+        <app-form-field [id]="'editLentAt'" label="Data" [error]="loanErrors().lentAt">
           <input
             type="date"
+            id="editLentAt"
             name="editLentAt"
             [ngModel]="loanForm().lentAt"
             (ngModelChange)="updateLoanField('lentAt', $event)"
             [attr.aria-invalid]="loanErrors().lentAt ? 'true' : null"
+            [attr.aria-describedby]="editLentAtDescribedBy()"
           />
-          @if (loanErrors().lentAt; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
         <div class="actions">
           <button type="submit" [disabled]="saving()">Salva</button>
@@ -147,7 +128,7 @@
     }
   </section>
 
-  <section class="panel">
+  <app-panel>
     <h3>Movimento d'origine</h3>
 
     @if (loan.transaction; as transaction) {
@@ -202,9 +183,9 @@
     } @else {
       <p class="message">Il movimento d'origine non è più in archivio.</p>
     }
-  </section>
+  </app-panel>
 
-  <section class="panel">
+  <app-panel>
     <div class="header">
       <h3>Storico restituzioni</h3>
       @if (!addingRepayment() && loan.remainingAmount > 0) {
@@ -216,57 +197,60 @@
 
     @if (addingRepayment()) {
       <form class="loan-form inline" (ngSubmit)="saveRepayment()">
-        <label>
-          <span class="field-label">Importo</span>
+        <app-form-field
+          [id]="'repaymentAmount'"
+          label="Importo"
+          [error]="repaymentErrors().amount"
+          [hint]="'Restano da ricevere ' + formatAmount(loan.remainingAmount) + '.'"
+        >
           <input
             type="text"
             inputmode="decimal"
+            id="repaymentAmount"
             name="repaymentAmount"
             placeholder="0,00"
             [ngModel]="repaymentForm().amount"
             (ngModelChange)="updateRepaymentField('amount', $event)"
             [attr.aria-invalid]="repaymentErrors().amount ? 'true' : null"
+            [attr.aria-describedby]="repaymentAmountDescribedBy()"
           />
-          @if (repaymentErrors().amount; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-          <span class="field-hint">
-            Restano da ricevere {{ formatAmount(loan.remainingAmount) }}.
-          </span>
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Data</span>
+        <app-form-field [id]="'repaymentDate'" label="Data" [error]="repaymentErrors().repaymentDate">
           <input
             type="date"
+            id="repaymentDate"
             name="repaymentDate"
             [ngModel]="repaymentForm().repaymentDate"
             (ngModelChange)="updateRepaymentField('repaymentDate', $event)"
             [attr.aria-invalid]="repaymentErrors().repaymentDate ? 'true' : null"
+            [attr.aria-describedby]="repaymentDateDescribedBy()"
           />
-          @if (repaymentErrors().repaymentDate; as message) {
-            <span class="field-error">{{ message }}</span>
-          }
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Nota</span>
+        <app-form-field [id]="'repaymentNote'" label="Nota">
           <input
             type="text"
+            id="repaymentNote"
             name="repaymentNote"
             placeholder="in contanti"
             autocomplete="off"
             [ngModel]="repaymentForm().note"
             (ngModelChange)="updateRepaymentField('note', $event)"
           />
-        </label>
+        </app-form-field>
 
-        <label>
-          <span class="field-label">Movimento collegato</span>
+        <app-form-field
+          [id]="'repaymentTransactionId'"
+          label="Movimento collegato"
+          hint="Se il denaro è arrivato con un bonifico, scegli il movimento: resta l'entrata che è, il collegamento aggiunge solo il significato. Se è stato restituito in contanti lascia «Contanti» — il conto non è stato toccato e non deve sembrare il contrario."
+        >
           <select
+            id="repaymentTransactionId"
             name="repaymentTransactionId"
             [ngModel]="repaymentForm().transactionId"
             (ngModelChange)="updateRepaymentField('transactionId', $event)"
+            [attr.aria-describedby]="repaymentTransactionIdDescribedBy()"
           >
             <option value="">Contanti — nessun movimento bancario</option>
             @for (candidate of repaymentCandidates(); track candidate.id) {
@@ -276,12 +260,7 @@
               </option>
             }
           </select>
-          <span class="field-hint">
-            Se il denaro è arrivato con un bonifico, scegli il movimento: resta l'entrata che
-            è, il collegamento aggiunge solo il significato. Se è stato restituito in contanti
-            lascia «Contanti» — il conto non è stato toccato e non deve sembrare il contrario.
-          </span>
-        </label>
+        </app-form-field>
 
         <div class="actions">
           <button type="submit" [disabled]="saving()">Registra</button>
@@ -337,9 +316,9 @@
         </table>
       </div>
     }
-  </section>
+  </app-panel>
 } @else if (loan.isLoading()) {
-  <section class="panel">
+  <app-panel>
     <p class="message">Caricamento in corso…</p>
-  </section>
+  </app-panel>
 }

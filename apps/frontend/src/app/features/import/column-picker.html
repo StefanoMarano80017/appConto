@@ -1,10 +1,11 @@
 <div class="picker">
-  <label>
-    <span class="field-label">Data</span>
+  <app-form-field [id]="'bookingDate'" label="Data" [error]="errors().bookingDate">
     <select
+      id="bookingDate"
       [value]="form().bookingDate"
       (change)="update('bookingDate', $any($event.target).value)"
       [attr.aria-invalid]="errors().bookingDate ? 'true' : null"
+      [attr.aria-describedby]="bookingDateDescribedBy()"
     >
       <option value="">— scegli la colonna —</option>
       @for (header of analysis().headers; track header) {
@@ -14,17 +15,15 @@
     @if (example(form().bookingDate); as value) {
       <span class="example">es. {{ value }}</span>
     }
-    @if (errors().bookingDate; as message) {
-      <span class="field-error">{{ message }}</span>
-    }
-  </label>
+  </app-form-field>
 
-  <label>
-    <span class="field-label">Descrizione</span>
+  <app-form-field [id]="'description'" label="Descrizione" [error]="errors().description">
     <select
+      id="description"
       [value]="form().description"
       (change)="update('description', $any($event.target).value)"
       [attr.aria-invalid]="errors().description ? 'true' : null"
+      [attr.aria-describedby]="descriptionDescribedBy()"
     >
       <option value="">— scegli la colonna —</option>
       @for (header of analysis().headers; track header) {
@@ -34,10 +33,7 @@
     @if (example(form().description); as value) {
       <span class="example">es. {{ value }}</span>
     }
-    @if (errors().description; as message) {
-      <span class="field-error">{{ message }}</span>
-    }
-  </label>
+  </app-form-field>
 
   <fieldset class="amount">
     <legend class="field-label">Importo</legend>
@@ -110,9 +106,17 @@
     }
   </fieldset>
 
-  <label>
-    <span class="field-label">Tipo movimento</span>
-    <select [value]="form().typeHint" (change)="update('typeHint', $any($event.target).value)">
+  <app-form-field
+    [id]="'typeHint'"
+    label="Tipo movimento"
+    hint="Facoltativa: distingue prelievi e accrediti. Senza, decide il segno dell'importo."
+  >
+    <select
+      id="typeHint"
+      [value]="form().typeHint"
+      (change)="update('typeHint', $any($event.target).value)"
+      [attr.aria-describedby]="typeHintDescribedBy()"
+    >
       <option value="">Nessuna colonna</option>
       @for (header of analysis().headers; track header) {
         <option [value]="header">{{ header }}</option>
@@ -121,8 +125,5 @@
     @if (example(form().typeHint); as value) {
       <span class="example">es. {{ value }}</span>
     }
-    <span class="field-hint">
-      Facoltativa: distingue prelievi e accrediti. Senza, decide il segno dell'importo.
-    </span>
-  </label>
+  </app-form-field>
 </div>

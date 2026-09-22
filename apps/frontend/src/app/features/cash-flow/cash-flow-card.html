@@ -1,10 +1,5 @@
-<section class="panel cash-flow">
-  <div class="header">
-    <h2>Liquidità</h2>
-    @if (cashFlow().balanceDate; as balanceDate) {
-      <p class="subtitle">Saldo noto al {{ formatBookingDate(balanceDate) }}</p>
-    }
-  </div>
+<app-panel>
+  <app-section-header title="Liquidità" [subtitle]="subtitle()" />
 
   <dl class="calculation">
     <div class="row">
@@ -64,4 +59,4 @@
       </ul>
     </details>
   }
-</section>
+</app-panel>
