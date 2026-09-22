@@ -178,3 +178,49 @@ describe('modifica di una categoria', () => {
     );
   });
 });
+
+describe('eliminazione di una categoria', () => {
+  it('elimina una categoria senza merchant assegnati', () => {
+    const categoria = categoriesService.create({ name: 'Da eliminare', color: null });
+
+    categoriesService.remove(categoria.id);
+
+    assert.equal(categoriesService.findById(categoria.id), null);
+  });
+
+  it('riassegna a «Da classificare» i merchant della categoria eliminata', () => {
+    const categoria = categoriesService.create({ name: 'Con merchant da riassegnare', color: null });
+    importService.importCsv(
+      ['Data contabile,Descrizione,Importo', '02/05/2026,ESERCENTE RIASSEGNATO,-5.00'].join('\r\n'),
+    );
+    const merchant = merchantsService.listAll().find((m) => m.name === 'ESERCENTE RIASSEGNATO');
+    assert.ok(merchant);
+    merchantsService.assignCategory(merchant.id, categoria.id);
+
+    categoriesService.remove(categoria.id);
+
+    const aggiornato = merchantsService.listAll().find((m) => m.id === merchant.id);
+    assert.equal(aggiornato?.categoryId, FALLBACK_CATEGORY_ID);
+    assert.equal(categoriesService.findById(categoria.id), null);
+  });
+
+  it('non permette di eliminare «Da classificare»', () => {
+    assert.throws(
+      () => categoriesService.remove(FALLBACK_CATEGORY_ID),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+
+  it('lancia NotFoundError per un id inesistente', () => {
+    assert.throws(
+      () => categoriesService.remove('id-che-non-esiste'),
+      (error: unknown) => {
+        assert.ok(error instanceof NotFoundError);
+        return true;
+      },
+    );
+  });
+});

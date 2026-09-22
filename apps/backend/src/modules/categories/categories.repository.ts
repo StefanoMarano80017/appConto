@@ -49,4 +49,13 @@ export const categoriesRepository = {
 
     return row?.total ?? 0;
   },
+
+  remove(id: string): void {
+    db.delete(categories).where(eq(categories.id, id)).run();
+  },
+
+  /** Sposta tutti i merchant di `fromId` su `toId`. */
+  reassignMerchants(fromId: string, toId: string): void {
+    db.update(merchants).set({ categoryId: toId }).where(eq(merchants.categoryId, fromId)).run();
+  },
 };

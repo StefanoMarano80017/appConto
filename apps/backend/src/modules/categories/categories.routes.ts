@@ -73,3 +73,12 @@ categoriesRouter.patch('/:id', json(), (req, res) => {
 
   res.json(toCategoryWithUsageDto({ ...updated, merchantCount }));
 });
+
+// DELETE /categories/:id
+categoriesRouter.delete('/:id', (req, res) => {
+  const id = categoryId(req.params.id);
+
+  categoriesService.remove(id);
+
+  res.status(204).send();
+});

@@ -1,3 +1,4 @@
+import { atomically } from '../../db/client.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import { type Category, type CategoryWithUsage, type NewCategory, createCategory } from './category.model.js';
 import { categoriesRepository } from './categories.repository.js';
@@ -80,5 +81,18 @@ export const categoriesService = {
     categoriesRepository.update(id, nextPatch);
 
     return { ...category, ...nextPatch };
+  },
+
+  remove(id: string): void {
+    requireCategory(id);
+
+    if (id === FALLBACK_CATEGORY_ID) {
+      throw new ConflictError('«Da classificare» non può essere eliminata.');
+    }
+
+    atomically(() => {
+      categoriesRepository.reassignMerchants(id, FALLBACK_CATEGORY_ID);
+      categoriesRepository.remove(id);
+    });
   },
 };
