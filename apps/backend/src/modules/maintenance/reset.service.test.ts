@@ -37,7 +37,6 @@ const { settingsService } = await import('../settings/index.js');
 const { loansService, DEFAULT_LOAN_QUERY } = await import('../loans/index.js');
 const { backupService } = await import('./backup.service.js');
 const { resetService, userTables } = await import('./reset.service.js');
-const { CATEGORY_SEED } = await import('../categories/categories.seed.js');
 const { PENDING_RESTORE_FILE } = await import('./restore-pending.js');
 const { ConflictError } = await import('../../shared/errors.js');
 
@@ -76,7 +75,8 @@ function contiDiUnArchivioNuovo(): Record<string, number> {
         sql`select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name`,
       )
       .map((row) => row.name)
-      .filter((name) => !name.startsWith('__'));
+      .filter((name) => !name.startsWith('__'))
+      .filter((name) => name !== 'categories');
 
     const conti: Record<string, number> = {};
     for (const tabella of tabelle) {
@@ -97,7 +97,6 @@ function contiAttuali(): Record<string, number> {
   const prestiti = loansService.list(DEFAULT_LOAN_QUERY).items;
 
   return {
-    categories: categoriesService.listAll().length,
     loan_repayments: prestiti.reduce((totale, prestito) => totale + prestito.repaymentCount, 0),
     loans: prestiti.length,
     merchants: merchantsService.listAllWithCategory().length,
@@ -138,6 +137,11 @@ function riempi(): void {
   });
 
   settingsService.update({ initialBalance: 1234.56, balanceDate: '2026-01-01' });
+
+  // Crea la categoria solo se non esiste già (possono sopravvivere a reset precedenti)
+  if (!categoriesService.listAll().some((c) => c.name === 'Categoria di prova')) {
+    categoriesService.create({ name: 'Categoria di prova', color: '#123456' });
+  }
 }
 
 describe('isolamento del test', () => {
@@ -148,18 +152,20 @@ describe('isolamento del test', () => {
 });
 
 describe('le tabelle da svuotare', () => {
-  it('vengono chieste al database, e non comprendono quelle di servizio', () => {
+  it('vengono chieste al database, e non comprendono quelle di servizio né le categorie', () => {
     const tabelle = userTables();
 
     assert.ok(tabelle.includes('transactions'));
     assert.ok(tabelle.includes('merchants'));
-    assert.ok(tabelle.includes('categories'));
     assert.ok(tabelle.includes('loans'));
     assert.ok(tabelle.includes('loan_repayments'));
     assert.ok(tabelle.includes('settings'));
     // Il registro delle migrazioni non è un dato dell'utente: azzerare i dati
     // non è tornare a una versione precedente del programma.
     assert.ok(!tabelle.some((nome) => nome.startsWith('__')));
+    // Le categorie sono configurazione stabile gestita a runtime, non dato
+    // utente: il reset non le tocca.
+    assert.ok(!tabelle.includes('categories'));
   });
 });
 
@@ -179,7 +185,6 @@ describe('azzeramento', () => {
     assert.equal(esito.removed.transactions, pieno.transactions);
     assert.equal(esito.removed.loans, pieno.loans);
     assert.equal(esito.removed.merchants, pieno.merchants);
-    assert.equal(esito.seededCategories, CATEGORY_SEED.length);
 
     // E l'archivio è indistinguibile da uno nuovo, tabella per tabella.
     assert.deepEqual(contiAttuali(), contiDiUnArchivioNuovo());
@@ -188,14 +193,13 @@ describe('azzeramento', () => {
     assert.deepEqual(databaseSchema(), schemaPrima);
   });
 
-  it('le categorie iniziali sono quelle del seed, con gli stessi identificativi', () => {
+  it('le categorie, incluse quelle create dall-utente, sopravvivono all-azzeramento', () => {
     const categorie = categoriesService.listAll();
 
-    assert.equal(categorie.length, CATEGORY_SEED.length);
-    assert.deepEqual(
-      categorie.map((categoria) => categoria.id).sort(),
-      CATEGORY_SEED.map((categoria) => categoria.id).sort(),
-    );
+    // La categoria di prova creata da riempi() prima del reset è ancora qui.
+    assert.ok(categorie.some((categoria) => categoria.name === 'Categoria di prova'));
+    // E le ventiquattro del seed di partenza ci sono ancora tutte.
+    assert.ok(categorie.length >= 25);
   });
 
   it('le impostazioni tornano a saldo di partenza sconosciuto', () => {
@@ -227,8 +231,6 @@ describe('azzeramento', () => {
     const esito = resetService.run(new Date('2026-09-02T15:01:00'));
 
     assert.equal(esito.removed.transactions, 0);
-    // Le categorie c'erano — quelle del seed — e vengono rimesse.
-    assert.equal(esito.removed.categories, CATEGORY_SEED.length);
     assert.deepEqual(contiAttuali(), contiDiUnArchivioNuovo());
   });
 

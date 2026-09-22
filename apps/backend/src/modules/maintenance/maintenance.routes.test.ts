@@ -391,13 +391,11 @@ describe('POST /api/reset', () => {
     const corpo = JSON.parse(risposta.body) as {
       backupName: string;
       removed: Record<string, number>;
-      seededCategories: number;
       message: string;
     };
 
     assert.match(corpo.backupName, /^pre-reset-\d{8}-\d{6}\.sqlite$/);
     assert.equal(corpo.removed.transactions, primaTransazioni);
-    assert.equal(corpo.seededCategories, 24);
     // Il messaggio nomina la copia: è l'unica informazione che serve a chi ha
     // cambiato idea.
     assert.match(corpo.message, new RegExp(corpo.backupName.replace(/\./g, '\\.')));

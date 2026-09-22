@@ -3,7 +3,6 @@ import { config } from '../../config.js';
 import { atomically, db, vacuum } from '../../db/client.js';
 import { ConflictError } from '../../shared/errors.js';
 import { logger } from '../../shared/logger.js';
-import { CATEGORY_SEED } from '../categories/categories.seed.js';
 import { SETTINGS_ID } from '../settings/settings.schema.js';
 import { backupService } from './backup.service.js';
 import { readPendingRestore } from './restore-pending.js';
@@ -28,13 +27,15 @@ import { readPendingRestore } from './restore-pending.js';
  * a una versione precedente del programma, e riapplicare le migrazioni non
  * avrebbe senso. I **backup** restano tutti dove sono — compreso quello appena
  * creato, che la ritenzione non elimina mai. I **log** restano: raccontano
- * anche questo azzeramento.
+ * anche questo azzeramento. Le **categorie** restano, incluse quelle create o
+ * modificate dall'utente: da quando sono gestite a runtime non sono più un
+ * dato da riportare al primo avvio.
  *
  * ## Cosa torna come al primo avvio
  *
- * Ogni tabella dell'applicazione viene svuotata, e le righe che una
- * installazione nuova ha vengono reinserite: le ventidue categorie iniziali e
- * l'unica riga delle impostazioni, con saldo di partenza sconosciuto.
+ * Ogni tabella dell'applicazione (categorie escluse) viene svuotata, e le
+ * righe che una installazione nuova ha vengono reinserite: l'unica riga delle
+ * impostazioni, con saldo di partenza sconosciuto.
  */
 
 /** L'archivio non è stato azzerato. */
@@ -45,7 +46,6 @@ export interface ResetOutcome {
   readonly backupName: string;
   /** Quante righe sono state eliminate, per tabella. */
   readonly removed: Record<string, number>;
-  readonly seededCategories: number;
 }
 
 /**
@@ -58,13 +58,20 @@ export interface ResetOutcome {
  * Le tabelle di servizio sono escluse con la stessa regola usata dal manifest
  * dei backup: il doppio trattino basso non è un dato dell'utente. È anche ciò
  * che protegge `__drizzle_migrations`, cioè la versione dello schema.
+ *
+ * `categories` è l'unica eccezione elencata a mano: da quando è gestita a
+ * runtime (creazione, modifica, eliminazione dall'utente) non è più un dato da
+ * azzerare, ma configurazione stabile — allo stesso titolo dello schema.
  */
 export function userTables(): string[] {
   const rows = db.all<{ name: string }>(
     sql`select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name`,
   );
 
-  return rows.map((row) => row.name).filter((name) => !name.startsWith('__'));
+  return rows
+    .map((row) => row.name)
+    .filter((name) => !name.startsWith('__'))
+    .filter((name) => name !== 'categories');
 }
 
 /** Quante righe contiene una tabella. */
@@ -137,12 +144,6 @@ export const resetService = {
         db.run(sql`delete from ${sql.identifier(table)}`);
       }
 
-      for (const category of CATEGORY_SEED) {
-        db.run(
-          sql`insert into categories (id, name, color) values (${category.id}, ${category.name}, ${category.color})`,
-        );
-      }
-
       // La riga unica delle impostazioni, come la crea la migrazione: saldo di
       // partenza sconosciuto.
       db.run(
@@ -161,6 +162,6 @@ export const resetService = {
 
     logger.info('Archivio azzerato', { backup: backupName, eliminate: removed });
 
-    return { backupName, removed, seededCategories: CATEGORY_SEED.length };
+    return { backupName, removed };
   },
 };
