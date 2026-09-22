@@ -28,6 +28,9 @@ export class CategoriesPage implements OnInit {
 
   protected readonly savingId = signal<string | null>(null);
 
+  protected readonly confirmingDeleteId = signal<string | null>(null);
+  protected readonly deleting = signal(false);
+
   ngOnInit(): void {
     this.load();
   }
@@ -108,6 +111,33 @@ export class CategoriesPage implements OnInit {
         this.error.set(toErrorMessage(error));
         this.savingId.set(null);
         this.load();
+      }
+    });
+  }
+
+  protected askDelete(id: string): void {
+    this.error.set(null);
+    this.confirmingDeleteId.set(id);
+  }
+
+  protected cancelDelete(): void {
+    this.confirmingDeleteId.set(null);
+  }
+
+  protected deleteCategory(category: CategoryWithUsage): void {
+    this.deleting.set(true);
+    this.error.set(null);
+
+    this.api.delete(category.id).subscribe({
+      next: () => {
+        this.categories.update((categories) => categories.filter((c) => c.id !== category.id));
+        this.deleting.set(false);
+        this.confirmingDeleteId.set(null);
+      },
+      error: (error: unknown) => {
+        this.error.set(toErrorMessage(error));
+        this.deleting.set(false);
+        this.confirmingDeleteId.set(null);
       }
     });
   }

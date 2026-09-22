@@ -46,6 +46,7 @@
           <th scope="col">Nome</th>
           <th scope="col">Colore</th>
           <th scope="col" class="numeric">Merchant assegnati</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
@@ -75,6 +76,30 @@
               />
             </td>
             <td class="numeric">{{ category.merchantCount }}</td>
+            <td class="actions">
+              @if (!isProtected(category.id)) {
+                @if (confirmingDeleteId() === category.id) {
+                  <span class="ask">
+                    {{ category.merchantCount }}
+                    {{ category.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
+                    su «Da classificare». Eliminare?
+                  </span>
+                  <button
+                    type="button"
+                    class="danger confirm-delete"
+                    [disabled]="deleting()"
+                    (click)="deleteCategory(category)"
+                  >
+                    {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+                  </button>
+                  <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
+                    Annulla
+                  </button>
+                } @else {
+                  <button type="button" class="danger" (click)="askDelete(category.id)">Elimina</button>
+                }
+              }
+            </td>
           </tr>
         }
       </tbody>

@@ -137,4 +137,55 @@ describe('CategoriesPage', () => {
 
     expect(fixture.nativeElement.querySelector('input.rename')).toBeNull();
   });
+
+  it('chiede conferma prima di eliminare, mostrando quanti merchant verranno riassegnati', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category({ merchantCount: 3 })]);
+
+    (fixture.nativeElement.querySelector('button.danger') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('3');
+    expect(fixture.nativeElement.querySelector('button.confirm-delete')).not.toBeNull();
+    http.expectNone(`${API_BASE_URL}/categories/c-1`);
+  });
+
+  it('elimina la categoria alla conferma', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category()]);
+
+    (fixture.nativeElement.querySelector('button.danger') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('button.confirm-delete') as HTMLButtonElement).click();
+
+    const request = http.expectOne(`${API_BASE_URL}/categories/c-1`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.textContent as string)).not.toContain('Alimentari');
+  });
+
+  it('annulla senza eliminare', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category()]);
+
+    (fixture.nativeElement.querySelector('button.danger') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('button.ghost') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('button.confirm-delete')).toBeNull();
+    http.expectNone(`${API_BASE_URL}/categories/c-1`);
+  });
+
+  it('non permette di eliminare «Da classificare»', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category({ id: 'c9bfcd74-e342-4a3f-8b0c-116f89236d51', name: 'Da classificare' })]);
+
+    expect(fixture.nativeElement.querySelector('button.danger')).toBeNull();
+  });
 });

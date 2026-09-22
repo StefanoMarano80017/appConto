@@ -95,4 +95,34 @@
   tr.saving {
     opacity: 0.6;
   }
+
+  .actions {
+    white-space: nowrap;
+    text-align: right;
+
+    .ask {
+      margin-right: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    button {
+      padding: 0.3125rem 0.625rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      margin-left: 0.375rem;
+    }
+
+    button.danger {
+      border: 1px solid var(--negative);
+      background: transparent;
+      color: var(--negative);
+    }
+
+    button.ghost {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+    }
+  }
 }
