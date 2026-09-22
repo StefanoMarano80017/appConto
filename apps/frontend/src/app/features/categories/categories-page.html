@@ -1,0 +1,39 @@
+<app-panel>
+  <app-section-header
+    title="Categorie"
+    subtitle="Crea, rinomina o elimina le categorie di spesa."
+  >
+    <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
+  </app-section-header>
+
+  @if (error(); as message) {
+    <p class="message error">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="message">Caricamento in corso…</p>
+  } @else if (categories().length === 0) {
+    <p class="message">Nessuna categoria.</p>
+  } @else {
+    <table class="categories">
+      <thead>
+        <tr>
+          <th scope="col">Nome</th>
+          <th scope="col">Colore</th>
+          <th scope="col" class="numeric">Merchant assegnati</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (category of categories(); track category.id) {
+          <tr>
+            <td class="name">{{ category.name }}</td>
+            <td class="color">
+              <span class="swatch" [style.background]="category.color ?? 'var(--text-muted)'"></span>
+            </td>
+            <td class="numeric">{{ category.merchantCount }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</app-panel>

@@ -10,7 +10,6 @@ export function toErrorMessage(error: unknown): string {
     if (error.status === 0) {
       return 'Backend non raggiungibile. Verifica che l\'applicazione sia in esecuzione.';
     }
-    return error.message;
   }
 
   return 'Si è verificato un errore imprevisto.';

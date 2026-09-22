@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { AnalyticsPage } from './features/analytics/analytics-page';
+import { CategoriesPage } from './features/categories/categories-page';
 import { DashboardPage } from './features/dashboard/dashboard-page';
 import { ImportPage } from './features/import/import-page';
 import { LoanCreatePage } from './features/loans/loan-create-page';
@@ -41,15 +42,20 @@ export const routes: Routes = [
     component: LoanDetailPage,
     title: 'Prestito'
   },
-  { 
-    path: 'merchants', 
-    component: MerchantsPage, 
-    title: 'Merchant' 
+  {
+    path: 'merchants',
+    component: MerchantsPage,
+    title: 'Merchant'
   },
-  { 
-    path: 'import', 
-    component: ImportPage, 
-    title: 'Import CSV' 
+  {
+    path: 'categories',
+    component: CategoriesPage,
+    title: 'Categorie'
+  },
+  {
+    path: 'import',
+    component: ImportPage,
+    title: 'Import CSV'
   },
   { 
     path: 'settings', 

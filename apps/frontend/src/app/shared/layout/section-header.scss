@@ -1,0 +1,17 @@
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+}
+
+.subtitle {
+  margin: 0.125rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
