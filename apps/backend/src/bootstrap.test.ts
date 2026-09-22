@@ -158,7 +158,7 @@ describe('primo avvio su un archivio nuovo', () => {
     assert.equal(esito.kind, 'inizializzato');
     assert.deepEqual(databaseSchema(), readAppSchema(migrazioniReali));
     assert.deepEqual(backupPreMigrazione(), [], 'niente da proteggere in un archivio vuoto');
-    assert.equal(righeDi(databaseFile, 'categories'), 22, 'il seed è stato applicato');
+    assert.equal(righeDi(databaseFile, 'categories'), 24, 'il seed è stato applicato');
   });
 });
 

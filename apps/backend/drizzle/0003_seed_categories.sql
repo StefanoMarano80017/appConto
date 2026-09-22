@@ -25,4 +25,6 @@ INSERT OR IGNORE INTO `categories` (`id`, `name`, `color`) VALUES
 ('7fd6d8a9-5f1c-4b2e-bb53-fd5f2b3f92f8', 'Animali', '#84cc16'),
 ('0b8e7b4f-4633-4562-bb27-9722eff8992d', 'Tabacco', '#8a6d3b'),
 ('6deb4a09-6ea5-455f-bfc2-f7ea9055a501', 'Altro', '#6b7280'),
+('d1f3e8c2-4b6a-4c9e-9f5b-3e2d7c8a1f2e', 'Regali', '#f97316'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Rimborso', '#1e40af'),
 ('c9bfcd74-e342-4a3f-8b0c-116f89236d51', 'Da classificare', '#9aa3af');

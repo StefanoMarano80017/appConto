@@ -227,7 +227,7 @@ describe('avvio da una directory di lavoro arbitraria', () => {
       const categorie = (await (
         await fetch(`http://127.0.0.1:${String(processo.port)}/api/categories`)
       ).json()) as unknown[];
-      assert.equal(categorie.length, 22);
+      assert.equal(categorie.length, 24);
     } finally {
       await termina(processo);
     }

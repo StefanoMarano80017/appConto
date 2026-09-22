@@ -152,7 +152,7 @@ describe('creazione di un backup', () => {
     assert.ok(!existsSync(`${file}-shm`));
 
     assert.equal(righeDi(file, 'transactions'), transactionsService.listAll().length);
-    assert.equal(righeDi(file, 'categories'), 22, 'anche le migrazioni sono nel backup');
+    assert.equal(righeDi(file, 'categories'), 24, 'anche le migrazioni sono nel backup');
 
     const inspection = inspectDatabase(file);
     assert.ok(inspection.ok);

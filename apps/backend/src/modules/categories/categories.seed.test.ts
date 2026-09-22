@@ -56,7 +56,7 @@ describe('il seed delle categorie e la migrazione', () => {
     // Se l'espressione regolare smettesse di riconoscere il formato, il
     // confronto passerebbe confrontando due elenchi vuoti.
     assert.ok(dallaMigrazione.length > 0, 'nessuna categoria estratta dal file di migrazione');
-    assert.equal(dallaMigrazione.length, 22);
+    assert.equal(dallaMigrazione.length, 24);
   });
 
   it('contengono gli stessi identificativi, nomi e colori, nello stesso ordine', () => {

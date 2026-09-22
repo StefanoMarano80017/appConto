@@ -397,7 +397,7 @@ describe('POST /api/reset', () => {
 
     assert.match(corpo.backupName, /^pre-reset-\d{8}-\d{6}\.sqlite$/);
     assert.equal(corpo.removed.transactions, primaTransazioni);
-    assert.equal(corpo.seededCategories, 22);
+    assert.equal(corpo.seededCategories, 24);
     // Il messaggio nomina la copia: è l'unica informazione che serve a chi ha
     // cambiato idea.
     assert.match(corpo.message, new RegExp(corpo.backupName.replace(/\./g, '\\.')));

@@ -104,7 +104,7 @@ describe('ciclo di vita del WAL', () => {
     riaperto.close();
 
     assert.equal(conteggio.totale, righeArchiviate, 'nessuna transazione persa dopo la chiusura');
-    assert.equal(categorie.totale, 22, 'le migrazioni erano state applicate da APP_ROOT');
+    assert.equal(categorie.totale, 24, 'le migrazioni erano state applicate da APP_ROOT');
   });
 
   it('chiudere due volte non è un errore', () => {
