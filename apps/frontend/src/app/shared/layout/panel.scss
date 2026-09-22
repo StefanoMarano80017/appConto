@@ -1,7 +1,11 @@
+:host {
+  display: contents;
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin: 0;
+  border-radius: var(--radius-panel);
+  padding: var(--space-panel);
+  margin-bottom: var(--space-panel);
 }

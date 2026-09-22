@@ -1,0 +1,11 @@
+<div class="section-header">
+  <div>
+    <h2>{{ title() }}</h2>
+    @if (subtitle(); as text) {
+      <p class="subtitle">{{ text }}</p>
+    }
+  </div>
+  <div class="actions">
+    <ng-content select="[panelActions]" />
+  </div>
+</div>

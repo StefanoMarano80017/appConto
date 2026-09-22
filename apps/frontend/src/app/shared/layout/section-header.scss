@@ -1,8 +1,9 @@
-.panel-header {
+.section-header {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
+  margin-bottom: 1rem;
 
   h2 {
     margin: 0;

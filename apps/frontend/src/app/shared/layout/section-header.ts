@@ -1,35 +1,22 @@
-import { Component, Directive, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 /**
- * Directive to mark content for placement in the panel actions area.
- */
-@Directive({
-  selector: '[panelActions]',
-  standalone: true
-})
-export class PanelActionsDirective {}
-
-/**
- * Header component for a panel section.
- * Displays a title and subtitle with an actions area.
+ * Intestazione di una sezione: titolo, sottotitolo opzionale, area a destra
+ * per contenuto proiettato (link, pulsante, badge — qualunque cosa la pagina
+ * ci metta).
+ *
+ * Normalizza i quattro nomi di classe usati oggi per lo stesso concetto
+ * (`.header`/`.head`/`.toolbar`/`.panel-header`), tutti con lo stesso CSS
+ * flex/gap. Non dipende da `Panel`: le due si compongono perché è così che
+ * appaiono oggi, non perché una "contenga" l'altra nel codice
+ * (docs/architecture/frontend-shared-components-proposal.md, §16.1).
  */
 @Component({
   selector: 'app-section-header',
-  template: `
-    <div class="panel-header">
-      <div>
-        <h2>{{ title }}</h2>
-        @if (subtitle) {
-          <p class="subtitle">{{ subtitle }}</p>
-        }
-      </div>
-      <ng-content></ng-content>
-    </div>
-  `,
-  styleUrl: './section-header.scss',
-  standalone: true
+  templateUrl: './section-header.html',
+  styleUrl: './section-header.scss'
 })
 export class SectionHeader {
-  @Input() title!: string;
-  @Input() subtitle?: string;
+  readonly title = input.required<string>();
+  readonly subtitle = input<string | undefined>(undefined);
 }
