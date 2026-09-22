@@ -88,3 +88,21 @@ describe('categorie con il numero di merchant assegnati', () => {
     assert.equal(trovata.merchantCount, 1);
   });
 });
+
+describe('utilizzo di una categoria', () => {
+  it('restituisce zero per una categoria non assegnata a nessun merchant', () => {
+    const categoria = categoriesService.create({ name: 'Categoria isolata', color: null });
+
+    assert.equal(categoriesService.usage(categoria.id), 0);
+  });
+
+  it('lancia NotFoundError per un id inesistente', () => {
+    assert.throws(
+      () => categoriesService.usage('id-che-non-esiste'),
+      (error: unknown) => {
+        assert.ok(error instanceof NotFoundError);
+        return true;
+      },
+    );
+  });
+});

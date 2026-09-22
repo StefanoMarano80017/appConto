@@ -38,4 +38,11 @@ export const categoriesRepository = {
 
     return result;
   },
+
+  /** Quanti merchant sono assegnati a una categoria specifica. */
+  countMerchantsForCategory(id: string): number {
+    const row = db.select({ total: count() }).from(merchants).where(eq(merchants.categoryId, id)).get();
+
+    return row?.total ?? 0;
+  },
 };

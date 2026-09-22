@@ -1,4 +1,4 @@
-import { ConflictError, ValidationError } from '../../shared/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors.js';
 import { type Category, type CategoryWithUsage, type NewCategory, createCategory } from './category.model.js';
 import { categoriesRepository } from './categories.repository.js';
 
@@ -8,6 +8,15 @@ import { categoriesRepository } from './categories.repository.js';
  * eliminata (vedi `update` e `remove` più sotto).
  */
 export const FALLBACK_CATEGORY_ID = 'c9bfcd74-e342-4a3f-8b0c-116f89236d51';
+
+function requireCategory(id: string): Category {
+  const category = categoriesRepository.findById(id);
+  if (category === null) {
+    throw new NotFoundError(`Categoria "${id}" non trovata.`);
+  }
+
+  return category;
+}
 
 /** Servizio pubblico della feature: unico punto di accesso per le altre feature. */
 export const categoriesService = {
@@ -42,5 +51,12 @@ export const categoriesService = {
     categoriesRepository.insert(category);
 
     return category;
+  },
+
+  /** Quanti merchant sono assegnati a una categoria. */
+  usage(id: string): number {
+    requireCategory(id);
+
+    return categoriesRepository.countMerchantsForCategory(id);
   },
 };

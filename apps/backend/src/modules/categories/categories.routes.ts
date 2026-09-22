@@ -11,9 +11,24 @@ const createCategoryBodySchema = z.object({
   color: z.string().trim().min(1).nullable().optional(),
 });
 
+function categoryId(value: string | undefined): string {
+  if (value === undefined) {
+    throw new ValidationError('Identificativo della categoria mancante.');
+  }
+
+  return value;
+}
+
 // GET /categories
 categoriesRouter.get('/', (_req, res) => {
   res.json(categoriesService.listAllWithUsage().map(toCategoryWithUsageDto));
+});
+
+// GET /categories/:id/usage
+categoriesRouter.get('/:id/usage', (req, res) => {
+  const id = categoryId(req.params.id);
+
+  res.json({ merchantCount: categoriesService.usage(id) });
 });
 
 // POST /categories
