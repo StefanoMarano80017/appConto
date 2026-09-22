@@ -4,3 +4,8 @@ export interface Category {
   name: string;
   color: string | null;
 }
+
+/** Categoria con il numero di merchant attualmente assegnati. */
+export interface CategoryWithUsage extends Category {
+  merchantCount: number;
+}
