@@ -50,4 +50,20 @@ describe('PageLayout', () => {
     expect(toolbox.children.length).toBe(1);
     expect(toolbox.querySelector('button')?.textContent?.trim()).toBe('filtro');
   });
+
+  // La regola che nasconde una toolbox vuota non ha altro modo di essere
+  // verificata: nessuna asserzione sul DOM la vede, solo lo stile calcolato.
+  it('nasconde la toolbox vuota invece di lasciarle una riga della griglia', async () => {
+    const host = await rendi(SenzaToolbox);
+    const toolbox = host.querySelector('.toolbox') as HTMLElement;
+
+    expect(getComputedStyle(toolbox).display).toBe('none');
+  });
+
+  it('mostra la toolbox quando qualcuno ci proietta dentro', async () => {
+    const host = await rendi(ConToolbox);
+    const toolbox = host.querySelector('.toolbox') as HTMLElement;
+
+    expect(getComputedStyle(toolbox).display).not.toBe('none');
+  });
 });
