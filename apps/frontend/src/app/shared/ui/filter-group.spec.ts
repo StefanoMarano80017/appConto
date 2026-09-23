@@ -22,4 +22,17 @@ describe('FilterGroup', () => {
     expect(host.querySelector('.label')?.textContent?.trim()).toBe('Periodo');
     expect(host.querySelector('button')?.textContent?.trim()).toBe('ultimi 30 giorni');
   });
+
+  it("collega l'etichetta al gruppo per lo screen reader", async () => {
+    const fixture = TestBed.createComponent(Ospite);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const gruppo = host.querySelector('app-filter-group') as HTMLElement;
+    const etichetta = host.querySelector('.label') as HTMLElement;
+
+    expect(gruppo.getAttribute('role')).toBe('group');
+    expect(etichetta.id).toBeTruthy();
+    expect(gruppo.getAttribute('aria-labelledby')).toBe(etichetta.id);
+  });
 });

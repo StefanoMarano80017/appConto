@@ -4,8 +4,7 @@
   display: block;
 }
 
-.filter-group + .filter-group,
-:host + :host .filter-group {
+:host(:not(:first-of-type)) {
   margin-top: var(--space-7);
 }
 
