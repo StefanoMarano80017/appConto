@@ -1,0 +1,34 @@
+/*
+ * I token che non dipendono dal tema (DESIGN_SYSTEM.md §3: al cambio tema
+ * cambiano solo i colori, mai geometria o tipografia).
+ *
+ * E' l'unico file in cui e' ammesso scrivere un `border-radius` numerico.
+ */
+:root {
+  --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', monospace;
+
+  /* La scala di design-tokens.json: [2,4,6,8,12,16,20,24,32,40]. */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 32px;
+  --space-10: 40px;
+
+  /* Un raggio per categoria di elemento, non uno per dimensione. */
+  --radius-badge: 4px;
+  --radius-control: 6px;
+  --radius-input: 7px;
+  --radius-button: 7px;
+  --radius-card: 10px;
+  /* Riservato a tag e filtri: mai come default di bottoni o card. */
+  --radius-pill: 999px;
+
+  /* DESIGN_SYSTEM.md: sempre 1px, mai 0 ne' piu' di 1. */
+  --border-width: 1px;
+}
