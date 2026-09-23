@@ -1,22 +1,25 @@
-<header class="app-header">
-  <h1 class="app-title">Personal Finance Tracker</h1>
-  <nav class="app-nav">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Riepilogo</a>
-    <a routerLink="/analytics" routerLinkActive="active">Analytics</a>
-    <a routerLink="/transactions" routerLinkActive="active">Movimenti</a>
-    <a routerLink="/loans" routerLinkActive="active">Prestiti</a>
-    <a routerLink="/merchants" routerLinkActive="active">Merchant</a>
-    <a routerLink="/categories" routerLinkActive="active">Categorie</a>
-    <a routerLink="/import" routerLinkActive="active">Import CSV</a>
-    <a routerLink="/settings" routerLinkActive="active">Impostazioni</a>
+<div class="shell">
+  <nav class="sidebar" aria-label="Navigazione principale">
+    <p class="brand">Personal Finance Tracker</p>
+
+    <ul class="nav">
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Riepilogo</a></li>
+      <li><a routerLink="/analytics" routerLinkActive="active">Analytics</a></li>
+      <li><a routerLink="/transactions" routerLinkActive="active">Movimenti</a></li>
+      <li><a routerLink="/loans" routerLinkActive="active">Prestiti</a></li>
+      <li><a routerLink="/merchants" routerLinkActive="active">Merchant</a></li>
+      <li><a routerLink="/categories" routerLinkActive="active">Categorie</a></li>
+      <li><a routerLink="/import" routerLinkActive="active">Import CSV</a></li>
+      <li><a routerLink="/settings" routerLinkActive="active">Impostazioni</a></li>
+    </ul>
+
+    <button type="button" class="theme-toggle" (click)="toggleTheme()">
+      <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
+      {{ themeAction() }}
+    </button>
   </nav>
 
-  <button type="button" class="theme-toggle" (click)="toggleTheme()">
-    <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
-    {{ themeAction() }}
-  </button>
-</header>
-
-<main class="app-main">
-  <router-outlet />
-</main>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
