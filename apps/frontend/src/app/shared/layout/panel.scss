@@ -11,3 +11,12 @@
      perché chi stringe la densità interna non deve per forza avvicinare le card. */
   margin-bottom: var(--space-7);
 }
+
+/*
+ * Durante un aggiornamento i dati restano leggibili, ma si vede che sono
+ * vecchi. La stessa convenzione che transactions-page e loan-detail-page
+ * scrivono a mano oggi: qui la eredita chiunque usi un pannello.
+ */
+:host(.updating) .panel {
+  opacity: 0.6;
+}

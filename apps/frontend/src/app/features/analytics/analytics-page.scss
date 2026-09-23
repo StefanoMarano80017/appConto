@@ -23,3 +23,13 @@
     text-decoration: underline;
   }
 }
+
+/*
+ * La utility globale .message possiede il proprio aspetto, non la propria
+ * posizione: qui la pagina decide che questi paragrafi non hanno margine,
+ * senza imporre la stessa scelta agli altri undici fogli che oggi si
+ * appoggiano al margine di default del browser.
+ */
+.message {
+  margin: 0;
+}

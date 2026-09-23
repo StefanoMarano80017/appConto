@@ -53,7 +53,7 @@
       (valueChange)="merchantSearch.set($event)"
     />
     @if (merchantOptions().length === 0) {
-      <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+      <p class="message message--hint">Nessun merchant corrisponde alla ricerca.</p>
     } @else {
       <app-toggle-button-group
         [options]="merchantOptions()"

@@ -130,6 +130,13 @@ describe('AnalyticsPage', () => {
   const text = (): string =>
     ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\./g, '');
 
+  /** Come `text()`, ma ancorato a un contenitore: verifica che il contenuto sparisca davvero se manca. */
+  const sectionText = (selector: string): string =>
+    ((fixture.nativeElement as HTMLElement).querySelector(selector)?.textContent ?? '').replace(
+      /\./g,
+      ''
+    );
+
   const settle = async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve));
     TestBed.tick();
@@ -184,7 +191,14 @@ describe('AnalyticsPage', () => {
     expect(text()).toContain('Andamento nel tempo');
     expect(text()).toContain('Spese per categoria');
     expect(text()).toContain('Merchant principali');
-    expect(text()).toContain('Prestiti');
+    expect(sectionText('app-analytics-loans')).toContain('Prestiti');
+  });
+
+  it('la pagina ha un solo titolo di primo livello', async () => {
+    await settle();
+    await flush(analytics());
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('h1').length).toBe(1);
   });
 
   it('è una dashboard: non contiene più la tabella dei movimenti', async () => {
@@ -201,11 +215,11 @@ describe('AnalyticsPage', () => {
     await settle();
     await flush(analytics());
 
-    expect(text()).toContain('Entrate');
+    expect(sectionText('app-stat-card-grid')).toContain('Entrate');
     expect(text()).toContain('2000,00');
     expect(text()).toContain('Uscite');
     expect(text()).toContain('500,00');
-    expect(text()).toContain('Prelievi');
+    expect(sectionText('app-stat-card-grid')).toContain('Prelievi');
     expect(text()).toContain('-300,00');
   });
 
@@ -255,7 +269,7 @@ describe('AnalyticsPage', () => {
 
     expect(text()).toContain('Nessun dato disponibile per il periodo selezionato');
     expect(text()).not.toContain('Andamento nel tempo');
-    expect(text()).toContain('Entrate');
+    expect(sectionText('app-stat-card-grid')).toContain('Entrate');
   });
 
   it('mostra l\'errore restituito dal backend', async () => {

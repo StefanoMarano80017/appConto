@@ -12,15 +12,12 @@
   }
 
   @if (data(); as data) {
-    <app-panel>
+    <app-panel [class.updating]="analytics.isLoading()">
       <app-stat-card-grid [items]="kpis()" />
-      @if (analytics.isLoading()) {
-        <p class="message">Aggiornamento in corso…</p>
-      }
     </app-panel>
 
     @if (isEmpty()) {
-      <app-panel>
+      <app-panel [class.updating]="analytics.isLoading()">
         <p class="message">Nessun dato disponibile per il periodo selezionato.</p>
         <p class="message message--hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
       </app-panel>
@@ -47,6 +44,7 @@
         [explorerParams]="explorerParams({ types: ['LOAN'] })"
       />
 
+      <!-- "all" è un aggancio di test (distingue questo link da quello di analytics-loans), non una classe di stile. -->
       <p class="explore all">
         <a routerLink="/transactions" [queryParams]="explorerParams()">
           Vedi le {{ data.counts.transactions }} transazioni del periodo →

@@ -48,14 +48,12 @@ app-search-input {
 }
 
 /*
- * Non è solo la modifier globale .message--hint: qui il paragrafo sostituisce
- * un app-toggle-button-group nello stesso punto del layout, quindi il margine
- * di default del <p> va azzerato per non introdurre uno scarto che gli altri
- * stati di questo filter-group non hanno.
+ * Solo la posizione: la tipografia viene da .message--hint. Tenerla qui
+ * accanto avrebbe reso questa regola più specifica di qualunque modifier
+ * globale (view encapsulation: 0,2,0 contro 0,1,0), silenziandola dentro
+ * questo componente.
  */
 .message {
-  @include typography.text('caption');
-
   margin: 0;
 }
 

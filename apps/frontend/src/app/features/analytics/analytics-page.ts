@@ -1,5 +1,5 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
 import { formatAmount } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
@@ -72,14 +72,19 @@ export class AnalyticsPage implements OnInit {
   protected readonly merchants = signal<MerchantSummary[]>([]);
 
   /**
-   * L'analisi caricata, oppure `undefined`.
+   * L'ultima analisi caricata, che resta a schermo mentre ne arriva un'altra.
+   *
+   * `httpResource` azzera il valore quando la richiesta cambia: senza questa
+   * latch, cambiare un filtro farebbe sparire il grafico e ricomparire — cioè
+   * esattamente il movimento che questa pagina esiste per togliere.
    *
    * `value()` solleverebbe l'errore quando la richiesta è fallita: qui la
    * risposta e l'errore restano due stati distinti, entrambi mostrabili.
    */
-  protected readonly data = computed<Analytics | undefined>(() =>
-    this.analytics.hasValue() ? this.analytics.value() : undefined
-  );
+  protected readonly data = linkedSignal<Analytics | undefined, Analytics | undefined>({
+    source: () => (this.analytics.hasValue() ? this.analytics.value() : undefined),
+    computation: (caricata, precedente) => caricata ?? precedente?.value
+  });
 
   protected readonly error = computed(() => {
     const error = this.analytics.error();
