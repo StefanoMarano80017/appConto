@@ -56,6 +56,14 @@
   --color-disabled-input: #101216;
 
   /*
+   * Testo del bottone primario in hover: nel mockup dark è il colore di
+   * sfondo dell'app stesso, cioè letteralmente `--color-background` in
+   * questo tema. Non è promosso a `literal` come i tre sopra perché non
+   * introduce un nuovo esadecimale: coincide con un token già esistente.
+   */
+  --color-primary-hover-text: var(--color-background);
+
+  /*
    * Ombre: design-tokens.json non ne contiene alcuna (lacuna §2.3 n.2 della
    * spec). Si conservano i due valori già in uso, che su fondo scuro devono
    * essere più densi per restare visibili.
@@ -107,6 +115,13 @@
   --color-primary-hover-border: #7b74d6;
   --color-disabled-surface: #f0f0ed;
   --color-disabled-input: #f2f2ef;
+
+  /*
+   * Il letterale scuro del mockup dà 3,57:1 su questo sfondo hover, sotto la
+   * soglia 4,5:1 (§9): qui il testo hover usa `--color-on-primary` (4,92:1),
+   * non `--color-background` come in scuro.
+   */
+  --color-primary-hover-text: var(--color-on-primary);
 
   --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 12%);
   --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 18%);

@@ -1,3 +1,5 @@
+@use 'typography';
+
 /*
  * Pillola dei gruppi di pulsanti.
  *
@@ -16,7 +18,9 @@
   background: var(--surface);
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.8125rem;
+
+  @include typography.text('body');
+
   cursor: pointer;
 
   &:hover {
@@ -27,5 +31,58 @@
     border-color: var(--accent);
     background: var(--accent);
     color: var(--surface);
+  }
+}
+
+/*
+ * L'involucro condiviso dalle cinque tabelle dell'applicazione.
+ *
+ * Solo l'involucro: le celle restano specifiche, perché è lì che le cinque
+ * tabelle differiscono davvero (select in riga, link ai prestiti, campo di
+ * rinomina, barra di avanzamento). Un `<app-data-table>` configurabile
+ * abbastanza da coprirle tutte sarebbe il componente generico da evitare.
+ *
+ * Si applica al contenitore che avvolge la `<table>`.
+ */
+@mixin data-table {
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    @include typography.text('label');
+
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    border-bottom: var(--border-width) solid var(--color-border);
+  }
+
+  td {
+    @include typography.text('table-text');
+
+    padding: var(--space-4);
+    border-bottom: var(--border-width) solid var(--color-row-divider);
+  }
+
+  tbody tr:hover {
+    background: var(--color-surface-elevated);
+  }
+
+  /*
+   * La riga selezionata porta anche una barra a sinistra: il solo cambio di
+   * sfondo non basta a chi distingue male i colori.
+   */
+  tbody tr.selected {
+    background: var(--color-primary-subtle);
+    box-shadow: inset 2px 0 0 var(--color-primary);
+  }
+
+  /* I numeri stanno a destra e non allargano la colonna. */
+  .numeric {
+    text-align: right;
+    white-space: nowrap;
   }
 }

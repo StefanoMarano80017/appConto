@@ -1,8 +1,11 @@
+@use '../styles/typography';
+
 .badge {
+  @include typography.text('secondary');
+
   display: inline-block;
   padding: 0.0625rem 0.5rem;
   border-radius: var(--radius-pill);
-  font-size: 0.75rem;
   white-space: nowrap;
 }
 
