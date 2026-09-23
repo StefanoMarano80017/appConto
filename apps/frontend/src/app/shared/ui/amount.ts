@@ -28,7 +28,6 @@ export type AmountTone = 'auto' | 'neutral' | 'positive' | 'negative';
   templateUrl: './amount.html',
   styleUrl: './amount.scss',
   host: {
-    class: 'amount',
     '[class.positive]': "resolvedTone() === 'positive'",
     '[class.negative]': "resolvedTone() === 'negative'",
     '[class.neutral]': "resolvedTone() === 'neutral'",
@@ -44,18 +43,23 @@ export class Amount {
   /**
    * Il tono effettivo.
    *
-   * Uno zero resta neutro anche in `auto`: non è né un'entrata né un'uscita,
-   * e `+0,00 €` non vorrebbe dire niente.
+   * Uno zero resta neutro anche con un tono imposto dall'esterno: non è né
+   * un'entrata né un'uscita, e «−0,00 €» su un residuo azzerato sarebbe
+   * un'affermazione falsa quanto «+0,00 €».
    */
   protected readonly resolvedTone = computed<Exclude<AmountTone, 'auto'>>(() => {
+    const value = this.value();
+
+    if (value === 0) {
+      return 'neutral';
+    }
+
     const tone = this.tone();
     if (tone !== 'auto') {
       return tone;
     }
 
-    const value = this.value();
-
-    return value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral';
+    return value > 0 ? 'positive' : 'negative';
   });
 
   protected readonly text = computed(() => {
@@ -63,7 +67,10 @@ export class Amount {
     const value = this.value();
 
     if (tone === 'neutral') {
-      return formatAmount(value);
+      // `Intl` usa il trattino ASCII e segna anche lo zero negativo (`-0,00
+      // €`): normalizziamo entrambi, o in colonna il suo meno non si allinea
+      // col nostro U+2212.
+      return formatAmount(value === 0 ? 0 : value).replace('-', '−');
     }
 
     // Il segno segue il tono risolto, non il segno grezzo di value: un tono

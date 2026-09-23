@@ -4,11 +4,18 @@ import { Amount } from './amount';
 describe('Amount', () => {
   let fixture: ComponentFixture<Amount>;
 
-  const render = async (value: number, tone?: 'auto' | 'neutral' | 'positive' | 'negative') => {
+  const render = async (
+    value: number,
+    tone?: 'auto' | 'neutral' | 'positive' | 'negative',
+    size?: 'row' | 'kpi'
+  ) => {
     fixture = TestBed.createComponent(Amount);
     fixture.componentRef.setInput('value', value);
     if (tone !== undefined) {
       fixture.componentRef.setInput('tone', tone);
+    }
+    if (size !== undefined) {
+      fixture.componentRef.setInput('size', size);
     }
     await fixture.whenStable();
   };
@@ -33,7 +40,7 @@ describe('Amount', () => {
 
     expect(text().startsWith('−')).toBe(true);
     expect(el().classList.contains('negative')).toBe(true);
-    // Il meno e' il nostro, non quello di Intl: un solo segno, non due.
+    // Il meno è il nostro, non quello di Intl: un solo segno, non due.
     expect(text()).not.toContain('-');
   });
 
@@ -45,7 +52,7 @@ describe('Amount', () => {
     expect(el().classList.contains('negative')).toBe(false);
   });
 
-  // Review Focus 1: uno zero non e' ne' entrata ne' uscita.
+  // Uno zero non è né entrata né uscita.
   it('non aggiunge segno ne colore a un importo pari a zero', async () => {
     await render(0);
 
@@ -60,5 +67,59 @@ describe('Amount', () => {
 
     expect(el().classList.contains('negative')).toBe(true);
     expect(text().startsWith('−')).toBe(true);
+  });
+
+  // Un tono forzato non può far mentire uno zero: niente segno, niente
+  // classe di tono, qualunque cosa chieda il chiamante.
+  it('resta neutro su uno zero anche con un tono positivo imposto', async () => {
+    await render(0, 'positive');
+
+    expect(text().startsWith('+')).toBe(false);
+    expect(text().startsWith('−')).toBe(false);
+    expect(el().classList.contains('positive')).toBe(false);
+    expect(el().classList.contains('negative')).toBe(false);
+  });
+
+  it('resta neutro su uno zero anche con un tono negativo imposto', async () => {
+    await render(0, 'negative');
+
+    expect(text().startsWith('+')).toBe(false);
+    expect(text().startsWith('−')).toBe(false);
+    expect(el().classList.contains('positive')).toBe(false);
+    expect(el().classList.contains('negative')).toBe(false);
+  });
+
+  // Il ramo neutro non deve ereditare il trattino ASCII di Intl: in una
+  // colonna tabular-nums avrebbe una larghezza diversa dal nostro U+2212.
+  it('normalizza al meno tipografico un importo negativo reso neutro', async () => {
+    await render(-892.1, 'neutral');
+
+    expect(text()).not.toContain('-');
+    expect(el().classList.contains('positive')).toBe(false);
+    expect(el().classList.contains('negative')).toBe(false);
+  });
+
+  // -0 non è né > 0 né < 0: senza normalizzazione Intl lo formatta come
+  // "-0,00 €", un segno negativo su un valore che non ha direzione.
+  it('non mostra un segno negativo su uno zero negativo', async () => {
+    await render(-0);
+
+    expect(text().startsWith('−')).toBe(false);
+    expect(text()).not.toContain('-');
+    expect(el().classList.contains('negative')).toBe(false);
+  });
+
+  it('applica la classe row per default', async () => {
+    await render(1000);
+
+    expect(el().classList.contains('row')).toBe(true);
+    expect(el().classList.contains('kpi')).toBe(false);
+  });
+
+  it('applica la classe kpi quando richiesta', async () => {
+    await render(1000, undefined, 'kpi');
+
+    expect(el().classList.contains('kpi')).toBe(true);
+    expect(el().classList.contains('row')).toBe(false);
   });
 });
