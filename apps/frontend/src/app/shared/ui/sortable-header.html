@@ -1,0 +1,6 @@
+<button type="button" class="sort" (click)="sorted.emit()">
+  {{ label() }}
+  @if (active()) {
+    <span class="arrow" aria-hidden="true">{{ direction() === 'asc' ? '↑' : '↓' }}</span>
+  }
+</button>
