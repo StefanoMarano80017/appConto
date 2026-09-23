@@ -13,10 +13,14 @@
 }
 
 /*
- * Durante un aggiornamento i dati restano leggibili, ma si vede che sono
- * vecchi. La stessa convenzione che transactions-page e loan-detail-page
+ * I dati restano leggibili ma non sono più allineati ai filtri correnti — o
+ * ne stanno arrivando altri, o la richiesta è fallita e questi sono i
+ * precedenti. Stessa convenzione che transactions-page e loan-detail-page
  * scrivono a mano oggi: qui la eredita chiunque usi un pannello.
+ *
+ * Figlio diretto, non discendente: un pannello annidato dentro un pannello
+ * marcato non deve moltiplicare le due opacità.
  */
-:host(.updating) .panel {
+:host(.stale) > .panel {
   opacity: 0.6;
 }

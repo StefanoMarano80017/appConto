@@ -198,7 +198,10 @@ describe('AnalyticsPage', () => {
     await settle();
     await flush(analytics());
 
-    expect((fixture.nativeElement as HTMLElement).querySelectorAll('h1').length).toBe(1);
+    const h1 = (fixture.nativeElement as HTMLElement).querySelectorAll('h1');
+
+    expect(h1.length).toBe(1);
+    expect(h1[0].textContent).toContain('Analytics');
   });
 
   it('è una dashboard: non contiene più la tabella dei movimenti', async () => {
@@ -261,6 +264,23 @@ describe('AnalyticsPage', () => {
 
     expect(text()).not.toContain('CARREFOUR');
     expect(text()).toContain('300,00');
+  });
+
+  it('mentre un nuovo filtro è in volo il contenuto precedente resta a schermo', async () => {
+    await settle();
+    await flush(analytics());
+
+    store.toggleCategory('cat-1');
+    await settle();
+
+    // La richiesta è in volo: httpResource ha già azzerato il proprio valore,
+    // ma la latch di `data` deve trattenere quello precedente — niente più
+    // sparizione del grafico, e il ramo del primo caricamento non deve
+    // prendere il suo posto.
+    expect(sectionText('app-analytics-timeline')).toContain('Andamento nel tempo');
+    expect(text()).not.toContain('Caricamento in corso');
+
+    await flush(analytics(), `${RANGE}&categoryIds=cat-1&${STEP}`);
   });
 
   it('spiega che non ci sono dati invece di mostrare sezioni vuote', async () => {

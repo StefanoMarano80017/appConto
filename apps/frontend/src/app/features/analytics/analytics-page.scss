@@ -33,3 +33,18 @@
 .message {
   margin: 0;
 }
+
+/*
+ * Qui l'indizio conta più che sui KPI: è dove la contraddizione è visibile,
+ * per esempio i bucket vecchi della timeline accanto a un controllo di
+ * granularità già passato a una scelta nuova. Diretto sull'host, non su un
+ * app-panel: nessuno di questi quattro fogli dichiara `:host { display:
+ * contents }`, quindi l'host stesso è la loro superficie visibile e non c'è
+ * un pannello interno la cui opacità si moltiplicherebbe con questa.
+ */
+app-analytics-timeline.stale,
+app-analytics-categories.stale,
+app-analytics-merchants.stale,
+app-analytics-loans.stale {
+  opacity: 0.6;
+}

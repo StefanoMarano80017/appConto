@@ -92,6 +92,12 @@ export class AnalyticsPage implements OnInit {
     return error === undefined ? null : toErrorMessage(error);
   });
 
+  /**
+   * I dati a schermo non sono quelli dei filtri correnti: o ne stanno
+   * arrivando altri, o la richiesta è fallita e questi sono i precedenti.
+   */
+  protected readonly isStale = computed(() => this.analytics.isLoading() || this.error() !== null);
+
   protected readonly isEmpty = computed(() => this.data()?.counts.transactions === 0);
 
   /**

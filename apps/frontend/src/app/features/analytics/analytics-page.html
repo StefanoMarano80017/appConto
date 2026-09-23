@@ -12,17 +12,18 @@
   }
 
   @if (data(); as data) {
-    <app-panel [class.updating]="analytics.isLoading()">
+    <app-panel [class.stale]="isStale()">
       <app-stat-card-grid [items]="kpis()" />
     </app-panel>
 
     @if (isEmpty()) {
-      <app-panel [class.updating]="analytics.isLoading()">
+      <app-panel [class.stale]="isStale()">
         <p class="message">Nessun dato disponibile per il periodo selezionato.</p>
         <p class="message message--hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
       </app-panel>
     } @else {
       <app-analytics-timeline
+        [class.stale]="isStale()"
         [timeline]="data.timeline"
         [granularity]="store.granularity()"
         (granularitySelected)="store.setGranularity($event)"
@@ -30,16 +31,19 @@
 
       <div class="columns">
         <app-analytics-categories
+          [class.stale]="isStale()"
           [categories]="data.byCategory"
           (categorySelected)="onCategorySelected($event)"
         />
         <app-analytics-merchants
+          [class.stale]="isStale()"
           [merchants]="data.byMerchant"
           (merchantSelected)="onMerchantSelected($event)"
         />
       </div>
 
       <app-analytics-loans
+        [class.stale]="isStale()"
         [loans]="data.loans"
         [explorerParams]="explorerParams({ types: ['LOAN'] })"
       />
