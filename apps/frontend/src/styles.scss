@@ -56,13 +56,6 @@ button {
   cursor: pointer;
 }
 
-button:disabled {
-  background: var(--color-disabled-surface);
-  border-color: var(--color-border);
-  color: var(--color-disabled);
-  cursor: not-allowed;
-}
-
 /*
  * Stato hover del bottone primario.
  *
@@ -73,7 +66,7 @@ button:disabled {
  * coincide con lo sfondo dell'app in scuro (com'era nel mockup, 0A0B0D) e
  * diventa `--color-on-primary` in chiaro (4,92:1 sullo stesso sfondo).
  */
-button:not(:disabled):hover {
+button:hover {
   border-color: var(--color-primary-hover-border);
   background: var(--color-primary-hover);
   color: var(--color-primary-hover-text);
@@ -157,11 +150,12 @@ button:not(:disabled):hover {
  * già scritte a mano in una ventina di punti.
  *
  * Le regole locali esistenti continuano a vincere su queste globali, ma non
- * per specificità: con l'encapsulation emulata un selettore locale come
- * `button.danger:hover` ha la stessa specificità (0,2,1) di quello globale
- * qui sotto. A decidere è l'ordine di iniezione dei fogli di stile, perché
- * Angular inserisce quelli dei componenti dopo il CSS globale. Continuano
- * quindi a funzionare finché le pagine non le cancellano, una alla volta.
+ * per specificità: con l'encapsulation emulata la base locale
+ * `button.danger[_ngcontent]` vale (0,2,1), esattamente quanto
+ * `button.danger:hover` qui sotto — è un pareggio, non un local che perde.
+ * A deciderlo è l'ordine di iniezione dei fogli di stile, perché Angular
+ * inserisce quelli dei componenti dopo il CSS globale. Continuano quindi a
+ * funzionare finché le pagine non le cancellano, una alla volta.
  */
 button.secondary {
   border-color: var(--color-border);
@@ -201,4 +195,24 @@ button:focus-visible {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-focus-ring);
   outline: none;
+}
+
+/*
+ * Stato disabilitato, per ogni variante di bottone.
+ *
+ * Deliberatamente in fondo al blocco: `button:disabled:hover` vale (0,2,1),
+ * quanto `button.secondary:hover`/`.ghost:hover`/`.danger:hover`, ma venendo
+ * dopo vince per ordine; `button:disabled` (0,1,1) coprirebbe già lo stato a
+ * riposo pareggiando con le basi delle varianti, e anche lì vince perché
+ * arriva dopo. Un `:not(:disabled)` sull'hover del primario, provato in un
+ * round precedente, alzava la specificità abbastanza da rompere le pillole
+ * di SegmentedControl/ToggleButtonGroup e il bordo di `.ghost`/`.danger` in
+ * hover: questa forma non tocca la specificità di nessun'altra regola.
+ */
+button:disabled,
+button:disabled:hover {
+  border-color: var(--color-border);
+  background: var(--color-disabled-surface);
+  color: var(--color-disabled);
+  cursor: not-allowed;
 }
