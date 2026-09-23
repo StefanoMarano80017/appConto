@@ -1,10 +1,10 @@
 <app-page-layout>
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="Percorso">
     <a routerLink="/loans">← Prestiti</a>
   </nav>
 
   <app-panel>
-    <h2>Crea prestito</h2>
+    <h1>Crea prestito</h1>
 
     @if (error(); as message) {
       <p class="message error">{{ message }}</p>

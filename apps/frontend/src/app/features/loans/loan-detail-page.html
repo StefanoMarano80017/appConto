@@ -1,5 +1,5 @@
 <app-page-layout>
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="Percorso">
     <a routerLink="/loans">← Prestiti</a>
   </nav>
 
@@ -13,7 +13,7 @@
     <section class="panel" [class.updating]="saving()">
       <div class="header">
         <div>
-          <h2>{{ loan.borrowerName }}</h2>
+          <h1>{{ loan.borrowerName }}</h1>
           <p class="subtitle">{{ loan.description ?? 'Nessuna descrizione' }}</p>
           <p class="lent-at">Prestato il {{ formatBookingDate(loan.lentAt) }}</p>
         </div>

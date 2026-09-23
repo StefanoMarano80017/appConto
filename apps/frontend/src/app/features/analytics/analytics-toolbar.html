@@ -1,5 +1,9 @@
 <app-panel>
-  <app-section-header title="Analytics" subtitle="Come sono andate le mie finanze nel periodo che scelgo.">
+  <app-section-header
+    title="Analytics"
+    subtitle="Come sono andate le mie finanze nel periodo che scelgo."
+    level="page"
+  >
     <button panelActions type="button" class="toggle" (click)="showFilters.set(!showFilters())">
       {{ showFilters() ? 'Nascondi filtri' : 'Filtri' }}
       @if (store.hasFilters()) {
