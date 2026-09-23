@@ -10,6 +10,7 @@ import { PERIOD_PRESETS } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { FilterChips } from '../../shared/ui/filter-chips';
+import { FilterGroup } from '../../shared/ui/filter-group';
 import { SearchInput } from '../../shared/ui/search-input';
 import { SegmentedControl } from '../../shared/ui/segmented-control';
 import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
@@ -38,12 +39,20 @@ interface ActiveFilter {
  * sezione vede lo stesso dataset.
  */
 @Component({
-  selector: 'app-analytics-toolbar',
-  imports: [FilterChips, Panel, SearchInput, SectionHeader, SegmentedControl, ToggleButtonGroup],
-  templateUrl: './analytics-toolbar.html',
-  styleUrl: './analytics-toolbar.scss'
+  selector: 'app-analytics-filters',
+  imports: [
+    FilterChips,
+    FilterGroup,
+    Panel,
+    SearchInput,
+    SectionHeader,
+    SegmentedControl,
+    ToggleButtonGroup
+  ],
+  templateUrl: './analytics-filters.html',
+  styleUrl: './analytics-filters.scss'
 })
-export class AnalyticsToolbar {
+export class AnalyticsFilters {
   readonly categories = input.required<Category[]>();
   readonly merchants = input.required<MerchantSummary[]>();
 
@@ -59,8 +68,6 @@ export class AnalyticsToolbar {
   }));
 
   protected readonly merchantSearch = signal('');
-  /** I filtri sono aperti solo su richiesta: su schermi stretti occupano molto. */
-  protected readonly showFilters = signal(false);
 
   /** I merchant proposti: quelli cercati, altrimenti quelli su cui si è speso di più. */
   protected readonly suggestedMerchants = computed(() => {

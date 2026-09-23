@@ -1,0 +1,66 @@
+@use '../../shared/styles/typography';
+
+.custom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+
+  label {
+    @include typography.text('secondary');
+
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  input {
+    @include typography.text('body');
+
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-input);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+
+  input:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-elevated);
+  }
+
+  input:focus {
+    border-color: var(--color-primary);
+    background: var(--color-surface-elevated);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    outline: none;
+  }
+}
+
+.selected {
+  @include typography.text('caption');
+
+  margin: var(--space-3) 0 0;
+}
+
+app-search-input {
+  margin-bottom: var(--space-3);
+}
+
+/*
+ * Non è solo la modifier globale .message--hint: qui il paragrafo sostituisce
+ * un app-toggle-button-group nello stesso punto del layout, quindi il margine
+ * di default del <p> va azzerato per non introdurre uno scarto che gli altri
+ * stati di questo filter-group non hanno.
+ */
+.message {
+  @include typography.text('caption');
+
+  margin: 0;
+}
+
+.chips {
+  margin-top: var(--space-7);
+  padding-top: var(--space-5);
+  border-top: var(--border-width) solid var(--color-border);
+}

@@ -21,7 +21,7 @@ import { AnalyticsCategories } from './analytics-categories';
 import { AnalyticsLoans } from './analytics-loans';
 import { AnalyticsMerchants } from './analytics-merchants';
 import { AnalyticsTimeline } from './analytics-timeline';
-import { AnalyticsToolbar } from './analytics-toolbar';
+import { AnalyticsFilters } from './analytics-filters';
 import { AnalyticsStore } from './analytics.store';
 
 /** Una card della fascia superiore. */
@@ -46,7 +46,7 @@ interface Kpi {
     AnalyticsLoans,
     AnalyticsMerchants,
     AnalyticsTimeline,
-    AnalyticsToolbar,
+    AnalyticsFilters,
     Panel,
     PageLayout,
     RouterLink,

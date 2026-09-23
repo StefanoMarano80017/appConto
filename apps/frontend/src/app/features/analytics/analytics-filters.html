@@ -1,0 +1,83 @@
+<app-panel>
+  <app-section-header title="Filtri" />
+
+  <app-filter-group label="Periodo">
+    <app-segmented-control
+      [options]="presets"
+      [value]="store.preset()"
+      ariaLabel="Periodo"
+      (valueChange)="store.selectPreset($event)"
+    />
+    <div class="custom">
+      <label>
+        <span>Dal</span>
+        <input
+          type="date"
+          [value]="store.dateRange().from ?? ''"
+          (change)="onFromChange($any($event.target).value)"
+        />
+      </label>
+      <label>
+        <span>Al</span>
+        <input
+          type="date"
+          [value]="store.dateRange().to ?? ''"
+          (change)="onToChange($any($event.target).value)"
+        />
+      </label>
+    </div>
+    <p class="selected">{{ store.selectedPeriodLabel() }}</p>
+  </app-filter-group>
+
+  <app-filter-group label="Tipo di movimento">
+    <app-toggle-button-group
+      [options]="transactionTypeOptions"
+      [value]="store.filters().types"
+      (toggled)="store.toggleType($event)"
+    />
+  </app-filter-group>
+
+  <app-filter-group label="Categoria">
+    <app-toggle-button-group
+      [options]="categoryOptions()"
+      [value]="store.filters().categoryIds"
+      (toggled)="store.toggleCategory($event)"
+    />
+  </app-filter-group>
+
+  <app-filter-group label="Merchant">
+    <app-search-input
+      [value]="merchantSearch()"
+      placeholder="Cerca un merchant…"
+      ariaLabel="Cerca un merchant"
+      (valueChange)="merchantSearch.set($event)"
+    />
+    @if (merchantOptions().length === 0) {
+      <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+    } @else {
+      <app-toggle-button-group
+        [options]="merchantOptions()"
+        [value]="store.filters().merchantIds"
+        (toggled)="store.toggleMerchant($event)"
+      />
+    }
+  </app-filter-group>
+
+  <app-filter-group label="Classificazione">
+    <app-segmented-control
+      [options]="classifications"
+      [value]="store.filters().classification"
+      ariaLabel="Classificazione"
+      (valueChange)="store.setClassification($event)"
+    />
+  </app-filter-group>
+
+  @if (activeFilters().length > 0) {
+    <app-filter-chips
+      class="chips"
+      [chips]="activeFilters()"
+      (removed)="removeFilter($event)"
+      (cleared)="store.resetFilters()"
+    />
+  }
+</app-panel>

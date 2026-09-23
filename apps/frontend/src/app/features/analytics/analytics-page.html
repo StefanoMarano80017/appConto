@@ -1,5 +1,5 @@
 <app-page-layout>
-  <app-analytics-toolbar [categories]="categories()" [merchants]="merchants()" />
+  <app-analytics-filters [categories]="categories()" [merchants]="merchants()" />
 
   @if (error(); as message) {
     <app-panel>
