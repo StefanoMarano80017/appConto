@@ -26,7 +26,7 @@ describe('SectionHeader', () => {
     expect(host().querySelector('h1')).toBeNull();
   });
 
-  it("rende un h1 quando è il titolo della pagina", async () => {
+  it('rende un h1 quando è il titolo della pagina', async () => {
     await render('page');
 
     expect(host().querySelector('h1')?.textContent?.trim()).toBe('Analytics');
