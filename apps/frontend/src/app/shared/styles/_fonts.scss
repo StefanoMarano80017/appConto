@@ -1,0 +1,24 @@
+/*
+ * Le due famiglie del design system (DESIGN_SYSTEM.md §4).
+ *
+ * Servite dal bundle e non da una CDN: l'applicazione gira come eseguibile
+ * portable, quindi a runtime non c'è rete su cui contare.
+ *
+ * Sono font variabili: un solo file copre tutti i pesi, e `font-weight`
+ * accetta l'intero intervallo invece dei soli valori dichiarati.
+ */
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/geist-variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono-variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
