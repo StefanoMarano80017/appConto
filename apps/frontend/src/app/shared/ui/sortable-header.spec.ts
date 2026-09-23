@@ -5,7 +5,9 @@ describe('SortableHeader', () => {
   let fixture: ComponentFixture<SortableHeader>;
 
   const render = async (active: boolean, direction: 'asc' | 'desc' = 'asc') => {
-    fixture = TestBed.createComponent(SortableHeader);
+    // `inferTagName`: senza, TestBed userebbe `div` come host invece di `th`,
+    // vanificando proprio ciò che il selettore d'attributo esiste a garantire.
+    fixture = TestBed.createComponent(SortableHeader, { inferTagName: true });
     fixture.componentRef.setInput('label', 'Data');
     fixture.componentRef.setInput('active', active);
     fixture.componentRef.setInput('direction', direction);
@@ -19,13 +21,15 @@ describe('SortableHeader', () => {
   });
 
   // Review Focus 5: una colonna non ordinata dichiara `none`, non tace.
-  it("dichiara aria-sort none quando non è la colonna attiva", async () => {
+  it('dichiara aria-sort none quando non è la colonna attiva', async () => {
     await render(false);
 
     expect(host().getAttribute('aria-sort')).toBe('none');
+    expect(host().tagName).toBe('TH');
+    expect(host().getAttribute('scope')).toBe('col');
   });
 
-  it("dichiara la direzione quando è la colonna attiva", async () => {
+  it('dichiara la direzione quando è la colonna attiva', async () => {
     await render(true, 'asc');
     expect(host().getAttribute('aria-sort')).toBe('ascending');
 
