@@ -21,7 +21,7 @@ import { Badge } from '../../shared/ui/badge';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { SearchInput } from '../../shared/ui/search-input';
-import { StatCardGrid } from '../../shared/ui/stat-card-grid';
+import { StatCardGrid } from '../../shared/layout/stat-card-grid';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;

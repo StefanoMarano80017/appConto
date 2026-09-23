@@ -25,7 +25,7 @@ import { Badge } from '../../shared/ui/badge';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { FormField } from '../../shared/ui/form-field';
 import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
-import { StatCardGrid, StatCardItem } from '../../shared/ui/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 
 /** Il giorno corrente in formato `YYYY-MM-DD`: la data più probabile per una restituzione. */
 function today(): string {

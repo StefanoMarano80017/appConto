@@ -13,7 +13,7 @@ import {
   toQueryParams
 } from '../transactions/transaction-query';
 import { Panel } from '../../shared/layout/panel';
-import { StatCardGrid } from '../../shared/ui/stat-card-grid';
+import { StatCardGrid } from '../../shared/layout/stat-card-grid';
 import { Analytics } from './analytics.model';
 import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';

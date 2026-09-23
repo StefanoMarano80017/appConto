@@ -4,7 +4,7 @@ import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { FilterChips } from '../../shared/ui/filter-chips';
-import { StatCardGrid, StatCardItem } from '../../shared/ui/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
 import {
   TRANSACTION_TYPES,

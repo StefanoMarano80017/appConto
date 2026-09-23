@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 
 /**
- * Campo di ricerca, con icona opzionale.
+ * Campo di ricerca, con icona di lente sempre presente.
  *
  * Solo presentazione: riceve il testo corrente ed emette quello digitato. La
  * pagina resta responsabile del debounce o del filtro applicato.
@@ -15,7 +15,6 @@ export class SearchInput {
   readonly value = input.required<string>();
   readonly placeholder = input.required<string>();
   readonly ariaLabel = input<string | undefined>(undefined);
-  readonly icon = input(false);
 
   readonly valueChange = output<string>();
 }
