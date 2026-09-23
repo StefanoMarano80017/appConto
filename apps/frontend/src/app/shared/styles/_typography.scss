@@ -4,14 +4,14 @@
  * I nove ruoli tipografici del design system (design-tokens.json →
  * typography.scale).
  *
- * Sono mixin e non custom property perché ogni ruolo porta con sé tre o
- * cinque proprietà insieme: spezzarle in quaranta variabili renderebbe
- * possibile usare la dimensione senza la famiglia, che è precisamente
- * l'errore che la regola sui numeri finanziari (§4) vieta.
+ * È un mixin e non una custom property per ruolo, perché ogni ruolo porta con
+ * sé tre o cinque proprietà insieme: spezzarle in quaranta variabili
+ * renderebbe possibile usare la dimensione senza la famiglia, che è
+ * precisamente l'errore che la regola sui numeri finanziari (§4) vieta.
  *
  * È l'unico file in cui è ammesso scrivere un `font-size` letterale.
  */
-$roles: (
+$_roles: (
   'display-kpi': (family: mono, size: 25px, weight: 600, spacing: -0.02em, tabular: true),
   'page-title': (family: ui, size: 15px, weight: 600, spacing: -0.01em),
   'section-title': (family: ui, size: 13px, weight: 600),
@@ -24,10 +24,10 @@ $roles: (
 );
 
 @mixin text($role) {
-  $spec: map.get($roles, $role);
+  $spec: map.get($_roles, $role);
 
   @if $spec == null {
-    @error "Ruolo tipografico sconosciuto: #{$role}. Ammessi: #{map.keys($roles)}.";
+    @error "Ruolo tipografico sconosciuto: #{$role}. Ammessi: #{map.keys($_roles)}.";
   }
 
   font-family: var(--font-#{map.get($spec, family)});
