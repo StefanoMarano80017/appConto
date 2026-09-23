@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
+import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { CategoriesApi } from './categories.api';
 import { CategoryWithUsage } from './category.model';
@@ -10,7 +11,7 @@ const FALLBACK_CATEGORY_ID = 'c9bfcd74-e342-4a3f-8b0c-116f89236d51';
 
 @Component({
   selector: 'app-categories-page',
-  imports: [FormsModule, Panel, SectionHeader],
+  imports: [FormsModule, PageLayout, Panel, SectionHeader],
   templateUrl: './categories-page.html',
   styleUrl: './categories-page.scss'
 })

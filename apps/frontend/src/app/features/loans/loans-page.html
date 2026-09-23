@@ -1,145 +1,147 @@
-@if (data(); as data) {
+<app-page-layout>
+  @if (data(); as data) {
+    <app-panel>
+      <app-stat-card-grid [items]="kpis()" />
+      <p class="note">
+        Il prestito dice quanto denaro devi ancora ricevere. Quanto è passato dal conto lo
+        racconta la <a routerLink="/">liquidità</a>: sono due cose diverse.
+      </p>
+      @if (loans.isLoading()) {
+        <p class="message">Aggiornamento in corso…</p>
+      }
+    </app-panel>
+  }
+
   <app-panel>
-    <app-stat-card-grid [items]="kpis()" />
-    <p class="note">
-      Il prestito dice quanto denaro devi ancora ricevere. Quanto è passato dal conto lo
-      racconta la <a routerLink="/">liquidità</a>: sono due cose diverse.
-    </p>
-    @if (loans.isLoading()) {
-      <p class="message">Aggiornamento in corso…</p>
-    }
-  </app-panel>
-}
+    <div class="toolbar">
+      <app-search-input
+        [value]="searchText()"
+        placeholder="Cerca una persona o una descrizione…"
+        (valueChange)="onSearchTyped($event)"
+      />
 
-<app-panel>
-  <div class="toolbar">
-    <app-search-input
-      [value]="searchText()"
-      placeholder="Cerca una persona o una descrizione…"
-      (valueChange)="onSearchTyped($event)"
-    />
+      <div class="filters" role="group" aria-label="Stato del prestito">
+        @for (status of statusFilters; track status) {
+          <button
+            type="button"
+            [class.active]="query().status === status"
+            (click)="apply({ status })"
+          >
+            {{ statusFilterLabels[status] }}
+          </button>
+        }
+      </div>
 
-    <div class="filters" role="group" aria-label="Stato del prestito">
-      @for (status of statusFilters; track status) {
-        <button
-          type="button"
-          [class.active]="query().status === status"
-          (click)="apply({ status })"
-        >
-          {{ statusFilterLabels[status] }}
-        </button>
+      @if (data(); as data) {
+        @if (data.borrowers.length > 0) {
+          <label class="borrower">
+            <span class="sr-only">Persona</span>
+            <select
+              [value]="query().borrower"
+              (change)="apply({ borrower: $any($event.target).value })"
+            >
+              <option value="">Tutte le persone</option>
+              @for (borrower of data.borrowers; track borrower) {
+                <option [value]="borrower">{{ borrower }}</option>
+              }
+            </select>
+          </label>
+        }
+      }
+
+      @if (hasFilters()) {
+        <button type="button" class="reset" (click)="resetFilters()">Azzera filtri</button>
       }
     </div>
 
+    @if (error(); as message) {
+      <app-error-retry [message]="message" (retry)="loans.reload()" />
+    }
+
     @if (data(); as data) {
-      @if (data.borrowers.length > 0) {
-        <label class="borrower">
-          <span class="sr-only">Persona</span>
-          <select
-            [value]="query().borrower"
-            (change)="apply({ borrower: $any($event.target).value })"
-          >
-            <option value="">Tutte le persone</option>
-            @for (borrower of data.borrowers; track borrower) {
-              <option [value]="borrower">{{ borrower }}</option>
-            }
-          </select>
-        </label>
-      }
-    }
-
-    @if (hasFilters()) {
-      <button type="button" class="reset" (click)="resetFilters()">Azzera filtri</button>
-    }
-  </div>
-
-  @if (error(); as message) {
-    <app-error-retry [message]="message" (retry)="loans.reload()" />
-  }
-
-  @if (data(); as data) {
-    @if (data.items.length === 0) {
-      <div class="empty">
-        @if (hasFilters()) {
-          <app-empty-state
-            message="Nessun prestito corrisponde ai criteri."
-            actionLabel="Azzera filtri"
-            (action)="resetFilters()"
-          />
-        } @else {
-          <p class="message">Nessun prestito registrato.</p>
-          <p class="hint">
-            Un prestito nasce da un movimento di tipo <em>Prestito</em>: cercalo fra i
-            <a routerLink="/transactions" [queryParams]="{ types: 'LOAN' }">movimenti</a>
-            e scegli «Crea prestito».
-          </p>
-        }
-      </div>
-    } @else {
-      <div class="scroller">
-        <table class="loans">
-          <thead>
-            <tr>
-              @for (column of columns; track column.label) {
-                <th
-                  scope="col"
-                  [class.numeric]="column.numeric"
-                  [attr.aria-sort]="ariaSort(column.field)"
-                >
-                  @if (column.field; as field) {
-                    <button type="button" class="sort" (click)="sortBy(field)">
+      @if (data.items.length === 0) {
+        <div class="empty">
+          @if (hasFilters()) {
+            <app-empty-state
+              message="Nessun prestito corrisponde ai criteri."
+              actionLabel="Azzera filtri"
+              (action)="resetFilters()"
+            />
+          } @else {
+            <p class="message">Nessun prestito registrato.</p>
+            <p class="hint">
+              Un prestito nasce da un movimento di tipo <em>Prestito</em>: cercalo fra i
+              <a routerLink="/transactions" [queryParams]="{ types: 'LOAN' }">movimenti</a>
+              e scegli «Crea prestito».
+            </p>
+          }
+        </div>
+      } @else {
+        <div class="scroller">
+          <table class="loans">
+            <thead>
+              <tr>
+                @for (column of columns; track column.label) {
+                  <th
+                    scope="col"
+                    [class.numeric]="column.numeric"
+                    [attr.aria-sort]="ariaSort(column.field)"
+                  >
+                    @if (column.field; as field) {
+                      <button type="button" class="sort" (click)="sortBy(field)">
+                        {{ column.label }}
+                        @if (query().sortBy === field) {
+                          <span class="arrow" aria-hidden="true">{{
+                            query().sortDirection === 'asc' ? '↑' : '↓'
+                          }}</span>
+                        }
+                      </button>
+                    } @else {
                       {{ column.label }}
-                      @if (query().sortBy === field) {
-                        <span class="arrow" aria-hidden="true">{{
-                          query().sortDirection === 'asc' ? '↑' : '↓'
-                        }}</span>
-                      }
-                    </button>
-                  } @else {
-                    {{ column.label }}
-                  }
-                </th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (loan of data.items; track loan.id) {
-              <tr [class.settled]="loan.status === 'SETTLED'">
-                <td class="borrower-name">
-                  <a [routerLink]="['/loans', loan.id]">{{ loan.borrowerName }}</a>
-                </td>
-                <td class="description">{{ loan.description ?? '—' }}</td>
-                <td class="date">{{ formatBookingDate(loan.lentAt) }}</td>
-                <td class="numeric">{{ formatAmount(loan.amount) }}</td>
-                <td class="numeric repaid">
-                  {{ loan.repaidAmount === 0 ? '—' : formatAmount(loan.repaidAmount) }}
-                  @if (loan.repaymentCount > 0) {
-                    <span class="count"
-                      >{{ loan.repaymentCount }}
-                      {{ loan.repaymentCount === 1 ? 'restituzione' : 'restituzioni' }}</span
-                    >
-                  }
-                </td>
-                <td class="numeric remaining" [class.zero]="loan.remainingAmount === 0">
-                  {{ formatAmount(loan.remainingAmount) }}
-                </td>
-                <td>
-                  <app-badge
-                    [label]="statusLabels[loan.status]"
-                    [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
-                  />
-                </td>
+                    }
+                  </th>
+                }
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              @for (loan of data.items; track loan.id) {
+                <tr [class.settled]="loan.status === 'SETTLED'">
+                  <td class="borrower-name">
+                    <a [routerLink]="['/loans', loan.id]">{{ loan.borrowerName }}</a>
+                  </td>
+                  <td class="description">{{ loan.description ?? '—' }}</td>
+                  <td class="date">{{ formatBookingDate(loan.lentAt) }}</td>
+                  <td class="numeric">{{ formatAmount(loan.amount) }}</td>
+                  <td class="numeric repaid">
+                    {{ loan.repaidAmount === 0 ? '—' : formatAmount(loan.repaidAmount) }}
+                    @if (loan.repaymentCount > 0) {
+                      <span class="count"
+                        >{{ loan.repaymentCount }}
+                        {{ loan.repaymentCount === 1 ? 'restituzione' : 'restituzioni' }}</span
+                      >
+                    }
+                  </td>
+                  <td class="numeric remaining" [class.zero]="loan.remainingAmount === 0">
+                    {{ formatAmount(loan.remainingAmount) }}
+                  </td>
+                  <td>
+                    <app-badge
+                      [label]="statusLabels[loan.status]"
+                      [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
 
-      <p class="count-line">
-        {{ data.items.length }} {{ data.items.length === 1 ? 'prestito' : 'prestiti' }}
-      </p>
+        <p class="count-line">
+          {{ data.items.length }} {{ data.items.length === 1 ? 'prestito' : 'prestiti' }}
+        </p>
+      }
+    } @else if (loans.isLoading()) {
+      <p class="message">Caricamento in corso…</p>
     }
-  } @else if (loans.isLoading()) {
-    <p class="message">Caricamento in corso…</p>
-  }
-</app-panel>
+  </app-panel>
+</app-page-layout>

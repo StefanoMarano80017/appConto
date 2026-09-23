@@ -1,108 +1,110 @@
-<app-panel>
-  <app-section-header
-    title="Categorie"
-    subtitle="Crea, rinomina o elimina le categorie di spesa."
-  >
-    <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
-  </app-section-header>
+<app-page-layout>
+  <app-panel>
+    <app-section-header
+      title="Categorie"
+      subtitle="Crea, rinomina o elimina le categorie di spesa."
+    >
+      <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
+    </app-section-header>
 
-  @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-  }
+    @if (error(); as message) {
+      <p class="message error">{{ message }}</p>
+    }
 
-  <form class="create-form" (submit)="create($event)">
-    <input
-      type="text"
-      name="newName"
-      placeholder="Nome nuova categoria"
-      [value]="newName()"
-      (input)="newName.set($any($event.target).value)"
-      [disabled]="creating()"
-    />
-    <input
-      type="color"
-      name="newColor"
-      [value]="newColor()"
-      (change)="newColor.set($any($event.target).value)"
-      [disabled]="creating()"
-    />
-    <button type="submit" [disabled]="creating() || newName().trim() === ''">
-      {{ creating() ? 'Creazione…' : 'Aggiungi categoria' }}
-    </button>
-  </form>
+    <form class="create-form" (submit)="create($event)">
+      <input
+        type="text"
+        name="newName"
+        placeholder="Nome nuova categoria"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+        [disabled]="creating()"
+      />
+      <input
+        type="color"
+        name="newColor"
+        [value]="newColor()"
+        (change)="newColor.set($any($event.target).value)"
+        [disabled]="creating()"
+      />
+      <button type="submit" [disabled]="creating() || newName().trim() === ''">
+        {{ creating() ? 'Creazione…' : 'Aggiungi categoria' }}
+      </button>
+    </form>
 
-  @if (createError(); as message) {
-    <p class="message error">{{ message }}</p>
-  }
+    @if (createError(); as message) {
+      <p class="message error">{{ message }}</p>
+    }
 
-  @if (loading()) {
-    <p class="message">Caricamento in corso…</p>
-  } @else if (categories().length === 0) {
-    <p class="message">Nessuna categoria.</p>
-  } @else {
-    <table class="categories">
-      <thead>
-        <tr>
-          <th scope="col">Nome</th>
-          <th scope="col">Colore</th>
-          <th scope="col" class="numeric">Merchant assegnati</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (category of categories(); track category.id) {
-          <tr [class.saving]="savingId() === category.id">
-            <td class="name">
-              @if (isProtected(category.id)) {
-                {{ category.name }}
-              } @else {
-                <input
-                  type="text"
-                  class="rename"
-                  [value]="category.name"
-                  [disabled]="savingId() === category.id"
-                  [attr.aria-label]="'Nome di ' + category.name"
-                  (change)="rename(category, $any($event.target).value)"
-                />
-              }
-            </td>
-            <td class="color">
-              <input
-                type="color"
-                [value]="category.color ?? '#9aa3af'"
-                [disabled]="savingId() === category.id"
-                [attr.aria-label]="'Colore di ' + category.name"
-                (change)="recolor(category, $any($event.target).value)"
-              />
-            </td>
-            <td class="numeric">{{ category.merchantCount }}</td>
-            <td class="actions">
-              @if (!isProtected(category.id)) {
-                @if (confirmingDeleteId() === category.id) {
-                  <span class="ask">
-                    {{ category.merchantCount }}
-                    {{ category.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
-                    su «Da classificare». Eliminare?
-                  </span>
-                  <button
-                    type="button"
-                    class="danger confirm-delete"
-                    [disabled]="deleting()"
-                    (click)="deleteCategory(category)"
-                  >
-                    {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
-                  </button>
-                  <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
-                    Annulla
-                  </button>
-                } @else {
-                  <button type="button" class="danger" (click)="askDelete(category.id)">Elimina</button>
-                }
-              }
-            </td>
+    @if (loading()) {
+      <p class="message">Caricamento in corso…</p>
+    } @else if (categories().length === 0) {
+      <p class="message">Nessuna categoria.</p>
+    } @else {
+      <table class="categories">
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col">Colore</th>
+            <th scope="col" class="numeric">Merchant assegnati</th>
+            <th scope="col"></th>
           </tr>
-        }
-      </tbody>
-    </table>
-  }
-</app-panel>
+        </thead>
+        <tbody>
+          @for (category of categories(); track category.id) {
+            <tr [class.saving]="savingId() === category.id">
+              <td class="name">
+                @if (isProtected(category.id)) {
+                  {{ category.name }}
+                } @else {
+                  <input
+                    type="text"
+                    class="rename"
+                    [value]="category.name"
+                    [disabled]="savingId() === category.id"
+                    [attr.aria-label]="'Nome di ' + category.name"
+                    (change)="rename(category, $any($event.target).value)"
+                  />
+                }
+              </td>
+              <td class="color">
+                <input
+                  type="color"
+                  [value]="category.color ?? '#9aa3af'"
+                  [disabled]="savingId() === category.id"
+                  [attr.aria-label]="'Colore di ' + category.name"
+                  (change)="recolor(category, $any($event.target).value)"
+                />
+              </td>
+              <td class="numeric">{{ category.merchantCount }}</td>
+              <td class="actions">
+                @if (!isProtected(category.id)) {
+                  @if (confirmingDeleteId() === category.id) {
+                    <span class="ask">
+                      {{ category.merchantCount }}
+                      {{ category.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
+                      su «Da classificare». Eliminare?
+                    </span>
+                    <button
+                      type="button"
+                      class="danger confirm-delete"
+                      [disabled]="deleting()"
+                      (click)="deleteCategory(category)"
+                    >
+                      {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+                    </button>
+                    <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
+                      Annulla
+                    </button>
+                  } @else {
+                    <button type="button" class="danger" (click)="askDelete(category.id)">Elimina</button>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </app-panel>
+</app-page-layout>

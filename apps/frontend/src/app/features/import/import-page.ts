@@ -16,6 +16,7 @@ import {
 import { ColumnPicker } from './column-picker';
 import { ImportApi, ImportResult } from './import.api';
 import { Panel } from '../../shared/layout/panel';
+import { PageLayout } from '../../shared/layout/page-layout';
 
 /**
  * Importazione di un estratto conto, in due modalità.
@@ -31,7 +32,7 @@ import { Panel } from '../../shared/layout/panel';
  */
 @Component({
   selector: 'app-import-page',
-  imports: [RouterLink, ColumnPicker, Panel],
+  imports: [RouterLink, ColumnPicker, Panel, PageLayout],
   templateUrl: './import-page.html',
   styleUrl: './import-page.scss'
 })

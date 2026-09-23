@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { formatAmount, formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
+import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { FilterChips } from '../../shared/ui/filter-chips';
 import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
@@ -34,6 +35,7 @@ import { TopMerchantsSection } from './top-merchants';
     FilterChips,
     MonthComparisonSection,
     Panel,
+    PageLayout,
     SectionHeader,
     StatCardGrid,
     TopMerchantsSection,

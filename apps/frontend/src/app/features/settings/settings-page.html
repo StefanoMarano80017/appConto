@@ -1,90 +1,92 @@
-<div class="row">
-  <section class="panel">
-    <h2>Impostazioni</h2>
-    <p class="hint">
-      Il saldo iniziale viene usato come punto di partenza per il calcolo della liquidità.
-    </p>
+<app-page-layout>
+  <div class="row">
+    <section class="panel">
+      <h2>Impostazioni</h2>
+      <p class="hint">
+        Il saldo iniziale viene usato come punto di partenza per il calcolo della liquidità.
+      </p>
 
-    @if (error(); as message) {
-      <p class="message error">{{ message }}</p>
-    }
+      @if (error(); as message) {
+        <p class="message error">{{ message }}</p>
+      }
 
-    @if (loading()) {
-      <p class="message">Caricamento in corso…</p>
-    } @else {
-      <form class="settings-form" (ngSubmit)="save()">
-        <app-form-field
-          [id]="'balanceDate'"
-          label="Data saldo iniziale"
-          [error]="errors().balanceDate"
-          hint="Il giorno di cui conosci il saldo del conto."
-        >
-          <input
-            type="date"
-            id="balanceDate"
-            name="balanceDate"
-            [ngModel]="form().balanceDate"
-            (ngModelChange)="update('balanceDate', $event)"
-            [attr.aria-invalid]="errors().balanceDate ? 'true' : null"
-            [attr.aria-describedby]="balanceDateDescribedBy()"
-          />
-        </app-form-field>
+      @if (loading()) {
+        <p class="message">Caricamento in corso…</p>
+      } @else {
+        <form class="settings-form" (ngSubmit)="save()">
+          <app-form-field
+            [id]="'balanceDate'"
+            label="Data saldo iniziale"
+            [error]="errors().balanceDate"
+            hint="Il giorno di cui conosci il saldo del conto."
+          >
+            <input
+              type="date"
+              id="balanceDate"
+              name="balanceDate"
+              [ngModel]="form().balanceDate"
+              (ngModelChange)="update('balanceDate', $event)"
+              [attr.aria-invalid]="errors().balanceDate ? 'true' : null"
+              [attr.aria-describedby]="balanceDateDescribedBy()"
+            />
+          </app-form-field>
 
-        <app-form-field
-          [id]="'initialBalance'"
-          label="Importo iniziale"
-          [error]="errors().initialBalance"
-          hint="Sono ammessi valori negativi, se il conto è in rosso."
-        >
-          <input
-            type="text"
-            inputmode="decimal"
-            id="initialBalance"
-            name="initialBalance"
-            placeholder="0,00"
-            [ngModel]="form().initialBalance"
-            (ngModelChange)="update('initialBalance', $event)"
-            [attr.aria-invalid]="errors().initialBalance ? 'true' : null"
-            [attr.aria-describedby]="initialBalanceDescribedBy()"
-          />
-        </app-form-field>
+          <app-form-field
+            [id]="'initialBalance'"
+            label="Importo iniziale"
+            [error]="errors().initialBalance"
+            hint="Sono ammessi valori negativi, se il conto è in rosso."
+          >
+            <input
+              type="text"
+              inputmode="decimal"
+              id="initialBalance"
+              name="initialBalance"
+              placeholder="0,00"
+              [ngModel]="form().initialBalance"
+              (ngModelChange)="update('initialBalance', $event)"
+              [attr.aria-invalid]="errors().initialBalance ? 'true' : null"
+              [attr.aria-describedby]="initialBalanceDescribedBy()"
+            />
+          </app-form-field>
 
-        <div class="actions">
-          <button type="submit" [disabled]="saving()">
-            {{ saving() ? 'Salvataggio…' : 'Salva' }}
-          </button>
-          @if (saved()) {
-            <span class="message saved">Impostazioni salvate.</span>
-            <a routerLink="/">Vai al riepilogo →</a>
+          <div class="actions">
+            <button type="submit" [disabled]="saving()">
+              {{ saving() ? 'Salvataggio…' : 'Salva' }}
+            </button>
+            @if (saved()) {
+              <span class="message saved">Impostazioni salvate.</span>
+              <a routerLink="/">Vai al riepilogo →</a>
+            }
+          </div>
+        </form>
+      }
+    </section>
+
+    <section class="panel">
+      <h2>Aspetto</h2>
+      <p class="hint">
+        Vale per questo computer: non finisce nell'archivio, quindi non viaggia con i backup.
+      </p>
+
+      <fieldset class="theme-choice">
+        <legend class="field-label">Tema</legend>
+        <div class="options">
+          @for (option of themeOptions; track option.mode) {
+            <label>
+              <input
+                type="radio"
+                name="theme"
+                [checked]="themeMode() === option.mode"
+                (change)="selectTheme(option.mode)"
+              />
+              <span>{{ option.label }}</span>
+            </label>
           }
         </div>
-      </form>
-    }
-  </section>
+      </fieldset>
+    </section>
+  </div>
 
-  <section class="panel">
-    <h2>Aspetto</h2>
-    <p class="hint">
-      Vale per questo computer: non finisce nell'archivio, quindi non viaggia con i backup.
-    </p>
-
-    <fieldset class="theme-choice">
-      <legend class="field-label">Tema</legend>
-      <div class="options">
-        @for (option of themeOptions; track option.mode) {
-          <label>
-            <input
-              type="radio"
-              name="theme"
-              [checked]="themeMode() === option.mode"
-              (change)="selectTheme(option.mode)"
-            />
-            <span>{{ option.label }}</span>
-          </label>
-        }
-      </div>
-    </fieldset>
-  </section>
-</div>
-
-<app-reset-panel />
+  <app-reset-panel />
+</app-page-layout>

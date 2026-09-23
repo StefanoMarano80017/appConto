@@ -1,74 +1,76 @@
-<app-panel>
-  <div class="toolbar">
-    <div>
-      <h2>Riepilogo</h2>
-      <p class="subtitle">{{ formatMonth(filters.month()) }}</p>
-    </div>
-
-    <div class="controls">
-      <label class="control">
-        <span>Mese</span>
-        <input type="month" [value]="filters.month()" (change)="onMonthChange($event)" />
-      </label>
-
-      <label class="control">
-        <span>Tipo</span>
-        <select [value]="filters.filters().type ?? ''" (change)="onTypeChange($any($event.target).value)">
-          <option value="">Tutti</option>
-          @for (type of transactionTypes; track type) {
-            <option [value]="type">{{ typeLabels[type] }}</option>
-          }
-        </select>
-      </label>
-    </div>
-  </div>
-
-  @if (activeFilters().length > 0) {
-    <app-filter-chips
-      class="chips"
-      [chips]="activeFilters()"
-      clearLabel="Azzera filtri"
-      (removed)="removeFilter($event)"
-      (cleared)="filters.clearFilters()"
-    />
-  }
-
-  @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-  }
-
-  @if (dashboard()) {
-    <app-stat-card-grid [items]="summaryCards()" />
-  } @else if (loading()) {
-    <p class="message">Caricamento in corso…</p>
-  }
-</app-panel>
-
-@if (dashboard(); as data) {
-  <app-cash-flow-card [cashFlow]="data.cashFlow" />
-
-  <app-category-breakdown
-    [categories]="data.categories"
-    (categorySelected)="filters.setCategory($event)"
-    (merchantSelected)="filters.setMerchant($event)"
-  />
-
-  <app-top-merchants
-    [merchants]="data.topMerchants"
-    (merchantSelected)="filters.setMerchant($event)"
-  />
-
-  <app-month-comparison [comparison]="data.comparison" />
-
+<app-page-layout>
   <app-panel>
-    <app-section-header title="Transazioni">
-      <p panelActions class="count">{{ data.transactions.length }} nel periodo selezionato</p>
-    </app-section-header>
+    <div class="toolbar">
+      <div>
+        <h2>Riepilogo</h2>
+        <p class="subtitle">{{ formatMonth(filters.month()) }}</p>
+      </div>
 
-    @if (data.transactions.length === 0) {
-      <p class="message">Nessuna transazione corrisponde ai filtri.</p>
-    } @else {
-      <app-transactions-table [transactions]="data.transactions" (changed)="reload()" />
+      <div class="controls">
+        <label class="control">
+          <span>Mese</span>
+          <input type="month" [value]="filters.month()" (change)="onMonthChange($event)" />
+        </label>
+
+        <label class="control">
+          <span>Tipo</span>
+          <select [value]="filters.filters().type ?? ''" (change)="onTypeChange($any($event.target).value)">
+            <option value="">Tutti</option>
+            @for (type of transactionTypes; track type) {
+              <option [value]="type">{{ typeLabels[type] }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </div>
+
+    @if (activeFilters().length > 0) {
+      <app-filter-chips
+        class="chips"
+        [chips]="activeFilters()"
+        clearLabel="Azzera filtri"
+        (removed)="removeFilter($event)"
+        (cleared)="filters.clearFilters()"
+      />
+    }
+
+    @if (error(); as message) {
+      <p class="message error">{{ message }}</p>
+    }
+
+    @if (dashboard()) {
+      <app-stat-card-grid [items]="summaryCards()" />
+    } @else if (loading()) {
+      <p class="message">Caricamento in corso…</p>
     }
   </app-panel>
-}
+
+  @if (dashboard(); as data) {
+    <app-cash-flow-card [cashFlow]="data.cashFlow" />
+
+    <app-category-breakdown
+      [categories]="data.categories"
+      (categorySelected)="filters.setCategory($event)"
+      (merchantSelected)="filters.setMerchant($event)"
+    />
+
+    <app-top-merchants
+      [merchants]="data.topMerchants"
+      (merchantSelected)="filters.setMerchant($event)"
+    />
+
+    <app-month-comparison [comparison]="data.comparison" />
+
+    <app-panel>
+      <app-section-header title="Transazioni">
+        <p panelActions class="count">{{ data.transactions.length }} nel periodo selezionato</p>
+      </app-section-header>
+
+      @if (data.transactions.length === 0) {
+        <p class="message">Nessuna transazione corrisponde ai filtri.</p>
+      } @else {
+        <app-transactions-table [transactions]="data.transactions" (changed)="reload()" />
+      }
+    </app-panel>
+  }
+</app-page-layout>

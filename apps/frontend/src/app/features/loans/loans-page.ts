@@ -17,6 +17,7 @@ import {
 import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
 import { Panel } from '../../shared/layout/panel';
+import { PageLayout } from '../../shared/layout/page-layout';
 import { Badge } from '../../shared/ui/badge';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
@@ -53,7 +54,7 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
  */
 @Component({
   selector: 'app-loans-page',
-  imports: [Badge, EmptyState, ErrorRetry, Panel, RouterLink, SearchInput, StatCardGrid],
+  imports: [Badge, EmptyState, ErrorRetry, PageLayout, Panel, RouterLink, SearchInput, StatCardGrid],
   templateUrl: './loans-page.html',
   styleUrl: './loans-page.scss'
 })

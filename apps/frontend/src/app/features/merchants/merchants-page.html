@@ -1,103 +1,105 @@
-<app-panel>
-  <app-section-header
-    title="Merchant"
-    subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
-  >
-    <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
-  </app-section-header>
+<app-page-layout>
+  <app-panel>
+    <app-section-header
+      title="Merchant"
+      subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
+    >
+      <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
+    </app-section-header>
 
-  <div class="toolbar">
-    <app-search-input
-      class="search"
-      [value]="search()"
-      placeholder="Cerca un merchant…"
-      (valueChange)="search.set($event)"
-    />
+    <div class="toolbar">
+      <app-search-input
+        class="search"
+        [value]="search()"
+        placeholder="Cerca un merchant…"
+        (valueChange)="search.set($event)"
+      />
 
-    <div class="filters" role="group" aria-label="Filtro merchant">
-      <button type="button" [class.active]="filter() === 'all'" (click)="filter.set('all')">
-        Tutti <span class="badge">{{ counts().all }}</span>
-      </button>
-      <button
-        type="button"
-        [class.active]="filter() === 'classified'"
-        (click)="filter.set('classified')"
-      >
-        Classificati <span class="badge">{{ counts().classified }}</span>
-      </button>
-      <button
-        type="button"
-        [class.active]="filter() === 'unclassified'"
-        (click)="filter.set('unclassified')"
-      >
-        Da classificare <span class="badge">{{ counts().unclassified }}</span>
-      </button>
+      <div class="filters" role="group" aria-label="Filtro merchant">
+        <button type="button" [class.active]="filter() === 'all'" (click)="filter.set('all')">
+          Tutti <span class="badge">{{ counts().all }}</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="filter() === 'classified'"
+          (click)="filter.set('classified')"
+        >
+          Classificati <span class="badge">{{ counts().classified }}</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="filter() === 'unclassified'"
+          (click)="filter.set('unclassified')"
+        >
+          Da classificare <span class="badge">{{ counts().unclassified }}</span>
+        </button>
+      </div>
     </div>
-  </div>
 
-  @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-  }
-
-  @if (loading()) {
-    <p class="message">Caricamento in corso…</p>
-  } @else if (merchants().length === 0) {
-    <p class="message">Nessun merchant. Importa un estratto conto per iniziare.</p>
-  } @else if (visible().length === 0) {
-    @if (filter() === 'unclassified' && search() === '') {
-      <p class="message done">Tutti i merchant sono stati classificati.</p>
-    } @else {
-      <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+    @if (error(); as message) {
+      <p class="message error">{{ message }}</p>
     }
-  } @else {
-    <p class="count">{{ visible().length }} di {{ counts().all }} merchant</p>
-    <table class="merchants">
-      <thead>
-        <tr>
-          <th scope="col">Nome</th>
-          <th scope="col">Categoria</th>
-          <th scope="col" class="numeric">Transazioni</th>
-          <th scope="col" class="numeric">Totale speso</th>
-          <th scope="col">Ultima transazione</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (merchant of visible(); track merchant.id) {
-          <tr [class.saving]="savingId() === merchant.id">
-            <td class="name">
-              <input
-                type="text"
-                [value]="merchant.displayName ?? ''"
-                [placeholder]="merchant.name"
-                [disabled]="savingId() === merchant.id"
-                [attr.aria-label]="'Nome di ' + merchant.name"
-                (change)="rename(merchant, $any($event.target).value)"
-              />
-              @if (merchant.displayName !== null) {
-                <span class="original">{{ merchant.name }}</span>
-              }
-            </td>
-            <td class="category">
-              <select
-                [ngModel]="merchant.category?.id ?? ''"
-                (ngModelChange)="changeCategory(merchant, $event)"
-                [disabled]="savingId() === merchant.id"
-                [attr.aria-label]="'Categoria di ' + merchant.label"
-              >
-                <option value="">—</option>
-                @for (category of categories(); track category.id) {
-                  <option [value]="category.id">{{ category.name }}</option>
-                }
-              </select>
-            </td>
-            <td class="numeric">{{ merchant.transactionCount }}</td>
-            <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
-            <td class="date">
-              {{ merchant.lastTransactionDate ? formatBookingDate(merchant.lastTransactionDate) : '—' }}
-            </td>
+
+    @if (loading()) {
+      <p class="message">Caricamento in corso…</p>
+    } @else if (merchants().length === 0) {
+      <p class="message">Nessun merchant. Importa un estratto conto per iniziare.</p>
+    } @else if (visible().length === 0) {
+      @if (filter() === 'unclassified' && search() === '') {
+        <p class="message done">Tutti i merchant sono stati classificati.</p>
+      } @else {
+        <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+      }
+    } @else {
+      <p class="count">{{ visible().length }} di {{ counts().all }} merchant</p>
+      <table class="merchants">
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col">Categoria</th>
+            <th scope="col" class="numeric">Transazioni</th>
+            <th scope="col" class="numeric">Totale speso</th>
+            <th scope="col">Ultima transazione</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  }
-</app-panel>
+        </thead>
+        <tbody>
+          @for (merchant of visible(); track merchant.id) {
+            <tr [class.saving]="savingId() === merchant.id">
+              <td class="name">
+                <input
+                  type="text"
+                  [value]="merchant.displayName ?? ''"
+                  [placeholder]="merchant.name"
+                  [disabled]="savingId() === merchant.id"
+                  [attr.aria-label]="'Nome di ' + merchant.name"
+                  (change)="rename(merchant, $any($event.target).value)"
+                />
+                @if (merchant.displayName !== null) {
+                  <span class="original">{{ merchant.name }}</span>
+                }
+              </td>
+              <td class="category">
+                <select
+                  [ngModel]="merchant.category?.id ?? ''"
+                  (ngModelChange)="changeCategory(merchant, $event)"
+                  [disabled]="savingId() === merchant.id"
+                  [attr.aria-label]="'Categoria di ' + merchant.label"
+                >
+                  <option value="">—</option>
+                  @for (category of categories(); track category.id) {
+                    <option [value]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </td>
+              <td class="numeric">{{ merchant.transactionCount }}</td>
+              <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
+              <td class="date">
+                {{ merchant.lastTransactionDate ? formatBookingDate(merchant.lastTransactionDate) : '—' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </app-panel>
+</app-page-layout>
