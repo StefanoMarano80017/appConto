@@ -24,9 +24,9 @@
             <span class="percentage">
               {{ formatPercent(category.percentage) }}
             </span>
-            <span class="amount">
-              {{ formatAmount(category.amount) }}
-            </span>
+            <!-- La distribuzione mostra solo spese (v. analytics.service): il tono non lo deduce dal segno,
+                 perché `amount` è la magnitudine positiva di un'uscita, non il suo segno. -->
+            <app-amount class="amount" [value]="category.amount" [tone]="'negative'" />
             <span class="navigation-hint" aria-hidden="true"> → </span>
           </button>
           <span class="bar">

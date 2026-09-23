@@ -48,3 +48,12 @@ app-analytics-merchants.stale,
 app-analytics-loans.stale {
   opacity: 0.6;
 }
+
+/*
+ * Anche il collegamento in fondo alla pagina conta un totale che i filtri
+ * correnti hanno già superato: senza questo indizio mostrerebbe un numero
+ * vecchio con parametri nuovi.
+ */
+.explore.stale {
+  opacity: 0.6;
+}

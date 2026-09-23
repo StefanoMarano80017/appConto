@@ -126,7 +126,11 @@
                 @if (item.visible) {
                   <li>
                     <span class="key" [attr.data-series]="item.key" aria-hidden="true"></span>
-                    <span class="amount">{{ formatAmount(value(item.key, bucket)) }}</span>
+                    <app-amount
+                      class="amount"
+                      [value]="value(item.key, bucket)"
+                      [tone]="amountTone(item.key)"
+                    />
                     <span class="name">{{ item.label }}</span>
                   </li>
                 }
@@ -173,17 +177,17 @@
                     <span class="incomplete">incompleto</span>
                   }
                 </th>
-                <td class="numeric">{{ formatAmount(bucket.income) }}</td>
-                <td class="numeric">{{ formatAmount(bucket.expenses) }}</td>
-                <td class="numeric">{{ formatAmount(bucket.netMovement) }}</td>
+                <td class="numeric"><app-amount [value]="bucket.income" /></td>
+                <td class="numeric"><app-amount [value]="bucket.expenses" [tone]="'negative'" /></td>
+                <td class="numeric"><app-amount [value]="bucket.netMovement" /></td>
               </tr>
             }
           </tbody>
           <tfoot>
             <tr>
               <th scope="row">Totale</th>
-              <td class="numeric">{{ formatAmount(totals().income) }}</td>
-              <td class="numeric">{{ formatAmount(totals().expenses) }}</td>
+              <td class="numeric"><app-amount [value]="totals().income" /></td>
+              <td class="numeric"><app-amount [value]="totals().expenses" [tone]="'negative'" /></td>
               <td class="numeric"></td>
             </tr>
           </tfoot>

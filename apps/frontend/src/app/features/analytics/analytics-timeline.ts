@@ -2,6 +2,7 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
+import { Amount, AmountTone } from '../../shared/ui/amount';
 import { SegmentedControl } from '../../shared/ui/segmented-control';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { timelineScale } from './timeline-scale';
@@ -82,7 +83,7 @@ interface PlottedSeries {
  */
 @Component({
   selector: 'app-analytics-timeline',
-  imports: [Panel, SectionHeader, SegmentedControl],
+  imports: [Panel, SectionHeader, SegmentedControl, Amount],
   templateUrl: './analytics-timeline.html',
   styleUrl: './analytics-timeline.scss'
 })
@@ -310,6 +311,18 @@ export class AnalyticsTimeline {
 
   protected value(key: SeriesKey, bucket: TimelineBucket): number {
     return SERIES.find((series) => series.key === key)?.value(bucket) ?? 0;
+  }
+
+  /**
+   * Il tono di una serie nel riquadro al passaggio del mouse.
+   *
+   * `income` e `netMovement` deducono il segno correttamente da soli:
+   * l'entrata è una magnitudine positiva, il saldo netto porta già il segno
+   * vero. `expenses` invece è anch'essa una magnitudine positiva ma è
+   * un'uscita, non un'entrata: l'auto la mostrerebbe col segno sbagliato.
+   */
+  protected amountTone(key: SeriesKey): AmountTone {
+    return key === 'expenses' ? 'negative' : 'auto';
   }
 
   /** L'ultima serie visibile non si nasconde: un grafico vuoto non dice nulla. */

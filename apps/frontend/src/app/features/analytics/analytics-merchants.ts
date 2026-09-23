@@ -1,6 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
-import { formatAmount } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
+import { Amount } from '../../shared/ui/amount';
 import { MerchantDistribution } from './analytics.model';
 
 /** Quanti merchant mostrare prima di chiedere conferma: la coda è quasi sempre lunga. */
@@ -9,7 +9,7 @@ const INITIAL_LIMIT = 10;
 /** Distribuzione delle spese per merchant: "da chi sto spendendo di più?". */
 @Component({
   selector: 'app-analytics-merchants',
-  imports: [Panel],
+  imports: [Panel, Amount],
   templateUrl: './analytics-merchants.html',
   styleUrl: './analytics-merchants.scss'
 })
@@ -28,6 +28,4 @@ export class AnalyticsMerchants {
   protected readonly hidden = computed(() =>
     Math.max(this.merchants().length - INITIAL_LIMIT, 0)
   );
-
-  protected readonly formatAmount = formatAmount;
 }

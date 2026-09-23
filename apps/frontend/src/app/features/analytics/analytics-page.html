@@ -49,7 +49,7 @@
       />
 
       <!-- "all" è un aggancio di test (distingue questo link da quello di analytics-loans), non una classe di stile. -->
-      <p class="explore all">
+      <p class="explore all" [class.stale]="isStale()">
         <a routerLink="/transactions" [queryParams]="explorerParams()">
           Vedi le {{ data.counts.transactions }} transazioni del periodo →
         </a>

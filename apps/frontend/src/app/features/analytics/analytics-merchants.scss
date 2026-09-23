@@ -1,6 +1,8 @@
+@use '../../shared/styles/typography';
+
 h2 {
   margin: 0 0 1.25rem;
-  font-size: 1.125rem;
+  @include typography.text('section-title');
 }
 
 .message {
@@ -25,8 +27,7 @@ ol {
   li::before {
     content: counter(merchant);
     min-width: 1.25rem;
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('caption');
     font-variant-numeric: tabular-nums;
   }
 
@@ -60,15 +61,14 @@ ol {
 
 .category,
 .count {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   white-space: nowrap;
 }
 
+/* `<app-amount>` porta già mono e tabular-nums: qui restano solo geometria e allineamento. */
 .amount {
   min-width: 6rem;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .more {
@@ -78,7 +78,7 @@ ol {
   background: none;
   color: var(--accent);
   font: inherit;
-  font-size: 0.875rem;
+  @include typography.text('body');
   cursor: pointer;
   text-decoration: underline;
 }

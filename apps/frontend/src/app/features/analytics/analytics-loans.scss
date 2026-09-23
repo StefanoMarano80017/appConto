@@ -1,3 +1,5 @@
+@use '../../shared/styles/typography';
+
 .totals {
   display: flex;
   gap: 2rem;
@@ -9,13 +11,17 @@
   gap: 0.125rem;
 
   .label {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('label');
   }
 
+  /*
+   * Classe condivisa fra la cifra dell'importo (ora `<app-amount class="value">`,
+   * che il ruolo lo eredita già da `:host(.row)`) e il conteggio dei movimenti
+   * qui accanto, che resta testo scritto a mano: il ruolo li tiene allineati
+   * come la stessa coppia di cifre.
+   */
   .value {
-    font-size: 1.125rem;
-    font-variant-numeric: tabular-nums;
+    @include typography.text('financial-row');
   }
 }
 
@@ -43,8 +49,7 @@ ul {
 
 .date {
   white-space: nowrap;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   font-variant-numeric: tabular-nums;
 }
 
@@ -59,20 +64,18 @@ ul {
   flex: 2;
   min-width: 0;
   overflow-wrap: anywhere;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 }
 
+/* `<app-amount>` porta già mono e tabular-nums: qui restano solo geometria e allineamento. */
 .amount {
   min-width: 6rem;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .note {
   margin: 1rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 
   a {
     color: var(--accent);
@@ -84,7 +87,7 @@ ul {
   flex-wrap: wrap;
   gap: 1.25rem;
   margin: 0 0 0.75rem;
-  font-size: 0.875rem;
+  @include typography.text('body');
 
   a {
     color: var(--accent);

@@ -1,14 +1,17 @@
+@use '../../shared/styles/typography';
+
 /*
  * Colori delle serie.
  *
- * Non sono il verde e il rosso usati per gli importi: quella coppia, verificata
- * con il validatore, cade a ΔE 4,2 in deuteranopia — due linee sovrapposte
- * diventerebbero indistinguibili. Blu (l'accento dell'app) e arancio passano
- * tutti i controlli con ampio margine; l'acqua del saldo netto sta sotto 3:1 di
- * contrasto, e per questo il grafico porta con sé legenda e tabella.
+ * Sono i token grafico del design system, applicati senza una nuova verifica
+ * per il daltonismo: è una scelta esplicita, documentata come rischio
+ * accettato nella spec (§12).
  *
- * I valori stanno in `styles.scss`, insieme a quelli della modalità notte: là
- * sono scelti sul fondo scuro e verificati lì, non ricavati da questi.
+ * La mappatura conserva le relazioni di tinta che la versione precedente
+ * aveva verificato — blu, caldo, acqua — e tiene fuori dalle linee il verde e
+ * il rosso degli importi, che in deuteranopia cadevano a DeltaE 4,2. Il
+ * grafico continua a portare legenda e tabella valori, quindi il colore non è
+ * mai l'unico canale.
  */
 .legend {
   display: flex;
@@ -27,7 +30,7 @@
     background: none;
     color: var(--text);
     font: inherit;
-    font-size: 0.875rem;
+    @include typography.text('body');
     cursor: pointer;
   }
 
@@ -90,7 +93,7 @@
 }
 
 .grid {
-  stroke: var(--border);
+  stroke: var(--color-border);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
@@ -102,10 +105,15 @@
   vector-effect: non-scaling-stroke;
 }
 
+/*
+ * Restano testo SVG scritto a mano, non `<app-amount>`: un componente Angular
+ * annidato in un `<text>` non fa parte del modello di contenuto testuale
+ * dell'SVG e i browser non garantiscono di renderlo.
+ */
 .tick,
 .time {
-  fill: var(--text-muted);
-  font-size: 11px;
+  fill: var(--color-text-muted);
+  @include typography.text('caption');
   font-variant-numeric: tabular-nums;
 }
 
@@ -131,10 +139,13 @@
   stroke-width: 2;
 }
 
-/* Il testo non veste il colore del dato: l'identità la porta il tratto accanto. */
+/*
+ * Il testo non veste il colore del dato: l'identità la porta il tratto
+ * accanto. Resta testo SVG scritto a mano per lo stesso motivo di `.tick`.
+ */
 .end-label {
-  fill: var(--text-muted);
-  font-size: 11px;
+  fill: var(--color-text-muted);
+  @include typography.text('caption');
   font-variant-numeric: tabular-nums;
 }
 
@@ -165,8 +176,7 @@
 
   .when {
     margin: 0 0 0.375rem;
-    color: var(--text-muted);
-    font-size: 0.75rem;
+    @include typography.text('caption');
   }
 
   ul {
@@ -179,13 +189,12 @@
     display: flex;
     align-items: baseline;
     gap: 0.4375rem;
-    font-size: 0.8125rem;
+    @include typography.text('body');
   }
 
-  /* Nel riquadro il valore è il protagonista, il nome della serie lo accompagna. */
+  /* Nel riquadro il valore è il protagonista: `<app-amount>` porta già mono e tabular-nums. */
   .amount {
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
   }
 
   .name {
@@ -194,8 +203,7 @@
 
   .note {
     margin: 0.375rem 0 0;
-    color: var(--text-muted);
-    font-size: 0.6875rem;
+    @include typography.text('caption');
   }
 }
 
@@ -210,8 +218,7 @@
 
 .note {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 }
 
 .table-toggle {
@@ -220,7 +227,7 @@
   background: none;
   color: var(--accent);
   font: inherit;
-  font-size: 0.8125rem;
+  @include typography.text('body');
   cursor: pointer;
   text-decoration: underline;
 }
@@ -238,13 +245,12 @@
 .values {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  @include typography.text('table-text');
 
   caption {
     text-align: left;
     padding-bottom: 0.5rem;
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('caption');
   }
 
   th,
@@ -255,10 +261,7 @@
   }
 
   thead th {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    @include typography.text('label');
   }
 
   tbody th {
@@ -271,6 +274,11 @@
     font-weight: 600;
   }
 
+  /*
+   * `font-variant-numeric` resta qui: la classe è condivisa con l'intestazione
+   * di colonna (testo scritto a mano, non un importo), non solo con le celle
+   * ora rese da `<app-amount>`.
+   */
   .numeric {
     text-align: right;
     white-space: nowrap;
@@ -283,6 +291,5 @@
   padding: 0 0.3125rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  color: var(--text-muted);
-  font-size: 0.6875rem;
+  @include typography.text('caption');
 }

@@ -3,7 +3,8 @@
     <div panelActions class="totals">
       <span class="figure">
         <span class="label">Prestato nel periodo</span>
-        <span class="value">{{ formatAmount(loans().lent) }}</span>
+        <!-- Non è un'entrata né un'uscita: è credito, non patrimonio perso. -->
+        <app-amount class="value" [value]="loans().lent" [tone]="'neutral'" />
       </span>
       <span class="figure">
         <span class="label">Movimenti</span>
@@ -25,7 +26,7 @@
           <span class="date">{{ formatBookingDate(entry.bookingDate) }}</span>
           <span class="name">{{ entry.merchant ?? entry.description }}</span>
           <span class="description">{{ entry.description }}</span>
-          <span class="amount">{{ formatAmount(entry.amount) }}</span>
+          <app-amount class="amount" [value]="entry.amount" [tone]="'neutral'" />
         </li>
       }
     </ul>
