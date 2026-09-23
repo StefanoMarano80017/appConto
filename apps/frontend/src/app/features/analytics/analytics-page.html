@@ -1,9 +1,13 @@
 <app-page-layout>
-  <app-analytics-filters [categories]="categories()" [merchants]="merchants()" />
+  <app-section-header
+    level="page"
+    title="Analytics"
+    subtitle="Come sono andate le mie finanze nel periodo che scelgo."
+  />
 
   @if (error(); as message) {
     <app-panel>
-      <p class="message error">{{ message }}</p>
+      <p class="message message--error">{{ message }}</p>
     </app-panel>
   }
 
@@ -18,7 +22,7 @@
     @if (isEmpty()) {
       <app-panel>
         <p class="message">Nessun dato disponibile per il periodo selezionato.</p>
-        <p class="hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
+        <p class="message message--hint">Prova ad allargare il periodo o a togliere qualche filtro.</p>
       </app-panel>
     } @else {
       <app-analytics-timeline
@@ -54,4 +58,6 @@
       <p class="message">Caricamento in corso…</p>
     </app-panel>
   }
+
+  <app-analytics-filters pageToolbox [categories]="categories()" [merchants]="merchants()" />
 </app-page-layout>
