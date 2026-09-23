@@ -29,11 +29,18 @@
 /*
  * Review Focus 4: su viewport basso le otto voci piu' il toggle devono
  * restare tutte raggiungibili. La lista scorre, il toggle resta in fondo.
+ *
+ * `.nav` e' il <nav>, non la lista: e' lui il figlio flex diretto di
+ * .sidebar, quindi e' lui a portare flex/min-height/overflow. `.nav-list` e'
+ * l'<ul> al suo interno e porta solo l'azzeramento della lista.
  */
 .nav {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.nav-list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -43,7 +50,6 @@
   @include typography.text('body');
 
   display: block;
-  position: relative;
   padding: var(--space-4) var(--space-3);
   border-radius: var(--radius-control);
   color: var(--color-text-secondary);
@@ -57,7 +63,9 @@
 
 /*
  * La voce attiva porta anche una barra a sinistra: lo sfondo tenue da solo
- * non basta a distinguerla (stessa formula di tableRow.selected).
+ * non basta a distinguerla (stessa formula di tableRow.selected). Chi non
+ * vede ne' lo sfondo ne' la barra la trova comunque, perche'
+ * ariaCurrentWhenActive="page" mette aria-current="page" sull'<a>.
  */
 .nav a.active {
   background: var(--color-primary-subtle);
@@ -65,9 +73,17 @@
   color: var(--color-text-primary);
 }
 
+/*
+ * `--color-primary` disegnato dentro il link (outline-offset negativo) cade
+ * sopra lo sfondo del link stesso: a riposo e' 3,24:1, ma sulla voce attiva
+ * scende a 2,91:1 e in hover a 2,76:1 in tema scuro, sotto la soglia 3:1 per
+ * un indicatore di fuoco — proprio dove un utente da tastiera atterra piu'
+ * spesso. `--color-text-primary` sta sopra 12:1 su tutti e tre gli sfondi,
+ * in entrambi i temi (vedi report).
+ */
 .nav a:focus-visible {
-  outline: var(--border-width) solid var(--color-primary);
-  outline-offset: -1px;
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
 }
 
 .theme-toggle {
@@ -81,11 +97,22 @@
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-button);
   background: transparent;
-  color: var(--color-text-secondary);
 
   &:hover {
     background: var(--color-surface-hover);
     color: var(--color-text-primary);
+  }
+
+  /*
+   * La regola globale `button:focus-visible` perde qui: la specificita' della
+   * base locale `.theme-toggle[_ngcontent]` (0,2,0) batte quella globale
+   * (0,1,1), quindi la sua `border:` sopravvive e resta solo il box-shadow del
+   * ring globale, che sul pannello scuro da' circa 1,20:1. Una regola propria,
+   * uguale a quella dei link.
+   */
+  &:focus-visible {
+    outline: 2px solid var(--color-text-primary);
+    outline-offset: -2px;
   }
 
   .glyph {
@@ -94,6 +121,8 @@
 }
 
 .content {
+  max-width: 100rem;
+  margin: 0 auto;
   padding: var(--space-8);
   min-width: 0;
 }
@@ -118,9 +147,12 @@
   }
 
   .nav {
+    overflow-x: auto;
+  }
+
+  .nav-list {
     display: flex;
     gap: var(--space-2);
-    overflow-x: auto;
   }
 
   .nav a {

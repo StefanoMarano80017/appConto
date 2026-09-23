@@ -23,6 +23,19 @@ describe('App', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelector('.brand')?.textContent?.trim()).toBe('Personal Finance Tracker');
-    expect(host.querySelectorAll('.nav a').length).toBe(8);
+
+    const hrefs = Array.from(host.querySelectorAll<HTMLAnchorElement>('.nav a')).map((a) =>
+      a.getAttribute('href')
+    );
+    expect(hrefs).toEqual([
+      '/',
+      '/analytics',
+      '/transactions',
+      '/loans',
+      '/merchants',
+      '/categories',
+      '/import',
+      '/settings',
+    ]);
   });
 });
