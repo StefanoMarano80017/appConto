@@ -1,0 +1,27 @@
+@use '../styles/typography';
+
+:host {
+  display: inline;
+  white-space: nowrap;
+}
+
+:host(.row) {
+  @include typography.text('financial-row');
+}
+
+/* Il massimo consentito da DESIGN_SYSTEM.md §4: nessun numero supera 25px. */
+:host(.kpi) {
+  @include typography.text('display-kpi');
+}
+
+:host(.positive) {
+  color: var(--color-income);
+}
+
+:host(.negative) {
+  color: var(--color-expense);
+}
+
+:host(.neutral) {
+  color: var(--color-text-primary);
+}
