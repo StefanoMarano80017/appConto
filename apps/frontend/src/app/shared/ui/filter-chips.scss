@@ -8,7 +8,7 @@
 }
 
 .chip {
-  @include typography.text('secondary');
+  @include typography.text('body');
 
   padding: 0.25rem 0.625rem;
   border: 1px solid var(--accent);

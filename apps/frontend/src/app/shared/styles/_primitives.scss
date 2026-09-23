@@ -50,17 +50,18 @@
   --color-chart-7: #a28bb2;
   --color-chart-neutral: #4c525c;
 
-  /* I tre `literal` di DESIGN_SYSTEM.md §8. */
+  /*
+   * Livello 3 — componentStatesReference: derivati da uno stato di
+   * componente (design-tokens.json → componentStatesReference), non
+   * primitive di livello 1 come il resto del file. L'appiattimento qui è
+   * preesistente per i primi tre (marcati `literal` da DESIGN_SYSTEM.md §8);
+   * `--color-primary-hover-text` li raggiunge per lo stesso motivo, ma senza
+   * introdurre un nuovo esadecimale: coincide con un token già esistente,
+   * il colore di sfondo dell'app stesso, com'era nel mockup dark.
+   */
   --color-primary-hover-border: #a5a1da;
   --color-disabled-surface: #1a1c21;
   --color-disabled-input: #101216;
-
-  /*
-   * Testo del bottone primario in hover: nel mockup dark è il colore di
-   * sfondo dell'app stesso, cioè letteralmente `--color-background` in
-   * questo tema. Non è promosso a `literal` come i tre sopra perché non
-   * introduce un nuovo esadecimale: coincide con un token già esistente.
-   */
   --color-primary-hover-text: var(--color-background);
 
   /*
@@ -112,15 +113,16 @@
   --color-chart-7: #7a5f8c;
   --color-chart-neutral: #8b939b;
 
+  /*
+   * Livello 3 — componentStatesReference: come in scuro, non primitive.
+   *
+   * Il letterale scuro del mockup dà 3,57:1 su questo sfondo hover, sotto la
+   * soglia 4,5:1 (§9): qui `--color-primary-hover-text` usa
+   * `--color-on-primary` (4,92:1), non `--color-background` come in scuro.
+   */
   --color-primary-hover-border: #7b74d6;
   --color-disabled-surface: #f0f0ed;
   --color-disabled-input: #f2f2ef;
-
-  /*
-   * Il letterale scuro del mockup dà 3,57:1 su questo sfondo hover, sotto la
-   * soglia 4,5:1 (§9): qui il testo hover usa `--color-on-primary` (4,92:1),
-   * non `--color-background` come in scuro.
-   */
   --color-primary-hover-text: var(--color-on-primary);
 
   --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 12%);

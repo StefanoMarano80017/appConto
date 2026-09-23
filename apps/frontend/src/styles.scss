@@ -73,7 +73,7 @@ button:disabled {
  * coincide con lo sfondo dell'app in scuro (com'era nel mockup, 0A0B0D) e
  * diventa `--color-on-primary` in chiaro (4,92:1 sullo stesso sfondo).
  */
-button:hover {
+button:not(:disabled):hover {
   border-color: var(--color-primary-hover-border);
   background: var(--color-primary-hover);
   color: var(--color-primary-hover-text);
@@ -102,8 +102,6 @@ button:hover {
  */
 .message {
   @include typography.text('secondary');
-
-  margin: 0;
 }
 
 .message--error {
@@ -158,9 +156,12 @@ button:hover {
  * lì. Sono globali e non per-componente perché le stesse tre classi sono
  * già scritte a mano in una ventina di punti.
  *
- * Gli stili di componente vincono per specificità su queste regole globali,
- * quindi le definizioni locali esistenti continuano a funzionare finché le
- * pagine non le cancellano, una alla volta.
+ * Le regole locali esistenti continuano a vincere su queste globali, ma non
+ * per specificità: con l'encapsulation emulata un selettore locale come
+ * `button.danger:hover` ha la stessa specificità (0,2,1) di quello globale
+ * qui sotto. A decidere è l'ordine di iniezione dei fogli di stile, perché
+ * Angular inserisce quelli dei componenti dopo il CSS globale. Continuano
+ * quindi a funzionare finché le pagine non le cancellano, una alla volta.
  */
 button.secondary {
   border-color: var(--color-border);
@@ -171,6 +172,7 @@ button.secondary {
 button.secondary:hover {
   border-color: var(--color-border-strong);
   background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
 }
 
 button.ghost {

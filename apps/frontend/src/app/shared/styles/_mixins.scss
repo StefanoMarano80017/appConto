@@ -13,14 +13,12 @@
  * contro 0,3125rem 0,75rem), quindi restano dichiarati da chi include il mixin.
  */
 @mixin pill-button {
+  @include typography.text('body');
+
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--text-muted);
-  font: inherit;
-
-  @include typography.text('body');
-
   cursor: pointer;
 
   &:hover {
@@ -60,6 +58,14 @@
     border-bottom: var(--border-width) solid var(--color-border);
   }
 
+  /*
+   * `table-text` porta con sé anche `color: var(--color-text-secondary)`:
+   * ogni tabella che adotta questo mixin ricolora tutte le celle, a meno di
+   * ridichiarare il colore dove serve. Gli importi in particolare devono
+   * restare `income`/`expense`, non `text-secondary`: usano il ruolo
+   * `financial-row` (che non porta colore), con `.numeric` per l'allineamento
+   * e un colore dichiarato a parte per il segno.
+   */
   td {
     @include typography.text('table-text');
 
