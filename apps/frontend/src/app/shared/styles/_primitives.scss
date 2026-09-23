@@ -2,14 +2,14 @@
  * Livello 1 dei token (DESIGN_SYSTEM.md §2): i valori grezzi, un blocco per
  * tema.
  *
- * design-tokens.json organizza gia' i colori per ruolo (`neutral.background`,
+ * design-tokens.json organizza già i colori per ruolo (`neutral.background`,
  * `brand.primary`, `semantic.income`), quindi non esiste una tavolozza
- * primitiva separata da nominare: il livello 1 e' "quali esadecimali valgono
- * in questo tema", il livello 2 e' il nome. Questo file e' il primo, i nomi
- * sono gia' quelli del secondo.
+ * primitiva separata da nominare: il livello 1 è "quali esadecimali valgono
+ * in questo tema", il livello 2 è il nome. Questo file è il primo, i nomi
+ * sono già quelli del secondo.
  *
  * I tre valori che DESIGN_SYSTEM.md §8 marca `literal` sono qui promossi a
- * token con un nome: un letterale scritto a mano dentro un componente e' il
+ * token con un nome: un letterale scritto a mano dentro un componente è il
  * punto di divergenza che §2 vieta.
  */
 @mixin dark-palette {
@@ -57,8 +57,8 @@
 
   /*
    * Ombre: design-tokens.json non ne contiene alcuna (lacuna §2.3 n.2 della
-   * spec). Si conservano i due valori gia' in uso, che su fondo scuro devono
-   * essere piu' dense per restare visibili.
+   * spec). Si conservano i due valori già in uso, che su fondo scuro devono
+   * essere più dense per restare visibili.
    */
   --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 55%);
   --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 65%);

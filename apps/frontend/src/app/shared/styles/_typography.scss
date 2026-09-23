@@ -1,0 +1,49 @@
+@use 'sass:map';
+
+/*
+ * I nove ruoli tipografici del design system (design-tokens.json →
+ * typography.scale).
+ *
+ * Sono mixin e non custom property perché ogni ruolo porta con sé tre o
+ * cinque proprietà insieme: spezzarle in quaranta variabili renderebbe
+ * possibile usare la dimensione senza la famiglia, che è precisamente
+ * l'errore che la regola sui numeri finanziari (§4) vieta.
+ *
+ * È l'unico file in cui è ammesso scrivere un `font-size` letterale.
+ */
+$roles: (
+  'display-kpi': (family: mono, size: 25px, weight: 600, spacing: -0.02em, tabular: true),
+  'page-title': (family: ui, size: 15px, weight: 600, spacing: -0.01em),
+  'section-title': (family: ui, size: 13px, weight: 600),
+  'body': (family: ui, size: 12.5px, weight: 500),
+  'secondary': (family: ui, size: 12px, weight: 400, color: text-secondary),
+  'label': (family: ui, size: 10px, weight: 600, spacing: 0.08em, upper: true, color: text-muted),
+  'caption': (family: ui, size: 11px, weight: 400, color: text-muted),
+  'table-text': (family: ui, size: 12px, weight: 400, color: text-secondary),
+  'financial-row': (family: mono, size: 12.5px, weight: 500, tabular: true)
+);
+
+@mixin text($role) {
+  $spec: map.get($roles, $role);
+
+  @if $spec == null {
+    @error "Ruolo tipografico sconosciuto: #{$role}. Ammessi: #{map.keys($roles)}.";
+  }
+
+  font-family: var(--font-#{map.get($spec, family)});
+  font-size: map.get($spec, size);
+  font-weight: map.get($spec, weight);
+
+  @if map.has-key($spec, spacing) {
+    letter-spacing: map.get($spec, spacing);
+  }
+  @if map.has-key($spec, upper) {
+    text-transform: uppercase;
+  }
+  @if map.has-key($spec, color) {
+    color: var(--color-#{map.get($spec, color)});
+  }
+  @if map.has-key($spec, tabular) {
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -2,11 +2,11 @@
  * I token che non dipendono dal tema (DESIGN_SYSTEM.md §3: al cambio tema
  * cambiano solo i colori, mai geometria o tipografia).
  *
- * E' l'unico file in cui e' ammesso scrivere un `border-radius` numerico.
+ * È l'unico file in cui è ammesso scrivere un `border-radius` numerico.
  */
 :root {
   --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
 
   /* La scala di design-tokens.json: [2,4,6,8,12,16,20,24,32,40]. */
   --space-1: 2px;
@@ -29,6 +29,6 @@
   /* Riservato a tag e filtri: mai come default di bottoni o card. */
   --radius-pill: 999px;
 
-  /* DESIGN_SYSTEM.md: sempre 1px, mai 0 ne' piu' di 1. */
+  /* DESIGN_SYSTEM.md: sempre 1px, mai 0 né più di 1. */
   --border-width: 1px;
 }

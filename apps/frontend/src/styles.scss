@@ -4,14 +4,14 @@
 @use 'app/shared/styles/legacy-aliases';
 
 /*
- * Tema chiaro e modalita' notte.
+ * Tema chiaro e modalità notte.
  *
- * Il tema scuro non e' un'inversione di quello chiaro: ogni colore mantiene la
- * propria tinta e cambia solo luminosita', cosi' una categoria o uno stato
+ * Il tema scuro non è un'inversione di quello chiaro: ogni colore mantiene la
+ * propria tinta e cambia solo luminosità, così una categoria o uno stato
  * resta riconoscibile passando da un tema all'altro (DESIGN_SYSTEM.md §1).
  *
- * `data-theme` sull'elemento radice e' la scelta esplicita dell'utente; se non
- * ha scelto, l'attributo non c'e' e decide `prefers-color-scheme`.
+ * `data-theme` sull'elemento radice è la scelta esplicita dell'utente; se non
+ * ha scelto, l'attributo non c'è e decide `prefers-color-scheme`.
  *
  * Qui si sostituisce solo la tabella dei colori: layout, spaziatura, raggi e
  * dimensioni sono identici nei due temi (§3).
@@ -25,7 +25,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  /* `:not` perche' la scelta esplicita del tema chiaro vince sul sistema. */
+  /* `:not` perché la scelta esplicita del tema chiaro vince sul sistema. */
   :root:not([data-theme='light']) {
     @include primitives.dark-palette;
   }
@@ -63,11 +63,11 @@ button:disabled {
 }
 
 /*
- * Il testo che non deve allargare cio' che lo contiene.
+ * Il testo che non deve allargare ciò che lo contiene.
  *
  * La applica la direttiva `appTruncate` (`app/core/truncate.ts`), che sul solo
  * testo tagliato aggiunge il tooltip col contenuto intero. Sta fra gli stili
- * globali perche' troncare non e' il problema di una schermata sola, e perche'
+ * globali perché troncare non è il problema di una schermata sola, e perché
  * l'attributo di scoping di un componente non arriverebbe alla direttiva.
  */
 .truncate {

@@ -1,3 +1,5 @@
+@use '../styles/typography';
+
 :host {
   display: block;
 }
@@ -5,29 +7,32 @@
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-8);
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-2);
 
   .label {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('label');
   }
 
+  /*
+   * Il KPI è l'unico numero che può arrivare a 25px, ed è il massimo che
+   * DESIGN_SYSTEM.md §4 consente: la gerarchia fra i numeri si ottiene per
+   * contrasto di colore, non aumentando la dimensione.
+   */
   .value {
-    font-size: 1.5rem;
-    font-variant-numeric: tabular-nums;
+    @include typography.text('display-kpi');
   }
 
   .value.positive {
-    color: var(--positive);
+    color: var(--color-income);
   }
 
   .value.negative {
-    color: var(--negative);
+    color: var(--color-expense);
   }
 }

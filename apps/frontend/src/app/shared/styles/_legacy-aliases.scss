@@ -6,7 +6,7 @@
  * file per altri motivi, ne sostituisce i riferimenti e cancella da qui le
  * righe rimaste senza utilizzatori.
  *
- * QUANDO QUESTO FILE E' VUOTO, LA MIGRAZIONE DEI TOKEN E' COMPLETA: e' il
+ * QUANDO QUESTO FILE È VUOTO, LA MIGRAZIONE DEI TOKEN È COMPLETA: è il
  * criterio di uscita della Fase 7, e non richiede alcun giudizio.
  */
 :root {
@@ -16,14 +16,13 @@
   --text: var(--color-text-primary);
   --text-muted: var(--color-text-muted);
   --accent: var(--color-primary);
-  --accent-text: var(--color-on-primary);
   --on-accent: var(--color-on-primary);
   --negative: var(--color-expense);
   --positive: var(--color-income);
 
   /*
    * Le tre serie del grafico. La mappatura conserva le relazioni di tinta
-   * gia' verificate contro la deuteranopia (blu / caldo / acqua): il verde e
+   * già verificate contro la deuteranopia (blu / caldo / acqua): il verde e
    * il rosso degli importi restano esclusi dalle linee.
    */
   --series-income: var(--color-chart-1);
