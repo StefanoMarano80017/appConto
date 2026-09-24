@@ -24,6 +24,11 @@ describe('StatCardGrid', () => {
     expect(amount).not.toBeNull();
     expect(amount.textContent?.trim().startsWith('−')).toBe(true);
     expect(amount.classList.contains('amount-negative')).toBe(true);
+    // La dimensione `kpi` è la ragione stessa del task (far uscire quel
+    // ramo di `Amount` dal suo stato di ramo morto): senza questa riga
+    // `size="kpi"` potrebbe smettere di arrivare al componente e nessun
+    // altro assert se ne accorgerebbe.
+    expect(amount.classList.contains('amount-kpi')).toBe(true);
   });
 
   it('rende la stessa card con valore positivo con il segno più e il tono positivo', async () => {
@@ -45,5 +50,20 @@ describe('StatCardGrid', () => {
 
     const value = host().querySelector('.value') as HTMLElement;
     expect(value.textContent?.trim()).toBe('42');
+  });
+
+  // Senza questo test, togliere `[tone]="item.tone ?? 'auto'"` dal template
+  // lascerebbe verdi gli altri: un valore negativo con tono `neutral`
+  // dichiarato deve restare neutro, non ricadere sul segno che `auto`
+  // dedurrebbe da sé. È esattamente il caso delle card dei prestiti
+  // (Prestato/Restituito/Da ricevere), che passano sempre `tone: 'neutral'`
+  // su magnitudini che possono essere negative solo per un refuso a monte.
+  it('passa il tono dichiarato ad Amount invece di lasciarlo dedurre da auto', async () => {
+    await render([{ kind: 'amount', label: 'Da ricevere', value: -530, tone: 'neutral' }]);
+
+    const amount = host().querySelector('app-amount') as HTMLElement;
+
+    expect(amount.classList.contains('amount-neutral')).toBe(true);
+    expect(amount.classList.contains('amount-negative')).toBe(false);
   });
 });

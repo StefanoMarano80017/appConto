@@ -129,8 +129,16 @@ export class AnalyticsPage implements OnInit {
       ...secondary
         .filter(([, value]) => value !== 0)
         // Prelievi/prestiti/trasferimenti/altro conservano già il segno (sono
-        // "somme con segno", non magnitudini): non sono né un'entrata né
-        // un'uscita, quindi il tono è neutro e dichiarato, non dedotto.
+        // "somme con segno", non magnitudini). Prelievi e trasferimenti non
+        // muovono il patrimonio (`netWorthCents` li azzera), «Prestiti» è
+        // credito, non spesa: nessuno dei tre è un'entrata o un'uscita.
+        // «Altro» è diverso: `netWorthCents` lo somma come un'entrata o
+        // un'uscita qualunque (nessun caso speciale in transaction-type.ts,
+        // ricade nel ramo che restituisce `amountCents`), quindi il
+        // patrimonio lo sente. Il tono neutro qui non dice "non conta": dice
+        // che è il tipo residuale per ciò che non rientra in nessun'altra
+        // categoria del dominio, quindi non c'è una base per giudicarlo
+        // buono o cattivo — non dedotto, dichiarato.
         .map(([label, value]): StatCardItem => ({ kind: 'amount', label, value, tone: 'neutral' }))
     ];
   });

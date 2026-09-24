@@ -20,22 +20,29 @@
   }
 
   /*
-   * `.value` si applica sia a `<app-amount class="value">` sia a
-   * `<span class="value">`: i due non hanno la stessa tipografia di
-   * partenza, quindi la regola resta qualificata su `span`.
+   * Qualificata `span` apposta, e `<app-amount>` (v. stat-card-grid.html)
+   * non porta più la classe `value`: per un importo la dimensione (fino a
+   * 25px, il massimo consentito da DESIGN_SYSTEM.md §4) e il colore del
+   * tono restano interamente di `Amount`, sul proprio host.
    *
-   * Per un importo la dimensione (fino a 25px, il massimo consentito da
-   * DESIGN_SYSTEM.md §4) e il colore del tono li porta già `Amount` sul
-   * proprio host — ripeterli qui vorrebbe dire far dipendere il risultato
-   * dall'ordine di inserimento dei due fogli di stile.
+   * Non è una precauzione contro l'ordine dei fogli di stile: è la
+   * specificità a decidere, in modo deterministico. Un `.value` non
+   * qualificato scritto qui — se raggiungesse l'host di `Amount` — vale
+   * (0,4,0) con gli attributi che l'incapsulamento aggiunge, contro (0,2,0)
+   * di `:host(.amount-kpi)`: il chiamante vince sempre, a prescindere da
+   * quale foglio viene inserito per ultimo. Tenere la regola qualificata
+   * *e* la classe fuori dall'host è ciò che toglie a quello scontro
+   * qualunque occasione di verificarsi.
    *
    * Un conteggio non è un importo — niente segno, §4 non lo riguarda — ma
    * resta un valore di pari grado nella stessa fascia di KPI: è
    * l'uniformità delle card a farle leggere come una fascia, e dimezzare
    * la dimensione di una sola le farebbe sembrare un dato minore. Stessa
-   * dimensione (`display-kpi`, 25px) e stessa famiglia mono di un importo:
-   * il mono non implica un segno, e le cifre tabulari allineano un
-   * conteggio quanto un importo.
+   * dimensione (`display-kpi`, 25px), quindi stessa famiglia mono di un
+   * importo: è una scelta consapevole, non una svista di §4, che riserva il
+   * mono ai valori finanziari — lo scopo di quella regola è che ogni
+   * numerale finanziario sia mono, non che *solo* quelli lo siano, e le
+   * cifre tabulari allineano un conteggio quanto un importo.
    */
   span.value {
     @include typography.text('display-kpi');

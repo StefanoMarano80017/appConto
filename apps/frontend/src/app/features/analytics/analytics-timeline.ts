@@ -18,13 +18,15 @@ const PLOT_HEIGHT = VIEW.height - PAD_TOP - PAD_BOTTOM;
  * ancorato a `pad.left + plot.width + 10`). Non è derivato come `pad.left`
  * sotto: la sua unica etichetta non riempiva le 96 unità originarie nemmeno
  * da `caption`, e passando a `financial-row` (v. `analytics-timeline.scss`)
- * resta capiente — ma per un margine sottile, non ampio. Il budget di testo
- * che offre, 109 - 10 = 99 unità, va confrontato con quanto costa davvero una
- * stringa di 13 caratteri come "-12.345,67 €", il caso più lungo che questa
- * vista mostri realisticamente: 13 × `MONO_CHAR_ADVANCE` (7,5) = 97,5 unità,
- * lo stesso calcolo che `padLeft` sotto userebbe. Il margine reale è quindi
- * 99 - 97,5 = 1,5 unità, non le ~13 che il calcolo precedente di questo
- * commento assumeva: il contrario di abbondante.
+ * resta capiente, con un margine stretto ma non al limite. Il budget di
+ * testo che offre, 109 - 10 = 99 unità, va confrontato con quanto costa
+ * davvero una stringa come "-12.345,67 €" — 12 caratteri, non 13 — il caso
+ * più lungo che questa vista mostri oggi: 12 × `MONO_CHAR_ADVANCE` (7,5) =
+ * 90 unità, lo stesso calcolo che `padLeft` sotto userebbe. Il margine
+ * reale è quindi 99 - 90 = 9 unità, poco più di un carattere.
+ * Il conto vale per la stringa più lunga di oggi, non per sempre: la forma
+ * durevole sarebbe derivare `PAD_RIGHT` come già fa `padLeft`, così un
+ * importo a sei cifre non lo scopra in silenzio.
  * Lasciato costante perché qui, a differenza di sinistra, un margine extra
  * non nasconde nulla: l'eccedenza è verso il bordo del `viewBox`, non verso
  * il tracciato.

@@ -3,7 +3,7 @@
     <div class="card">
       <span class="label">{{ item.label }}</span>
       @if (item.kind === 'amount') {
-        <app-amount class="value" size="kpi" [value]="item.value" [tone]="item.tone ?? 'auto'" />
+        <app-amount size="kpi" [value]="item.value" [tone]="item.tone ?? 'auto'" />
       } @else {
         <span class="value">{{ item.value }}</span>
       }

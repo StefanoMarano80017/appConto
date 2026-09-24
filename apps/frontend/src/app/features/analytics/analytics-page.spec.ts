@@ -223,9 +223,13 @@ describe('AnalyticsPage', () => {
     expect(text()).toContain('Uscite');
     expect(text()).toContain('500,00');
     expect(sectionText('app-stat-card-grid')).toContain('Prelievi');
-    // U+2212, non il trattino ASCII: le card KPI passano ora da `Amount`, che
-    // normalizza il segno come fa altrove (v. `amount.spec.ts`).
-    expect(text()).toContain('−300,00');
+    // Ancorata al contenitore, non a `text()`: `analytics-merchants.html`
+    // rende lo stesso «−300,00 €» (ESSELUNGA, v. fixture sopra) altrove
+    // nella pagina — su `text()` l'asserzione passerebbe anche se questa
+    // card sparisse o mostrasse il valore sbagliato. U+2212, non il
+    // trattino ASCII: le card KPI passano ora da `Amount`, che normalizza
+    // il segno come fa altrove (v. `amount.spec.ts`).
+    expect(sectionText('app-stat-card-grid')).toContain('−300,00');
   });
 
   it('chiede al backend il periodo selezionato', async () => {
