@@ -109,10 +109,15 @@ describe('AnalyticsTimeline', () => {
     expect(text()).toContain('intervalli coperti solo in parte');
   });
 
-  /** Il puntatore a metà dell'intervallo indicato, in pixel dello strato di mira. */
+  /**
+   * Il puntatore a metà dell'intervallo indicato, in pixel dello strato di mira.
+   *
+   * `plotLeft`/`96` seguono `PAD.left`/`PAD.right` di `analytics-timeline.ts`
+   * (68/109): sono la stessa geometria, non un valore indipendente.
+   */
   const pointAt = (index: number, total: number): number => {
-    const plotLeft = 60;
-    const plotWidth = 760 - 60 - 96;
+    const plotLeft = 68;
+    const plotWidth = 760 - 68 - 109;
     const band = plotWidth / (total - 1);
 
     return ((plotLeft + index * band) / 760) * 760;
@@ -134,8 +139,11 @@ describe('AnalyticsTimeline', () => {
     const shown = (host().querySelector('.tooltip')?.textContent ?? '').replace(/\./g, '');
 
     expect(shown).toContain('settimana del 6 luglio');
-    expect(shown).toContain('1725,00');
-    expect(shown).toContain('340,00');
+    // Il segno, non solo la cifra: un'entrata e un'uscita non si distinguono
+    // dal solo colore, e prima d'ora questa asserzione sarebbe passata anche
+    // invertendo i due toni.
+    expect(shown).toContain('+1725,00');
+    expect(shown).toContain('−340,00');
   });
 
   it('un intervallo incompleto lo dice anche nel riquadro', async () => {
@@ -191,7 +199,10 @@ describe('AnalyticsTimeline', () => {
 
     const rows = host().querySelectorAll('table.values tbody tr');
     expect(rows.length).toBe(4);
-    expect(text()).toContain('880,07');
+    // Il segno: `bucket.expenses` è una magnitudine (v. analytics.service), non
+    // un valore con segno — questa riga ha entrate a zero, quindi la colonna
+    // uscite è anche l'unica sorgente di "880,07" nella tabella.
+    expect(text()).toContain('−880,07');
     expect(text()).toContain('incompleto');
   });
 

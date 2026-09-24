@@ -108,20 +108,22 @@
 /*
  * Restano testo SVG scritto a mano, non `<app-amount>`: un componente Angular
  * annidato in un `<text>` non fa parte del modello di contenuto testuale
- * dell'SVG e i browser non garantiscono di renderlo.
+ * dell'SVG e i browser non garantiscono di renderlo. Il `fill` resta esplicito
+ * in ogni regola qui sotto: su un `<text>` SVG è lui a dipingere il glifo, non
+ * `color` (che il ruolo porta con sé ma qui resta inerte).
  */
-.tick,
-.time {
-  fill: var(--color-text-muted);
-  @include typography.text('caption');
-  font-variant-numeric: tabular-nums;
-}
-
 .tick {
+  /* Un numerale finanziario: stessa famiglia e stessa dimensione della cifra in tabella. */
+  fill: var(--color-text-muted);
+  @include typography.text('financial-row');
   text-anchor: end;
 }
 
 .time {
+  /* Una data, non un importo: resta 'caption', ma le cifre vogliono comunque l'allineamento tabulare. */
+  fill: var(--color-text-muted);
+  @include typography.text('caption');
+  font-variant-numeric: tabular-nums;
   text-anchor: middle;
 }
 
@@ -141,12 +143,12 @@
 
 /*
  * Il testo non veste il colore del dato: l'identità la porta il tratto
- * accanto. Resta testo SVG scritto a mano per lo stesso motivo di `.tick`.
+ * accanto. Resta testo SVG scritto a mano per lo stesso motivo di `.tick`, ed
+ * è un numerale finanziario quanto `.tick`: stesso ruolo.
  */
 .end-label {
   fill: var(--color-text-muted);
-  @include typography.text('caption');
-  font-variant-numeric: tabular-nums;
+  @include typography.text('financial-row');
 }
 
 /* Lo strato di mira copre il grafico: il puntatore trova sempre un intervallo. */
@@ -271,6 +273,16 @@
   tfoot th,
   tfoot td {
     border-bottom: 0;
+    font-weight: 600;
+  }
+
+  /*
+   * `tfoot td { font-weight: 600 }` sopra non basta per le celle che ora
+   * contengono `<app-amount>`: `:host(.amount-row)` dichiara `font-weight: 500`
+   * direttamente sul proprio host, e una regola diretta batte l'ereditarietà
+   * da un antenato. Serve una regola che colpisca l'elemento stesso.
+   */
+  tfoot app-amount {
     font-weight: 600;
   }
 

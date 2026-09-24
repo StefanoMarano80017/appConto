@@ -178,7 +178,8 @@
                   }
                 </th>
                 <td class="numeric"><app-amount [value]="bucket.income" /></td>
-                <td class="numeric"><app-amount [value]="bucket.expenses" [tone]="'negative'" /></td>
+                <!-- `expenses` è una magnitudine, non un segno: si nega qui, non con un tono forzato. -->
+                <td class="numeric"><app-amount [value]="-bucket.expenses" /></td>
                 <td class="numeric"><app-amount [value]="bucket.netMovement" /></td>
               </tr>
             }
@@ -187,7 +188,7 @@
             <tr>
               <th scope="row">Totale</th>
               <td class="numeric"><app-amount [value]="totals().income" /></td>
-              <td class="numeric"><app-amount [value]="totals().expenses" [tone]="'negative'" /></td>
+              <td class="numeric"><app-amount [value]="-totals().expenses" /></td>
               <td class="numeric"></td>
             </tr>
           </tfoot>

@@ -9,7 +9,22 @@ import { timelineScale } from './timeline-scale';
 
 /** Geometria del disegno, in unità del `viewBox`. */
 const VIEW = { width: 760, height: 260 };
-const PAD = { top: 16, right: 96, bottom: 34, left: 60 };
+/*
+ * `left`/`right` riservano spazio ai numerali dell'asse: `.tick` (importo di ogni
+ * linea guida, ancorato a `pad.left - 10`) ed `.end-label` (ultimo valore di ogni
+ * serie, a `pad.left + plot.width + 10`). Da quando quei due usano il ruolo
+ * `financial-row` (12,5px) invece di `caption` (11px), i loro glifi occupano
+ * ~12,5/11 ≈ 1,136× lo spazio in unità di `viewBox` — la dimensione del font SVG
+ * è nelle stesse unità della geometria, non in pixel CSS reali, perché l'`<svg>`
+ * scala con `width: 100%`.
+ *
+ * `60`/`96` erano tarati per `caption`: qui sono scalati dello stesso 1,136× e
+ * arrotondati (60→68, 96→109) per tenere lo stesso margine visivo relativo.
+ * Non è una misura esatta (non renderizzo in un browser reale per verificarlo):
+ * se l'importo più largo dell'asse dovesse comunque toccare il grafico, il
+ * fattore da correggere è questo.
+ */
+const PAD = { top: 16, right: 109, bottom: 34, left: 68 };
 const PLOT = {
   width: VIEW.width - PAD.left - PAD.right,
   height: VIEW.height - PAD.top - PAD.bottom

@@ -22,17 +22,23 @@ export type AmountTone = 'auto' | 'neutral' | 'positive' | 'negative';
  * Lo stile sta sull'host e non su uno `<span>` interno: chi la usa applica le
  * proprie classi direttamente sul tag (`<app-amount class="value">`), e con un
  * elemento interno quelle classi non governerebbero nulla.
+ *
+ * Le classi dell'host sono tutte prefissate `amount-`: l'host vive nello
+ * spazio dei nomi del chiamante (porta il suo attributo di encapsulation), e
+ * `row`/`kpi`/`positive`/`negative`/`neutral` sono fra i nomi di classe più
+ * comuni che esistano. Una regola scritta dal chiamante per un proprio
+ * elemento con lo stesso nome colpirebbe anche questo host.
  */
 @Component({
   selector: 'app-amount',
   templateUrl: './amount.html',
   styleUrl: './amount.scss',
   host: {
-    '[class.positive]': "resolvedTone() === 'positive'",
-    '[class.negative]': "resolvedTone() === 'negative'",
-    '[class.neutral]': "resolvedTone() === 'neutral'",
-    '[class.kpi]': "size() === 'kpi'",
-    '[class.row]': "size() === 'row'"
+    '[class.amount-positive]': "resolvedTone() === 'positive'",
+    '[class.amount-negative]': "resolvedTone() === 'negative'",
+    '[class.amount-neutral]': "resolvedTone() === 'neutral'",
+    '[class.amount-kpi]': "size() === 'kpi'",
+    '[class.amount-row]': "size() === 'row'"
   }
 })
 export class Amount {

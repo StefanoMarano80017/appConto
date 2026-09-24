@@ -1,27 +1,34 @@
 @use '../styles/typography';
 
+/*
+ * `inline-block`, non `inline`: un chiamante che usasse `min-width`/
+ * `text-align` sull'host (per allineare l'importo in una colonna) li vedrebbe
+ * ignorati da un elemento inline non rimpiazzato. `inline-block` li rispetta
+ * a prescindere dal contesto del chiamante — non solo dentro un flex/grid che
+ * blockifica l'host per conto proprio.
+ */
 :host {
-  display: inline;
+  display: inline-block;
   white-space: nowrap;
 }
 
-:host(.row) {
+:host(.amount-row) {
   @include typography.text('financial-row');
 }
 
 /* Il massimo consentito da DESIGN_SYSTEM.md §4: nessun numero supera 25px. */
-:host(.kpi) {
+:host(.amount-kpi) {
   @include typography.text('display-kpi');
 }
 
-:host(.positive) {
+:host(.amount-positive) {
   color: var(--color-income);
 }
 
-:host(.negative) {
+:host(.amount-negative) {
   color: var(--color-expense);
 }
 
-:host(.neutral) {
+:host(.amount-neutral) {
   color: var(--color-text-primary);
 }

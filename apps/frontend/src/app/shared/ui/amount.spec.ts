@@ -32,14 +32,14 @@ describe('Amount', () => {
     await render(1647.3);
 
     expect(text().startsWith('+')).toBe(true);
-    expect(el().classList.contains('positive')).toBe(true);
+    expect(el().classList.contains('amount-positive')).toBe(true);
   });
 
   it('antepone il segno meno a un importo negativo', async () => {
     await render(-892.1);
 
     expect(text().startsWith('−')).toBe(true);
-    expect(el().classList.contains('negative')).toBe(true);
+    expect(el().classList.contains('amount-negative')).toBe(true);
     // Il meno è il nostro, non quello di Intl: un solo segno, non due.
     expect(text()).not.toContain('-');
   });
@@ -48,8 +48,8 @@ describe('Amount', () => {
     await render(1200, 'neutral');
 
     expect(text().startsWith('+')).toBe(false);
-    expect(el().classList.contains('positive')).toBe(false);
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-positive')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
   // Uno zero non è né entrata né uscita.
@@ -58,14 +58,14 @@ describe('Amount', () => {
 
     expect(text().startsWith('+')).toBe(false);
     expect(text().startsWith('−')).toBe(false);
-    expect(el().classList.contains('positive')).toBe(false);
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-positive')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
   it('rispetta un tono imposto dall esterno', async () => {
     await render(1500, 'negative');
 
-    expect(el().classList.contains('negative')).toBe(true);
+    expect(el().classList.contains('amount-negative')).toBe(true);
     expect(text().startsWith('−')).toBe(true);
   });
 
@@ -76,8 +76,8 @@ describe('Amount', () => {
 
     expect(text().startsWith('+')).toBe(false);
     expect(text().startsWith('−')).toBe(false);
-    expect(el().classList.contains('positive')).toBe(false);
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-positive')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
   it('resta neutro su uno zero anche con un tono negativo imposto', async () => {
@@ -85,8 +85,8 @@ describe('Amount', () => {
 
     expect(text().startsWith('+')).toBe(false);
     expect(text().startsWith('−')).toBe(false);
-    expect(el().classList.contains('positive')).toBe(false);
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-positive')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
   // Il ramo neutro non deve ereditare il trattino ASCII di Intl: in una
@@ -95,8 +95,8 @@ describe('Amount', () => {
     await render(-892.1, 'neutral');
 
     expect(text()).not.toContain('-');
-    expect(el().classList.contains('positive')).toBe(false);
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-positive')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
   // -0 non è né > 0 né < 0: senza normalizzazione Intl lo formatta come
@@ -106,20 +106,20 @@ describe('Amount', () => {
 
     expect(text().startsWith('−')).toBe(false);
     expect(text()).not.toContain('-');
-    expect(el().classList.contains('negative')).toBe(false);
+    expect(el().classList.contains('amount-negative')).toBe(false);
   });
 
-  it('applica la classe row per default', async () => {
+  it('applica la classe amount-row per default', async () => {
     await render(1000);
 
-    expect(el().classList.contains('row')).toBe(true);
-    expect(el().classList.contains('kpi')).toBe(false);
+    expect(el().classList.contains('amount-row')).toBe(true);
+    expect(el().classList.contains('amount-kpi')).toBe(false);
   });
 
-  it('applica la classe kpi quando richiesta', async () => {
+  it('applica la classe amount-kpi quando richiesta', async () => {
     await render(1000, undefined, 'kpi');
 
-    expect(el().classList.contains('kpi')).toBe(true);
-    expect(el().classList.contains('row')).toBe(false);
+    expect(el().classList.contains('amount-kpi')).toBe(true);
+    expect(el().classList.contains('amount-row')).toBe(false);
   });
 });

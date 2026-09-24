@@ -19,8 +19,8 @@
           }
           <span class="category">{{ merchant.category ?? 'Senza categoria' }}</span>
           <span class="count">{{ merchant.transactionCount }}</span>
-          <!-- Come in analytics-categories: `amount` è la magnitudine di una spesa, mai un'entrata. -->
-          <app-amount class="amount" [value]="merchant.amount" [tone]="'negative'" />
+          <!-- Come in analytics-categories: si nega il valore e si lascia dedurre il segno. -->
+          <app-amount class="amount" [value]="-merchant.amount" />
         </li>
       }
     </ol>
