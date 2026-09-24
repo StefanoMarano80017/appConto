@@ -11,12 +11,13 @@ import { Category } from '../categories/category.model';
 import { MerchantFilter, filterMerchants } from './merchant-filter';
 import { MerchantSummary } from './merchant.model';
 import { MerchantsApi } from './merchants.api';
+import { ColorMarkerComponent } from '../../shared/ui/color-marker';
 
 @Component({
   selector: 'app-merchants-page',
-  imports: [FormsModule, PageLayout, Panel, SearchInput, SectionHeader],
+  imports: [FormsModule, PageLayout, Panel, SearchInput, SectionHeader, ColorMarkerComponent],
   templateUrl: './merchants-page.html',
-  styleUrl: './merchants-page.scss'
+  styleUrl: './merchants-page.scss',
 })
 export class MerchantsPage implements OnInit {
   private readonly api = inject(MerchantsApi);
@@ -32,7 +33,7 @@ export class MerchantsPage implements OnInit {
   protected readonly savingId = signal<string | null>(null);
 
   protected readonly visible = computed(() =>
-    filterMerchants(this.merchants(), { search: this.search(), filter: this.filter() })
+    filterMerchants(this.merchants(), { search: this.search(), filter: this.filter() }),
   );
 
   protected readonly counts = computed(() => {
@@ -48,7 +49,7 @@ export class MerchantsPage implements OnInit {
   ngOnInit(): void {
     this.categoriesApi.list().subscribe({
       next: (categories) => this.categories.set(categories),
-      error: (error: unknown) => this.error.set(toErrorMessage(error))
+      error: (error: unknown) => this.error.set(toErrorMessage(error)),
     });
 
     this.load();
@@ -66,7 +67,7 @@ export class MerchantsPage implements OnInit {
       error: (error: unknown) => {
         this.error.set(toErrorMessage(error));
         this.loading.set(false);
-      }
+      },
     });
   }
 
@@ -97,8 +98,8 @@ export class MerchantsPage implements OnInit {
       next: (updated) => {
         this.merchants.update((merchants) =>
           merchants.map((merchant) =>
-            merchant.id === updated.id ? { ...merchant, ...updated } : merchant
-          )
+            merchant.id === updated.id ? { ...merchant, ...updated } : merchant,
+          ),
         );
         this.savingId.set(null);
       },
@@ -106,7 +107,7 @@ export class MerchantsPage implements OnInit {
         this.error.set(toErrorMessage(error));
         this.savingId.set(null);
         this.load(); // ripristina lo stato mostrato a video
-      }
+      },
     });
   }
 }

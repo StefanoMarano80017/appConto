@@ -2,13 +2,11 @@
 
 .custom {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-4);
   margin-top: var(--space-5);
 
   label {
     @include typography.text('secondary');
-
     display: flex;
     align-items: center;
     gap: var(--space-3);

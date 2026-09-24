@@ -80,6 +80,9 @@
                 }
               </td>
               <td class="category">
+
+                <app-color-marker [color]="merchant.category?.color" />
+
                 <select
                   [ngModel]="merchant.category?.id ?? ''"
                   (ngModelChange)="changeCategory(merchant, $event)"

@@ -27,7 +27,9 @@
               <button type="button" class="sort" (click)="sortSelected.emit(field)">
                 {{ column.label }}
                 @if (sortBy() === field) {
-                  <span class="arrow" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                  <span class="arrow" aria-hidden="true">{{
+                    sortDirection() === 'asc' ? '↑' : '↓'
+                  }}</span>
                 }
               </button>
             } @else {
@@ -83,6 +85,7 @@
           </td>
           <td class="category">
             @if (transaction.merchant; as merchant) {
+              <app-color-marker [color]="merchant.category?.color" />
               <select
                 [ngModel]="merchant.category?.id ?? ''"
                 (ngModelChange)="changeCategory(transaction, $event)"
@@ -120,9 +123,7 @@
               }
 
               @if (loans.ownExpense > 0) {
-                <span class="own-expense"
-                  >{{ formatAmount(loans.ownExpense) }} spesa tua</span
-                >
+                <span class="own-expense">{{ formatAmount(loans.ownExpense) }} spesa tua</span>
               }
 
               @if (loans.creatable) {
