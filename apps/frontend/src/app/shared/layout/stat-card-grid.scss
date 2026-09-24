@@ -29,12 +29,15 @@
    * proprio host — ripeterli qui vorrebbe dire far dipendere il risultato
    * dall'ordine di inserimento dei due fogli di stile.
    *
-   * Un conteggio non è un importo (§4 vale solo per i valori finanziari):
-   * niente mono, niente segno. Resta comunque leggibile accanto
-   * all'etichetta, quindi usa lo stesso registro degli altri numeri
-   * prominenti dell'interfaccia (`page-title`), non il testo di corpo.
+   * Un conteggio non è un importo — niente segno, §4 non lo riguarda — ma
+   * resta un valore di pari grado nella stessa fascia di KPI: è
+   * l'uniformità delle card a farle leggere come una fascia, e dimezzare
+   * la dimensione di una sola le farebbe sembrare un dato minore. Stessa
+   * dimensione (`display-kpi`, 25px) e stessa famiglia mono di un importo:
+   * il mono non implica un segno, e le cifre tabulari allineano un
+   * conteggio quanto un importo.
    */
   span.value {
-    @include typography.text('page-title');
+    @include typography.text('display-kpi');
   }
 }
