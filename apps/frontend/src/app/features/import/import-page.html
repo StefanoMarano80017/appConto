@@ -1,142 +1,144 @@
-<app-panel>
-  <h2>Import CSV</h2>
-  <p class="hint">
-    Seleziona l'estratto conto esportato dalla banca. Le colonne vengono riconosciute dal loro
-    contenuto: non importa come sono intitolate, in che ordine sono, né quante ne contiene il file.
-    Se il riconoscimento non riesce — o sceglie la colonna sbagliata — le colonne si indicano a
-    mano prima di importare.
-  </p>
+<app-page-layout>
+  <app-panel>
+    <h1>Import CSV</h1>
+    <p class="hint">
+      Seleziona l'estratto conto esportato dalla banca. Le colonne vengono riconosciute dal loro
+      contenuto: non importa come sono intitolate, in che ordine sono, né quante ne contiene il file.
+      Se il riconoscimento non riesce — o sceglie la colonna sbagliata — le colonne si indicano a
+      mano prima di importare.
+    </p>
 
-  <div class="actions">
-    <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
-    <button
-      type="button"
-      (click)="importCsv()"
-      [disabled]="analysis() === null || analyzing() || importing()"
-    >
-      {{ importing() ? 'Importazione in corso…' : 'Importa' }}
-    </button>
-  </div>
-
-  @if (analyzing()) {
-    <p class="message">Lettura del file in corso…</p>
-  }
-
-  @if (error(); as message) {
-    <p class="message error">{{ message }}</p>
-  }
-
-  @if (analysis(); as csv) {
-    <div class="mapping">
-      <p class="file-summary">
-        <strong>{{ fileName() }}</strong> — {{ csv.rowsRead }}
-        {{ csv.rowsRead === 1 ? 'riga' : 'righe' }}, {{ csv.headers.length }}
-        {{ csv.headers.length === 1 ? 'colonna' : 'colonne' }}.
-      </p>
-
-      @if (unrecognized().length > 0) {
-        <p class="message warning">
-          Non ho riconosciuto la colonna di: <strong>{{ unrecognized().join(', ') }}</strong>.
-          Indicala qui sotto.
-        </p>
-      }
-
-      <fieldset class="mode">
-        <legend class="field-label">Colonne da leggere</legend>
-        <div class="options">
-          <label class="inline">
-            <input
-              type="radio"
-              name="mode"
-              [checked]="mode() === 'auto'"
-              [disabled]="!canImportAutomatically()"
-              (change)="selectMode('auto')"
-            />
-            <span>Automatica</span>
-          </label>
-          <label class="inline">
-            <input
-              type="radio"
-              name="mode"
-              [checked]="mode() === 'manual'"
-              (change)="selectMode('manual')"
-            />
-            <span>Manuale</span>
-          </label>
-        </div>
-      </fieldset>
-
-      @if (mode() === 'auto') {
-        <ul class="columns">
-          @for (bound of proposed(); track bound.label) {
-            <li>
-              <span class="field">{{ bound.label }}</span>
-              <span class="column">{{ bound.column }}</span>
-            </li>
-          }
-        </ul>
-      } @else if (form(); as value) {
-        <app-column-picker
-          [analysis]="csv"
-          [form]="value"
-          [errors]="errors()"
-          (changed)="updateForm($event)"
-        />
-      }
+    <div class="actions">
+      <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
+      <button
+        type="button"
+        (click)="importCsv()"
+        [disabled]="analysis() === null || analyzing() || importing()"
+      >
+        {{ importing() ? 'Importazione in corso…' : 'Importa' }}
+      </button>
     </div>
-  }
 
-  @if (result(); as importResult) {
-    <div class="result">
-      <div class="report">
-        <h3>Import completato</h3>
-        <dl>
-          <div>
-            <dt>Righe lette</dt>
-            <dd>{{ importResult.rowsRead }}</dd>
-          </div>
-          <div>
-            <dt>Transazioni nuove</dt>
-            <dd class="highlight">{{ importResult.imported }}</dd>
-          </div>
-          <div>
-            <dt>Transazioni duplicate</dt>
-            <dd>{{ importResult.duplicates }}</dd>
-          </div>
-          <div>
-            <dt>Righe scartate</dt>
-            <dd [class.warning]="importResult.failed > 0">{{ importResult.failed }}</dd>
-          </div>
-          <div>
-            <dt>Merchant creati</dt>
-            <dd>{{ importResult.merchantsCreated }}</dd>
-          </div>
-        </dl>
-      </div>
+    @if (analyzing()) {
+      <p class="message">Lettura del file in corso…</p>
+    }
 
-      @if (columns().length > 0) {
-        <div class="used-columns">
-          <h3>Colonne usate</h3>
+    @if (error(); as message) {
+      <p class="message error">{{ message }}</p>
+    }
+
+    @if (analysis(); as csv) {
+      <div class="mapping">
+        <p class="file-summary">
+          <strong>{{ fileName() }}</strong> — {{ csv.rowsRead }}
+          {{ csv.rowsRead === 1 ? 'riga' : 'righe' }}, {{ csv.headers.length }}
+          {{ csv.headers.length === 1 ? 'colonna' : 'colonne' }}.
+        </p>
+
+        @if (unrecognized().length > 0) {
+          <p class="message warning">
+            Non ho riconosciuto la colonna di: <strong>{{ unrecognized().join(', ') }}</strong>.
+            Indicala qui sotto.
+          </p>
+        }
+
+        <fieldset class="mode">
+          <legend class="field-label">Colonne da leggere</legend>
+          <div class="options">
+            <label class="inline">
+              <input
+                type="radio"
+                name="mode"
+                [checked]="mode() === 'auto'"
+                [disabled]="!canImportAutomatically()"
+                (change)="selectMode('auto')"
+              />
+              <span>Automatica</span>
+            </label>
+            <label class="inline">
+              <input
+                type="radio"
+                name="mode"
+                [checked]="mode() === 'manual'"
+                (change)="selectMode('manual')"
+              />
+              <span>Manuale</span>
+            </label>
+          </div>
+        </fieldset>
+
+        @if (mode() === 'auto') {
           <ul class="columns">
-            @for (bound of columns(); track bound.label) {
+            @for (bound of proposed(); track bound.label) {
               <li>
                 <span class="field">{{ bound.label }}</span>
                 <span class="column">{{ bound.column }}</span>
               </li>
             }
           </ul>
+        } @else if (form(); as value) {
+          <app-column-picker
+            [analysis]="csv"
+            [form]="value"
+            [errors]="errors()"
+            (changed)="updateForm($event)"
+          />
+        }
+      </div>
+    }
+
+    @if (result(); as importResult) {
+      <div class="result">
+        <div class="report">
+          <h3>Import completato</h3>
+          <dl>
+            <div>
+              <dt>Righe lette</dt>
+              <dd>{{ importResult.rowsRead }}</dd>
+            </div>
+            <div>
+              <dt>Transazioni nuove</dt>
+              <dd class="highlight">{{ importResult.imported }}</dd>
+            </div>
+            <div>
+              <dt>Transazioni duplicate</dt>
+              <dd>{{ importResult.duplicates }}</dd>
+            </div>
+            <div>
+              <dt>Righe scartate</dt>
+              <dd [class.warning]="importResult.failed > 0">{{ importResult.failed }}</dd>
+            </div>
+            <div>
+              <dt>Merchant creati</dt>
+              <dd>{{ importResult.merchantsCreated }}</dd>
+            </div>
+          </dl>
         </div>
-      }
 
-      @if (importResult.errors.length > 0) {
-        <ul class="row-errors">
-          @for (rowError of importResult.errors; track rowError.line) {
-            <li>Riga {{ rowError.line }}: {{ rowError.message }}</li>
-          }
-        </ul>
-      }
+        @if (columns().length > 0) {
+          <div class="used-columns">
+            <h3>Colonne usate</h3>
+            <ul class="columns">
+              @for (bound of columns(); track bound.label) {
+                <li>
+                  <span class="field">{{ bound.label }}</span>
+                  <span class="column">{{ bound.column }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
 
-      <a routerLink="/">Vai al riepilogo →</a>
-    </div>
-  }
-</app-panel>
+        @if (importResult.errors.length > 0) {
+          <ul class="row-errors">
+            @for (rowError of importResult.errors; track rowError.line) {
+              <li>Riga {{ rowError.line }}: {{ rowError.message }}</li>
+            }
+          </ul>
+        }
+
+        <a routerLink="/">Vai al riepilogo →</a>
+      </div>
+    }
+  </app-panel>
+</app-page-layout>

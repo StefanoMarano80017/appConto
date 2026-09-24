@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
-import { formatAmount, formatPercent } from '../../core/format';
+import { formatPercent } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
+import { Amount } from '../../shared/ui/amount';
 import { CategoryDistribution } from './analytics.model';
 
 /**
@@ -11,7 +12,7 @@ import { CategoryDistribution } from './analytics.model';
  */
 @Component({
   selector: 'app-analytics-categories',
-  imports: [Panel],
+  imports: [Panel, Amount],
   templateUrl: './analytics-categories.html',
   styleUrl: './analytics-categories.scss'
 })
@@ -21,7 +22,6 @@ export class AnalyticsCategories {
   /** Richiesta di restringere l'analisi ad una categoria; `null` = senza categoria. */
   readonly categorySelected = output<string | null>();
 
-  protected readonly formatAmount = formatAmount;
   protected readonly formatPercent = formatPercent;
 
   private readonly widest = computed(() =>

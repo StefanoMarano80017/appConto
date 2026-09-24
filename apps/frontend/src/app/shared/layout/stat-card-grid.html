@@ -1,0 +1,12 @@
+<div class="cards">
+  @for (item of items(); track item.label) {
+    <div class="card">
+      <span class="label">{{ item.label }}</span>
+      @if (item.kind === 'amount') {
+        <app-amount size="kpi" [value]="item.value" [tone]="item.tone ?? 'auto'" />
+      } @else {
+        <span class="value">{{ item.value }}</span>
+      }
+    </div>
+  }
+</div>

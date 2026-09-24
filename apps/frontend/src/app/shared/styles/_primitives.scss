@@ -1,0 +1,132 @@
+/*
+ * Livello 1 dei token (DESIGN_SYSTEM.md §2): i valori grezzi, un blocco per
+ * tema.
+ *
+ * design-tokens.json organizza già i colori per ruolo (`neutral.background`,
+ * `brand.primary`, `semantic.income`), quindi non esiste una tavolozza
+ * primitiva separata da nominare: il livello 1 è "quali esadecimali valgono
+ * in questo tema", il livello 2 è il nome. Questo file è il primo, i nomi
+ * sono già quelli del secondo.
+ *
+ * I tre valori che DESIGN_SYSTEM.md §8 marca `literal` sono qui promossi a
+ * token con un nome: un letterale scritto a mano dentro un componente è il
+ * punto di divergenza che §2 vieta.
+ */
+@mixin dark-palette {
+  --color-background: #0a0b0d;
+  --color-panel: #0d0f12;
+  --color-surface: #121418;
+  --color-surface-elevated: #171a1f;
+  --color-surface-hover: #1d2026;
+  --color-surface-active: #23272e;
+  --color-border: #24272e;
+  --color-border-strong: #343941;
+  --color-row-divider: #16191d;
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #a5acb8;
+  --color-text-muted: #777e8b;
+  --color-disabled: #4c525c;
+
+  --color-primary: #5f5ba8;
+  --color-primary-hover: #8a86c9;
+  --color-primary-active: #4f4b95;
+  --color-primary-subtle: rgb(95 91 168 / 14%);
+  --color-primary-border: rgb(95 91 168 / 34%);
+  --color-on-primary: #f2f1fa;
+  --color-focus-ring: rgb(95 91 168 / 22%);
+
+  --color-income: #61b08d;
+  --color-expense: #cb8b93;
+  --color-warning: #b3924f;
+  --color-error: #f0555f;
+  --color-info: #7793b8;
+
+  --color-chart-1: #7090b4;
+  --color-chart-2: #96a66e;
+  --color-chart-3: #5f968f;
+  --color-chart-4: #b08290;
+  --color-chart-5: #b3924f;
+  --color-chart-6: #8a86c9;
+  --color-chart-7: #a28bb2;
+  --color-chart-neutral: #4c525c;
+
+  /*
+   * Livello 3 — componentStatesReference: derivati da uno stato di
+   * componente (design-tokens.json → componentStatesReference), non
+   * primitive di livello 1 come il resto del file. L'appiattimento qui è
+   * preesistente per i primi tre (marcati `literal` da DESIGN_SYSTEM.md §8);
+   * `--color-primary-hover-text` li raggiunge per lo stesso motivo, ma senza
+   * introdurre un nuovo esadecimale: coincide con un token già esistente,
+   * il colore di sfondo dell'app stesso, com'era nel mockup dark.
+   */
+  --color-primary-hover-border: #a5a1da;
+  --color-disabled-surface: #1a1c21;
+  --color-disabled-input: #101216;
+  --color-primary-hover-text: var(--color-background);
+
+  /*
+   * Ombre: design-tokens.json non ne contiene alcuna (lacuna §2.3 n.2 della
+   * spec). Si conservano i due valori già in uso, che su fondo scuro devono
+   * essere più densi per restare visibili.
+   */
+  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 55%);
+  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 65%);
+
+  color-scheme: dark;
+}
+
+@mixin light-palette {
+  --color-background: #f3f3f1;
+  --color-panel: #ebebe8;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #f7f7f4;
+  --color-surface-hover: #efefec;
+  --color-surface-active: #e4e4e0;
+  --color-border: #e3e3df;
+  --color-border-strong: #c6c6c0;
+  --color-row-divider: #f0f0ed;
+  --color-text-primary: #1a1b19;
+  --color-text-secondary: #4e5359;
+  --color-text-muted: #6b7077;
+  --color-disabled: #8b939b;
+
+  --color-primary: #5b55c4;
+  --color-primary-hover: #625cc0;
+  --color-primary-active: #4a44a8;
+  --color-primary-subtle: rgb(91 85 196 / 14%);
+  --color-primary-border: rgb(91 85 196 / 34%);
+  --color-on-primary: #f2f1fa;
+  --color-focus-ring: rgb(91 85 196 / 22%);
+
+  --color-income: #17794f;
+  --color-expense: #ae3f51;
+  --color-warning: #8a6a15;
+  --color-error: #c22b33;
+  --color-info: #2d6394;
+
+  --color-chart-1: #3d6b99;
+  --color-chart-2: #5f7a33;
+  --color-chart-3: #2f6e68;
+  --color-chart-4: #97505f;
+  --color-chart-5: #8a6a15;
+  --color-chart-6: #625cc0;
+  --color-chart-7: #7a5f8c;
+  --color-chart-neutral: #8b939b;
+
+  /*
+   * Livello 3 — componentStatesReference: come in scuro, non primitive.
+   *
+   * Il letterale scuro del mockup dà 3,57:1 su questo sfondo hover, sotto la
+   * soglia 4,5:1 (§9): qui `--color-primary-hover-text` usa
+   * `--color-on-primary` (4,92:1), non `--color-background` come in scuro.
+   */
+  --color-primary-hover-border: #7b74d6;
+  --color-disabled-surface: #f0f0ed;
+  --color-disabled-input: #f2f2ef;
+  --color-primary-hover-text: var(--color-on-primary);
+
+  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 12%);
+  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 18%);
+
+  color-scheme: light;
+}

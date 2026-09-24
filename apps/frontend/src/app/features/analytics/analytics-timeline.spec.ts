@@ -109,11 +109,21 @@ describe('AnalyticsTimeline', () => {
     expect(text()).toContain('intervalli coperti solo in parte');
   });
 
-  /** Il puntatore a metà dell'intervallo indicato, in pixel dello strato di mira. */
+  /**
+   * Il puntatore a metà dell'intervallo indicato, in pixel dello strato di mira.
+   *
+   * `plotLeft`/`plotWidth` non ridichiarano `pad`/`plot` del componente (che
+   * da quando `pad.left` è calcolato dalla larghezza delle etichette non sono
+   * nemmeno più costanti): li legge dal primo `<line class="grid">` già
+   * renderizzato, gli stessi `x1`/`x2` che il template lega a `pad().left` e
+   * `pad().left + plot().width`. Un valore ridichiarato qui è quello che è
+   * andato fuori sincrono nel round precedente.
+   */
   const pointAt = (index: number, total: number): number => {
-    const plotLeft = 60;
-    const plotWidth = 760 - 60 - 96;
-    const band = plotWidth / (total - 1);
+    const grid = host().querySelector('line.grid');
+    const plotLeft = Number(grid?.getAttribute('x1'));
+    const plotRight = Number(grid?.getAttribute('x2'));
+    const band = (plotRight - plotLeft) / (total - 1);
 
     return ((plotLeft + index * band) / 760) * 760;
   };
@@ -134,8 +144,38 @@ describe('AnalyticsTimeline', () => {
     const shown = (host().querySelector('.tooltip')?.textContent ?? '').replace(/\./g, '');
 
     expect(shown).toContain('settimana del 6 luglio');
-    expect(shown).toContain('1725,00');
-    expect(shown).toContain('340,00');
+    // Il segno, non solo la cifra: un'entrata e un'uscita non si distinguono
+    // dal solo colore, e prima d'ora questa asserzione sarebbe passata anche
+    // invertendo i due toni.
+    expect(shown).toContain('+1725,00');
+    expect(shown).toContain('−340,00');
+  });
+
+  // Il caso del round precedente: un bucket a rimborso netto (`expenses`
+  // negativo) deve mostrare lo stesso segno nel riquadro al passaggio del
+  // mouse e nella tabella. Prima di questo fix il riquadro passava da
+  // `amountTone()` (tono forzato su un valore non negato) e la tabella da
+  // `value()` (valore negato, tono auto): sullo stesso bucket rendevano segni
+  // opposti.
+  it('il riquadro e la tabella concordano sul segno di un rimborso netto', async () => {
+    await render({
+      granularity: 'week',
+      buckets: [bucket('2026-07-06', 1000, 300, false), bucket('2026-07-13', 200, -50, false)]
+    });
+
+    await hover(1, 2);
+    const tooltipExpenses = [...host().querySelectorAll('.tooltip li')]
+      .find((li) => li.textContent?.includes('Uscite'))
+      ?.querySelector('.amount')
+      ?.textContent?.trim();
+
+    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
+    await fixture.whenStable();
+    const rows = host().querySelectorAll('table.values tbody tr');
+    const tableExpenses = rows[1]?.querySelectorAll('td.numeric')[1]?.textContent?.trim();
+
+    expect(tooltipExpenses).toContain('+50,00');
+    expect(tableExpenses).toContain('+50,00');
   });
 
   it('un intervallo incompleto lo dice anche nel riquadro', async () => {
@@ -191,8 +231,14 @@ describe('AnalyticsTimeline', () => {
 
     const rows = host().querySelectorAll('table.values tbody tr');
     expect(rows.length).toBe(4);
-    expect(text()).toContain('880,07');
     expect(text()).toContain('incompleto');
+
+    // Il segno, sulla cella giusta: in questa riga (indice 2, income 0) il
+    // saldo netto vale anch'esso -880,07, quindi un'asserzione sull'intera
+    // fixture (`text()`) sarebbe passata anche con le uscite non negate —
+    // esattamente il difetto che questa correzione doveva chiudere.
+    const expensesCell = rows[2]?.querySelectorAll('td.numeric')[1];
+    expect(expensesCell?.textContent?.replace(/\./g, '')).toContain('−880,07');
   });
 
   it('chiede il passo scelto senza cambiarlo da sé', async () => {

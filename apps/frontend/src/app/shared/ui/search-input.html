@@ -1,15 +1,5 @@
-@if (icon()) {
-  <label class="with-icon">
-    <span class="icon" aria-hidden="true">🔎</span>
-    <input
-      type="search"
-      [placeholder]="placeholder()"
-      [attr.aria-label]="ariaLabel() ?? null"
-      [value]="value()"
-      (input)="valueChange.emit($any($event.target).value)"
-    />
-  </label>
-} @else {
+<label class="search">
+  <span class="icon" aria-hidden="true">🔎</span>
   <input
     type="search"
     [placeholder]="placeholder()"
@@ -17,4 +7,4 @@
     [value]="value()"
     (input)="valueChange.emit($any($event.target).value)"
   />
-}
+</label>

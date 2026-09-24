@@ -1,78 +1,34 @@
-/* I token geometrici condivisi (raggi, spaziatura dei pannelli): shared/styles/_tokens.scss. */
-@use 'app/shared/styles/tokens';
+@use 'app/shared/styles/fonts';
+@use 'app/shared/styles/semantic';
+@use 'app/shared/styles/primitives';
+@use 'app/shared/styles/typography';
+@use 'app/shared/styles/legacy-aliases';
 
 /*
  * Tema chiaro e modalità notte.
  *
- * Tutta l'interfaccia legge questi token e nessun colore proprio: cambiare
- * tema significa quindi ridefinire solo quanto segue.
- *
- * Il tema scuro non è un'inversione automatica di quello chiaro: i colori sono
- * scelti sul fondo scuro e verificati lì. Le tre serie del grafico, in
- * particolare, mantengono la separazione in deuteranopia che il tema chiaro
- * documenta in `analytics-timeline.scss`, e sul fondo scuro superano i 3:1 di
- * contrasto che il verde acqua chiaro non raggiungeva.
+ * Il tema scuro non è un'inversione di quello chiaro: ogni colore mantiene la
+ * propria tinta e cambia solo luminosità, così una categoria o uno stato
+ * resta riconoscibile passando da un tema all'altro (DESIGN_SYSTEM.md §1).
  *
  * `data-theme` sull'elemento radice è la scelta esplicita dell'utente; se non
- * ha scelto l'attributo non c'è e decide `prefers-color-scheme`, cioè il
- * sistema operativo.
+ * ha scelto, l'attributo non c'è e decide `prefers-color-scheme`.
+ *
+ * Qui si sostituisce solo la tabella dei colori: layout, spaziatura, raggi e
+ * dimensioni sono identici nei due temi (§3).
  */
-
-@mixin light-theme {
-  --background: #f6f7f9;
-  --surface: #ffffff;
-  --border: #dfe3e8;
-  --text: #1b1f24;
-  --text-muted: #5c6672;
-  --accent: #2f6feb;
-  --accent-text: #ffffff;
-  --negative: #b4232a;
-  --positive: #1f7a45;
-
-  --series-income: #2f6feb;
-  --series-expenses: #eb6834;
-  --series-net: #1baf7a;
-
-  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 12%);
-  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 18%);
-
-  color-scheme: light;
-}
-
-@mixin dark-theme {
-  --background: #12161c;
-  --surface: #1a1f27;
-  --border: #2c333d;
-  --text: #e6e9ee;
-  --text-muted: #9aa4b2;
-  --accent: #6b9bff;
-  --accent-text: #10151c;
-  --negative: #f4756f;
-  --positive: #4cc98a;
-
-  --series-income: #508cfc;
-  --series-expenses: #ed5c19;
-  --series-net: #0fab76;
-
-  // Su fondo scuro un'ombra tenue non si vede: serve più densa.
-  --shadow-tooltip: 0 4px 14px rgb(0 0 0 / 55%);
-  --shadow-dropdown: 0 6px 20px rgb(0 0 0 / 65%);
-
-  color-scheme: dark;
-}
-
 :root {
-  @include light-theme;
+  @include primitives.light-palette;
 }
 
 :root[data-theme='dark'] {
-  @include dark-theme;
+  @include primitives.dark-palette;
 }
 
 @media (prefers-color-scheme: dark) {
-  // `:not` perché la scelta esplicita del tema chiaro vince sul sistema.
+  /* `:not` perché la scelta esplicita del tema chiaro vince sul sistema. */
   :root:not([data-theme='light']) {
-    @include dark-theme;
+    @include primitives.dark-palette;
   }
 }
 
@@ -82,26 +38,38 @@
 
 body {
   margin: 0;
-  background: var(--background);
-  color: var(--text);
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 15px;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 500;
   line-height: 1.5;
 }
 
 button {
   font: inherit;
-  padding: 0.5rem 1rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: var(--accent);
-  color: var(--accent-text);
+  padding: var(--space-4) var(--space-6);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   cursor: pointer;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/*
+ * Stato hover del bottone primario.
+ *
+ * design-tokens.json (componentStatesReference.primaryButton.hover) fissa il
+ * testo su un letterale scuro, verificato solo sul mockup dark. Misurato sullo
+ * sfondo hover chiaro `#625CC0`, quel letterale dà 3,57:1: sotto la soglia
+ * 4,5:1 del §9. Perciò il testo hover usa un token che cambia per tema:
+ * coincide con lo sfondo dell'app in scuro (com'era nel mockup, 0A0B0D) e
+ * diventa `--color-on-primary` in chiaro (4,92:1 sullo stesso sfondo).
+ */
+button:hover {
+  border-color: var(--color-primary-hover-border);
+  background: var(--color-primary-hover);
+  color: var(--color-primary-hover-text);
 }
 
 /*
@@ -116,4 +84,135 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * Messaggio di stato inline.
+ *
+ * Zero logica, quindi zero motivo per un componente Angular: è una classe,
+ * come `.truncate`. Oggi lo stesso CSS è ridefinito in ventitré file, con
+ * varianti che sono già divergenti fra loro.
+ */
+.message {
+  @include typography.text('secondary');
+}
+
+.message--error {
+  color: var(--color-error);
+}
+
+.message--warning {
+  color: var(--color-warning);
+}
+
+.message--done {
+  color: var(--color-income);
+}
+
+.message--hint {
+  @include typography.text('caption');
+}
+
+/* Visibile agli screen reader, non agli occhi. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.breadcrumb {
+  @include typography.text('caption');
+
+  margin: 0 0 var(--space-5);
+
+  a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+  }
+}
+
+/*
+ * Le tre varianti di bottone oltre al primario.
+ *
+ * design-tokens.json definisce solo `primaryButton` (lacuna §2.3 n.9 della
+ * spec): queste sono derivate dai token semantici secondo la decisione presa
+ * lì. Sono globali e non per-componente perché le stesse tre classi sono
+ * già scritte a mano in una ventina di punti.
+ *
+ * Le regole locali esistenti continuano a vincere su queste globali, ma non
+ * per specificità: con l'encapsulation emulata la base locale
+ * `button.danger[_ngcontent]` vale (0,2,1), esattamente quanto
+ * `button.danger:hover` qui sotto — è un pareggio, non un local che perde.
+ * A deciderlo è l'ordine di iniezione dei fogli di stile, perché Angular
+ * inserisce quelli dei componenti dopo il CSS globale. Continuano quindi a
+ * funzionare finché le pagine non le cancellano, una alla volta.
+ */
+button.secondary {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+button.secondary:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+}
+
+button.ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+button.ghost:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+button.danger {
+  border-color: var(--color-error);
+  background: transparent;
+  color: var(--color-error);
+}
+
+button.danger:hover {
+  background: var(--color-error);
+  color: var(--color-on-primary);
+}
+
+button:focus-visible {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
+}
+
+/*
+ * Stato disabilitato, per ogni variante di bottone.
+ *
+ * Deliberatamente in fondo al blocco: `button:disabled:hover` vale (0,2,1),
+ * quanto `button.secondary:hover`/`.ghost:hover`/`.danger:hover`, ma venendo
+ * dopo vince per ordine; `button:disabled` (0,1,1) coprirebbe già lo stato a
+ * riposo pareggiando con le basi delle varianti, e anche lì vince perché
+ * arriva dopo. Un `:not(:disabled)` sull'hover del primario, provato in un
+ * round precedente, alzava la specificità abbastanza da rompere le pillole
+ * di SegmentedControl/ToggleButtonGroup e il bordo di `.ghost`/`.danger` in
+ * hover: questa forma non tocca la specificità di nessun'altra regola.
+ */
+button:disabled,
+button:disabled:hover {
+  border-color: var(--color-border);
+  background: var(--color-disabled-surface);
+  color: var(--color-disabled);
+  cursor: not-allowed;
 }

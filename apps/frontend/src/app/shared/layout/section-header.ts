@@ -19,4 +19,13 @@ import { Component, input } from '@angular/core';
 export class SectionHeader {
   readonly title = input.required<string>();
   readonly subtitle = input<string | undefined>(undefined);
+
+  /**
+   * Il livello del titolo.
+   *
+   * Non è solo tipografia: DESIGN_SYSTEM.md distingue `page-title` (15px) da
+   * `section-title` (13px), e la pagina deve avere un `h1` solo. Il default
+   * resta `section`, così i nove usi esistenti non cambiano.
+   */
+  readonly level = input<'page' | 'section'>('section');
 }

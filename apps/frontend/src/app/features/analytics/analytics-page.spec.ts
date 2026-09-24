@@ -130,6 +130,13 @@ describe('AnalyticsPage', () => {
   const text = (): string =>
     ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\./g, '');
 
+  /** Come `text()`, ma ancorato a un contenitore: verifica che il contenuto sparisca davvero se manca. */
+  const sectionText = (selector: string): string =>
+    ((fixture.nativeElement as HTMLElement).querySelector(selector)?.textContent ?? '').replace(
+      /\./g,
+      ''
+    );
+
   const settle = async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve));
     TestBed.tick();
@@ -184,7 +191,17 @@ describe('AnalyticsPage', () => {
     expect(text()).toContain('Andamento nel tempo');
     expect(text()).toContain('Spese per categoria');
     expect(text()).toContain('Merchant principali');
-    expect(text()).toContain('Prestiti');
+    expect(sectionText('app-analytics-loans')).toContain('Prestiti');
+  });
+
+  it('la pagina ha un solo titolo di primo livello', async () => {
+    await settle();
+    await flush(analytics());
+
+    const h1 = (fixture.nativeElement as HTMLElement).querySelectorAll('h1');
+
+    expect(h1.length).toBe(1);
+    expect(h1[0].textContent).toContain('Analytics');
   });
 
   it('è una dashboard: non contiene più la tabella dei movimenti', async () => {
@@ -201,12 +218,18 @@ describe('AnalyticsPage', () => {
     await settle();
     await flush(analytics());
 
-    expect(text()).toContain('Entrate');
+    expect(sectionText('app-stat-card-grid')).toContain('Entrate');
     expect(text()).toContain('2000,00');
     expect(text()).toContain('Uscite');
     expect(text()).toContain('500,00');
-    expect(text()).toContain('Prelievi');
-    expect(text()).toContain('-300,00');
+    expect(sectionText('app-stat-card-grid')).toContain('Prelievi');
+    // Ancorata al contenitore, non a `text()`: `analytics-merchants.html`
+    // rende lo stesso «−300,00 €» (ESSELUNGA, v. fixture sopra) altrove
+    // nella pagina — su `text()` l'asserzione passerebbe anche se questa
+    // card sparisse o mostrasse il valore sbagliato. U+2212, non il
+    // trattino ASCII: le card KPI passano ora da `Amount`, che normalizza
+    // il segno come fa altrove (v. `amount.spec.ts`).
+    expect(sectionText('app-stat-card-grid')).toContain('−300,00');
   });
 
   it('chiede al backend il periodo selezionato', async () => {
@@ -249,13 +272,30 @@ describe('AnalyticsPage', () => {
     expect(text()).toContain('300,00');
   });
 
+  it('mentre un nuovo filtro è in volo il contenuto precedente resta a schermo', async () => {
+    await settle();
+    await flush(analytics());
+
+    store.toggleCategory('cat-1');
+    await settle();
+
+    // La richiesta è in volo: httpResource ha già azzerato il proprio valore,
+    // ma la latch di `data` deve trattenere quello precedente — niente più
+    // sparizione del grafico, e il ramo del primo caricamento non deve
+    // prendere il suo posto.
+    expect(sectionText('app-analytics-timeline')).toContain('Andamento nel tempo');
+    expect(text()).not.toContain('Caricamento in corso');
+
+    await flush(analytics(), `${RANGE}&categoryIds=cat-1&${STEP}`);
+  });
+
   it('spiega che non ci sono dati invece di mostrare sezioni vuote', async () => {
     await settle();
     await flush(empty());
 
     expect(text()).toContain('Nessun dato disponibile per il periodo selezionato');
     expect(text()).not.toContain('Andamento nel tempo');
-    expect(text()).toContain('Entrate');
+    expect(sectionText('app-stat-card-grid')).toContain('Entrate');
   });
 
   it('mostra l\'errore restituito dal backend', async () => {

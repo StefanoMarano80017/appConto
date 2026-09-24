@@ -1,8 +1,9 @@
 import { Component, input } from '@angular/core';
 import { Params, RouterLink } from '@angular/router';
-import { formatAmount, formatBookingDate } from '../../core/format';
+import { formatBookingDate } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
+import { Amount } from '../../shared/ui/amount';
 import { LoansSection } from './analytics.model';
 
 /**
@@ -14,7 +15,7 @@ import { LoansSection } from './analytics.model';
  */
 @Component({
   selector: 'app-analytics-loans',
-  imports: [Panel, RouterLink, SectionHeader],
+  imports: [Panel, RouterLink, SectionHeader, Amount],
   templateUrl: './analytics-loans.html',
   styleUrl: './analytics-loans.scss'
 })
@@ -23,6 +24,5 @@ export class AnalyticsLoans {
   /** Criteri con cui aprire l'esplorazione sui soli prestiti del periodo. */
   readonly explorerParams = input.required<Params>();
 
-  protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
 }

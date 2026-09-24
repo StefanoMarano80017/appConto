@@ -1,324 +1,326 @@
-<nav class="breadcrumb">
-  <a routerLink="/loans">← Prestiti</a>
-</nav>
+<app-page-layout>
+  <nav class="breadcrumb" aria-label="Percorso">
+    <a routerLink="/loans">← Prestiti</a>
+  </nav>
 
-@if (loadError(); as message) {
-  <app-panel>
-    <app-error-retry [message]="message" (retry)="loan.reload()" />
-  </app-panel>
-}
+  @if (loadError(); as message) {
+    <app-panel>
+      <app-error-retry [message]="message" (retry)="loan.reload()" />
+    </app-panel>
+  }
 
-@if (data(); as loan) {
-  <section class="panel" [class.updating]="saving()">
-    <div class="header">
-      <div>
-        <h2>{{ loan.borrowerName }}</h2>
-        <p class="subtitle">{{ loan.description ?? 'Nessuna descrizione' }}</p>
-        <p class="lent-at">Prestato il {{ formatBookingDate(loan.lentAt) }}</p>
+  @if (data(); as loan) {
+    <section class="panel" [class.updating]="saving()">
+      <div class="header">
+        <div>
+          <h1>{{ loan.borrowerName }}</h1>
+          <p class="subtitle">{{ loan.description ?? 'Nessuna descrizione' }}</p>
+          <p class="lent-at">Prestato il {{ formatBookingDate(loan.lentAt) }}</p>
+        </div>
+        <app-badge
+          [label]="statusLabels[loan.status]"
+          [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+        />
       </div>
-      <app-badge
-        [label]="statusLabels[loan.status]"
-        [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
-      />
-    </div>
 
-    <app-stat-card-grid [items]="summaryCards(loan)" />
+      <app-stat-card-grid [items]="summaryCards(loan)" />
 
-    <div
-      class="progress"
-      role="progressbar"
-      [attr.aria-valuenow]="repaidPercent()"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      [attr.aria-label]="'Restituito il ' + repaidPercent() + '% del prestito'"
-    >
-      <span class="bar" [style.width.%]="repaidPercent()"></span>
-    </div>
+      <div
+        class="progress"
+        role="progressbar"
+        [attr.aria-valuenow]="repaidPercent()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-label]="'Restituito il ' + repaidPercent() + '% del prestito'"
+      >
+        <span class="bar" [style.width.%]="repaidPercent()"></span>
+      </div>
 
-    @if (actionError(); as message) {
-      <p class="message error">{{ message }}</p>
-    }
-
-    <div class="loan-actions">
-      @if (!editing()) {
-        <button type="button" class="secondary" (click)="openEdit()" [disabled]="saving()">
-          Modifica
-        </button>
+      @if (actionError(); as message) {
+        <p class="message error">{{ message }}</p>
       }
-      @if (loan.repaymentCount === 0) {
-        @if (confirmingDelete()) {
-          <span class="confirm">
-            Eliminare il prestito?
-            <button type="button" class="danger" (click)="deleteLoan()" [disabled]="saving()">
-              Sì, elimina
-            </button>
-            <button type="button" class="secondary" (click)="confirmingDelete.set(false)">
-              Annulla
-            </button>
-          </span>
-        } @else {
-          <button
-            type="button"
-            class="secondary"
-            (click)="confirmingDelete.set(true)"
-            [disabled]="saving()"
-          >
-            Elimina
+
+      <div class="loan-actions">
+        @if (!editing()) {
+          <button type="button" class="secondary" (click)="openEdit()" [disabled]="saving()">
+            Modifica
           </button>
         }
-      }
-    </div>
-
-    @if (editing()) {
-      <form class="loan-form inline" (ngSubmit)="saveLoan()">
-        <app-form-field [id]="'editBorrowerName'" label="Persona" [error]="loanErrors().borrowerName">
-          <input
-            type="text"
-            id="editBorrowerName"
-            name="editBorrowerName"
-            autocomplete="off"
-            [ngModel]="loanForm().borrowerName"
-            (ngModelChange)="updateLoanField('borrowerName', $event)"
-            [attr.aria-invalid]="loanErrors().borrowerName ? 'true' : null"
-            [attr.aria-describedby]="editBorrowerNameDescribedBy()"
-          />
-        </app-form-field>
-
-        <app-form-field [id]="'editDescription'" label="Descrizione">
-          <input
-            type="text"
-            id="editDescription"
-            name="editDescription"
-            autocomplete="off"
-            [ngModel]="loanForm().description"
-            (ngModelChange)="updateLoanField('description', $event)"
-          />
-        </app-form-field>
-
-        <app-form-field [id]="'editAmount'" label="Importo" [error]="loanErrors().amount">
-          <input
-            type="text"
-            inputmode="decimal"
-            id="editAmount"
-            name="editAmount"
-            [ngModel]="loanForm().amount"
-            (ngModelChange)="updateLoanField('amount', $event)"
-            [attr.aria-invalid]="loanErrors().amount ? 'true' : null"
-            [attr.aria-describedby]="editAmountDescribedBy()"
-          />
-        </app-form-field>
-
-        <app-form-field [id]="'editLentAt'" label="Data" [error]="loanErrors().lentAt">
-          <input
-            type="date"
-            id="editLentAt"
-            name="editLentAt"
-            [ngModel]="loanForm().lentAt"
-            (ngModelChange)="updateLoanField('lentAt', $event)"
-            [attr.aria-invalid]="loanErrors().lentAt ? 'true' : null"
-            [attr.aria-describedby]="editLentAtDescribedBy()"
-          />
-        </app-form-field>
-
-        <div class="actions">
-          <button type="submit" [disabled]="saving()">Salva</button>
-          <button type="button" class="secondary" (click)="closeEdit()">Annulla</button>
-        </div>
-      </form>
-    }
-  </section>
-
-  <app-panel>
-    <h3>Movimento d'origine</h3>
-
-    @if (loan.transaction; as transaction) {
-      <div class="origin">
-        <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
-        <span class="description">{{ transaction.description }}</span>
-        <span class="type">{{ typeLabels[transaction.type] }}</span>
-        <span class="amount negative">{{ formatAmount(transaction.amount) }}</span>
+        @if (loan.repaymentCount === 0) {
+          @if (confirmingDelete()) {
+            <span class="confirm">
+              Eliminare il prestito?
+              <button type="button" class="danger" (click)="deleteLoan()" [disabled]="saving()">
+                Sì, elimina
+              </button>
+              <button type="button" class="secondary" (click)="confirmingDelete.set(false)">
+                Annulla
+              </button>
+            </span>
+          } @else {
+            <button
+              type="button"
+              class="secondary"
+              (click)="confirmingDelete.set(true)"
+              [disabled]="saving()"
+            >
+              Elimina
+            </button>
+          }
+        }
       </div>
 
-      @if (loan.originSplit; as split) {
-        @if (split.ownExpense > 0) {
-          <div class="split-bar">
-            <span class="lent" [style.width.%]="lentPercent()"></span>
+      @if (editing()) {
+        <form class="loan-form inline" (ngSubmit)="saveLoan()">
+          <app-form-field [id]="'editBorrowerName'" label="Persona" [error]="loanErrors().borrowerName">
+            <input
+              type="text"
+              id="editBorrowerName"
+              name="editBorrowerName"
+              autocomplete="off"
+              [ngModel]="loanForm().borrowerName"
+              (ngModelChange)="updateLoanField('borrowerName', $event)"
+              [attr.aria-invalid]="loanErrors().borrowerName ? 'true' : null"
+              [attr.aria-describedby]="editBorrowerNameDescribedBy()"
+            />
+          </app-form-field>
+
+          <app-form-field [id]="'editDescription'" label="Descrizione">
+            <input
+              type="text"
+              id="editDescription"
+              name="editDescription"
+              autocomplete="off"
+              [ngModel]="loanForm().description"
+              (ngModelChange)="updateLoanField('description', $event)"
+            />
+          </app-form-field>
+
+          <app-form-field [id]="'editAmount'" label="Importo" [error]="loanErrors().amount">
+            <input
+              type="text"
+              inputmode="decimal"
+              id="editAmount"
+              name="editAmount"
+              [ngModel]="loanForm().amount"
+              (ngModelChange)="updateLoanField('amount', $event)"
+              [attr.aria-invalid]="loanErrors().amount ? 'true' : null"
+              [attr.aria-describedby]="editAmountDescribedBy()"
+            />
+          </app-form-field>
+
+          <app-form-field [id]="'editLentAt'" label="Data" [error]="loanErrors().lentAt">
+            <input
+              type="date"
+              id="editLentAt"
+              name="editLentAt"
+              [ngModel]="loanForm().lentAt"
+              (ngModelChange)="updateLoanField('lentAt', $event)"
+              [attr.aria-invalid]="loanErrors().lentAt ? 'true' : null"
+              [attr.aria-describedby]="editLentAtDescribedBy()"
+            />
+          </app-form-field>
+
+          <div class="actions">
+            <button type="submit" [disabled]="saving()">Salva</button>
+            <button type="button" class="secondary" (click)="closeEdit()">Annulla</button>
           </div>
-          <ul class="split-legend">
-            <li>
-              <span class="swatch lent"></span>
-              <span class="label">Prestato</span>
-              <span class="value">{{ formatAmount(split.lent) }}</span>
-            </li>
-            <li>
-              <span class="swatch own"></span>
-              <span class="label">Spesa tua</span>
-              <span class="value">{{ formatAmount(split.ownExpense) }}</span>
-            </li>
-          </ul>
-          <p class="message note">
-            Del movimento, {{ formatAmount(split.ownExpense) }} non sono un credito di nessuno:
-            sono una tua spesa, e come tale entrano nelle uscite del mese e nella categoria del
-            movimento. Dal conto sono comunque usciti {{ formatAmount(split.amount) }}.
-          </p>
-        } @else {
-          <p class="message note">
-            Tutto il movimento è attribuito a prestiti: non entra fra le uscite del mese.
+        </form>
+      }
+    </section>
+
+    <app-panel>
+      <h3>Movimento d'origine</h3>
+
+      @if (loan.transaction; as transaction) {
+        <div class="origin">
+          <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
+          <span class="description">{{ transaction.description }}</span>
+          <span class="type">{{ typeLabels[transaction.type] }}</span>
+          <span class="amount negative">{{ formatAmount(transaction.amount) }}</span>
+        </div>
+
+        @if (loan.originSplit; as split) {
+          @if (split.ownExpense > 0) {
+            <div class="split-bar">
+              <span class="lent" [style.width.%]="lentPercent()"></span>
+            </div>
+            <ul class="split-legend">
+              <li>
+                <span class="swatch lent"></span>
+                <span class="label">Prestato</span>
+                <span class="value">{{ formatAmount(split.lent) }}</span>
+              </li>
+              <li>
+                <span class="swatch own"></span>
+                <span class="label">Spesa tua</span>
+                <span class="value">{{ formatAmount(split.ownExpense) }}</span>
+              </li>
+            </ul>
+            <p class="message note">
+              Del movimento, {{ formatAmount(split.ownExpense) }} non sono un credito di nessuno:
+              sono una tua spesa, e come tale entrano nelle uscite del mese e nella categoria del
+              movimento. Dal conto sono comunque usciti {{ formatAmount(split.amount) }}.
+            </p>
+          } @else {
+            <p class="message note">
+              Tutto il movimento è attribuito a prestiti: non entra fra le uscite del mese.
+            </p>
+          }
+        }
+
+        <p class="explore">
+          <a routerLink="/transactions" [queryParams]="{ search: transaction.description }">
+            Vedi nei movimenti →
+          </a>
+        </p>
+
+        @if (loan.transactionTypeMismatch) {
+          <p class="message warning">
+            Il movimento non è più di tipo «Prestito»: il prestito resta valido, ma uno dei due
+            dati è da sistemare.
           </p>
         }
+      } @else {
+        <p class="message">Il movimento d'origine non è più in archivio.</p>
       }
+    </app-panel>
 
-      <p class="explore">
-        <a routerLink="/transactions" [queryParams]="{ search: transaction.description }">
-          Vedi nei movimenti →
-        </a>
-      </p>
-
-      @if (loan.transactionTypeMismatch) {
-        <p class="message warning">
-          Il movimento non è più di tipo «Prestito»: il prestito resta valido, ma uno dei due
-          dati è da sistemare.
-        </p>
-      }
-    } @else {
-      <p class="message">Il movimento d'origine non è più in archivio.</p>
-    }
-  </app-panel>
-
-  <app-panel>
-    <div class="header">
-      <h3>Storico restituzioni</h3>
-      @if (!addingRepayment() && loan.remainingAmount > 0) {
-        <button type="button" (click)="openRepayment()" [disabled]="saving()">
-          + Registra restituzione
-        </button>
-      }
-    </div>
-
-    @if (addingRepayment()) {
-      <form class="loan-form inline" (ngSubmit)="saveRepayment()">
-        <app-form-field
-          [id]="'repaymentAmount'"
-          label="Importo"
-          [error]="repaymentErrors().amount"
-          [hint]="'Restano da ricevere ' + formatAmount(loan.remainingAmount) + '.'"
-        >
-          <input
-            type="text"
-            inputmode="decimal"
-            id="repaymentAmount"
-            name="repaymentAmount"
-            placeholder="0,00"
-            [ngModel]="repaymentForm().amount"
-            (ngModelChange)="updateRepaymentField('amount', $event)"
-            [attr.aria-invalid]="repaymentErrors().amount ? 'true' : null"
-            [attr.aria-describedby]="repaymentAmountDescribedBy()"
-          />
-        </app-form-field>
-
-        <app-form-field [id]="'repaymentDate'" label="Data" [error]="repaymentErrors().repaymentDate">
-          <input
-            type="date"
-            id="repaymentDate"
-            name="repaymentDate"
-            [ngModel]="repaymentForm().repaymentDate"
-            (ngModelChange)="updateRepaymentField('repaymentDate', $event)"
-            [attr.aria-invalid]="repaymentErrors().repaymentDate ? 'true' : null"
-            [attr.aria-describedby]="repaymentDateDescribedBy()"
-          />
-        </app-form-field>
-
-        <app-form-field [id]="'repaymentNote'" label="Nota">
-          <input
-            type="text"
-            id="repaymentNote"
-            name="repaymentNote"
-            placeholder="in contanti"
-            autocomplete="off"
-            [ngModel]="repaymentForm().note"
-            (ngModelChange)="updateRepaymentField('note', $event)"
-          />
-        </app-form-field>
-
-        <app-form-field
-          [id]="'repaymentTransactionId'"
-          label="Movimento collegato"
-          hint="Se il denaro è arrivato con un bonifico, scegli il movimento: resta l'entrata che è, il collegamento aggiunge solo il significato. Se è stato restituito in contanti lascia «Contanti» — il conto non è stato toccato e non deve sembrare il contrario."
-        >
-          <select
-            id="repaymentTransactionId"
-            name="repaymentTransactionId"
-            [ngModel]="repaymentForm().transactionId"
-            (ngModelChange)="updateRepaymentField('transactionId', $event)"
-            [attr.aria-describedby]="repaymentTransactionIdDescribedBy()"
-          >
-            <option value="">Contanti — nessun movimento bancario</option>
-            @for (candidate of repaymentCandidates(); track candidate.id) {
-              <option [value]="candidate.id">
-                {{ formatBookingDate(candidate.bookingDate) }} ·
-                {{ formatAmount(candidate.amount) }} · {{ candidate.description }}
-              </option>
-            }
-          </select>
-        </app-form-field>
-
-        <div class="actions">
-          <button type="submit" [disabled]="saving()">Registra</button>
-          <button type="button" class="secondary" (click)="closeRepayment()">Annulla</button>
-        </div>
-      </form>
-    }
-
-    @if (loan.repayments.length === 0) {
-      <p class="message">Nessuna restituzione registrata.</p>
-    } @else {
-      <div class="scroller">
-        <table class="repayments">
-          <thead>
-            <tr>
-              <th scope="col">Data</th>
-              <th scope="col" class="numeric">Importo</th>
-              <th scope="col">Collegamento</th>
-              <th scope="col">Nota</th>
-              <th scope="col"><span class="sr-only">Azioni</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (repayment of loan.repayments; track repayment.id) {
-              <tr>
-                <td class="date">{{ formatBookingDate(repayment.repaymentDate) }}</td>
-                <td class="numeric positive">{{ formatAmount(repayment.amount) }}</td>
-                <td class="link">
-                  @if (repayment.transaction; as transaction) {
-                    <a
-                      routerLink="/transactions"
-                      [queryParams]="{ search: transaction.description }"
-                      >{{ transaction.description }}</a
-                    >
-                  } @else {
-                    <span class="cash">Contanti</span>
-                  }
-                </td>
-                <td class="note">{{ repayment.note ?? '—' }}</td>
-                <td class="row-actions">
-                  <button
-                    type="button"
-                    class="link-button"
-                    (click)="removeRepayment(repayment.id)"
-                    [disabled]="saving()"
-                  >
-                    Elimina
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+    <app-panel>
+      <div class="header">
+        <h3>Storico restituzioni</h3>
+        @if (!addingRepayment() && loan.remainingAmount > 0) {
+          <button type="button" (click)="openRepayment()" [disabled]="saving()">
+            + Registra restituzione
+          </button>
+        }
       </div>
-    }
-  </app-panel>
-} @else if (loan.isLoading()) {
-  <app-panel>
-    <p class="message">Caricamento in corso…</p>
-  </app-panel>
-}
+
+      @if (addingRepayment()) {
+        <form class="loan-form inline" (ngSubmit)="saveRepayment()">
+          <app-form-field
+            [id]="'repaymentAmount'"
+            label="Importo"
+            [error]="repaymentErrors().amount"
+            [hint]="'Restano da ricevere ' + formatAmount(loan.remainingAmount) + '.'"
+          >
+            <input
+              type="text"
+              inputmode="decimal"
+              id="repaymentAmount"
+              name="repaymentAmount"
+              placeholder="0,00"
+              [ngModel]="repaymentForm().amount"
+              (ngModelChange)="updateRepaymentField('amount', $event)"
+              [attr.aria-invalid]="repaymentErrors().amount ? 'true' : null"
+              [attr.aria-describedby]="repaymentAmountDescribedBy()"
+            />
+          </app-form-field>
+
+          <app-form-field [id]="'repaymentDate'" label="Data" [error]="repaymentErrors().repaymentDate">
+            <input
+              type="date"
+              id="repaymentDate"
+              name="repaymentDate"
+              [ngModel]="repaymentForm().repaymentDate"
+              (ngModelChange)="updateRepaymentField('repaymentDate', $event)"
+              [attr.aria-invalid]="repaymentErrors().repaymentDate ? 'true' : null"
+              [attr.aria-describedby]="repaymentDateDescribedBy()"
+            />
+          </app-form-field>
+
+          <app-form-field [id]="'repaymentNote'" label="Nota">
+            <input
+              type="text"
+              id="repaymentNote"
+              name="repaymentNote"
+              placeholder="in contanti"
+              autocomplete="off"
+              [ngModel]="repaymentForm().note"
+              (ngModelChange)="updateRepaymentField('note', $event)"
+            />
+          </app-form-field>
+
+          <app-form-field
+            [id]="'repaymentTransactionId'"
+            label="Movimento collegato"
+            hint="Se il denaro è arrivato con un bonifico, scegli il movimento: resta l'entrata che è, il collegamento aggiunge solo il significato. Se è stato restituito in contanti lascia «Contanti» — il conto non è stato toccato e non deve sembrare il contrario."
+          >
+            <select
+              id="repaymentTransactionId"
+              name="repaymentTransactionId"
+              [ngModel]="repaymentForm().transactionId"
+              (ngModelChange)="updateRepaymentField('transactionId', $event)"
+              [attr.aria-describedby]="repaymentTransactionIdDescribedBy()"
+            >
+              <option value="">Contanti — nessun movimento bancario</option>
+              @for (candidate of repaymentCandidates(); track candidate.id) {
+                <option [value]="candidate.id">
+                  {{ formatBookingDate(candidate.bookingDate) }} ·
+                  {{ formatAmount(candidate.amount) }} · {{ candidate.description }}
+                </option>
+              }
+            </select>
+          </app-form-field>
+
+          <div class="actions">
+            <button type="submit" [disabled]="saving()">Registra</button>
+            <button type="button" class="secondary" (click)="closeRepayment()">Annulla</button>
+          </div>
+        </form>
+      }
+
+      @if (loan.repayments.length === 0) {
+        <p class="message">Nessuna restituzione registrata.</p>
+      } @else {
+        <div class="scroller">
+          <table class="repayments">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col" class="numeric">Importo</th>
+                <th scope="col">Collegamento</th>
+                <th scope="col">Nota</th>
+                <th scope="col"><span class="sr-only">Azioni</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (repayment of loan.repayments; track repayment.id) {
+                <tr>
+                  <td class="date">{{ formatBookingDate(repayment.repaymentDate) }}</td>
+                  <td class="numeric positive">{{ formatAmount(repayment.amount) }}</td>
+                  <td class="link">
+                    @if (repayment.transaction; as transaction) {
+                      <a
+                        routerLink="/transactions"
+                        [queryParams]="{ search: transaction.description }"
+                        >{{ transaction.description }}</a
+                      >
+                    } @else {
+                      <span class="cash">Contanti</span>
+                    }
+                  </td>
+                  <td class="note">{{ repayment.note ?? '—' }}</td>
+                  <td class="row-actions">
+                    <button
+                      type="button"
+                      class="link-button"
+                      (click)="removeRepayment(repayment.id)"
+                      [disabled]="saving()"
+                    >
+                      Elimina
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </app-panel>
+  } @else if (loan.isLoading()) {
+    <app-panel>
+      <p class="message">Caricamento in corso…</p>
+    </app-panel>
+  }
+</app-page-layout>

@@ -2,17 +2,55 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
+import { Amount } from '../../shared/ui/amount';
 import { SegmentedControl } from '../../shared/ui/segmented-control';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { timelineScale } from './timeline-scale';
 
 /** Geometria del disegno, in unità del `viewBox`. */
 const VIEW = { width: 760, height: 260 };
-const PAD = { top: 16, right: 96, bottom: 34, left: 60 };
-const PLOT = {
-  width: VIEW.width - PAD.left - PAD.right,
-  height: VIEW.height - PAD.top - PAD.bottom
-};
+const PAD_TOP = 16;
+const PAD_BOTTOM = 34;
+const PLOT_HEIGHT = VIEW.height - PAD_TOP - PAD_BOTTOM;
+
+/*
+ * `pad.right` riserva spazio a `.end-label` (ultimo valore di ogni serie,
+ * ancorato a `pad.left + plot.width + 10`). Non è derivato come `pad.left`
+ * sotto: la sua unica etichetta non riempiva le 96 unità originarie nemmeno
+ * da `caption`, e passando a `financial-row` (v. `analytics-timeline.scss`)
+ * resta capiente, con un margine stretto ma non al limite. Il budget di
+ * testo che offre, 109 - 10 = 99 unità, va confrontato con quanto costa
+ * davvero una stringa come "-12.345,67 €" — 12 caratteri, non 13 — il caso
+ * più lungo che questa vista mostri oggi: 12 × `MONO_CHAR_ADVANCE` (7,5) =
+ * 90 unità, lo stesso calcolo che `padLeft` sotto userebbe. Il margine
+ * reale è quindi 99 - 90 = 9 unità, poco più di un carattere.
+ * Il conto vale per la stringa più lunga di oggi, non per sempre: la forma
+ * durevole sarebbe derivare `PAD_RIGHT` come già fa `padLeft`, così un
+ * importo a sei cifre non lo scopra in silenzio.
+ * Lasciato costante perché qui, a differenza di sinistra, un margine extra
+ * non nasconde nulla: l'eccedenza è verso il bordo del `viewBox`, non verso
+ * il tracciato.
+ */
+const PAD_RIGHT = 109;
+/** Distacco fisso fra il tracciato e l'inizio (sinistra) o la fine (destra) di un'etichetta. */
+const LABEL_GAP = 10;
+
+/**
+ * Avanzamento di un carattere di Geist Mono, in unità di `viewBox`, al corpo
+ * del ruolo `financial-row` che `.tick`/`.end-label` usano (12,5px — v.
+ * `_typography.scss`): in un font monospaziato ogni carattere occupa la
+ * stessa cella piena, punto delle migliaia, virgola, spazio e simbolo di
+ * valuta compresi — circa 0,6em. Non è importabile da `_typography.scss` da
+ * qui: se quel ruolo cambia corpo, questa costante va aggiornata a mano.
+ *
+ * È il motivo per cui `PAD_LEFT` di prima (stimato scalando per il rapporto
+ * fra i corpi, 12,5/11, quando `.tick` è passato da `caption`) sottostimava
+ * lo spazio: il cambiamento non era di corpo, era di famiglia — dal
+ * proporzionale di `caption` al monospaziato di `financial-row`, dove ogni
+ * carattere (incluse le quattro cifre "strette" di un importo) vale una
+ * cella intera invece di circa metà.
+ */
+const MONO_CHAR_ADVANCE = 0.6 * 12.5;
 
 /** Oltre questi punti i pallini su ogni valore diventano rumore. */
 const MARKERS_MAX_POINTS = 24;
@@ -82,7 +120,7 @@ interface PlottedSeries {
  */
 @Component({
   selector: 'app-analytics-timeline',
-  imports: [Panel, SectionHeader, SegmentedControl],
+  imports: [Panel, SectionHeader, SegmentedControl, Amount],
   templateUrl: './analytics-timeline.html',
   styleUrl: './analytics-timeline.scss'
 })
@@ -93,8 +131,6 @@ export class AnalyticsTimeline {
   readonly granularitySelected = output<TimelineGranularity>();
 
   protected readonly view = VIEW;
-  protected readonly pad = PAD;
-  protected readonly plot = PLOT;
   protected readonly granularities = GRANULARITIES;
   protected readonly formatAmount = formatAmount;
 
@@ -138,6 +174,36 @@ export class AnalyticsTimeline {
   protected readonly gridLines = computed(() =>
     this.scale().ticks.map((value) => ({ value, y: this.y(value) }))
   );
+
+  /**
+   * Larghezza riservata all'etichetta più larga fra le linee guida, in
+   * unità di `viewBox`, più il distacco fisso dal tracciato.
+   *
+   * Dipende da `gridLines()`, non da `pad`/`plot`: se dipendesse da questi
+   * ultimi (che a loro volta dipendono da questo valore) sarebbe un ciclo.
+   * `y()` per lo stesso motivo non legge `pad`/`plot`: usa le costanti
+   * `PAD_TOP`/`PLOT_HEIGHT`, che non dipendono da `padLeft`.
+   */
+  private readonly padLeft = computed(() => {
+    const widest = Math.max(
+      0,
+      ...this.gridLines().map((line) => formatAmount(line.value).length)
+    );
+
+    return Math.ceil(widest * MONO_CHAR_ADVANCE + LABEL_GAP);
+  });
+
+  protected readonly pad = computed(() => ({
+    top: PAD_TOP,
+    right: PAD_RIGHT,
+    bottom: PAD_BOTTOM,
+    left: this.padLeft()
+  }));
+
+  protected readonly plot = computed(() => ({
+    width: VIEW.width - this.padLeft() - PAD_RIGHT,
+    height: PLOT_HEIGHT
+  }));
 
   protected readonly plotted = computed<PlottedSeries[]>(() => {
     const buckets = this.buckets();
@@ -246,9 +312,10 @@ export class AnalyticsTimeline {
     }
 
     const buckets = this.buckets();
-    const band = buckets.length <= 1 ? PLOT.width : PLOT.width / (buckets.length - 1);
+    const plot = this.plot();
+    const band = buckets.length <= 1 ? plot.width : plot.width / (buckets.length - 1);
     const inView = (event.offsetX / width) * VIEW.width;
-    const index = Math.round((inView - PAD.left) / band);
+    const index = Math.round((inView - this.pad().left) / band);
 
     this.hovered.set(Math.min(Math.max(index, 0), buckets.length - 1));
   }
@@ -275,18 +342,25 @@ export class AnalyticsTimeline {
 
   protected x(index: number): number {
     const buckets = this.buckets();
+    const pad = this.pad();
+    const plot = this.plot();
     if (buckets.length <= 1) {
-      return PAD.left + PLOT.width / 2;
+      return pad.left + plot.width / 2;
     }
 
-    return PAD.left + (index * PLOT.width) / (buckets.length - 1);
+    return pad.left + (index * plot.width) / (buckets.length - 1);
   }
 
+  /**
+   * Non legge `pad`/`plot`: userebbe `padLeft`, che dipende da `gridLines()`,
+   * che chiama proprio questo metodo. `PAD_TOP`/`PLOT_HEIGHT` non dipendono
+   * da `padLeft`, quindi restano le costanti di modulo.
+   */
   protected y(value: number): number {
     const { min, max } = this.scale();
     const span = max - min || 1;
 
-    return PAD.top + PLOT.height * (1 - (value - min) / span);
+    return PAD_TOP + PLOT_HEIGHT * (1 - (value - min) / span);
   }
 
   /** `06/07` a giorni e settimane, `lug 26` a mesi. */
@@ -308,8 +382,47 @@ export class AnalyticsTimeline {
     return formatBookingDate(bucket.period);
   }
 
+  /**
+   * Corregge il segno di una serie per la resa testuale (tooltip e tabella).
+   *
+   * `expenses` è una magnitudine di spesa (v. analytics.service, `hasExpense`
+   * corto-circuita a vero per ogni `EXPENSE`, rimborsi inclusi), non un
+   * valore con segno: un rimborso netto la rende negativa senza che quello
+   * significhi un'entrata. Negarla è ciò che permette al tono `'auto'` di
+   * `<app-amount>` di dedurre il segno giusto in entrambi i casi. `income` e
+   * `net` sono già nella forma corretta e restano invariati.
+   *
+   * Un solo punto sia per il tooltip sia per la tabella, così i due non
+   * possono più mostrare segni diversi per lo stesso valore — come accaduto
+   * quando la correzione viveva solo al punto di chiamata della tabella.
+   *
+   * NON va usata dove il valore alimenta la geometria del grafico
+   * (`plotted`/`scale`/`gridLines`/`endLabels`, che leggono
+   * `series.value(bucket)` direttamente, non questo metodo): negare lì
+   * ribalterebbe la linea "Uscite" sotto lo zero, cambiando la forma del
+   * grafico invece del solo segno del testo.
+   *
+   * Ne discende una seconda convenzione di segno, visibile e non solo
+   * interna: sullo stesso bucket, `.end-label` (che legge `series.value`
+   * per la geometria, non questo metodo) mostra "546,00 €", mentre il
+   * tooltip sullo stesso punto — che passa da qui — mostra "−546,00 €".
+   * Ciascuna delle due è coerente con la propria regola (l'asse disegna
+   * magnitudini sopra lo zero, il testo segue i segni), ma nessuna delle
+   * due lo dice: chi legge solo uno dei due punti di rendering non ha modo
+   * di saperlo.
+   */
+  private toDisplaySign(key: 'income' | 'expenses' | 'net', raw: number): number {
+    return key === 'expenses' ? -raw : raw;
+  }
+
   protected value(key: SeriesKey, bucket: TimelineBucket): number {
-    return SERIES.find((series) => series.key === key)?.value(bucket) ?? 0;
+    const raw = SERIES.find((series) => series.key === key)?.value(bucket) ?? 0;
+    return this.toDisplaySign(key, raw);
+  }
+
+  /** Gli stessi due totali della tabella, con la stessa correzione di segno di `value()`. */
+  protected totalValue(key: 'income' | 'expenses'): number {
+    return this.toDisplaySign(key, this.totals()[key]);
   }
 
   /** L'ultima serie visibile non si nasconde: un grafico vuoto non dice nulla. */

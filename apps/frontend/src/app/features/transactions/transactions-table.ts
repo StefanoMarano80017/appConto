@@ -10,23 +10,21 @@ import { Category } from '../categories/category.model';
 import { LoanLink, indexLinksByTransaction } from '../loans/loan.model';
 import { MerchantsApi } from '../merchants/merchants.api';
 import { SortDirection, TransactionSortField } from './transaction-query';
-import {
-  TRANSACTION_TYPES,
-  TRANSACTION_TYPE_LABELS,
-  TransactionType
-} from './transaction-type';
+import { TRANSACTION_TYPES, TRANSACTION_TYPE_LABELS, TransactionType } from './transaction-type';
 import { Transaction } from './transaction.model';
 import { TransactionsApi } from './transactions.api';
+import { ColorMarkerComponent } from '../../shared/ui/color-marker';
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
-const COLUMNS: readonly { label: string; field: TransactionSortField | null; numeric: boolean }[] = [
-  { label: 'Data', field: 'bookingDate', numeric: false },
-  { label: 'Descrizione', field: null, numeric: false },
-  { label: 'Merchant', field: 'merchant', numeric: false },
-  { label: 'Tipo', field: 'type', numeric: false },
-  { label: 'Categoria', field: 'category', numeric: false },
-  { label: 'Importo', field: 'amount', numeric: true }
-];
+const COLUMNS: readonly { label: string; field: TransactionSortField | null; numeric: boolean }[] =
+  [
+    { label: 'Data', field: 'bookingDate', numeric: false },
+    { label: 'Descrizione', field: null, numeric: false },
+    { label: 'Merchant', field: 'merchant', numeric: false },
+    { label: 'Tipo', field: 'type', numeric: false },
+    { label: 'Categoria', field: 'category', numeric: false },
+    { label: 'Importo', field: 'amount', numeric: true },
+  ];
 
 /** La colonna dei prestiti: non si ordina, è un'azione. */
 const LOAN_COLUMN = { label: 'Prestito', field: null, numeric: false } as const;
@@ -62,9 +60,9 @@ interface LoanCell {
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [FormsModule, RouterLink, Truncate],
+  imports: [FormsModule, RouterLink, Truncate, ColorMarkerComponent],
   templateUrl: './transactions-table.html',
-  styleUrl: './transactions-table.scss'
+  styleUrl: './transactions-table.scss',
 })
 export class TransactionsTable implements OnInit {
   private readonly api = inject(TransactionsApi);
@@ -115,11 +113,11 @@ export class TransactionsTable implements OnInit {
   protected readonly showLoans = computed(() => this.loanLinks() !== null);
 
   protected readonly columns = computed(() =>
-    this.showLoans() ? [...COLUMNS, LOAN_COLUMN] : COLUMNS
+    this.showLoans() ? [...COLUMNS, LOAN_COLUMN] : COLUMNS,
   );
 
   private readonly linksByTransaction = computed(() =>
-    indexLinksByTransaction(this.loanLinks() ?? [])
+    indexLinksByTransaction(this.loanLinks() ?? []),
   );
 
   /** Ciò che la colonna dei prestiti mostra per una riga. */
@@ -138,7 +136,7 @@ export class TransactionsTable implements OnInit {
       ownExpense:
         transaction.type === 'LOAN' && origins.length > 0
           ? Math.max(Math.abs(transaction.amount) - lent, 0)
-          : 0
+          : 0,
     };
   }
 
@@ -189,7 +187,7 @@ export class TransactionsTable implements OnInit {
   ngOnInit(): void {
     this.categoriesApi.list().subscribe({
       next: (categories) => this.categories.set(categories),
-      error: (error: unknown) => this.error.set(toErrorMessage(error))
+      error: (error: unknown) => this.error.set(toErrorMessage(error)),
     });
   }
 
@@ -233,7 +231,7 @@ export class TransactionsTable implements OnInit {
         this.error.set(toErrorMessage(error));
         this.savingId.set(null);
         this.changed.emit(); // ripristina lo stato mostrato a video
-      }
+      },
     });
   }
 }

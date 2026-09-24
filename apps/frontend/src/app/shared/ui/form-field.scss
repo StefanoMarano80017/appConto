@@ -1,3 +1,5 @@
+@use '../styles/typography';
+
 :host {
   display: contents;
 }
@@ -9,16 +11,15 @@ label {
 }
 
 .field-label {
-  font-weight: 600;
-  font-size: 0.875rem;
+  @include typography.text('label');
 }
 
 .field-hint {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 }
 
 .field-error {
+  @include typography.text('caption');
+
   color: var(--negative);
-  font-size: 0.8125rem;
 }

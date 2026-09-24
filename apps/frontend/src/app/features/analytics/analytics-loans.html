@@ -3,7 +3,13 @@
     <div panelActions class="totals">
       <span class="figure">
         <span class="label">Prestato nel periodo</span>
-        <span class="value">{{ formatAmount(loans().lent) }}</span>
+        <!--
+          Non è un'entrata né un'uscita: è credito, non patrimonio perso — da qui il tono
+          neutro. Negato perché `lent` è una magnitudine (v. analytics.service, outflowCents):
+          senza il segno negativo direbbe "1.000,00 €" qui e "−1.000,00 €" nelle righe sotto,
+          due segni per lo stesso denaro uscito.
+        -->
+        <app-amount class="value" [value]="-loans().lent" [tone]="'neutral'" />
       </span>
       <span class="figure">
         <span class="label">Movimenti</span>
@@ -25,7 +31,7 @@
           <span class="date">{{ formatBookingDate(entry.bookingDate) }}</span>
           <span class="name">{{ entry.merchant ?? entry.description }}</span>
           <span class="description">{{ entry.description }}</span>
-          <span class="amount">{{ formatAmount(entry.amount) }}</span>
+          <app-amount class="amount" [value]="entry.amount" [tone]="'neutral'" />
         </li>
       }
     </ul>

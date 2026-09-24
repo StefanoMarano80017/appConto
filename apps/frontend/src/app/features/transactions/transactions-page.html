@@ -1,97 +1,101 @@
-<app-transactions-toolbar
-  [query]="query()"
-  [categories]="categories()"
-  [merchants]="merchants()"
-  [searchText]="searchText()"
-  (changed)="apply($event)"
-  (searchTyped)="onSearchTyped($event)"
-  (cleared)="resetFilters()"
-/>
+<app-page-layout>
+  <app-section-header title="Movimenti" level="page" />
 
-@if (error(); as message) {
-  <section class="panel">
-    <app-error-retry [message]="message" (retry)="transactions.reload()" />
-  </section>
-}
+  <app-transactions-toolbar
+    [query]="query()"
+    [categories]="categories()"
+    [merchants]="merchants()"
+    [searchText]="searchText()"
+    (changed)="apply($event)"
+    (searchTyped)="onSearchTyped($event)"
+    (cleared)="resetFilters()"
+  />
 
-@if (page(); as data) {
-  <section class="panel" [class.updating]="transactions.isLoading()">
-    @if (data.items.length === 0) {
-      <div class="empty">
-        <app-empty-state
-          message="Nessuna transazione trovata."
-          hint="Prova a modificare o rimuovere uno dei filtri."
-          [actionLabel]="hasFilters() ? 'Reset filtri' : undefined"
-          (action)="resetFilters()"
-        />
-      </div>
-    } @else {
-      <app-transactions-pagination
-        [pagination]="data.pagination"
-        (pageSelected)="goToPage($event)"
-        (pageSizeSelected)="apply({ pageSize: $event })"
-      />
+  @if (error(); as message) {
+    <section class="panel">
+      <app-error-retry [message]="message" (retry)="transactions.reload()" />
+    </section>
+  }
 
-      @if (selectedCount() > 0 || deleteError() || deleteDone()) {
-        <div class="selection" role="group" aria-label="Azioni sulla selezione">
-          @if (selectedCount() > 0) {
-            <span class="count">
-              {{ selectedCount() }}
-              {{ selectedCount() === 1 ? 'movimento selezionato' : 'movimenti selezionati' }}
-            </span>
-
-            @if (confirmingDelete()) {
-              <span class="ask">Eliminare definitivamente?</span>
-              <button type="button" class="danger" [disabled]="deleting()" (click)="deleteSelected()">
-                {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
-              </button>
-              <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
-                Annulla
-              </button>
-            } @else {
-              <button type="button" class="danger" (click)="askDelete()">Elimina</button>
-              <button type="button" class="ghost" (click)="clearSelection()">
-                Deseleziona
-              </button>
-            }
-          }
-
-          @if (deleteError(); as message) {
-            <p class="message error">{{ message }}</p>
-          }
-          @if (deleteDone(); as message) {
-            <p class="message done">{{ message }}</p>
-          }
+  @if (page(); as data) {
+    <section class="panel" [class.updating]="transactions.isLoading()">
+      @if (data.items.length === 0) {
+        <div class="empty">
+          <app-empty-state
+            message="Nessuna transazione trovata."
+            hint="Prova a modificare o rimuovere uno dei filtri."
+            [actionLabel]="hasFilters() ? 'Reset filtri' : undefined"
+            (action)="resetFilters()"
+          />
         </div>
-      }
+      } @else {
+        <app-transactions-pagination
+          [pagination]="data.pagination"
+          (pageSelected)="goToPage($event)"
+          (pageSizeSelected)="apply({ pageSize: $event })"
+        />
 
-      <app-transactions-table
-        [transactions]="data.items"
-        [sortBy]="query().sortBy"
-        [sortDirection]="query().sortDirection"
-        [loanLinks]="links()"
-        [selectable]="true"
-        [selectedIds]="selected()"
-        (sortSelected)="sortBy($event)"
-        (selectionToggled)="toggleSelection($event)"
-        (allToggled)="toggleAll($event)"
-        (changed)="reload()"
-      />
+        @if (selectedCount() > 0 || deleteError() || deleteDone()) {
+          <div class="selection" role="group" aria-label="Azioni sulla selezione">
+            @if (selectedCount() > 0) {
+              <span class="count">
+                {{ selectedCount() }}
+                {{ selectedCount() === 1 ? 'movimento selezionato' : 'movimenti selezionati' }}
+              </span>
 
-      <app-transactions-pagination
-        [pagination]="data.pagination"
-        (pageSelected)="goToPage($event)"
-        (pageSizeSelected)="apply({ pageSize: $event })"
-      />
-    }
-  </section>
-} @else if (transactions.isLoading()) {
-  <section class="panel" aria-busy="true">
-    <p class="message">Caricamento in corso…</p>
-    <div class="skeleton">
-      @for (row of skeletonRows; track $index) {
-        <span class="line"></span>
+              @if (confirmingDelete()) {
+                <span class="ask">Eliminare definitivamente?</span>
+                <button type="button" class="danger" [disabled]="deleting()" (click)="deleteSelected()">
+                  {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+                </button>
+                <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
+                  Annulla
+                </button>
+              } @else {
+                <button type="button" class="danger" (click)="askDelete()">Elimina</button>
+                <button type="button" class="ghost" (click)="clearSelection()">
+                  Deseleziona
+                </button>
+              }
+            }
+
+            @if (deleteError(); as message) {
+              <p class="message error">{{ message }}</p>
+            }
+            @if (deleteDone(); as message) {
+              <p class="message done">{{ message }}</p>
+            }
+          </div>
+        }
+
+        <app-transactions-table
+          [transactions]="data.items"
+          [sortBy]="query().sortBy"
+          [sortDirection]="query().sortDirection"
+          [loanLinks]="links()"
+          [selectable]="true"
+          [selectedIds]="selected()"
+          (sortSelected)="sortBy($event)"
+          (selectionToggled)="toggleSelection($event)"
+          (allToggled)="toggleAll($event)"
+          (changed)="reload()"
+        />
+
+        <app-transactions-pagination
+          [pagination]="data.pagination"
+          (pageSelected)="goToPage($event)"
+          (pageSizeSelected)="apply({ pageSize: $event })"
+        />
       }
-    </div>
-  </section>
-}
+    </section>
+  } @else if (transactions.isLoading()) {
+    <section class="panel" aria-busy="true">
+      <p class="message">Caricamento in corso…</p>
+      <div class="skeleton">
+        @for (row of skeletonRows; track $index) {
+          <span class="line"></span>
+        }
+      </div>
+    </section>
+  }
+</app-page-layout>

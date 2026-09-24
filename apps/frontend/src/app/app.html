@@ -1,22 +1,27 @@
-<header class="app-header">
-  <h1 class="app-title">Personal Finance Tracker</h1>
-  <nav class="app-nav">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Riepilogo</a>
-    <a routerLink="/analytics" routerLinkActive="active">Analytics</a>
-    <a routerLink="/transactions" routerLinkActive="active">Movimenti</a>
-    <a routerLink="/loans" routerLinkActive="active">Prestiti</a>
-    <a routerLink="/merchants" routerLinkActive="active">Merchant</a>
-    <a routerLink="/categories" routerLinkActive="active">Categorie</a>
-    <a routerLink="/import" routerLinkActive="active">Import CSV</a>
-    <a routerLink="/settings" routerLinkActive="active">Impostazioni</a>
-  </nav>
+<div class="shell">
+  <div class="sidebar">
+    <header class="brand">Personal Finance Tracker</header>
 
-  <button type="button" class="theme-toggle" (click)="toggleTheme()">
-    <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
-    {{ themeAction() }}
-  </button>
-</header>
+    <nav class="nav" aria-label="Navigazione principale">
+      <ul class="nav-list" role="list">
+        <li><a routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">Riepilogo</a></li>
+        <li><a routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analytics</a></li>
+        <li><a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page">Movimenti</a></li>
+        <li><a routerLink="/loans" routerLinkActive="active" ariaCurrentWhenActive="page">Prestiti</a></li>
+        <li><a routerLink="/merchants" routerLinkActive="active" ariaCurrentWhenActive="page">Merchant</a></li>
+        <li><a routerLink="/categories" routerLinkActive="active" ariaCurrentWhenActive="page">Categorie</a></li>
+        <li><a routerLink="/import" routerLinkActive="active" ariaCurrentWhenActive="page">Import CSV</a></li>
+        <li><a routerLink="/settings" routerLinkActive="active" ariaCurrentWhenActive="page">Impostazioni</a></li>
+      </ul>
+    </nav>
 
-<main class="app-main">
-  <router-outlet />
-</main>
+    <button type="button" class="theme-toggle" (click)="toggleTheme()">
+      <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
+      {{ themeAction() }}
+    </button>
+  </div>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

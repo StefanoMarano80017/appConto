@@ -1,0 +1,15 @@
+@use '../styles/typography';
+
+:host {
+  display: block;
+}
+
+:host(:not(:first-of-type)) {
+  margin-top: var(--space-7);
+}
+
+.label {
+  @include typography.text('label');
+
+  margin: 0 0 var(--space-3);
+}

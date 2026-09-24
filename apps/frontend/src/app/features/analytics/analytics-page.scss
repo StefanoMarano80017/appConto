@@ -1,19 +1,21 @@
-/* Categorie e merchant affiancati sul desktop, uno sotto l'altro sul mobile. */
+@use '../../shared/styles/typography';
+
+/* Categorie e merchant affiancati: sono liste della stessa forma. */
 .columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-6);
 }
 
-/* Il passaggio dalla dashboard all'elenco dei movimenti. */
+/* Il passaggio dall'analisi all'elenco dei movimenti. */
 .explore {
-  margin: 0 0 1.5rem;
+  @include typography.text('secondary');
+
+  margin: 0 0 var(--space-6);
   text-align: right;
 
   a {
-    color: var(--accent);
-    font-size: 0.9375rem;
+    color: var(--color-primary);
     text-decoration: none;
   }
 
@@ -22,17 +24,36 @@
   }
 }
 
+/*
+ * La utility globale .message possiede il proprio aspetto, non la propria
+ * posizione: qui la pagina decide che questi paragrafi non hanno margine,
+ * senza imporre la stessa scelta agli altri undici fogli che oggi si
+ * appoggiano al margine di default del browser.
+ */
 .message {
   margin: 0;
-  color: var(--text-muted);
 }
 
-.message.error {
-  color: var(--negative);
+/*
+ * Qui l'indizio conta più che sui KPI: è dove la contraddizione è visibile,
+ * per esempio i bucket vecchi della timeline accanto a un controllo di
+ * granularità già passato a una scelta nuova. Diretto sull'host, non su un
+ * app-panel: nessuno di questi quattro fogli dichiara `:host { display:
+ * contents }`, quindi l'host stesso è la loro superficie visibile e non c'è
+ * un pannello interno la cui opacità si moltiplicherebbe con questa.
+ */
+app-analytics-timeline.stale,
+app-analytics-categories.stale,
+app-analytics-merchants.stale,
+app-analytics-loans.stale {
+  opacity: 0.6;
 }
 
-.hint {
-  margin: 0.375rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+/*
+ * Anche il collegamento in fondo alla pagina conta un totale che i filtri
+ * correnti hanno già superato: senza questo indizio mostrerebbe un numero
+ * vecchio con parametri nuovi.
+ */
+.explore.stale {
+  opacity: 0.6;
 }

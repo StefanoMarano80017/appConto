@@ -24,9 +24,12 @@
             <span class="percentage">
               {{ formatPercent(category.percentage) }}
             </span>
-            <span class="amount">
-              {{ formatAmount(category.amount) }}
-            </span>
+            <!--
+              `amount` è la magnitudine di una spesa (v. analytics.service), non un valore
+              con segno: un rimborso netto la rende negativa. Si nega qui, non con un tono
+              forzato, così l'auto deduce il segno vero invece di ribaltarlo sempre.
+            -->
+            <app-amount class="amount" [value]="-category.amount" />
             <span class="navigation-hint" aria-hidden="true"> → </span>
           </button>
           <span class="bar">

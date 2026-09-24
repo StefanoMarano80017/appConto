@@ -1,0 +1,35 @@
+/*
+ * Ponte temporaneo fra i nomi di token precedenti e quelli del design system.
+ *
+ * Esiste solo per non dover riscrivere in un unico commit i 40+ file di
+ * feature che usano ancora i nomi vecchi. Ogni fase successiva, aprendo un
+ * file per altri motivi, ne sostituisce i riferimenti e cancella da qui le
+ * righe rimaste senza utilizzatori.
+ *
+ * QUANDO QUESTO FILE È VUOTO, LA MIGRAZIONE DEI TOKEN È COMPLETA: è il
+ * criterio di uscita della Fase 7, e non richiede alcun giudizio.
+ */
+:root {
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --border: var(--color-border);
+  --text: var(--color-text-primary);
+  --text-muted: var(--color-text-muted);
+  --accent: var(--color-primary);
+  --on-accent: var(--color-on-primary);
+  --negative: var(--color-expense);
+  --positive: var(--color-income);
+
+  /*
+   * Le tre serie del grafico. La mappatura conserva le relazioni di tinta
+   * già verificate contro la deuteranopia (blu / caldo / acqua): il verde e
+   * il rosso degli importi restano esclusi dalle linee.
+   */
+  --series-income: var(--color-chart-1);
+  --series-expenses: var(--color-chart-5);
+  --series-net: var(--color-chart-3);
+
+  /* Geometria: i nomi di _tokens.scss, che questo file sostituisce. */
+  --radius-panel: var(--radius-card);
+  --space-panel: var(--space-7);
+}

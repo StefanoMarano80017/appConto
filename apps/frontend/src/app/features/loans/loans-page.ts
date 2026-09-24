@@ -17,21 +17,16 @@ import {
 import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
 import { Panel } from '../../shared/layout/panel';
+import { PageLayout } from '../../shared/layout/page-layout';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { Badge } from '../../shared/ui/badge';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { SearchInput } from '../../shared/ui/search-input';
-import { StatCardGrid } from '../../shared/ui/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
-
-/** Una card della fascia superiore. */
-interface Kpi {
-  label: string;
-  value: string;
-  tone: 'positive' | 'negative' | 'neutral';
-}
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
 const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: boolean }[] = [
@@ -53,7 +48,17 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
  */
 @Component({
   selector: 'app-loans-page',
-  imports: [Badge, EmptyState, ErrorRetry, Panel, RouterLink, SearchInput, StatCardGrid],
+  imports: [
+    Badge,
+    EmptyState,
+    ErrorRetry,
+    PageLayout,
+    Panel,
+    RouterLink,
+    SearchInput,
+    SectionHeader,
+    StatCardGrid
+  ],
   templateUrl: './loans-page.html',
   styleUrl: './loans-page.scss'
 })
@@ -96,22 +101,26 @@ export class LoansPage implements OnDestroy {
    *
    * «Da ricevere» è la cifra che conta: è l'unica che dice quanto denaro è
    * ancora fuori casa.
+   *
+   * `lent`, `repaid` e `remaining` sono importi del dominio dei prestiti:
+   * `loans.service.ts` li documenta come «sempre positivi», perché la
+   * direzione del denaro è già raccontata dalla transazione — ripeterla col
+   * segno qui la contraddirebbe. Per questo restano magnitudini, con tono
+   * neutro invece che dedotto: non sono né un'entrata né un'uscita, sono una
+   * posizione di credito. Coerente con il resto della pagina, che li mostra
+   * già così (v. tabella sotto, `formatAmount(loan.amount)` senza segno).
    */
-  protected readonly kpis = computed<Kpi[]>(() => {
+  protected readonly kpis = computed<StatCardItem[]>(() => {
     const totals = this.data()?.totals;
     if (totals === undefined) {
       return [];
     }
 
     return [
-      { label: 'Prestato', value: formatAmount(totals.lent), tone: 'neutral' },
-      { label: 'Restituito', value: formatAmount(totals.repaid), tone: 'positive' },
-      {
-        label: 'Da ricevere',
-        value: formatAmount(totals.remaining),
-        tone: totals.remaining > 0 ? 'negative' : 'positive'
-      },
-      { label: 'Aperti', value: String(totals.openCount), tone: 'neutral' }
+      { kind: 'amount', label: 'Prestato', value: totals.lent, tone: 'neutral' },
+      { kind: 'amount', label: 'Restituito', value: totals.repaid, tone: 'neutral' },
+      { kind: 'amount', label: 'Da ricevere', value: totals.remaining, tone: 'neutral' },
+      { kind: 'text', label: 'Aperti', value: String(totals.openCount) }
     ];
   });
 

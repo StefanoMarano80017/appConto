@@ -1,0 +1,43 @@
+:host {
+  display: block;
+}
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+/*
+ * La seconda colonna compare solo se qualcuno ha proiettato nella toolbox.
+ * `minmax(0, 1fr)` e non `1fr`: senza il minimo a zero una tabella larga
+ * allargherebbe la colonna invece di scorrere al proprio interno.
+ */
+.page:has(.toolbox > *) {
+  grid-template-columns: minmax(0, 1fr) 18.75rem;
+}
+
+/*
+ * Una toolbox senza contenuto non e' una colonna stretta: e' una riga in piu'
+ * nella griglia a colonna singola, alta zero ma preceduta dal gap. Nasconderla
+ * toglie riga e gap insieme.
+ */
+.toolbox:not(:has(> *)) {
+  display: none;
+}
+
+/*
+ * Sotto i 1280px la toolbox non sparisce e non diventa collassabile: passa
+ * sopra il contenuto, in riga. Nessun criterio diventa irraggiungibile a
+ * nessuna larghezza.
+ */
+@media (width < 80rem) {
+  .page:has(.toolbox > *) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbox {
+    order: -1;
+  }
+}

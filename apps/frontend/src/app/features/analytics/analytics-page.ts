@@ -1,7 +1,6 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
-import { formatAmount } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
@@ -13,22 +12,17 @@ import {
   toQueryParams
 } from '../transactions/transaction-query';
 import { Panel } from '../../shared/layout/panel';
-import { StatCardGrid } from '../../shared/ui/stat-card-grid';
+import { PageLayout } from '../../shared/layout/page-layout';
+import { SectionHeader } from '../../shared/layout/section-header';
+import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { Analytics } from './analytics.model';
 import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
 import { AnalyticsLoans } from './analytics-loans';
 import { AnalyticsMerchants } from './analytics-merchants';
 import { AnalyticsTimeline } from './analytics-timeline';
-import { AnalyticsToolbar } from './analytics-toolbar';
+import { AnalyticsFilters } from './analytics-filters';
 import { AnalyticsStore } from './analytics.store';
-
-/** Una card della fascia superiore. */
-interface Kpi {
-  label: string;
-  value: string;
-  tone: 'positive' | 'negative' | 'neutral';
-}
 
 /**
  * Pagina Analytics.
@@ -42,12 +36,14 @@ interface Kpi {
   selector: 'app-analytics-page',
   imports: [
     AnalyticsCategories,
+    AnalyticsFilters,
     AnalyticsLoans,
     AnalyticsMerchants,
     AnalyticsTimeline,
-    AnalyticsToolbar,
+    PageLayout,
     Panel,
     RouterLink,
+    SectionHeader,
     StatCardGrid
   ],
   templateUrl: './analytics-page.html',
@@ -68,20 +64,31 @@ export class AnalyticsPage implements OnInit {
   protected readonly merchants = signal<MerchantSummary[]>([]);
 
   /**
-   * L'analisi caricata, oppure `undefined`.
+   * L'ultima analisi caricata, che resta a schermo mentre ne arriva un'altra.
+   *
+   * `httpResource` azzera il valore quando la richiesta cambia: senza questa
+   * latch, cambiare un filtro farebbe sparire il grafico e ricomparire — cioè
+   * esattamente il movimento che questa pagina esiste per togliere.
    *
    * `value()` solleverebbe l'errore quando la richiesta è fallita: qui la
    * risposta e l'errore restano due stati distinti, entrambi mostrabili.
    */
-  protected readonly data = computed<Analytics | undefined>(() =>
-    this.analytics.hasValue() ? this.analytics.value() : undefined
-  );
+  protected readonly data = linkedSignal<Analytics | undefined, Analytics | undefined>({
+    source: () => (this.analytics.hasValue() ? this.analytics.value() : undefined),
+    computation: (caricata, precedente) => caricata ?? precedente?.value
+  });
 
   protected readonly error = computed(() => {
     const error = this.analytics.error();
 
     return error === undefined ? null : toErrorMessage(error);
   });
+
+  /**
+   * I dati a schermo non sono quelli dei filtri correnti: o ne stanno
+   * arrivando altri, o la richiesta è fallita e questi sono i precedenti.
+   */
+  protected readonly isStale = computed(() => this.analytics.isLoading() || this.error() !== null);
 
   protected readonly isEmpty = computed(() => this.data()?.counts.transactions === 0);
 
@@ -91,7 +98,7 @@ export class AnalyticsPage implements OnInit {
    * Prelievi, prestiti, trasferimenti e movimenti "altro" compaiono solo se il
    * dataset ne contiene: una card a zero occuperebbe spazio senza dire nulla.
    */
-  protected readonly kpis = computed<Kpi[]>(() => {
+  protected readonly kpis = computed<StatCardItem[]>(() => {
     const data = this.data();
     if (data === undefined) {
       return [];
@@ -106,17 +113,33 @@ export class AnalyticsPage implements OnInit {
     ];
 
     return [
-      { label: 'Entrate', value: formatAmount(overview.income), tone: 'positive' },
-      { label: 'Uscite', value: formatAmount(overview.expenses), tone: 'negative' },
-      {
-        label: 'Saldo netto',
-        value: formatAmount(overview.balance),
-        tone: overview.balance < 0 ? 'negative' : 'positive'
-      },
-      { label: 'Transazioni', value: String(counts.transactions), tone: 'neutral' },
+      // `income` è una magnitudine positiva (v. analytics.view-model.ts): nessuna
+      // negazione, nessun tono. `Amount` la legge com'è e ne deduce il verde.
+      { kind: 'amount', label: 'Entrate', value: overview.income },
+      // `expenses` è una magnitudine positiva quanto `income`, ma rappresenta
+      // un'uscita: la neghiamo qui, senza forzare il tono. Un rimborso conta
+      // come spesa prima di guardare il segno (`hasExpense`), quindi il totale
+      // non è garantito positivo: se un periodo è dominato da rimborsi, la
+      // negazione lo riporta da sola in verde invece di restare rosso a forza.
+      { kind: 'amount', label: 'Uscite', value: -overview.expenses },
+      // `balance` è già `income - expenses`, con il segno giusto: si passa così,
+      // senza tono imposto.
+      { kind: 'amount', label: 'Saldo netto', value: overview.balance },
+      { kind: 'text', label: 'Transazioni', value: String(counts.transactions) },
       ...secondary
         .filter(([, value]) => value !== 0)
-        .map(([label, value]): Kpi => ({ label, value: formatAmount(value), tone: 'neutral' }))
+        // Prelievi/prestiti/trasferimenti/altro conservano già il segno (sono
+        // "somme con segno", non magnitudini). Prelievi e trasferimenti non
+        // muovono il patrimonio (`netWorthCents` li azzera), «Prestiti» è
+        // credito, non spesa: nessuno dei tre è un'entrata o un'uscita.
+        // «Altro» è diverso: `netWorthCents` lo somma come un'entrata o
+        // un'uscita qualunque (nessun caso speciale in transaction-type.ts,
+        // ricade nel ramo che restituisce `amountCents`), quindi il
+        // patrimonio lo sente. Il tono neutro qui non dice "non conta": dice
+        // che è il tipo residuale per ciò che non rientra in nessun'altra
+        // categoria del dominio, quindi non c'è una base per giudicarlo
+        // buono o cattivo — non dedotto, dichiarato.
+        .map(([label, value]): StatCardItem => ({ kind: 'amount', label, value, tone: 'neutral' }))
     ];
   });
 

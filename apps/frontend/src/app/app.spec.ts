@@ -17,10 +17,25 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render the navigation', async () => {
+  it('mostra il marchio e le otto voci di navigazione', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Personal Finance Tracker');
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.brand')?.textContent?.trim()).toBe('Personal Finance Tracker');
+
+    const hrefs = Array.from(host.querySelectorAll<HTMLAnchorElement>('.nav a')).map((a) =>
+      a.getAttribute('href')
+    );
+    expect(hrefs).toEqual([
+      '/',
+      '/analytics',
+      '/transactions',
+      '/loans',
+      '/merchants',
+      '/categories',
+      '/import',
+      '/settings',
+    ]);
   });
 });
