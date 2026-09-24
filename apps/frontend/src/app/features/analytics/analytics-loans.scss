@@ -16,9 +16,9 @@
 
   /*
    * Classe condivisa fra la cifra dell'importo (ora `<app-amount class="value">`,
-   * che il ruolo lo eredita già da `:host(.row)`) e il conteggio dei movimenti
-   * qui accanto, che resta testo scritto a mano: il ruolo li tiene allineati
-   * come la stessa coppia di cifre.
+   * che il ruolo lo eredita già da `:host(.amount-row)`, la sua classe di default)
+   * e il conteggio dei movimenti qui accanto, che resta testo scritto a mano: il
+   * ruolo li tiene allineati come la stessa coppia di cifre.
    */
   .value {
     @include typography.text('financial-row');

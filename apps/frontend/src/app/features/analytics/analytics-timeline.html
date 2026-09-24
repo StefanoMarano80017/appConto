@@ -41,12 +41,12 @@
           @for (line of gridLines(); track line.value) {
             <line
               class="grid"
-              [attr.x1]="pad.left"
-              [attr.x2]="pad.left + plot.width"
+              [attr.x1]="pad().left"
+              [attr.x2]="pad().left + plot().width"
               [attr.y1]="line.y"
               [attr.y2]="line.y"
             />
-            <text class="tick" [attr.x]="pad.left - 10" [attr.y]="line.y + 4">
+            <text class="tick" [attr.x]="pad().left - 10" [attr.y]="line.y + 4">
               {{ formatAmount(line.value) }}
             </text>
           }
@@ -56,8 +56,8 @@
               class="crosshair"
               [attr.x1]="x(hovered()!)"
               [attr.x2]="x(hovered()!)"
-              [attr.y1]="pad.top"
-              [attr.y2]="pad.top + plot.height"
+              [attr.y1]="pad().top"
+              [attr.y2]="pad().top + plot().height"
             />
           }
 
@@ -84,7 +84,7 @@
             <text
               class="end-label"
               [attr.data-series]="label.key"
-              [attr.x]="pad.left + plot.width + 10"
+              [attr.x]="pad().left + plot().width + 10"
               [attr.y]="label.y + 4"
             >{{ formatAmount(label.value) }}</text>
           }
@@ -126,11 +126,8 @@
                 @if (item.visible) {
                   <li>
                     <span class="key" [attr.data-series]="item.key" aria-hidden="true"></span>
-                    <app-amount
-                      class="amount"
-                      [value]="value(item.key, bucket)"
-                      [tone]="amountTone(item.key)"
-                    />
+                    <!-- `value()` corregge già il segno di 'expenses': nessun tono forzato qui. -->
+                    <app-amount class="amount" [value]="value(item.key, bucket)" />
                     <span class="name">{{ item.label }}</span>
                   </li>
                 }
@@ -177,18 +174,18 @@
                     <span class="incomplete">incompleto</span>
                   }
                 </th>
-                <td class="numeric"><app-amount [value]="bucket.income" /></td>
-                <!-- `expenses` è una magnitudine, non un segno: si nega qui, non con un tono forzato. -->
-                <td class="numeric"><app-amount [value]="-bucket.expenses" /></td>
-                <td class="numeric"><app-amount [value]="bucket.netMovement" /></td>
+                <!-- `value()`: stessa correzione di segno del riquadro al passaggio del mouse, un solo punto. -->
+                <td class="numeric"><app-amount [value]="value('income', bucket)" /></td>
+                <td class="numeric"><app-amount [value]="value('expenses', bucket)" /></td>
+                <td class="numeric"><app-amount [value]="value('net', bucket)" /></td>
               </tr>
             }
           </tbody>
           <tfoot>
             <tr>
               <th scope="row">Totale</th>
-              <td class="numeric"><app-amount [value]="totals().income" /></td>
-              <td class="numeric"><app-amount [value]="-totals().expenses" /></td>
+              <td class="numeric"><app-amount [value]="totalValue('income')" /></td>
+              <td class="numeric"><app-amount [value]="totalValue('expenses')" /></td>
               <td class="numeric"></td>
             </tr>
           </tfoot>

@@ -109,8 +109,10 @@
  * Restano testo SVG scritto a mano, non `<app-amount>`: un componente Angular
  * annidato in un `<text>` non fa parte del modello di contenuto testuale
  * dell'SVG e i browser non garantiscono di renderlo. Il `fill` resta esplicito
- * in ogni regola qui sotto: su un `<text>` SVG è lui a dipingere il glifo, non
- * `color` (che il ruolo porta con sé ma qui resta inerte).
+ * in ogni regola qui sotto perché su un `<text>` SVG è lui a dipingere il
+ * glifo, non `color`: vale sia per `.time` (che eredita `color` da `caption`,
+ * ma qui resta inerte) sia per `.tick`/`.end-label` (`financial-row` non
+ * dichiara alcun `color`, quindi senza `fill` non avrebbero colore affatto).
  */
 .tick {
   /* Un numerale finanziario: stessa famiglia e stessa dimensione della cifra in tabella. */
