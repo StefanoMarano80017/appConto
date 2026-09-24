@@ -140,15 +140,20 @@ export class LoanDetailPage {
   protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
 
+  /**
+   * `amount`, `repaidAmount` e `remainingAmount` sono importi del dominio dei
+   * prestiti: `loans.service.ts` li documenta come «sempre positivi», perché
+   * la direzione del denaro è già raccontata dalla transazione d'origine —
+   * ripeterla col segno qui la contraddirebbe. Restano quindi magnitudini,
+   * con tono neutro invece che dedotto: non sono un'entrata né un'uscita, ma
+   * una posizione di credito. Coerente col resto della pagina, che li mostra
+   * già senza segno (v. `formatAmount(split.lent)`, `formatAmount(loan.remainingAmount)` più sotto).
+   */
   protected summaryCards(loan: LoanDetail): StatCardItem[] {
     return [
-      { label: 'Importo originale', value: formatAmount(loan.amount), tone: 'neutral' },
-      { label: 'Restituito', value: formatAmount(loan.repaidAmount), tone: 'positive' },
-      {
-        label: 'Residuo',
-        value: formatAmount(loan.remainingAmount),
-        tone: loan.remainingAmount > 0 ? 'negative' : 'positive'
-      }
+      { kind: 'amount', label: 'Importo originale', value: loan.amount, tone: 'neutral' },
+      { kind: 'amount', label: 'Restituito', value: loan.repaidAmount, tone: 'neutral' },
+      { kind: 'amount', label: 'Residuo', value: loan.remainingAmount, tone: 'neutral' }
     ];
   }
 

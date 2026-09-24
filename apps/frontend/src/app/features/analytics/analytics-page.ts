@@ -1,7 +1,6 @@
 import { httpResource } from '@angular/common/http';
 import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
-import { formatAmount } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
@@ -15,7 +14,7 @@ import {
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
-import { StatCardGrid } from '../../shared/layout/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { Analytics } from './analytics.model';
 import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
@@ -24,13 +23,6 @@ import { AnalyticsMerchants } from './analytics-merchants';
 import { AnalyticsTimeline } from './analytics-timeline';
 import { AnalyticsFilters } from './analytics-filters';
 import { AnalyticsStore } from './analytics.store';
-
-/** Una card della fascia superiore. */
-interface Kpi {
-  label: string;
-  value: string;
-  tone: 'positive' | 'negative' | 'neutral';
-}
 
 /**
  * Pagina Analytics.
@@ -106,7 +98,7 @@ export class AnalyticsPage implements OnInit {
    * Prelievi, prestiti, trasferimenti e movimenti "altro" compaiono solo se il
    * dataset ne contiene: una card a zero occuperebbe spazio senza dire nulla.
    */
-  protected readonly kpis = computed<Kpi[]>(() => {
+  protected readonly kpis = computed<StatCardItem[]>(() => {
     const data = this.data();
     if (data === undefined) {
       return [];
@@ -121,17 +113,25 @@ export class AnalyticsPage implements OnInit {
     ];
 
     return [
-      { label: 'Entrate', value: formatAmount(overview.income), tone: 'positive' },
-      { label: 'Uscite', value: formatAmount(overview.expenses), tone: 'negative' },
-      {
-        label: 'Saldo netto',
-        value: formatAmount(overview.balance),
-        tone: overview.balance < 0 ? 'negative' : 'positive'
-      },
-      { label: 'Transazioni', value: String(counts.transactions), tone: 'neutral' },
+      // `income` è una magnitudine positiva (v. analytics.view-model.ts): nessuna
+      // negazione, nessun tono. `Amount` la legge com'è e ne deduce il verde.
+      { kind: 'amount', label: 'Entrate', value: overview.income },
+      // `expenses` è una magnitudine positiva quanto `income`, ma rappresenta
+      // un'uscita: la neghiamo qui, senza forzare il tono. Un rimborso conta
+      // come spesa prima di guardare il segno (`hasExpense`), quindi il totale
+      // non è garantito positivo: se un periodo è dominato da rimborsi, la
+      // negazione lo riporta da sola in verde invece di restare rosso a forza.
+      { kind: 'amount', label: 'Uscite', value: -overview.expenses },
+      // `balance` è già `income - expenses`, con il segno giusto: si passa così,
+      // senza tono imposto.
+      { kind: 'amount', label: 'Saldo netto', value: overview.balance },
+      { kind: 'text', label: 'Transazioni', value: String(counts.transactions) },
       ...secondary
         .filter(([, value]) => value !== 0)
-        .map(([label, value]): Kpi => ({ label, value: formatAmount(value), tone: 'neutral' }))
+        // Prelievi/prestiti/trasferimenti/altro conservano già il segno (sono
+        // "somme con segno", non magnitudini): non sono né un'entrata né
+        // un'uscita, quindi il tono è neutro e dichiarato, non dedotto.
+        .map(([label, value]): StatCardItem => ({ kind: 'amount', label, value, tone: 'neutral' }))
     ];
   });
 

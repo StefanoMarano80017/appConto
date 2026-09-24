@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { formatAmount, formatMonth } from '../../core/format';
+import { formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
@@ -56,7 +56,6 @@ export class DashboardPage {
 
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
-  protected readonly formatAmount = formatAmount;
   protected readonly formatMonth = formatMonth;
 
   /** Etichette dei filtri attivi, risolte sui dati appena caricati. */
@@ -90,18 +89,22 @@ export class DashboardPage {
       return [];
     }
 
-    const { balance } = data.summary;
+    const { income, expenses, balance, transactionCount, merchantCount } = data.summary;
 
     return [
-      { label: 'Entrate', value: formatAmount(data.summary.income), tone: 'positive' },
-      { label: 'Uscite', value: formatAmount(data.summary.expenses), tone: 'negative' },
-      {
-        label: 'Saldo',
-        value: formatAmount(balance),
-        tone: balance > 0 ? 'positive' : balance < 0 ? 'negative' : 'neutral'
-      },
-      { label: 'Transazioni', value: String(data.summary.transactionCount), tone: 'neutral' },
-      { label: 'Merchant', value: String(data.summary.merchantCount), tone: 'neutral' }
+      // `income` è una magnitudine positiva (v. summary.view-model.ts): nessuna
+      // negazione, nessun tono. `Amount` ne deduce il verde da sola.
+      { kind: 'amount', label: 'Entrate', value: income },
+      // `expenses` è una magnitudine positiva ma rappresenta un'uscita: la
+      // neghiamo qui senza forzare il tono, così un totale dominato da rimborsi
+      // (hasExpense è vera prima di guardare il segno) torna verde da solo
+      // invece di restare rosso a forza.
+      { kind: 'amount', label: 'Uscite', value: -expenses },
+      // `balance` è già `income - expenses`, con il segno giusto: nessun tono
+      // imposto, nemmeno per lo zero — `Amount` lo tratta già da neutro.
+      { kind: 'amount', label: 'Saldo', value: balance },
+      { kind: 'text', label: 'Transazioni', value: String(transactionCount) },
+      { kind: 'text', label: 'Merchant', value: String(merchantCount) }
     ];
   });
 

@@ -18,10 +18,13 @@ const PLOT_HEIGHT = VIEW.height - PAD_TOP - PAD_BOTTOM;
  * ancorato a `pad.left + plot.width + 10`). Non è derivato come `pad.left`
  * sotto: la sua unica etichetta non riempiva le 96 unità originarie nemmeno
  * da `caption`, e passando a `financial-row` (v. `analytics-timeline.scss`)
- * resta ampiamente capiente — il budget di testo che offre, 109 - 10 = 99
- * unità, sta abbondantemente sopra le ~13 unità di margine che il calcolo
- * di `padLeft` sotto userebbe per una stringa di 13 caratteri come
- * "-12.345,67 €", il caso più lungo che questa vista mostri realisticamente.
+ * resta capiente — ma per un margine sottile, non ampio. Il budget di testo
+ * che offre, 109 - 10 = 99 unità, va confrontato con quanto costa davvero una
+ * stringa di 13 caratteri come "-12.345,67 €", il caso più lungo che questa
+ * vista mostri realisticamente: 13 × `MONO_CHAR_ADVANCE` (7,5) = 97,5 unità,
+ * lo stesso calcolo che `padLeft` sotto userebbe. Il margine reale è quindi
+ * 99 - 97,5 = 1,5 unità, non le ~13 che il calcolo precedente di questo
+ * commento assumeva: il contrario di abbondante.
  * Lasciato costante perché qui, a differenza di sinistra, un margine extra
  * non nasconde nulla: l'eccedenza è verso il bordo del `viewBox`, non verso
  * il tracciato.
@@ -396,6 +399,15 @@ export class AnalyticsTimeline {
    * `series.value(bucket)` direttamente, non questo metodo): negare lì
    * ribalterebbe la linea "Uscite" sotto lo zero, cambiando la forma del
    * grafico invece del solo segno del testo.
+   *
+   * Ne discende una seconda convenzione di segno, visibile e non solo
+   * interna: sullo stesso bucket, `.end-label` (che legge `series.value`
+   * per la geometria, non questo metodo) mostra "546,00 €", mentre il
+   * tooltip sullo stesso punto — che passa da qui — mostra "−546,00 €".
+   * Ciascuna delle due è coerente con la propria regola (l'asse disegna
+   * magnitudini sopra lo zero, il testo segue i segni), ma nessuna delle
+   * due lo dice: chi legge solo uno dei due punti di rendering non ha modo
+   * di saperlo.
    */
   private toDisplaySign(key: 'income' | 'expenses' | 'net', raw: number): number {
     return key === 'expenses' ? -raw : raw;

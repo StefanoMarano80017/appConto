@@ -2,9 +2,11 @@
   @for (item of items(); track item.label) {
     <div class="card">
       <span class="label">{{ item.label }}</span>
-      <span class="value" [class.positive]="item.tone === 'positive'" [class.negative]="item.tone === 'negative'">
-        {{ item.value }}
-      </span>
+      @if (item.kind === 'amount') {
+        <app-amount class="value" size="kpi" [value]="item.value" [tone]="item.tone ?? 'auto'" />
+      } @else {
+        <span class="value">{{ item.value }}</span>
+      }
     </div>
   }
 </div>

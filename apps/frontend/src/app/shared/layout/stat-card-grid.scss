@@ -20,19 +20,21 @@
   }
 
   /*
-   * Il KPI è l'unico numero che può arrivare a 25px, ed è il massimo che
-   * DESIGN_SYSTEM.md §4 consente: la gerarchia fra i numeri si ottiene per
-   * contrasto di colore, non aumentando la dimensione.
+   * `.value` si applica sia a `<app-amount class="value">` sia a
+   * `<span class="value">`: i due non hanno la stessa tipografia di
+   * partenza, quindi la regola resta qualificata su `span`.
+   *
+   * Per un importo la dimensione (fino a 25px, il massimo consentito da
+   * DESIGN_SYSTEM.md §4) e il colore del tono li porta già `Amount` sul
+   * proprio host — ripeterli qui vorrebbe dire far dipendere il risultato
+   * dall'ordine di inserimento dei due fogli di stile.
+   *
+   * Un conteggio non è un importo (§4 vale solo per i valori finanziari):
+   * niente mono, niente segno. Resta comunque leggibile accanto
+   * all'etichetta, quindi usa lo stesso registro degli altri numeri
+   * prominenti dell'interfaccia (`page-title`), non il testo di corpo.
    */
-  .value {
-    @include typography.text('display-kpi');
-  }
-
-  .value.positive {
-    color: var(--color-income);
-  }
-
-  .value.negative {
-    color: var(--color-expense);
+  span.value {
+    @include typography.text('page-title');
   }
 }
