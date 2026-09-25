@@ -19,25 +19,30 @@ const PLOT_HEIGHT = VIEW.height - PAD_TOP - PAD_BOTTOM;
  * sotto: la sua unica etichetta non riempiva le 96 unità originarie nemmeno
  * da `caption`, e passando a `financial-row` (v. `analytics-timeline.scss`)
  * resta capiente, con un margine stretto ma non al limite. Il budget di
- * testo che offre, 109 - 10 = 99 unità, va confrontato con quanto costa
+ * testo che offre, 127 - 10 = 117 unità, va confrontato con quanto costa
  * davvero una stringa come "-12.345,67 €" — 12 caratteri, non 13 — il caso
- * più lungo che questa vista mostri oggi: 12 × `MONO_CHAR_ADVANCE` (7,5) =
- * 90 unità, lo stesso calcolo che `padLeft` sotto userebbe. Il margine
- * reale è quindi 99 - 90 = 9 unità, poco più di un carattere.
+ * più lungo che questa vista mostri oggi: 12 × `MONO_CHAR_ADVANCE` (9) =
+ * 108 unità, lo stesso calcolo che `padLeft` sotto userebbe. Il margine
+ * reale è quindi 117 - 108 = 9 unità, poco più di mezzo carattere.
  * Il conto vale per la stringa più lunga di oggi, non per sempre: la forma
  * durevole sarebbe derivare `PAD_RIGHT` come già fa `padLeft`, così un
  * importo a sei cifre non lo scopra in silenzio.
  * Lasciato costante perché qui, a differenza di sinistra, un margine extra
  * non nasconde nulla: l'eccedenza è verso il bordo del `viewBox`, non verso
  * il tracciato.
+ *
+ * Era 109 finché `financial-row` valeva 12,5px (budget 99, costo 90, stesso
+ * margine di 9). Portando il ruolo a 15px il costo è salito a 108, che le 99
+ * unità di allora non contenevano: è il modo in cui questa costante "si
+ * scopre in silenzio", previsto dal commento sopra e puntualmente accaduto.
  */
-const PAD_RIGHT = 109;
+const PAD_RIGHT = 127;
 /** Distacco fisso fra il tracciato e l'inizio (sinistra) o la fine (destra) di un'etichetta. */
 const LABEL_GAP = 10;
 
 /**
  * Avanzamento di un carattere di Geist Mono, in unità di `viewBox`, al corpo
- * del ruolo `financial-row` che `.tick`/`.end-label` usano (12,5px — v.
+ * del ruolo `financial-row` che `.tick`/`.end-label` usano (15px — v.
  * `_typography.scss`): in un font monospaziato ogni carattere occupa la
  * stessa cella piena, punto delle migliaia, virgola, spazio e simbolo di
  * valuta compresi — circa 0,6em. Non è importabile da `_typography.scss` da
@@ -50,7 +55,7 @@ const LABEL_GAP = 10;
  * carattere (incluse le quattro cifre "strette" di un importo) vale una
  * cella intera invece di circa metà.
  */
-const MONO_CHAR_ADVANCE = 0.6 * 12.5;
+const MONO_CHAR_ADVANCE = 0.6 * 15;
 
 /** Oltre questi punti i pallini su ogni valore diventano rumore. */
 const MARKERS_MAX_POINTS = 24;
@@ -58,8 +63,15 @@ const MARKERS_MAX_POINTS = 24;
 /** Quante etichette al massimo sull'asse dei tempi, prima di diradarle. */
 const MAX_TIME_LABELS = 9;
 
-/** Sotto questa distanza due etichette a fine linea si sovrappongono. */
-const LABEL_COLLISION = 18;
+/**
+ * Sotto questa distanza due etichette a fine linea si sovrappongono.
+ *
+ * Scala con il corpo di `financial-row`, che le compone: era 18 a 12,5px, è 22
+ * a 15px. Sbagliare per eccesso fa sparire una coppia di etichette che sarebbe
+ * stata leggibile; sbagliare per difetto le fa scrivere una sopra l'altra — il
+ * primo errore si nota e si corregge, il secondo sembra un bug del grafico.
+ */
+const LABEL_COLLISION = 22;
 
 const shortMonth = new Intl.DateTimeFormat('it-IT', { month: 'short', year: '2-digit' });
 const shortDay = new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit' });
@@ -248,7 +260,16 @@ export class AnalyticsTimeline {
     const labels = this.plotted().flatMap((series) => {
       const last = series.points.at(-1);
 
-      return last === undefined ? [] : [{ key: series.key, label: series.label, y: last.y, value: last.value }];
+      return last === undefined
+        ? []
+        : [
+            {
+              key: series.key,
+              label: series.label,
+              y: last.y,
+              value: this.toDisplaySign(series.key, last.value)
+            }
+          ];
     });
 
     const sorted = [...labels].sort((a, b) => a.y - b.y);
@@ -383,7 +404,8 @@ export class AnalyticsTimeline {
   }
 
   /**
-   * Corregge il segno di una serie per la resa testuale (tooltip e tabella).
+   * Corregge il segno di una serie per la resa testuale (tooltip, tabella ed
+   * etichette di fine linea).
    *
    * `expenses` è una magnitudine di spesa (v. analytics.service, `hasExpense`
    * corto-circuita a vero per ogni `EXPENSE`, rimborsi inclusi), non un
@@ -392,24 +414,17 @@ export class AnalyticsTimeline {
    * `<app-amount>` di dedurre il segno giusto in entrambi i casi. `income` e
    * `net` sono già nella forma corretta e restano invariati.
    *
-   * Un solo punto sia per il tooltip sia per la tabella, così i due non
-   * possono più mostrare segni diversi per lo stesso valore — come accaduto
-   * quando la correzione viveva solo al punto di chiamata della tabella.
+   * Un solo punto per tooltip, tabella ed `endLabels`, così i tre non possono
+   * più mostrare segni diversi per lo stesso valore — come accadeva quando
+   * `.end-label` leggeva `series.value` grezzo mentre il tooltip, sullo
+   * stesso bucket, passava già da qui: "546,00 €" nell'etichetta e
+   * "−546,00 €" nel riquadro, due segni per lo stesso importo.
    *
-   * NON va usata dove il valore alimenta la geometria del grafico
-   * (`plotted`/`scale`/`gridLines`/`endLabels`, che leggono
-   * `series.value(bucket)` direttamente, non questo metodo): negare lì
-   * ribalterebbe la linea "Uscite" sotto lo zero, cambiando la forma del
-   * grafico invece del solo segno del testo.
-   *
-   * Ne discende una seconda convenzione di segno, visibile e non solo
-   * interna: sullo stesso bucket, `.end-label` (che legge `series.value`
-   * per la geometria, non questo metodo) mostra "546,00 €", mentre il
-   * tooltip sullo stesso punto — che passa da qui — mostra "−546,00 €".
-   * Ciascuna delle due è coerente con la propria regola (l'asse disegna
-   * magnitudini sopra lo zero, il testo segue i segni), ma nessuna delle
-   * due lo dice: chi legge solo uno dei due punti di rendering non ha modo
-   * di saperlo.
+   * La regola è unica, non un'eccezione per il tooltip: la geometria del
+   * grafico (`plotted`/`scale`/`gridLines`, e la `y` di `endLabels`) resta a
+   * magnitudini grezze — negarla ribalterebbe la linea "Uscite" sotto lo
+   * zero, cambiando la forma del grafico — mentre ogni valore che diventa
+   * testo passa da `toDisplaySign`, `endLabels` compreso.
    */
   private toDisplaySign(key: 'income' | 'expenses' | 'net', raw: number): number {
     return key === 'expenses' ? -raw : raw;

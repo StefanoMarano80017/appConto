@@ -1,14 +1,13 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { API_BASE_URL } from '../../core/api';
 import { toErrorMessage } from '../../core/http-error';
-import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { LoanLinks } from '../loans/loan.model';
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
-import { MerchantsApi } from '../merchants/merchants.api';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { EmptyState } from '../../shared/ui/empty-state';
@@ -17,14 +16,16 @@ import {
   TransactionQueryState,
   hasFilters,
   parseTransactionQuery,
-  toQueryParams
+  toQueryParams,
+  TransactionSortField,
 } from './transaction-query';
-import { TransactionSortField } from './transaction-query';
 import { TransactionPage } from './transaction.model';
 import { TransactionsApi, transactionsRequest } from './transactions.api';
 import { TransactionsPagination } from './transactions-pagination';
 import { TransactionsTable } from './transactions-table';
 import { TransactionsToolbar } from './transactions-toolbar';
+import { createDeleteState } from './transaction-delete';
+import { createSelectionState } from './transaction-selection';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -48,27 +49,25 @@ const SKELETON_ROWS = 8;
     SectionHeader,
     TransactionsPagination,
     TransactionsTable,
-    TransactionsToolbar
+    TransactionsToolbar,
   ],
   templateUrl: './transactions-page.html',
-  styleUrl: './transactions-page.scss'
+  styleUrl: './transactions-page.scss',
 })
-export class TransactionsPage implements OnInit, OnDestroy {
+export class TransactionsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly categoriesApi = inject(CategoriesApi);
-  private readonly merchantsApi = inject(MerchantsApi);
   private readonly api = inject(TransactionsApi);
 
   private readonly params = toSignal(this.route.queryParamMap, {
-    initialValue: this.route.snapshot.queryParamMap
+    initialValue: this.route.snapshot.queryParamMap,
   });
 
   protected readonly query = computed(() => parseTransactionQuery(this.params()));
   protected readonly hasFilters = computed(() => hasFilters(this.query()));
 
   protected readonly transactions = httpResource<TransactionPage>(() =>
-    transactionsRequest(this.query())
+    transactionsRequest(this.query()),
   );
 
   /**
@@ -82,7 +81,7 @@ export class TransactionsPage implements OnInit, OnDestroy {
 
   /** Un elenco (anche vuoto) mostra la colonna; finché non si sa, resta nascosta. */
   protected readonly links = computed(() =>
-    this.loanLinks.hasValue() ? this.loanLinks.value().links : null
+    this.loanLinks.hasValue() ? this.loanLinks.value().links : null,
   );
 
   /** Il testo digitato, prima che diventi un criterio nell'URL. */
@@ -90,18 +89,28 @@ export class TransactionsPage implements OnInit, OnDestroy {
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /** Servono ai filtri per mostrare nomi al posto di identificativi. */
-  protected readonly categories = signal<Category[]>([]);
-  protected readonly merchants = signal<MerchantSummary[]>([]);
+  protected readonly categories = httpResource<Category[]>(() => ({
+    url: `${API_BASE_URL}/categories`,
+  }));
+  protected readonly merchants = httpResource<MerchantSummary[]>(() => ({
+    url: `${API_BASE_URL}/merchants/summary`,
+  }));
+
+  protected readonly categoryItems = computed(() =>
+    this.categories.hasValue() ? this.categories.value() : [],
+  );
+  protected readonly merchantItems = computed(() =>
+    this.merchants.hasValue() ? this.merchants.value() : [],
+  );
 
   protected readonly skeletonRows = Array.from({ length: SKELETON_ROWS });
 
   protected readonly page = computed<TransactionPage | undefined>(() =>
-    this.transactions.hasValue() ? this.transactions.value() : undefined
+    this.transactions.hasValue() ? this.transactions.value() : undefined,
   );
 
   protected readonly error = computed(() => {
     const error = this.transactions.error();
-
     return error === undefined ? null : toErrorMessage(error);
   });
 
@@ -115,15 +124,16 @@ export class TransactionsPage implements OnInit, OnDestroy {
    * Sono identificativi e non righe: l'insieme resta valido anche quando la
    * pagina mostrata cambia.
    */
-  protected readonly selected = signal<ReadonlySet<string>>(new Set<string>());
-
-  protected readonly selectedCount = computed(() => this.selected().size);
+  private readonly selection = createSelectionState();
+  protected readonly selected = this.selection.selected;
+  protected readonly selectedCount = this.selection.count;
 
   /** Lo stato dell'eliminazione: prima si chiede conferma, poi si esegue. */
-  protected readonly confirmingDelete = signal(false);
-  protected readonly deleting = signal(false);
-  protected readonly deleteError = signal<string | null>(null);
-  protected readonly deleteDone = signal<string | null>(null);
+  private readonly deleteState = createDeleteState();
+  protected readonly confirmingDelete = this.deleteState.confirming;
+  protected readonly deleting = this.deleteState.deleting;
+  protected readonly deleteError = this.deleteState.error;
+  protected readonly deleteDone = this.deleteState.done;
 
   constructor() {
     // L'URL resta la verità: tornando indietro anche la casella di ricerca lo segue.
@@ -138,16 +148,9 @@ export class TransactionsPage implements OnInit, OnDestroy {
      */
     effect(() => {
       this.query();
-      this.selected.set(new Set<string>());
-      this.confirmingDelete.set(false);
-      this.deleteError.set(null);
-      this.deleteDone.set(null);
+      this.selection.clear();
+      this.deleteState.reset();
     });
-  }
-
-  ngOnInit(): void {
-    this.categoriesApi.list().subscribe({ next: (categories) => this.categories.set(categories) });
-    this.merchantsApi.summary().subscribe({ next: (merchants) => this.merchants.set(merchants) });
   }
 
   ngOnDestroy(): void {
@@ -168,7 +171,7 @@ export class TransactionsPage implements OnInit, OnDestroy {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: toQueryParams(next),
-      replaceUrl
+      replaceUrl,
     });
   }
 
@@ -179,7 +182,10 @@ export class TransactionsPage implements OnInit, OnDestroy {
       clearTimeout(this.searchTimeout);
     }
     // La ricerca sostituisce la voce di cronologia: digitare non riempie il tasto "indietro".
-    this.searchTimeout = setTimeout(() => this.apply({ search: value.trim() }, true), SEARCH_DEBOUNCE_MS);
+    this.searchTimeout = setTimeout(
+      () => this.apply({ search: value.trim() }, true),
+      SEARCH_DEBOUNCE_MS,
+    );
   }
 
   /** Dopo una modifica si ricaricano entrambi: un tipo corretto cambia le azioni. */
@@ -195,11 +201,10 @@ export class TransactionsPage implements OnInit, OnDestroy {
   /** La stessa colonna inverte il verso; una colonna nuova parte dal decrescente. */
   protected sortBy(field: TransactionSortField): void {
     const query = this.query();
-
     this.apply(
       query.sortBy === field
         ? { sortDirection: query.sortDirection === 'asc' ? 'desc' : 'asc' }
-        : { sortBy: field, sortDirection: 'desc' }
+        : { sortBy: field, sortDirection: 'desc' },
     );
   }
 
@@ -209,18 +214,10 @@ export class TransactionsPage implements OnInit, OnDestroy {
 
   /** Inverte la selezione di una riga. */
   protected toggleSelection(id: string): void {
-    this.selected.update((corrente) => {
-      const prossimo = new Set(corrente);
-      if (!prossimo.delete(id)) {
-        prossimo.add(id);
-      }
-
-      return prossimo;
-    });
-
+    this.selection.toggle(id);
     // Cambiando la selezione, una conferma in sospeso non riguarda più ciò che
     // era stato scelto.
-    this.confirmingDelete.set(false);
+    this.deleteState.cancel();
   }
 
   /**
@@ -231,39 +228,24 @@ export class TransactionsPage implements OnInit, OnDestroy {
    * possono guardare prima di eliminarli.
    */
   protected toggleAll(select: boolean): void {
-    const mostrati = this.page()?.items.map((movimento) => movimento.id) ?? [];
-
-    this.selected.update((corrente) => {
-      const prossimo = new Set(corrente);
-      for (const id of mostrati) {
-        if (select) {
-          prossimo.add(id);
-        } else {
-          prossimo.delete(id);
-        }
-      }
-
-      return prossimo;
-    });
-
-    this.confirmingDelete.set(false);
+    const ids = this.page()?.items.map((transaction) => transaction.id) ?? [];
+    this.selection.toggleMany(ids, select);
+    this.deleteState.cancel();
   }
 
   protected clearSelection(): void {
-    this.selected.set(new Set<string>());
-    this.confirmingDelete.set(false);
-    this.deleteError.set(null);
+    this.selection.clear();
+    this.deleteState.cancel();
+    this.deleteState.clearMessages();
   }
 
   /** Il primo clic chiede conferma; il secondo elimina. */
   protected askDelete(): void {
-    this.deleteError.set(null);
-    this.deleteDone.set(null);
-    this.confirmingDelete.set(true);
+    this.deleteState.askConfirm();
   }
 
   protected cancelDelete(): void {
-    this.confirmingDelete.set(false);
+    this.deleteState.cancel();
   }
 
   /**
@@ -279,28 +261,24 @@ export class TransactionsPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.deleting.set(true);
-    this.deleteError.set(null);
+    this.deleteState.start();
 
     this.api.deleteMany(ids).subscribe({
       next: (esito) => {
-        this.deleting.set(false);
-        this.confirmingDelete.set(false);
-        this.selected.set(new Set<string>());
-        this.deleteDone.set(
+        const message =
           esito.notFound.length === 0
             ? `${String(esito.deleted)} ${esito.deleted === 1 ? 'movimento eliminato' : 'movimenti eliminati'}.`
-            : `${String(esito.deleted)} eliminati; ${String(esito.notFound.length)} non esistevano più.`
-        );
+            : `${String(esito.deleted)} eliminati; ${String(esito.notFound.length)} non esistevano più.`;
+
+        this.selection.clear();
+        this.deleteState.success(message);
         this.reload();
       },
       error: (error: unknown) => {
-        this.deleting.set(false);
-        this.confirmingDelete.set(false);
         // La selezione **resta**: il messaggio dice cosa toglierne, e
         // ricominciare da zero sarebbe una punizione.
-        this.deleteError.set(toErrorMessage(error));
-      }
+        this.deleteState.failure(toErrorMessage(error));
+      },
     });
   }
 }

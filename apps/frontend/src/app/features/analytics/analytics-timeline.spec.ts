@@ -280,4 +280,19 @@ describe('AnalyticsTimeline', () => {
     expect(host().querySelectorAll('circle.point').length).toBe(2);
     expect(host().querySelector('.hit')).not.toBeNull();
   });
+
+  // Il caso del punto 5 della review: `.end-label` leggeva `series.value` grezzo,
+  // mostrando "546,00 €" mentre il tooltip sullo stesso bucket mostrava "−546,00
+  // €" — due segni per lo stesso importo. Ora anche l'etichetta passa da
+  // `toDisplaySign`: deve fallire di nuovo se qualcuno riporta `label.value` al
+  // valore grezzo. Il trattino resta quello ASCII di `Intl` (non il "−" di
+  // `<app-amount>`): `.end-label` chiama `formatAmount` direttamente, senza la
+  // normalizzazione che solo `<app-amount>` applica.
+  it('l\'etichetta di fine serie per le uscite mostra il segno meno', async () => {
+    await render();
+
+    const label = host().querySelector('.end-label[data-series="expenses"]');
+
+    expect(label?.textContent?.replace(/\./g, '')).toContain('-546,00');
+  });
 });

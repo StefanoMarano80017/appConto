@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
+import { PanelContentComponent } from '../../shared/layout/panel-content';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { SearchInput } from '../../shared/ui/search-input';
@@ -15,14 +16,21 @@ import { ColorMarkerComponent } from '../../shared/ui/color-marker';
 
 @Component({
   selector: 'app-merchants-page',
-  imports: [FormsModule, PageLayout, Panel, SearchInput, SectionHeader, ColorMarkerComponent],
+  imports: [
+    FormsModule,
+    PageLayout,
+    Panel,
+    PanelContentComponent,
+    SearchInput,
+    SectionHeader,
+    ColorMarkerComponent,
+  ],
   templateUrl: './merchants-page.html',
   styleUrl: './merchants-page.scss',
 })
 export class MerchantsPage implements OnInit {
   private readonly api = inject(MerchantsApi);
   private readonly categoriesApi = inject(CategoriesApi);
-
   protected readonly merchants = signal<MerchantSummary[]>([]);
   protected readonly categories = signal<Category[]>([]);
   protected readonly search = signal('');

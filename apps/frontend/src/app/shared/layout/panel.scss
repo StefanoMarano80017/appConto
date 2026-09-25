@@ -6,10 +6,14 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
-  padding: var(--space-panel);
   /* Distanza fra due pannelli, non respiro interno: token separato apposta,
      perché chi stringe la densità interna non deve per forza avvicinare le card. */
   margin-bottom: var(--space-7);
+  padding: var(--space-panel);
+}
+
+:host(.no-padding) > .panel {
+  padding: 0;
 }
 
 /*

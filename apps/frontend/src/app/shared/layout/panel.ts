@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Il contenitore a pannello usato in tutta l'applicazione.
@@ -15,6 +15,12 @@ import { Component } from '@angular/core';
 @Component({
   selector: 'app-panel',
   templateUrl: './panel.html',
-  styleUrl: './panel.scss'
+  styleUrl: './panel.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.no-padding]': 'noPadding()',
+  },
 })
-export class Panel {}
+export class Panel {
+  noPadding = input(false);
+}

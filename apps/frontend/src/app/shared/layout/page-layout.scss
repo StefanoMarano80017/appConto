@@ -27,17 +27,19 @@
   display: none;
 }
 
+/* Un elemento largo dentro i 300px si adatta invece di sfondare la colonna, come la principale. */
+.toolbox {
+  min-width: 0;
+}
+
 /*
- * Sotto i 1280px la toolbox non sparisce e non diventa collassabile: passa
- * sopra il contenuto, in riga. Nessun criterio diventa irraggiungibile a
- * nessuna larghezza.
+ * Sotto i 1280px la toolbox non sparisce e non diventa collassabile: resta
+ * sotto il contenuto, nell'ordine in cui il DOM la scrive già. Nessun criterio
+ * diventa irraggiungibile a nessuna larghezza, e l'ordine visivo coincide con
+ * quello di tabulazione (WCAG 2.4.3).
  */
 @media (width < 80rem) {
   .page:has(.toolbox > *) {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .toolbox {
-    order: -1;
   }
 }
