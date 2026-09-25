@@ -3,8 +3,8 @@
 
   <app-transactions-toolbar
     [query]="query()"
-    [categories]="categories()"
-    [merchants]="merchants()"
+    [categories]="categoryItems()"
+    [merchants]="merchantItems()"
     [searchText]="searchText()"
     (changed)="apply($event)"
     (searchTyped)="onSearchTyped($event)"

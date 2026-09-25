@@ -46,7 +46,8 @@
               [attr.y1]="line.y"
               [attr.y2]="line.y"
             />
-            <text class="tick" [attr.x]="pad().left - 10" [attr.y]="line.y + 4">
+            <!-- +5: mezza altezza delle maiuscole a 15px, per centrare il testo sulla linea. -->
+            <text class="tick" [attr.x]="pad().left - 10" [attr.y]="line.y + 5">
               {{ formatAmount(line.value) }}
             </text>
           }
@@ -85,7 +86,7 @@
               class="end-label"
               [attr.data-series]="label.key"
               [attr.x]="pad().left + plot().width + 10"
-              [attr.y]="label.y + 4"
+              [attr.y]="label.y + 5"
             >{{ formatAmount(label.value) }}</text>
           }
 

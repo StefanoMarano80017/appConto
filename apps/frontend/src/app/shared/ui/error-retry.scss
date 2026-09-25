@@ -4,10 +4,27 @@
   display: contents;
 }
 
-.message.error {
-  color: var(--negative);
-}
-
+/*
+ * Nessuna regola per il colore del messaggio: lo porta l'utility globale
+ * `.message--error`.
+ *
+ * Qui c'era `.message.message--error { color: var(--negative) }` — due classi,
+ * specificità 0,2,0 — che vinceva sull'utility globale, una classe sola, 0,1,0.
+ * Dipingeva quindi l'errore con `--color-expense`, il colore delle uscite,
+ * invece che con `--color-error`. Un errore di sistema non è denaro che esce:
+ * tenerli distinti è la separazione che il design system chiede.
+ *
+ * La cronologia non si vede nel diff: la regola si chiamava `.message.error`
+ * finché la classe nel template era `message error`, ed è stata rinominata
+ * insieme a quella. Rinominata, non disattivata — continuava a corrispondere e
+ * a vincere. È per questo che cancellarla cambia il colore reso, e non è la
+ * rimozione di un selettore ormai morto.
+ *
+ * Fuori da questo componente la convenzione vecchia è ancora viva: 12 regole
+ * `.message.error` in 11 file, tutte con `--negative`. Portarle all'utility non
+ * è una rinomina di classi, è un cambio di colore visibile — da dichiarare nel
+ * piano che aprirà quei file, non da scoprire nel diff.
+ */
 .retry {
   @include typography.text('body');
 

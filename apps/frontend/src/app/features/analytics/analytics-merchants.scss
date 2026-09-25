@@ -1,14 +1,5 @@
 @use '../../shared/styles/typography';
 
-h2 {
-  margin: 0 0 1.25rem;
-  @include typography.text('section-title');
-}
-
-.message {
-  color: var(--text-muted);
-}
-
 ol {
   list-style: none;
   margin: 0;

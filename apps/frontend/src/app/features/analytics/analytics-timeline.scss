@@ -1,3 +1,4 @@
+@use 'sass:map';
 @use '../../shared/styles/typography';
 
 /*
@@ -50,23 +51,37 @@
   height: 2px;
 }
 
+/*
+ * Serie → indice del token grafico, in un solo punto del foglio. La
+ * mappatura conserva le relazioni di tinta già verificate contro la
+ * deuteranopia (blu / caldo / acqua): il verde e il rosso degli importi
+ * restano esclusi dalle linee.
+ */
+$series-tokens: (
+  income: 1,
+  expenses: 5,
+  net: 3
+);
+
 @each $series in income, expenses, net {
+  $token: var(--color-chart-#{map.get($series-tokens, $series)});
+
   .key[data-series='#{$series}'] {
-    background: var(--series-#{$series});
+    background: $token;
   }
 
   .line[data-series='#{$series}'] {
-    stroke: var(--series-#{$series});
+    stroke: $token;
   }
 
   .point[data-series='#{$series}'] {
-    fill: var(--series-#{$series});
+    fill: $token;
   }
 
   /* Un intervallo incompleto si vede: pallino vuoto, non pieno. */
   .point.partial[data-series='#{$series}'] {
     fill: var(--surface);
-    stroke: var(--series-#{$series});
+    stroke: $token;
   }
 }
 
@@ -237,7 +252,6 @@
 
 .message {
   margin: 1.25rem 0 0;
-  color: var(--text-muted);
 }
 
 .scroller {

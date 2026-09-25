@@ -20,15 +20,6 @@
   --negative: var(--color-expense);
   --positive: var(--color-income);
 
-  /*
-   * Le tre serie del grafico. La mappatura conserva le relazioni di tinta
-   * già verificate contro la deuteranopia (blu / caldo / acqua): il verde e
-   * il rosso degli importi restano esclusi dalle linee.
-   */
-  --series-income: var(--color-chart-1);
-  --series-expenses: var(--color-chart-5);
-  --series-net: var(--color-chart-3);
-
   /* Geometria: i nomi di _tokens.scss, che questo file sostituisce. */
   --radius-panel: var(--radius-card);
   --space-panel: var(--space-7);

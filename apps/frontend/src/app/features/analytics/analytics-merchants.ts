@@ -1,5 +1,6 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { Amount } from '../../shared/ui/amount';
 import { MerchantDistribution } from './analytics.model';
 
@@ -9,7 +10,7 @@ const INITIAL_LIMIT = 10;
 /** Distribuzione delle spese per merchant: "da chi sto spendendo di più?". */
 @Component({
   selector: 'app-analytics-merchants',
-  imports: [Panel, Amount],
+  imports: [Panel, SectionHeader, Amount],
   templateUrl: './analytics-merchants.html',
   styleUrl: './analytics-merchants.scss'
 })

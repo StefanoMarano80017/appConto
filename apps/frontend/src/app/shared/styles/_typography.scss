@@ -11,16 +11,32 @@
  *
  * È l'unico file in cui è ammesso scrivere un `font-size` letterale.
  */
+/*
+ * La rampa è stata scalata di ×1,2 rispetto ai valori del design system, per
+ * decisione esplicita dell'utente: 12,5px per il testo corrente risultava
+ * troppo piccolo in uso reale (decisione aperta #14 della specifica, che
+ * andava presa guardando l'applicazione e non il documento).
+ *
+ * Scalata tutta, non solo `body`: portare il solo testo corrente a 15px lo
+ * avrebbe reso più grande dei titoli di sezione (13px) e dei numerali
+ * finanziari (12,5px), cioè avrebbe invertito la gerarchia che questi ruoli
+ * esistono per esprimere.
+ *
+ * `display-kpi` è l'unica eccezione e resta a 25px: DESIGN_SYSTEM.md §4 vieta
+ * qualunque numerale oltre i 25px, ed è un tetto, non una proporzione. Il
+ * rapporto con il testo corrente scende quindi da 2,0 a 1,67 — il numero
+ * domina ancora la fascia KPI, ma meno di prima.
+ */
 $_roles: (
   'display-kpi': (family: mono, size: 25px, weight: 600, spacing: -0.02em, tabular: true),
-  'page-title': (family: ui, size: 15px, weight: 600, spacing: -0.01em),
-  'section-title': (family: ui, size: 13px, weight: 600),
-  'body': (family: ui, size: 12.5px, weight: 500),
-  'secondary': (family: ui, size: 12px, weight: 400, color: text-secondary),
-  'label': (family: ui, size: 10px, weight: 600, spacing: 0.08em, upper: true, color: text-muted),
-  'caption': (family: ui, size: 11px, weight: 400, color: text-muted),
-  'table-text': (family: ui, size: 12px, weight: 400, color: text-secondary),
-  'financial-row': (family: mono, size: 12.5px, weight: 500, tabular: true)
+  'page-title': (family: ui, size: 18px, weight: 600, spacing: -0.01em),
+  'section-title': (family: ui, size: 16px, weight: 600),
+  'body': (family: ui, size: 15px, weight: 500),
+  'secondary': (family: ui, size: 14px, weight: 400, color: text-secondary),
+  'label': (family: ui, size: 12px, weight: 600, spacing: 0.08em, upper: true, color: text-muted),
+  'caption': (family: ui, size: 13px, weight: 400, color: text-muted),
+  'table-text': (family: ui, size: 14px, weight: 400, color: text-secondary),
+  'financial-row': (family: mono, size: 15px, weight: 500, tabular: true)
 );
 
 @mixin text($role) {

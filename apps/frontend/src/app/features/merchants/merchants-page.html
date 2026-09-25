@@ -1,58 +1,71 @@
 <app-page-layout>
-  <app-panel>
-    <app-section-header
-      title="Merchant"
-      subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
-      level="page"
-    >
-      <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
-    </app-section-header>
+  <app-panel [noPadding]=true>
+    <app-panel-content>
+      <app-section-header
+        title="Merchant"
+        subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
+        level="page"
+      >
+        <button panelActions type="button" (click)="load()" [disabled]="loading()">
+          Aggiorna
+        </button>
+      </app-section-header>
 
-    <div class="toolbar">
-      <app-search-input
-        class="search"
-        [value]="search()"
-        placeholder="Cerca un merchant…"
-        (valueChange)="search.set($event)"
-      />
+      <div class="toolbar">
+        <app-search-input
+          class="search"
+          [value]="search()"
+          placeholder="Cerca un merchant…"
+          (valueChange)="search.set($event)"
+        />
 
-      <div class="filters" role="group" aria-label="Filtro merchant">
-        <button type="button" [class.active]="filter() === 'all'" (click)="filter.set('all')">
-          Tutti <span class="badge">{{ counts().all }}</span>
-        </button>
-        <button
-          type="button"
-          [class.active]="filter() === 'classified'"
-          (click)="filter.set('classified')"
-        >
-          Classificati <span class="badge">{{ counts().classified }}</span>
-        </button>
-        <button
-          type="button"
-          [class.active]="filter() === 'unclassified'"
-          (click)="filter.set('unclassified')"
-        >
-          Da classificare <span class="badge">{{ counts().unclassified }}</span>
-        </button>
+        <div class="filters" role="group" aria-label="Filtro merchant">
+          <button
+            type="button"
+            [class.active]="filter() === 'all'"
+            (click)="filter.set('all')"
+          >
+            Tutti <span class="badge">{{ counts().all }}</span>
+          </button>
+
+          <button
+            type="button"
+            [class.active]="filter() === 'classified'"
+            (click)="filter.set('classified')"
+          >
+            Classificati <span class="badge">{{ counts().classified }}</span>
+          </button>
+
+          <button
+            type="button"
+            [class.active]="filter() === 'unclassified'"
+            (click)="filter.set('unclassified')"
+          >
+            Da classificare <span class="badge">{{ counts().unclassified }}</span>
+          </button>
+        </div>
       </div>
-    </div>
 
-    @if (error(); as message) {
-      <p class="message error">{{ message }}</p>
-    }
-
-    @if (loading()) {
-      <p class="message">Caricamento in corso…</p>
-    } @else if (merchants().length === 0) {
-      <p class="message">Nessun merchant. Importa un estratto conto per iniziare.</p>
-    } @else if (visible().length === 0) {
-      @if (filter() === 'unclassified' && search() === '') {
-        <p class="message done">Tutti i merchant sono stati classificati.</p>
-      } @else {
-        <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+      @if (error(); as message) {
+        <p class="message error">{{ message }}</p>
       }
-    } @else {
-      <p class="count">{{ visible().length }} di {{ counts().all }} merchant</p>
+
+      @if (loading()) {
+        <p class="message">Caricamento in corso…</p>
+      } @else if (merchants().length === 0) {
+        <p class="message">Nessun merchant. Importa un estratto conto per iniziare.</p>
+      } @else if (visible().length === 0) {
+        @if (filter() === 'unclassified' && search() === '') {
+          <p class="message done">Tutti i merchant sono stati classificati.</p>
+        } @else {
+          <p class="message">Nessun merchant corrisponde alla ricerca.</p>
+        }
+      } @else {
+        <p class="count">{{ visible().length }} di {{ counts().all }} merchant</p>
+      }
+    </app-panel-content>
+
+    @if (!loading() && merchants().length > 0 && visible().length > 0) {
       <table class="merchants">
         <thead>
           <tr>
@@ -63,6 +76,7 @@
             <th scope="col">Ultima transazione</th>
           </tr>
         </thead>
+
         <tbody>
           @for (merchant of visible(); track merchant.id) {
             <tr [class.saving]="savingId() === merchant.id">
@@ -75,12 +89,13 @@
                   [attr.aria-label]="'Nome di ' + merchant.name"
                   (change)="rename(merchant, $any($event.target).value)"
                 />
+
                 @if (merchant.displayName !== null) {
                   <span class="original">{{ merchant.name }}</span>
                 }
               </td>
-              <td class="category">
 
+              <td class="category">
                 <app-color-marker [color]="merchant.category?.color" />
 
                 <select
@@ -90,15 +105,23 @@
                   [attr.aria-label]="'Categoria di ' + merchant.label"
                 >
                   <option value="">—</option>
+
                   @for (category of categories(); track category.id) {
-                    <option [value]="category.id">{{ category.name }}</option>
+                    <option [value]="category.id">
+                      {{ category.name }}
+                    </option>
                   }
                 </select>
               </td>
+
               <td class="numeric">{{ merchant.transactionCount }}</td>
               <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
               <td class="date">
-                {{ merchant.lastTransactionDate ? formatBookingDate(merchant.lastTransactionDate) : '—' }}
+                {{
+                  merchant.lastTransactionDate
+                    ? formatBookingDate(merchant.lastTransactionDate)
+                    : '—'
+                }}
               </td>
             </tr>
           }
