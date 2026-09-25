@@ -101,8 +101,8 @@
               —
             }
           </td>
-          <td class="numeric" [class.negative]="transaction.amount < 0">
-            {{ formatAmount(transaction.amount) }}
+          <td class="numeric">
+            <app-amount [value]="transaction.amount" />
           </td>
           @if (showLoans()) {
             @let loans = loanCell(transaction);
@@ -141,5 +141,23 @@
         </tr>
       }
     </tbody>
+    <tfoot>
+      <!--
+        Il totale del periodo mostrato, non dell'intero archivio: l'etichetta
+        lo dice esplicitamente, perché la tabella qui sopra è già filtrata da
+        chi la ospita e non mostra mai tutte le transazioni esistenti.
+      -->
+      <tr class="total">
+        <td class="total-label" [attr.colspan]="amountColumnIndex + (selectable() ? 1 : 0)">
+          Totale del periodo mostrato
+        </td>
+        <td class="numeric">
+          <app-amount [value]="totalAmount()" />
+        </td>
+        @if (showLoans()) {
+          <td></td>
+        }
+      </tr>
+    </tfoot>
   </table>
 </div>

@@ -21,11 +21,17 @@ export interface ToggleButtonOption<T> {
 @Component({
   selector: 'app-toggle-button-group',
   templateUrl: './toggle-button-group.html',
-  styleUrl: './toggle-button-group.scss'
+  styleUrl: './toggle-button-group.scss',
+  host: {
+    role: 'group',
+    '[attr.aria-label]': 'ariaLabel()'
+  }
 })
 export class ToggleButtonGroup<T> {
   readonly options = input.required<readonly ToggleButtonOption<T>[]>();
   readonly value = input.required<readonly T[]>();
+  /** Senza, chi usa uno screen reader sente una fila di interruttori senza sapere di che criterio sono. */
+  readonly ariaLabel = input.required<string>();
 
   readonly toggled = output<T>();
 }

@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { LucideX } from '@lucide/angular';
 
 export interface FilterChip<T> {
   key: T;
@@ -15,6 +16,7 @@ export interface FilterChip<T> {
  */
 @Component({
   selector: 'app-filter-chips',
+  imports: [LucideX],
   templateUrl: './filter-chips.html',
   styleUrl: './filter-chips.scss'
 })

@@ -1,11 +1,11 @@
 <app-panel>
   <app-section-header title="Andamento nel tempo" [subtitle]="subtitle()">
-    <app-segmented-control
+    <app-choice-group
       panelActions
       [options]="granularities"
       [value]="granularity()"
       ariaLabel="Passo dell'andamento"
-      (valueChange)="granularitySelected.emit($event)"
+      (selected)="granularitySelected.emit($event)"
     />
   </app-section-header>
 

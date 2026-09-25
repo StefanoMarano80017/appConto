@@ -3,25 +3,87 @@
     <header class="brand">Personal Finance Tracker</header>
 
     <nav class="nav" aria-label="Navigazione principale">
-      <ul class="nav-list" role="list">
-        <li><a routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">Riepilogo</a></li>
-        <li><a routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">Analytics</a></li>
-        <li><a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page">Movimenti</a></li>
-        <li><a routerLink="/loans" routerLinkActive="active" ariaCurrentWhenActive="page">Prestiti</a></li>
-        <li><a routerLink="/merchants" routerLinkActive="active" ariaCurrentWhenActive="page">Merchant</a></li>
-        <li><a routerLink="/categories" routerLinkActive="active" ariaCurrentWhenActive="page">Categorie</a></li>
-        <li><a routerLink="/import" routerLinkActive="active" ariaCurrentWhenActive="page">Import CSV</a></li>
-        <li><a routerLink="/settings" routerLinkActive="active" ariaCurrentWhenActive="page">Impostazioni</a></li>
+      <span class="nav-group-label" id="nav-group-generale">Generale</span>
+      <ul class="nav-list" role="list" aria-labelledby="nav-group-generale">
+        <li>
+          <a routerLink="/" routerLinkActive="active" ariaCurrentWhenActive="page" [routerLinkActiveOptions]="{ exact: true }">
+            <svg lucideLayoutDashboard aria-hidden="true"></svg>
+            Riepilogo
+          </a>
+        </li>
+        <li>
+          <a routerLink="/transactions" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideArrowLeftRight aria-hidden="true"></svg>
+            Movimenti
+          </a>
+        </li>
+        <li>
+          <a routerLink="/analytics" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideChartColumn aria-hidden="true"></svg>
+            Analytics
+          </a>
+        </li>
+        <li>
+          <a routerLink="/loans" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideHandCoins aria-hidden="true"></svg>
+            Prestiti
+          </a>
+        </li>
+      </ul>
+
+      <span class="nav-group-label" id="nav-group-organizza">Organizza</span>
+      <ul class="nav-list" role="list" aria-labelledby="nav-group-organizza">
+        <li>
+          <a routerLink="/categories" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideTag aria-hidden="true"></svg>
+            Categorie
+          </a>
+        </li>
+        <li>
+          <a routerLink="/merchants" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideStore aria-hidden="true"></svg>
+            Merchant
+          </a>
+        </li>
+      </ul>
+
+      <span class="nav-group-label" id="nav-group-sistema">Sistema</span>
+      <ul class="nav-list" role="list" aria-labelledby="nav-group-sistema">
+        <li>
+          <a routerLink="/import" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideUpload aria-hidden="true"></svg>
+            Import CSV
+          </a>
+        </li>
+        <li>
+          <a routerLink="/settings" routerLinkActive="active" ariaCurrentWhenActive="page">
+            <svg lucideSettings aria-hidden="true"></svg>
+            Impostazioni
+          </a>
+        </li>
       </ul>
     </nav>
-
-    <button type="button" class="theme-toggle" (click)="toggleTheme()">
-      <span class="glyph" aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span>
-      {{ themeAction() }}
-    </button>
   </div>
 
   <main class="content">
+    <header class="topbar">
+      <h1>{{ pageTitle() }}</h1>
+
+      <!-- Spazio riservato a ricerca globale e azione primaria: nessuna delle due esiste ancora. -->
+      <div class="topbar-spacer"></div>
+
+      <button type="button" class="theme-toggle" (click)="toggleTheme()">
+        <span class="glyph" aria-hidden="true">
+          @if (theme() === 'dark') {
+            <svg lucideSun></svg>
+          } @else {
+            <svg lucideMoon></svg>
+          }
+        </span>
+        {{ themeAction() }}
+      </button>
+    </header>
+
     <router-outlet />
   </main>
 </div>

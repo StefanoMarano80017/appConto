@@ -18,3 +18,8 @@
   background: color-mix(in srgb, var(--positive) 12%, transparent);
   color: var(--positive);
 }
+
+.badge.neutral {
+  background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+  color: var(--color-text-secondary);
+}

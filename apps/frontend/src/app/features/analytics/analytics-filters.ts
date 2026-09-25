@@ -1,4 +1,11 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import {
+  LucideArrowUpDown,
+  LucideCalendarDays,
+  LucideListChecks,
+  LucideStore,
+  LucideTag
+} from '@lucide/angular';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
 import {
@@ -8,11 +15,11 @@ import {
 import { ClassificationFilter } from './analytics.model';
 import { PERIOD_PRESETS } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
-import { SectionHeader } from '../../shared/layout/section-header';
+import { Badge } from '../../shared/ui/badge';
+import { ChoiceGroup } from '../../shared/ui/choice-group';
 import { FilterChips } from '../../shared/ui/filter-chips';
 import { FilterGroup } from '../../shared/ui/filter-group';
 import { SearchInput } from '../../shared/ui/search-input';
-import { SegmentedControl } from '../../shared/ui/segmented-control';
 import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
 import { AnalyticsStore } from './analytics.store';
 
@@ -41,12 +48,17 @@ interface ActiveFilter {
 @Component({
   selector: 'app-analytics-filters',
   imports: [
+    Badge,
+    ChoiceGroup,
     FilterChips,
     FilterGroup,
+    LucideArrowUpDown,
+    LucideCalendarDays,
+    LucideListChecks,
+    LucideStore,
+    LucideTag,
     Panel,
     SearchInput,
-    SectionHeader,
-    SegmentedControl,
     ToggleButtonGroup
   ],
   templateUrl: './analytics-filters.html',
@@ -58,7 +70,11 @@ export class AnalyticsFilters {
 
   protected readonly store = inject(AnalyticsStore);
 
-  protected readonly presets = PERIOD_PRESETS;
+  protected readonly presets = PERIOD_PRESETS.map((preset) => ({
+    id: preset.id,
+    label: preset.shortLabel,
+    description: preset.label
+  }));
   protected readonly classifications = CLASSIFICATIONS;
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
@@ -133,4 +149,25 @@ export class AnalyticsFilters {
   protected removeFilter(key: string): void {
     this.activeFilters().find((filter) => filter.key === key)?.remove();
   }
+
+  /*
+   * Conta esattamente ciò che `resetFilters()` azzera: tipi, categorie,
+   * merchant e classificazione. Il periodo resta fuori da entrambi
+   * (`analytics.store.ts:139` riporta `filterState` a `NO_FILTERS` senza
+   * toccare `presetState`), quindi il tasto "Azzera" del riepilogo fa
+   * esattamente quello che il numero promette, né di più né di meno.
+   */
+  protected readonly activeCount = computed(() => this.activeFilters().length);
+
+  /*
+   * Il testo del badge di riepilogo: mostrato solo quando activeCount() > 0
+   * (v. template), quindi qui il caso zero non serve. "attivi" resta
+   * concordato al plurale/singolare invece del letterale "N attivi" del
+   * mockup: "1 attivi" sarebbe un errore di italiano visibile a ogni utente
+   * con un solo filtro acceso.
+   */
+  protected readonly activeBadgeLabel = computed(() => {
+    const count = this.activeCount();
+    return count === 1 ? '1 attivo' : `${count} attivi`;
+  });
 }

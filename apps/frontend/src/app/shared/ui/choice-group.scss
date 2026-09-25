@@ -1,0 +1,57 @@
+@use '../styles/typography';
+
+/*
+ * Blocco unico: bordo, angoli arrotondati, i segmenti dentro. Il segmento
+ * attivo è una pillola incassata (sfondo proprio, inset dato dal padding del
+ * contenitore) — non un riempimento a tutta altezza.
+ *
+ * Niente separatori verticali fra i segmenti inattivi, a differenza del
+ * mockup: con sette preset di periodo in una colonna da 260px utili il blocco
+ * va per forza a capo (`flex-wrap`), e quale segmento apra una nuova riga
+ * dipende dalla larghezza delle etichette, non da un indice fisso — CSS non
+ * ha oggi un selettore "primo della riga visiva" per capirlo (solo
+ * `:first-child`, sempre lo stesso elemento, o conteggi cablati sulla
+ * larghezza esatta di ciascuna etichetta, che si rompono al primo testo più
+ * lungo). Senza quel selettore un separatore ricompare a inizio riga, il
+ * caso che il brief chiede esplicitamente di evitare piuttosto che lasciare
+ * approssimato. Il `gap` qui sotto resta, non per separare (non è un bordo),
+ * ma perché due etichette adiacenti senza alcuno spazio si leggerebbero come
+ * una sola parola.
+ */
+:host {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: var(--space-1);
+}
+
+button {
+  @include typography.text('body');
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: transparent;
+  color: var(--color-text-muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+button:hover:not(.active) {
+  color: var(--color-text-primary);
+}
+
+button.active {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

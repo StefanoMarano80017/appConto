@@ -4,12 +4,82 @@
   display: block;
 }
 
+/*
+ * Il filo fra una sezione e la successiva (mockup): un `border-top`, non
+ * spazio soltanto. Non prima della prima sezione, quindi stesso selettore
+ * già usato per il margine — è lo stesso punto, non una regola nuova. Un
+ * piccolo padding tiene l'etichetta staccata dal filo invece di toccarlo.
+ */
 :host(:not(:first-of-type)) {
   margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.heading {
+  margin: 0;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.icon {
+  flex: none;
+}
+
+/*
+ * L'icona è proiettata (`ng-content select="[icon]"`): se il chiamante non ne
+ * mette una, lo span resterebbe vuoto e occuperebbe comunque il suo spazio
+ * nella riga. Stessa tecnica di `page-layout.scss` per la toolbox vuota.
+ */
+.icon:empty {
+  display: none;
 }
 
 .label {
   @include typography.text('label');
+}
 
-  margin: 0 0 var(--space-3);
+.count {
+  margin-left: auto;
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-text-muted);
+
+  /* Il chevron è puro ornamento accanto all'etichetta: sta più piccolo dell'icona di sezione e discreto. */
+  svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+/*
+ * L'attributo `hidden` da solo perde contro qualunque regola che dichiari un
+ * `display` sull'elemento, perché arriva dal foglio dello user agent: va
+ * ribadito qui per vincere quella specificità.
+ */
+.body[hidden] {
+  display: none;
+}
+
+.body {
+  margin-top: var(--space-3);
 }

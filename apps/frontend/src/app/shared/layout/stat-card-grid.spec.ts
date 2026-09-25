@@ -66,4 +66,48 @@ describe('StatCardGrid', () => {
     expect(amount.classList.contains('amount-neutral')).toBe(true);
     expect(amount.classList.contains('amount-negative')).toBe(false);
   });
+
+  it('una card amount con delta mostra il chip col segno e il tono dichiarati', async () => {
+    await render([
+      {
+        kind: 'amount',
+        label: 'Uscite',
+        value: -500,
+        delta: { percent: 12, caption: 'vs agosto', tone: 'negative' }
+      }
+    ]);
+
+    const chip = host().querySelector('.delta') as HTMLElement;
+
+    expect(chip).not.toBeNull();
+    expect(chip.textContent).toContain('+12');
+    expect(chip.textContent).toContain('vs agosto');
+    expect(chip.classList.contains('delta-negative')).toBe(true);
+  });
+
+  it('una card amount senza delta non mostra alcun chip', async () => {
+    await render([{ kind: 'amount', label: 'Entrate', value: 500 }]);
+
+    expect(host().querySelector('.delta')).toBeNull();
+  });
+
+  // È il test che protegge la regola del brief: il tono del chip è quello
+  // dichiarato dal chiamante, non quello che il segno di `percent`
+  // suggerirebbe. Una percentuale positiva con tono `negative` deve restare
+  // negativa: per le uscite crescere è una cattiva notizia, non una buona.
+  it('il tono del chip non segue il segno della percentuale', async () => {
+    await render([
+      {
+        kind: 'amount',
+        label: 'Uscite',
+        value: -500,
+        delta: { percent: 12, caption: 'vs agosto', tone: 'negative' }
+      }
+    ]);
+
+    const chip = host().querySelector('.delta') as HTMLElement;
+
+    expect(chip.classList.contains('delta-negative')).toBe(true);
+    expect(chip.classList.contains('delta-positive')).toBe(false);
+  });
 });

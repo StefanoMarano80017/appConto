@@ -204,7 +204,7 @@ button:focus-visible {
  * riposo pareggiando con le basi delle varianti, e anche lì vince perché
  * arriva dopo. Un `:not(:disabled)` sull'hover del primario, provato in un
  * round precedente, alzava la specificità abbastanza da rompere le pillole
- * di SegmentedControl/ToggleButtonGroup e il bordo di `.ghost`/`.danger` in
+ * dei gruppi di scelta a bottoni e il bordo di `.ghost`/`.danger` in
  * hover: questa forma non tocca la specificità di nessun'altra regola.
  */
 button:disabled,

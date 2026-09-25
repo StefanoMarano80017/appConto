@@ -22,14 +22,19 @@ export interface DateRange {
   to: string | null;
 }
 
-export const PERIOD_PRESETS: readonly { id: PeriodPreset; label: string }[] = [
-  { id: 'this-month', label: 'Questo mese' },
-  { id: 'previous-month', label: 'Mese precedente' },
-  { id: 'last-3-months', label: 'Ultimi 3 mesi' },
-  { id: 'last-6-months', label: 'Ultimi 6 mesi' },
-  { id: 'this-year', label: "Quest'anno" },
-  { id: 'previous-year', label: 'Anno precedente' },
-  { id: 'all', label: 'Tutto' }
+/**
+ * `shortLabel` alimenta i segmenti di `ChoiceGroup`, dove sette etichette per
+ * intero non ci starebbero in una colonna da 260px utili senza andare a capo
+ * su più righe di quante ne valga la pena. `label` resta la forma per esteso:
+ * `selectedPeriodLabel()` (analytics.store.ts) e ogni altro punto che oggi la
+ * legge continuano a dire "Questo mese", non "1M".
+ */
+export const PERIOD_PRESETS: readonly { id: PeriodPreset; label: string; shortLabel: string }[] = [
+  { id: 'this-month', label: 'Questo mese', shortLabel: '1M' },
+  { id: 'last-3-months', label: 'Ultimi 3 mesi', shortLabel: '3M' },
+  { id: 'last-6-months', label: 'Ultimi 6 mesi', shortLabel: '6M' },
+  { id: 'this-year', label: "Quest'anno", shortLabel: '12M' },
+  { id: 'all', label: 'Tutto', shortLabel: 'Tutto' }
 ];
 
 export const PERIOD_PRESET_LABELS: Record<PeriodPreset, string> = {

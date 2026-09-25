@@ -10,6 +10,13 @@ import { Component, input } from '@angular/core';
  * flex/gap. Non dipende da `Panel`: le due si compongono perché è così che
  * appaiono oggi, non perché una "contenga" l'altra nel codice
  * (docs/architecture/frontend-shared-components-proposal.md, §16.1).
+ *
+ * Il titolo qui è sempre un `h2`: l'unico `h1` della pagina è quello che la
+ * shell disegna leggendo il titolo della rotta (`app.html`). Questo
+ * componente portava in passato un `level` ('page' | 'section') che rendeva
+ * un `h1` per le pagine senza intestazione propria — rimosso quando la shell
+ * ha preso in carico quel ruolo, perché altrimenti ogni rotta finiva con due
+ * `h1`.
  */
 @Component({
   selector: 'app-section-header',
@@ -19,13 +26,4 @@ import { Component, input } from '@angular/core';
 export class SectionHeader {
   readonly title = input.required<string>();
   readonly subtitle = input<string | undefined>(undefined);
-
-  /**
-   * Il livello del titolo.
-   *
-   * Non è solo tipografia: DESIGN_SYSTEM.md distingue `page-title` (15px) da
-   * `section-title` (13px), e la pagina deve avere un `h1` solo. Il default
-   * resta `section`, così i nove usi esistenti non cambiano.
-   */
-  readonly level = input<'page' | 'section'>('section');
 }

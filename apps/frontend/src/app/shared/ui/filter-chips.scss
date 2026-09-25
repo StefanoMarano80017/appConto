@@ -10,12 +10,20 @@
 .chip {
   @include typography.text('body');
 
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.25rem 0.625rem;
   border: 1px solid var(--accent);
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--accent);
   cursor: pointer;
+}
+
+.chip .icon svg {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
 .clear {

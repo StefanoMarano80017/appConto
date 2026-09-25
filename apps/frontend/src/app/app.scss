@@ -27,8 +27,8 @@
 }
 
 /*
- * Review Focus 4: su viewport basso le otto voci piu' il toggle devono
- * restare tutte raggiungibili. La lista scorre, il toggle resta in fondo.
+ * Review Focus 4: su viewport basso le otto voci devono restare tutte
+ * raggiungibili. La lista scorre.
  *
  * `.nav` e' il <nav>, non la lista: e' lui il figlio flex diretto di
  * .sidebar, quindi e' lui a portare flex/min-height/overflow. `.nav-list` e'
@@ -40,8 +40,23 @@
   overflow-y: auto;
 }
 
+/*
+ * Etichetta di gruppo (GENERALE / ORGANIZZA / SISTEMA): stesso ruolo
+ * tipografico delle etichette dei filtri, non un titolo nuovo.
+ */
+.nav-group-label {
+  @include typography.text('label');
+
+  display: block;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+}
+
+.nav-list:not(:first-of-type) {
+  margin-top: var(--space-2);
+}
+
 .nav-list {
-  margin: 0;
+  margin: 0 0 var(--space-4);
   padding: 0;
   list-style: none;
 }
@@ -49,15 +64,23 @@
 .nav a {
   @include typography.text('body');
 
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-4) var(--space-3);
   border-radius: var(--radius-control);
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   text-decoration: none;
+
+  /* L'svg di Lucide nasce a 24px: qui accanto al testo 'body' (15px) serve piccolo. */
+  svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
 }
 
 .nav a:hover {
-  background: var(--color-surface-hover);
   color: var(--color-text-primary);
 }
 
@@ -68,7 +91,7 @@
  * ariaCurrentWhenActive="page" mette aria-current="page" sull'<a>.
  */
 .nav a.active {
-  background: var(--color-primary-subtle);
+  background: var(--color-surface-elevated);
   box-shadow: inset 2px 0 0 var(--color-primary);
   color: var(--color-text-primary);
 }
@@ -84,6 +107,43 @@
 .nav a:focus-visible {
   outline: 2px solid var(--color-text-primary);
   outline-offset: -2px;
+}
+
+/*
+ * Nessun `max-width`: il contenuto prende tutta la larghezza che la sidebar
+ * gli lascia. Le due griglie che lo riempiono — la fascia KPI e i pannelli
+ * della pagina — usano `auto-fit` con `minmax`, quindi aggiungono colonne
+ * invece di allargare le esistenti oltre il leggibile.
+ *
+ * L'unica eccezione è il grafico, che non può semplicemente allargarsi: v.
+ * `.plot` in `analytics-timeline.scss`.
+ */
+.content {
+  padding: var(--space-8);
+  min-width: 0;
+}
+
+/*
+ * Fascia superiore: titolo di rotta a sinistra, selettore di tema a destra.
+ * Lo spazio fra i due è riservato a ricerca globale e azione primaria
+ * future — oggi nessuna delle due esiste, quindi resta vuoto.
+ */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-7);
+
+  h1 {
+    @include typography.text('page-title');
+
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+}
+
+.topbar-spacer {
+  flex: 1;
 }
 
 .theme-toggle {
@@ -116,14 +176,15 @@
   }
 
   .glyph {
+    display: flex;
     line-height: 1;
-  }
-}
 
-.content {
-  max-width: 100rem;
-  padding: var(--space-8);
-  min-width: 0;
+    /* Lo svg di Lucide nasce a 24px: qui accanto al testo 'secondary' (14px) serve piccolo. */
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
 }
 
 /*
@@ -146,20 +207,36 @@
   }
 
   .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
     overflow-x: auto;
+  }
+
+  /*
+   * Visivamente nascosta, non tolta dal DOM: `aria-labelledby` sull'`<ul>`
+   * la referenzia ancora, e un `display: none` la toglierebbe anche dal
+   * nome accessibile della lista.
+   */
+  .nav-group-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .nav-list {
     display: flex;
     gap: var(--space-2);
+    margin: 0;
   }
 
   .nav a {
     white-space: nowrap;
-  }
-
-  .theme-toggle {
-    margin-left: auto;
   }
 
   .content {

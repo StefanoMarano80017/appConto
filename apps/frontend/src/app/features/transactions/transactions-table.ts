@@ -14,6 +14,7 @@ import { TRANSACTION_TYPES, TRANSACTION_TYPE_LABELS, TransactionType } from './t
 import { Transaction } from './transaction.model';
 import { TransactionsApi } from './transactions.api';
 import { ColorMarkerComponent } from '../../shared/ui/color-marker';
+import { Amount } from '../../shared/ui/amount';
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
 const COLUMNS: readonly { label: string; field: TransactionSortField | null; numeric: boolean }[] =
@@ -60,7 +61,7 @@ interface LoanCell {
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [FormsModule, RouterLink, Truncate, ColorMarkerComponent],
+  imports: [FormsModule, RouterLink, Truncate, ColorMarkerComponent, Amount],
   templateUrl: './transactions-table.html',
   styleUrl: './transactions-table.scss',
 })
@@ -114,6 +115,25 @@ export class TransactionsTable implements OnInit {
 
   protected readonly columns = computed(() =>
     this.showLoans() ? [...COLUMNS, LOAN_COLUMN] : COLUMNS,
+  );
+
+  /**
+   * Dove sta la colonna «Importo» dentro `COLUMNS`, per la riga di totale.
+   *
+   * Calcolato una sola volta su una costante di modulo, non un `computed`:
+   * `COLUMNS` non cambia mai a runtime.
+   */
+  protected readonly amountColumnIndex = COLUMNS.findIndex((column) => column.field === 'amount');
+
+  /**
+   * Il totale delle transazioni mostrate, non dell'intero archivio.
+   *
+   * Somma esattamente le righe che la tabella sta rendendo (`transactions()`
+   * è già filtrata da chi la ospita): un cambio di mese o di filtro cambia
+   * l'input, e questo totale li segue senza bisogno di saperne nulla.
+   */
+  protected readonly totalAmount = computed(() =>
+    this.transactions().reduce((sum, transaction) => sum + transaction.amount, 0),
   );
 
   private readonly linksByTransaction = computed(() =>

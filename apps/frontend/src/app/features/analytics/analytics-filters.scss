@@ -1,13 +1,93 @@
 @use '../../shared/styles/typography';
 
-.custom {
+/*
+ * Il pannello (`app-panel`) ha `--space-panel` di padding su tutti i lati.
+ * Questa riga unisce titolo, badge del conteggio e azzeramento: non c'è più
+ * un titolo "Filtri" separato sopra un riepilogo a parte, quindi è lei il
+ * primo figlio del pannello. Restando ferma mentre la toolbox scorre
+ * (`position: sticky`), deve coprire per intero ciò che le passa sotto:
+ * senza margini negativi il suo sfondo si fermerebbe 20px prima dei bordi
+ * del pannello e si vedrebbe il contenuto sfilare di lato. Il padding
+ * rimesso dentro riallinea il testo alle altre sezioni.
+ *
+ * Qui il margine negativo copre anche il lato superiore, ed è corretto
+ * proprio perché è il primo figlio: non c'è più nessun titolo sopra con cui
+ * i margini possano collassare. Il difetto che c'era in questo stesso file
+ * (il riquadro che saliva di 4px sopra "Filtri", tagliandone i discendenti)
+ * nasceva dall'avere questa riga *sotto* un titolo separato; unificandoli non
+ * esiste più quella situazione. L'angolo va arrotondato di conseguenza,
+ * altrimenti il rettangolo sporgerebbe squadrato dagli angoli tondi del
+ * pannello.
+ */
+.header {
+  position: sticky;
+  top: 0;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: calc(var(--space-panel) * -1) calc(var(--space-panel) * -1) var(--space-6);
+  padding: var(--space-5) var(--space-panel);
+  background: var(--color-surface);
+  border-bottom: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.heading h2 {
+  @include typography.text('section-title');
+
+  margin: 0;
+}
+
+.header .reset {
+  @include typography.text('secondary');
+
+  flex: none;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.header .reset:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/*
+ * I due campi data stanno uno sopra l'altro, non affiancati.
+ *
+ * Non è una preferenza estetica, è una misura: la colonna della toolbox è
+ * larga 300px e il pannello ne toglie 20 per lato, quindi lo spazio utile è
+ * 260. Un campo data nativo non scende sotto i ~135px (il widget porta con sé
+ * "gg/mm/aaaa" e l'icona del calendario), e con l'etichetta accanto una coppia
+ * ne chiede circa 338: affiancati non ci stanno a nessuna larghezza che questa
+ * colonna possa avere.
+ *
+ * Impilati per griglia e non lasciati andare a capo con `flex-wrap`: il
+ * risultato a schermo è lo stesso, ma così è una scelta dichiarata invece di
+ * un ripiego, e ogni campo prende tutta la larghezza disponibile invece di
+ * restare della sua larghezza naturale con uno spazio vuoto a destra.
+ */
+.custom {
+  display: grid;
   gap: var(--space-4);
   margin-top: var(--space-5);
 
   label {
     @include typography.text('secondary');
-    display: flex;
+
+    /* Colonna fissa per "Dal"/"Al": i due input restano allineati fra loro. */
+    display: grid;
+    grid-template-columns: 2rem 1fr;
     align-items: center;
     gap: var(--space-3);
   }
@@ -15,6 +95,8 @@
   input {
     @include typography.text('body');
 
+    /* Senza, l'input non scende sotto la propria larghezza naturale e sfonda. */
+    min-width: 0;
     padding: var(--space-3) var(--space-4);
     border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-input);
@@ -59,4 +141,14 @@ app-search-input {
   margin-top: var(--space-7);
   padding-top: var(--space-5);
   border-top: var(--border-width) solid var(--color-border);
+}
+
+/*
+ * L'svg vive qui: e' questo template, non `FilterGroup`, a scriverlo (viene
+ * solo proiettato nel suo slot `[icon]`). Nasce a 24px; accanto all'etichetta
+ * 'label' la proporzione giusta e' 16px.
+ */
+svg[icon] {
+  width: 1rem;
+  height: 1rem;
 }

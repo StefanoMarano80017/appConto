@@ -26,8 +26,15 @@
 }
 
 .icon {
+  display: flex;
   color: var(--color-text-muted);
   opacity: 0.6;
+
+  /* Lo svg di Lucide nasce a 24px: qui accanto al testo 'body' (15px) serve piccolo. */
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
 }
 
 input {

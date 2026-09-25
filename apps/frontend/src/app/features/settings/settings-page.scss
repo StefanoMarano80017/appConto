@@ -5,7 +5,10 @@
   padding: 1.5rem;
   max-width: 34rem;
 
-  h1,
+  /*
+   * Solo "Aspetto" (la seconda sezione) ha ancora un titolo qui: quello di
+   * "Impostazioni" è già nella fascia superiore della shell.
+   */
   h2 {
     margin: 0;
     font-size: 1.125rem;

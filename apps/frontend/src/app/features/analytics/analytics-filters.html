@@ -1,12 +1,23 @@
 <app-panel>
-  <app-section-header title="Filtri" />
+  <div class="header">
+    <div class="heading">
+      <h2>Filtri</h2>
+      @if (activeCount() > 0) {
+        <app-badge class="count" [label]="activeBadgeLabel()" tone="neutral" />
+      }
+    </div>
+    @if (activeCount() > 0) {
+      <button type="button" class="reset" (click)="store.resetFilters()">Azzera</button>
+    }
+  </div>
 
-  <app-filter-group label="Periodo">
-    <app-segmented-control
+  <app-filter-group label="Periodo" [initiallyOpen]="true">
+    <svg icon lucideCalendarDays></svg>
+    <app-choice-group
       [options]="presets"
       [value]="store.preset()"
       ariaLabel="Periodo"
-      (valueChange)="store.selectPreset($event)"
+      (selected)="store.selectPreset($event)"
     />
     <div class="custom">
       <label>
@@ -29,23 +40,40 @@
     <p class="selected">{{ store.selectedPeriodLabel() }}</p>
   </app-filter-group>
 
-  <app-filter-group label="Tipo di movimento">
+  <app-filter-group
+    label="Tipo di movimento"
+    [count]="store.filters().types.length"
+    [initiallyOpen]="store.filters().types.length > 0"
+  >
+    <svg icon lucideArrowUpDown></svg>
     <app-toggle-button-group
       [options]="transactionTypeOptions"
       [value]="store.filters().types"
+      ariaLabel="Tipo di movimento"
       (toggled)="store.toggleType($event)"
     />
   </app-filter-group>
 
-  <app-filter-group label="Categoria">
+  <app-filter-group
+    label="Categoria"
+    [count]="store.filters().categoryIds.length"
+    [initiallyOpen]="store.filters().categoryIds.length > 0"
+  >
+    <svg icon lucideTag></svg>
     <app-toggle-button-group
       [options]="categoryOptions()"
       [value]="store.filters().categoryIds"
+      ariaLabel="Categoria"
       (toggled)="store.toggleCategory($event)"
     />
   </app-filter-group>
 
-  <app-filter-group label="Merchant">
+  <app-filter-group
+    label="Merchant"
+    [count]="store.filters().merchantIds.length"
+    [initiallyOpen]="store.filters().merchantIds.length > 0"
+  >
+    <svg icon lucideStore></svg>
     <app-search-input
       [value]="merchantSearch()"
       placeholder="Cerca un merchant…"
@@ -58,17 +86,23 @@
       <app-toggle-button-group
         [options]="merchantOptions()"
         [value]="store.filters().merchantIds"
+        ariaLabel="Merchant"
         (toggled)="store.toggleMerchant($event)"
       />
     }
   </app-filter-group>
 
-  <app-filter-group label="Classificazione">
-    <app-segmented-control
+  <app-filter-group
+    label="Classificazione"
+    [count]="store.filters().classification === 'all' ? 0 : 1"
+    [initiallyOpen]="store.filters().classification !== 'all'"
+  >
+    <svg icon lucideListChecks></svg>
+    <app-choice-group
       [options]="classifications"
       [value]="store.filters().classification"
       ariaLabel="Classificazione"
-      (valueChange)="store.setClassification($event)"
+      (selected)="store.setClassification($event)"
     />
   </app-filter-group>
 

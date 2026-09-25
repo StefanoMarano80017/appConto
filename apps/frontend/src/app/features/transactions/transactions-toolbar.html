@@ -11,11 +11,11 @@
     <details class="dropdown">
       <summary>Periodo <span class="value">{{ periodLabel() }}</span></summary>
       <div class="panel-body">
-        <app-segmented-control
+        <app-choice-group
           [options]="presets"
           [value]="preset()"
           ariaLabel="Periodo"
-          (valueChange)="selectPreset($event)"
+          (selected)="selectPreset($event)"
         />
         <div class="dates">
           <label>
@@ -44,6 +44,7 @@
         <app-toggle-button-group
           [options]="transactionTypeOptions"
           [value]="query().types"
+          ariaLabel="Tipo di movimento"
           (toggled)="toggleType($event)"
         />
       </div>
@@ -86,6 +87,7 @@
           <app-toggle-button-group
             [options]="merchantOptions()"
             [value]="query().merchantIds"
+            ariaLabel="Merchant"
             (toggled)="toggleMerchant($event)"
           />
         }
@@ -95,11 +97,11 @@
     <details class="dropdown">
       <summary>Classificazione</summary>
       <div class="panel-body">
-        <app-segmented-control
+        <app-choice-group
           [options]="classificationOptions"
           [value]="query().classification"
           ariaLabel="Classificazione"
-          (valueChange)="changed.emit({ classification: $event })"
+          (selected)="changed.emit({ classification: $event })"
         />
       </div>
     </details>

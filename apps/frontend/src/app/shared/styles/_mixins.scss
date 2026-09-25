@@ -1,16 +1,18 @@
 @use 'typography';
 
 /*
- * Pillola dei gruppi di pulsanti.
+ * Pillola dei gruppi di pulsanti a scelta multipla.
  *
- * Lo stile condiviso da `SegmentedControl` (selezione singola) e
- * `ToggleButtonGroup` (selezione multipla): il comportamento dei due resta
- * separato (docs/architecture/frontend-shared-components-proposal.md, §16.2),
- * lo stile del singolo pulsante no.
+ * Oggi l'unico consumatore è `ToggleButtonGroup`. Lo era anche
+ * `SegmentedControl`, sostituito da `ChoiceGroup`, che non lo include: la sua
+ * pillola attiva è incassata in un blocco unico, non un pulsante bordato a sé.
+ * Un solo chiamante non basta a giustificare un mixin, ma non lo assorbo
+ * dentro `ToggleButtonGroup` finché non è chiaro se le altre otto toolbox del
+ * piano successivo ne avranno bisogno.
  *
- * Non include `padding` né lo spaziamento del contenitore (`gap`): i due usi
- * migrati in questa fase hanno valori diversi fra loro (0,3125rem 0,6875rem
- * contro 0,3125rem 0,75rem), quindi restano dichiarati da chi include il mixin.
+ * Non include `padding` né lo spaziamento del contenitore (`gap`): quando i
+ * consumatori erano due avevano valori diversi (0,3125rem 0,6875rem contro
+ * 0,3125rem 0,75rem), quindi restano dichiarati da chi include il mixin.
  */
 @mixin pill-button {
   @include typography.text('body');

@@ -194,14 +194,16 @@ describe('AnalyticsPage', () => {
     expect(sectionText('app-analytics-loans')).toContain('Prestiti');
   });
 
-  it('la pagina ha un solo titolo di primo livello', async () => {
+  it('non duplica il titolo di pagina: "Analytics" è di secondo livello, l\'h1 sta nella shell', async () => {
     await settle();
     await flush(analytics());
 
-    const h1 = (fixture.nativeElement as HTMLElement).querySelectorAll('h1');
+    const host = fixture.nativeElement as HTMLElement;
 
-    expect(h1.length).toBe(1);
-    expect(h1[0].textContent).toContain('Analytics');
+    expect(host.querySelectorAll('h1').length).toBe(0);
+
+    const h2Titles = Array.from(host.querySelectorAll('h2')).map((el) => el.textContent);
+    expect(h2Titles.some((text) => text?.includes('Analytics'))).toBe(true);
   });
 
   it('è una dashboard: non contiene più la tabella dei movimenti', async () => {

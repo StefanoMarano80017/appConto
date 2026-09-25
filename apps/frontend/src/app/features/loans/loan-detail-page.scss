@@ -33,12 +33,17 @@
   gap: 0.75rem 1.5rem;
   margin-bottom: 1.25rem;
 
-  h1,
+  /*
+   * Il nome di chi ha ricevuto il prestito è sceso a h2 (la rotta dice già
+   * "Prestito" nella fascia superiore): qui resta la stessa resa visiva di
+   * prima, solo sul tag giusto.
+   */
+  h2,
   h3 {
     margin: 0;
   }
 
-  h1 {
+  h2 {
     font-size: 1.375rem;
   }
 
@@ -47,7 +52,12 @@
   }
 }
 
-h1,
+/*
+ * Questo foglio serve anche `loan-create-page`, che ora non ha più un titolo
+ * proprio (era un doppione di "Crea prestito" già nella shell): resta solo
+ * l'h3 dei due riquadri di questa pagina ("Movimento d'origine",
+ * "Storico restituzioni").
+ */
 h3 {
   margin: 0 0 0.75rem;
 }

@@ -27,9 +27,19 @@
   display: none;
 }
 
-/* Un elemento largo dentro i 300px si adatta invece di sfondare la colonna, come la principale. */
+/*
+ * Un elemento largo dentro i 300px si adatta invece di sfondare la colonna,
+ * come la principale. `sticky` la tiene a schermo mentre la pagina scorre —
+ * una colonna di filtri che sparisce scorrendo costringe a tornare su per
+ * cambiare un criterio — e l'altezza massima con scroll interno evita che
+ * una colonna di sezioni più alta della finestra spinga giù il resto.
+ */
 .toolbox {
   min-width: 0;
+  position: sticky;
+  top: var(--space-8);
+  max-height: calc(100vh - var(--space-8) * 2);
+  overflow-y: auto;
 }
 
 /*
@@ -37,9 +47,19 @@
  * sotto il contenuto, nell'ordine in cui il DOM la scrive già. Nessun criterio
  * diventa irraggiungibile a nessuna larghezza, e l'ordine visivo coincide con
  * quello di tabulazione (WCAG 2.4.3).
+ *
+ * Qui la toolbox non è più una colonna affiancata ma un blocco sotto il
+ * contenuto: `sticky` e lo scroll interno, pensati per una colonna alta
+ * quanto la finestra, diventerebbero solo un ostacolo che taglia le sezioni.
  */
 @media (width < 80rem) {
   .page:has(.toolbox > *) {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbox {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
 }

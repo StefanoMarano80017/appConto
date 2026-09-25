@@ -1,9 +1,43 @@
 <div class="cards">
   @for (item of items(); track item.label) {
     <div class="card">
-      <span class="label">{{ item.label }}</span>
+      <div class="heading">
+        @switch (item.icon) {
+          @case ('entrate') {
+            <svg lucideTrendingUp aria-hidden="true" class="icon"></svg>
+          }
+          @case ('uscite') {
+            <svg lucideTrendingDown aria-hidden="true" class="icon"></svg>
+          }
+          @case ('saldo') {
+            <svg lucideWallet aria-hidden="true" class="icon"></svg>
+          }
+          @case ('conteggio') {
+            <svg lucideReceipt aria-hidden="true" class="icon"></svg>
+          }
+        }
+        <span class="label">{{ item.label }}</span>
+      </div>
+
       @if (item.kind === 'amount') {
         <app-amount size="kpi" [value]="item.value" [tone]="item.tone ?? 'auto'" />
+
+        @if (item.delta; as delta) {
+          <span
+            class="delta"
+            [class.delta-positive]="delta.tone === 'positive'"
+            [class.delta-negative]="delta.tone === 'negative'"
+            [class.delta-neutral]="delta.tone === 'neutral'"
+          >
+            @if (delta.percent >= 0) {
+              <svg lucideArrowUp aria-hidden="true" class="delta-arrow"></svg>
+            } @else {
+              <svg lucideArrowDown aria-hidden="true" class="delta-arrow"></svg>
+            }
+            <span class="delta-value">{{ signedPercent(delta.percent) }}</span>
+            <span class="delta-caption">{{ delta.caption }}</span>
+          </span>
+        }
       } @else {
         <span class="value">{{ item.value }}</span>
       }

@@ -15,8 +15,21 @@
   flex-direction: column;
   gap: var(--space-2);
 
+  .heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
   .label {
     @include typography.text('label');
+  }
+
+  /* Decorativa: il testo dell'etichetta accanto basta a chi usa uno screen reader. */
+  .icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    color: var(--color-text-muted);
   }
 
   /*
@@ -46,5 +59,41 @@
    */
   span.value {
     @include typography.text('display-kpi');
+  }
+
+  /*
+   * Il chip di variazione.
+   *
+   * Il colore sta qui, sull'host del chip, e non su `.delta-value` da solo:
+   * la freccia deve tingersi con lo stesso tono del numero, non restare
+   * muted. `.delta-caption` sotto lo sovrascrive apposta: la didascalia resta
+   * muted a prescindere dal tono (v. brief §2).
+   */
+  .delta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    @include typography.text('caption');
+  }
+
+  .delta-positive {
+    color: var(--color-income);
+  }
+
+  .delta-negative {
+    color: var(--color-expense);
+  }
+
+  .delta-neutral {
+    color: var(--color-text-secondary);
+  }
+
+  .delta-arrow {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .delta-caption {
+    color: var(--color-text-muted);
   }
 }

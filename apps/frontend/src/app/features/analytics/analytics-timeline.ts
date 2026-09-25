@@ -3,7 +3,7 @@ import { formatAmount, formatBookingDate } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Amount } from '../../shared/ui/amount';
-import { SegmentedControl } from '../../shared/ui/segmented-control';
+import { ChoiceGroup } from '../../shared/ui/choice-group';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { timelineScale } from './timeline-scale';
 
@@ -132,7 +132,7 @@ interface PlottedSeries {
  */
 @Component({
   selector: 'app-analytics-timeline',
-  imports: [Panel, SectionHeader, SegmentedControl, Amount],
+  imports: [Panel, SectionHeader, ChoiceGroup, Amount],
   templateUrl: './analytics-timeline.html',
   styleUrl: './analytics-timeline.scss'
 })

@@ -3,8 +3,9 @@ import { Component, input } from '@angular/core';
 /**
  * Pillola di stato testuale.
  *
- * `tone` copre solo i due valori realmente osservati (stato prestito aperto/
- * chiuso): nessun terzo tono "neutral" è stato aggiunto senza un uso reale.
+ * `tone` copriva solo i due valori dello stato prestito aperto/chiuso finché
+ * non è arrivato un uso reale del terzo: un conteggio di filtri attivi non è
+ * né positivo né negativo, quindi 'neutral' esiste da quando serve a questo.
  */
 @Component({
   selector: 'app-badge',
@@ -13,5 +14,5 @@ import { Component, input } from '@angular/core';
 })
 export class Badge {
   readonly label = input.required<string>();
-  readonly tone = input.required<'positive' | 'negative'>();
+  readonly tone = input.required<'positive' | 'negative' | 'neutral'>();
 }

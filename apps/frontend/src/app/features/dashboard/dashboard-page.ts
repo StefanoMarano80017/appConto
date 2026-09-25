@@ -5,7 +5,7 @@ import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { FilterChips } from '../../shared/ui/filter-chips';
-import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
+import { StatCardDelta, StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
 import {
   TRANSACTION_TYPES,
@@ -15,7 +15,7 @@ import {
 import { TransactionsTable } from '../transactions/transactions-table';
 import { CategoryBreakdownSection } from './category-breakdown';
 import { DashboardFilterStore } from './dashboard-filter.store';
-import { Dashboard } from './dashboard.model';
+import { Dashboard, MonthComparison } from './dashboard.model';
 import { DashboardApi } from './dashboard.api';
 import { MonthComparisonSection } from './month-comparison';
 import { TopMerchantsSection } from './top-merchants';
@@ -94,19 +94,54 @@ export class DashboardPage {
     return [
       // `income` è una magnitudine positiva (v. summary.view-model.ts): nessuna
       // negazione, nessun tono. `Amount` ne deduce il verde da sola.
-      { kind: 'amount', label: 'Entrate', value: income },
+      { kind: 'amount', label: 'Entrate', value: income, icon: 'entrate' },
       // `expenses` è una magnitudine positiva ma rappresenta un'uscita: la
       // neghiamo qui senza forzare il tono, così un totale dominato da rimborsi
       // (hasExpense è vera prima di guardare il segno) torna verde da solo
-      // invece di restare rosso a forza.
-      { kind: 'amount', label: 'Uscite', value: -expenses },
+      // invece di restare rosso a forza. Il confronto mensile esiste solo per
+      // le uscite (v. `expensesDelta`): è l'unica card con un chip.
+      {
+        kind: 'amount',
+        label: 'Uscite',
+        value: -expenses,
+        icon: 'uscite',
+        delta: this.expensesDelta(data.comparison)
+      },
       // `balance` è già `income - expenses`, con il segno giusto: nessun tono
       // imposto, nemmeno per lo zero — `Amount` lo tratta già da neutro.
-      { kind: 'amount', label: 'Saldo', value: balance },
-      { kind: 'text', label: 'Transazioni', value: String(transactionCount) },
+      { kind: 'amount', label: 'Saldo', value: balance, icon: 'saldo' },
+      { kind: 'text', label: 'Transazioni', value: String(transactionCount), icon: 'conteggio' },
+      // Nessuna icona mappata per i merchant: le quattro ammesse coprono le
+      // altre card, e inventarne una quinta senza un caso reale nel mockup
+      // andrebbe contro la ragione stessa dell'unione chiusa.
       { kind: 'text', label: 'Merchant', value: String(merchantCount) }
     ];
   });
+
+  /**
+   * Il chip «vs mese precedente» della card «Uscite».
+   *
+   * `undefined` quando `percentChange` è `null`: il backend non calcola un
+   * confronto (il mese precedente non ha spese), e mostrare uno `0%` al
+   * posto di "non calcolabile" sarebbe un dato falso, non assente.
+   *
+   * Il tono non segue il segno di `percentChange`: per le uscite crescere
+   * (`percentChange > 0`) è una cattiva notizia, quindi tono `negative`, il
+   * contrario di quanto varrebbe per un'entrata. È la card che dichiara il
+   * tono, non `StatCardGrid` che lo deduce.
+   */
+  private expensesDelta(comparison: MonthComparison): StatCardDelta | undefined {
+    const { percentChange, previousMonth } = comparison;
+    if (percentChange === null) {
+      return undefined;
+    }
+
+    return {
+      percent: percentChange,
+      caption: `vs ${this.formatMonth(previousMonth)}`,
+      tone: percentChange > 0 ? 'negative' : percentChange < 0 ? 'positive' : 'neutral'
+    };
+  }
 
   constructor() {
     effect((onCleanup) => {

@@ -13,7 +13,9 @@
     <section class="panel" [class.updating]="saving()">
       <div class="header">
         <div>
-          <h1>{{ loan.borrowerName }}</h1>
+          <!-- Il titolo di rotta è "Prestito": chi ha ricevuto il prestito è un'informazione
+               che la rotta non dice, quindi resta, ma di secondo livello. -->
+          <h2>{{ loan.borrowerName }}</h2>
           <p class="subtitle">{{ loan.description ?? 'Nessuna descrizione' }}</p>
           <p class="lent-at">Prestato il {{ formatBookingDate(loan.lentAt) }}</p>
         </div>

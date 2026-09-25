@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { LucideSearch } from '@lucide/angular';
 
 /**
  * Campo di ricerca, con icona di lente sempre presente.
@@ -8,6 +9,7 @@ import { Component, input, output } from '@angular/core';
  */
 @Component({
   selector: 'app-search-input',
+  imports: [LucideSearch],
   templateUrl: './search-input.html',
   styleUrl: './search-input.scss'
 })
