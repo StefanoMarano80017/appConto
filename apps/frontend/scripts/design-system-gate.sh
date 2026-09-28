@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sei controlli oggettivi sul design system. Zero righe = passato.
+# Sette controlli oggettivi sul design system. Zero righe = passato.
 #
 # Il perimetro e' `src`, non `src/app`: fuori da `src/app` vivono
 # `styles.scss` e i temi, che sono CSS a tutti gli effetti.
@@ -36,6 +36,13 @@ verifica 'nessuna spaziatura letterale fuori dai semantici' \
 
 verifica 'shared non conosce le feature' \
   bash -c "grep -rn 'features/' src/app/shared"
+
+# Il nome dell'alias legacy deve essere seguito subito da ) o da , per evitare
+# di catturare i nomi nuovi verso cui stiamo migrando: --border catturerebbe
+# --border-width, --text catturerebbe --text-primary e --text-secondary.
+# Questo vincolo discrimina i veri alias legacy dai nomi nuovi.
+verifica 'nessun alias legacy' \
+  bash -c "grep -rnE 'var\( *--(background|surface|border|text|text-muted|accent|on-accent|negative|positive|radius-panel|space-panel) *[,)]' src --include=*.scss --include=*.ts | grep -v _legacy-aliases"
 
 verifica 'dominio intatto' \
   bash -c "git -C ../.. diff --name-only | grep -E '\.(model|api|store|query)\.ts\$|apps/backend'"
