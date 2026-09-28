@@ -20,8 +20,58 @@ h2 {
   color: var(--color-text-muted);
 }
 
-app-stat-card-grid {
-  margin-bottom: var(--space-8);
+/*
+ * La fascia dei totali resta una presentazione propria e subordinata: le
+ * stesse tre cifre (spese, mese precedente, variazione) compaiono già nella
+ * fascia KPI di testa pagina (`dashboard-page.html`), con lo stesso dato
+ * garantito uguale dal backend. Promuoverle qui al trattamento
+ * `StatCardGrid` (25px mono, etichette maiuscole, icone) le renderebbe una
+ * seconda fascia KPI paritaria che dice due volte la stessa cosa — è la
+ * decisione di layout che il giro di correzione 1 ha riportato in scope
+ * (R34), da proporre all'utente nel giro visivo separatamente.
+ */
+.totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-8);
+  margin: var(--space-8) 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  .label {
+    @include typography.text('caption');
+  }
+
+  .value {
+    @include typography.text('financial-row');
+  }
+
+  /* V. `.previous` di `.categories` sotto: stesso motivo, stessa tecnica. */
+  .previous {
+    color: var(--color-text-muted);
+  }
+
+  small {
+    @include typography.text('caption');
+  }
+}
+
+/*
+ * Spendere di più è il segnale a cui prestare attenzione. Il colore vive qui,
+ * non su `Amount`: una variazione non può passare da un tono imposto a
+ * `Amount` (v. commento su `signed` in month-comparison.ts) — è lo stesso
+ * concetto in un mezzo diverso, non una duplicazione.
+ */
+.up {
+  color: var(--color-expense);
+}
+
+.down {
+  color: var(--color-income);
 }
 
 .categories {
@@ -52,6 +102,15 @@ app-stat-card-grid {
     text-align: right;
   }
 
+  /*
+   * De-enfasi deliberata della colonna «mese precedente»: nidificata sotto
+   * `.categories` (due classi + l'attributo di encapsulation su ciascuna,
+   * verificato: 4 componenti di specificità) batte sempre
+   * `:host(.amount-negative)` di `Amount` (2 componenti), a prescindere
+   * dall'ordine di iniezione dei fogli — v. `.previous` di `.figure` sopra
+   * per lo stesso meccanismo sulla fascia dei totali.
+   */
+  .previous,
   .arrow {
     color: var(--color-text-muted);
   }
