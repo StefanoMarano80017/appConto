@@ -228,7 +228,7 @@ button:active:not(:disabled) {
  * `--color-primary-active` esistevano gia' con un nome proprio e zero
  * consumatori — erano la regola mancante, dichiarata e non scritta.
  */
-input:not([type='checkbox']):not([type='radio']),
+input:not([type='checkbox']):not([type='radio']):not([type='file']),
 select,
 textarea {
   @include typography.text('body');
@@ -241,7 +241,9 @@ textarea {
 }
 
 /*
- * Caselle e radio sono escluse dalla regola sopra e non ne hanno una propria.
+ * Caselle, radio e campi file sono esclusi dalla regola sopra: sono la
+ * stessa famiglia di controlli che il browser disegna da se', non varianti
+ * dello stesso campo di testo.
  *
  * Un `padding` e un `border-radius` su un `input[type="checkbox"]` lo
  * sfigurano: il controllo nativo disegna se stesso, e quelle proprieta' gli
@@ -250,19 +252,35 @@ textarea {
  * lavoro a se' e non ha ancora un caso reale in questa applicazione —
  * `accent-color: var(--color-primary)` e' l'unica cosa che vale la pena
  * dichiarare, perche' li allinea al tema senza toccarne la forma.
+ *
+ * `input[type="file"]` e' nella stessa famiglia per lo stesso motivo, ma non
+ * ha un equivalente di `accent-color`: rende un bottone ("Scegli file") gia'
+ * suo, e bordo/padding/sfondo intorno producono un riquadro dentro un
+ * riquadro, con resa diversa da browser a browser. C'e' un solo consumatore
+ * in questa applicazione (`import-page.html`), e per lui non cambia nulla:
+ * prima di questa regola non aveva alcuno stile, quindi restarne fuori non e'
+ * una perdita. Il focus resta un'eccezione dichiarata piu' sotto: navigabile
+ * da tastiera come ogni altro controllo, è un requisito di accessibilita',
+ * non un'estetica che gli si somma addosso.
  */
 input[type='checkbox'],
 input[type='radio'] {
   accent-color: var(--color-primary);
 }
 
-input:not([type='checkbox']):not([type='radio']):hover:not(:disabled),
+input:not([type='checkbox']):not([type='radio']):not([type='file']):hover:not(:disabled),
 select:hover:not(:disabled),
 textarea:hover:not(:disabled) {
   border-color: var(--color-border-strong);
   background: var(--color-surface-elevated);
 }
 
+/*
+ * Il focus-visible NON esclude `input[type="file"]`, a differenza di ogni
+ * altra regola di questo blocco: e' l'unico stato che un campo file deve
+ * comunque mostrare, perche' resta navigabile da tastiera come ogni altro
+ * controllo (requisito di accessibilita', non estetica).
+ */
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
@@ -272,7 +290,7 @@ textarea:focus-visible {
   outline: none;
 }
 
-input:disabled,
+input:not([type='file']):disabled,
 select:disabled,
 textarea:disabled {
   background: var(--color-disabled-input);
@@ -281,7 +299,7 @@ textarea:disabled {
 }
 
 /* Lo stato non valido non si affida al solo colore: porta anche il bordo piu' marcato. */
-input:user-invalid,
+input:not([type='file']):user-invalid,
 select:user-invalid,
 textarea:user-invalid {
   border-color: var(--color-error);

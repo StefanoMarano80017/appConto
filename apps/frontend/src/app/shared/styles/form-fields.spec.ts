@@ -41,8 +41,18 @@ import { compile } from 'sass';
  *   simulato, mentre `:invalid` sullo stesso campo risulta `true`: il motore
  *   selettori di jsdom non implementa l'euristica "interazione dell'utente"
  *   che distingue `:user-invalid` da `:invalid`.
- * Questi due stati restano verificati solo dal giro visivo (Step 5), non da
- * un'asserzione più debole spacciata per equivalente.
+ * - `:focus-visible` su `input[type="file"]` — dipende dall'ORDINE dei test:
+ *   risulta `true` se è il primo `.focus()` indotto nell'intero file di
+ *   spec, `false` se un test precedente ha già messo a fuoco un altro
+ *   elemento (lo stesso richiamo su un secondo `input[type="text"]` resta
+ *   `true`: il problema è specifico del tipo `file`). Verificato con prove
+ *   dirette ripetute, non è un'ipotesi. Un'asserzione sulla cascata qui
+ *   dipenderebbe dall'ordine dei test, non dalla regola CSS: il controllo
+ *   scende quindi a livello testuale sul sorgente compilato (vedi il test
+ *   dedicato più sotto).
+ * Questi stati restano verificati solo dal giro visivo (Step 5) o da un
+ * controllo testuale sul sorgente, mai da un'asserzione più debole
+ * spacciata per equivalente.
  */
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -121,7 +131,34 @@ describe('stili globali dei campi di modulo', () => {
     expect(getComputedStyle(casella).borderRadius).toBe('');
   });
 
-  it('il CSS compilato contiene ancora button:active, l\'esclusione di checkbox/radio e :user-invalid', () => {
+  it('un campo file resta escluso dal bordo generico (regola di base)', () => {
+    // Deciso dal coordinatore dopo la consegna iniziale: `input[type="file"]`
+    // rende un bottone nativo ("Scegli file") e bordo/padding/sfondo intorno
+    // producono un riquadro dentro un riquadro — stessa famiglia di
+    // checkbox/radio, quindi stessa esclusione dalla regola generica.
+    const campoFile = creaCampo('file');
+
+    // Escluso dalla regola di base: nessun border-radius dichiarato per lui.
+    expect(getComputedStyle(campoFile).borderRadius).toBe('');
+  });
+
+  it('il focus-visible su un campo file NON è verificabile via cascata in jsdom: controllo testuale sul sorgente', () => {
+    // Provato per davvero, non assunto: `campoFile.matches(':focus-visible')`
+    // dopo una `.focus()` reale risulta `true` se è il PRIMO focus indotto in
+    // tutto il file di test, ma `false` se un test precedente ha già chiamato
+    // `.focus()` su un altro elemento — un artefatto dell'euristica interna di
+    // jsdom specifico per `input[type="file"]` (lo stesso richiamo su un
+    // secondo `input[type="text"]` resta `true`). Un'asserzione così
+    // dipenderebbe dall'ordine dei test, non dalla regola CSS: qui si
+    // verifica quindi solo che il sorgente NON escluda `[type="file"]` dal
+    // selettore `:focus-visible` (a differenza di base/hover/disabled/
+    // user-invalid, che lo escludono tutti).
+    const blocco = cssGlobale.match(/input:focus-visible[^{]*\{[^}]*\}/)?.[0] ?? '';
+    expect(blocco).not.toBe('');
+    expect(blocco).not.toMatch(/:not\(\[type=file\]\)/);
+  });
+
+  it('il CSS compilato contiene ancora button:active, l\'esclusione di checkbox/radio/file e :user-invalid', () => {
     // Stati che jsdom non permette di indurre (NOTA 3) o che dipendono da un
     // vero :active del puntatore: qui si verifica solo che la regola esista
     // nel foglio compilato, dichiarato come controllo più debole — non uno
@@ -129,6 +166,7 @@ describe('stili globali dei campi di modulo', () => {
     expect(cssGlobale).toContain('button:active:not(:disabled)');
     expect(cssGlobale).toContain('--color-primary-active');
     expect(cssGlobale).toMatch(/input\[type=['"]checkbox['"]\]/);
+    expect(cssGlobale).toMatch(/:not\(\[type=file\]\)/);
     expect(cssGlobale).toContain(':user-invalid');
   });
 });
