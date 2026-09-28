@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compile } from 'sass';
+import { compile, compileString } from 'sass';
 
 /**
  * Il guardiano dei token del design system.
@@ -12,85 +12,114 @@ import { compile } from 'sass';
  * qualcosa segnala — `var(--sparito)` vale la stringa vuota, quindi uno
  * sfondo diventa trasparente e un colore di testo sparisce, in silenzio.
  * Oggi cancellare una riga da lì non fa fallire il build e non rompe nessun
- * test: questo è l'unico test che se ne accorgerebbe.
+ * test: questo file è l'unico che se ne accorgerebbe.
  *
  * NOTA SU UNA SCELTA DIVERSA DA QUELLA ABBOZZATA NEL BRIEF: la prima idea era
- * montare `<App>` con `TestBed` e leggere `document.querySelectorAll('style')`
- * per raccogliere sia il CSS globale sia quello (iniettato a runtime da
- * Angular) dei componenti. Provato per davvero, in questo ambiente
- * (`@angular/build:unit-test`, runner vitest, nessun `browsers` configurato
- * in `angular.json` → jsdom in Node, non un browser vero) succede questo:
- * il builder passa `index: false` e `browser: undefined` alla build di test,
- * quindi il foglio globale (`styles.css`, quello con TUTTE le definizioni
- * `:root`) non viene mai iniettato nel documento — viene aggiunto solo via
- * `transformIndexHtml` di Vite, un passo che esiste solo per la modalità
- * browser di Vitest. Il solo `<style>` che compare davvero è quello che
- * Angular inietta a runtime per il componente istanziato (qui, `App`), che
- * *referenzia* i token ma non li *definisce* mai. Risultato misurato:
- * un solo `<style>`, 19 proprietà referenziate, **19 irrisolte** — non
- * perché un alias sia orfano, ma perché il foglio con le definizioni non è
- * mai stato caricato. Un test così avrebbe sempre fallito, per il motivo
- * sbagliato, e sarebbe stato il primo ad essere silenziato.
+ * montare `<App>` con `TestBed` e leggere `document.querySelectorAll('style')`.
+ * Provato per davvero: in questo ambiente (`@angular/build:unit-test`,
+ * runner Vitest, nessun `browsers` in `angular.json` → jsdom in Node, non un
+ * browser vero) il builder passa `index: false` e `browser: undefined` alla
+ * build di test, quindi il foglio globale con le definizioni `:root` non
+ * viene mai iniettato nel documento — solo lo `<style>` che Angular inietta
+ * a runtime per il componente istanziato, che referenzia i token ma non li
+ * definisce mai. Misurato: un solo `<style>`, 19 proprietà referenziate,
+ * 19 irrisolte, sempre — un test così avrebbe fallito per il motivo
+ * sbagliato e sarebbe stato il primo ad essere cancellato.
  *
- * La soluzione qui sotto smonta il problema in due metà indipendenti, niente
- * affatto legate al montaggio di un componente:
+ * La soluzione sotto non monta nulla: separa CENSIMENTO (quali `var(--x)`
+ * sono referenziate) da RISOLUZIONE (se risolvono davvero), e per il secondo
+ * compila da sé, con lo stesso Sass della build reale, il foglio che
+ * `angular.json` dichiara come stile globale, iniettandolo in un `<style>`
+ * del documento di test — il passo che la pipeline di test non compie da
+ * sola qui.
  *
- * 1. CENSIMENTO — quali `var(--x)` sono referenziate nel progetto: si legge
- *    il testo sorgente di ogni file `.scss` sotto `src/`, non un elenco
- *    scritto a mano (che invecchierebbe e smetterebbe di coprire proprio i
- *    token aggiunti dopo). Si scandagliano TUTTI i file, non solo il foglio
- *    globale: gli undici alias sono definiti in `_legacy-aliases.scss`, ma i
- *    loro consumatori (`var(--accent)`, `var(--border)`, `var(--negative)`,
- *    ...) vivono sparsi in oltre venti file di feature. Un censimento che
- *    guardasse solo il foglio globale non li vedrebbe mai sparire.
- *
- * 2. RISOLUZIONE — se ogni nome censito risolve davvero: si compila
- *    `styles.scss` (lo stesso foglio che `angular.json` dichiara come
- *    stile globale dell'app, con lo stesso `loadPaths`) con lo stesso
- *    compilatore Sass che usa la build reale, e si inietta il CSS
- *    risultante in un `<style>` del documento di test — cosa che, come
- *    appena spiegato, la pipeline di test non fa da sola. Da lì
- *    `getComputedStyle(document.documentElement)` legge i valori reali,
- *    nei due temi (`data-theme='light'|'dark'`), esattamente come farebbe un
- *    browser vero: tutte le custom property del progetto sono definite su
- *    `:root` (mai su un `:host` di componente), quindi questo lettore non
- *    produce falsi positivi da proprietà con scope ristretto.
+ * GIRO DI REVIEW 1 — perché il censimento non legge il solo testo sorgente:
+ * un primo tentativo scandagliava il testo grezzo dei `.scss` con un regex,
+ * scartando i nomi incompleti prodotti da un'interpolazione Sass non ancora
+ * risolta. Verificato che era sbagliato: per cinque nomi reali del progetto
+ * (`--font-ui`, `--font-mono`, `--color-chart-1`, `--color-chart-3`,
+ * `--color-chart-5`) l'UNICA occorrenza in tutto il sorgente è dentro
+ * un'interpolazione — non esiste da nessuna parte un `var(--font-ui)`
+ * scritto alla lettera. Scartarli come falsi positivi li faceva sparire dal
+ * censimento per sempre: cancellare `--font-ui` da `_semantic.scss` avrebbe
+ * svuotato il `font-family` di tutta l'app, in silenzio, con questo test
+ * verde. I tre siti che costruiscono nomi per interpolazione sono
+ * `_typography.scss:49` (famiglia), `_typography.scss:60` (colore) e
+ * `analytics-timeline.scss:67` (indice della serie). Nessuno dei due
+ * `_typography.scss` emette CSS da solo (è un partial, i nomi si
+ * materializzano solo dove il mixin viene incluso): perciò il censimento
+ * non legge il testo dei `.scss`, compila ogni foglio non-partial con lo
+ * stesso compilatore Sass e legge i nomi dal CSS che ne esce — lì
+ * l'interpolazione è già risolta in un nome letterale, sempre.
  */
 
-/**
- * Un riferimento `var(--nome)`, seguito da spazi opzionali.
- *
- * `_typography.scss` costruisce alcuni nomi con l'interpolazione Sass
- * `var(--color-#{map.get($spec, color)})`: sul sorgente non compilato quella
- * riga non è ancora un nome di proprietà, e il regex ne matcherebbe solo il
- * prefisso (`--color-`), un falso positivo che finirebbe censito come token
- * a sé. Si scarta filtrando i nomi che finiscono con un trattino: i nomi
- * reali che quell'interpolazione produce (`--color-text-secondary`,
- * `--color-text-muted`, ...) sono comunque scritti alla lettera altrove,
- * ovunque il ruolo tipografico corrispondente sia invocato, quindi restano
- * censiti lo stesso.
- */
+/** Un riferimento `var(--nome)`, seguito da spazi opzionali. */
 const RIFERIMENTO = /var\(\s*(--[a-z0-9-]+)/g;
 
-function proprietaReferenziate(css: string): Set<string> {
+/** Una dichiarazione `--nome: ...` dentro un blocco di regola. */
+const DICHIARAZIONE = /(--[a-z0-9-]+)\s*:/g;
+
+function nomiDaRegex(testo: string, regex: RegExp): Set<string> {
   const nomi = new Set<string>();
-  for (const trovato of css.matchAll(RIFERIMENTO)) {
+  for (const trovato of testo.matchAll(regex)) {
     const nome = trovato[1];
-    if (nome !== undefined && !nome.endsWith('-')) {
+    if (nome !== undefined) {
       nomi.add(nome);
     }
   }
   return nomi;
 }
 
-/** Ogni file `.scss` sotto una radice, ricorsivamente. */
-function trovaFileScss(radice: string): string[] {
+/**
+ * Il contenuto fra graffe di ogni occorrenza di un selettore che apre un
+ * blocco — qui non serve gestire l'annidamento (le regole `:root` non ne
+ * hanno), ma contare le graffe è comunque la via che non si rompe se un
+ * commento nel CSS ne contenesse una spaiata.
+ */
+function blocchi(css: string, apertura: RegExp): string[] {
+  const risultati: string[] = [];
+  const regex = new RegExp(apertura.source, 'g');
+  let trovato: RegExpExecArray | null;
+  while ((trovato = regex.exec(css))) {
+    let profondita = 1;
+    let indice = trovato.index + trovato[0].length;
+    const inizio = indice;
+    while (profondita > 0 && indice < css.length) {
+      if (css[indice] === '{') profondita++;
+      else if (css[indice] === '}') profondita--;
+      indice++;
+    }
+    risultati.push(css.slice(inizio, indice - 1));
+  }
+  return risultati;
+}
+
+function dichiarateInBlocchi(css: string, apertura: RegExp): Set<string> {
+  const nomi = new Set<string>();
+  for (const blocco of blocchi(css, apertura)) {
+    for (const nome of nomiDaRegex(blocco, DICHIARAZIONE)) {
+      nomi.add(nome);
+    }
+  }
+  return nomi;
+}
+
+/**
+ * Ogni file con l'estensione data, sotto una radice, ricorsivamente.
+ * `soloNonPartial` esclude i file `_nome.scss`: da soli non emettono CSS
+ * (si materializzano solo dove chi li `@use`sa li invoca), quindi compilarli
+ * in isolamento non direbbe nulla sui nomi reali.
+ */
+function trovaFile(radice: string, estensione: string, soloNonPartial: boolean): string[] {
   const trovati: string[] = [];
   for (const voce of readdirSync(radice, { withFileTypes: true })) {
     const percorso = join(radice, voce.name);
     if (voce.isDirectory()) {
-      trovati.push(...trovaFileScss(percorso));
-    } else if (voce.name.endsWith('.scss')) {
+      trovati.push(...trovaFile(percorso, estensione, soloNonPartial));
+    } else if (voce.name.endsWith(estensione)) {
+      if (soloNonPartial && voce.name.startsWith('_')) {
+        continue;
+      }
       trovati.push(percorso);
     }
   }
@@ -101,14 +130,44 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 /** `src/`, tre livelli sopra `src/app/shared/styles`. */
 const SRC = join(QUI, '../../..');
 
+/**
+ * Il censimento: unione di due fonti, nessuna delle due un elenco scritto a
+ * mano (che invecchierebbe e smetterebbe di coprire proprio i token
+ * aggiunti dopo).
+ *
+ * 1. Ogni foglio `.scss` non-partial, COMPILATO (non il testo grezzo — vedi
+ *    la nota sopra sull'interpolazione).
+ * 2. Ogni template `.html`, testo grezzo: un binding di stile può citare un
+ *    token alla lettera fuori da qualunque foglio di stile (qui succede
+ *    davvero, due volte, con `'var(--text-muted)'` come sfondo di
+ *    ripiego quando una categoria non ha un colore proprio). Un censimento
+ *    che guardasse solo i `.scss` non se ne accorgerebbe — e sarebbe
+ *    proprio nel momento in cui sparisse l'ultimo consumatore `.scss` di un
+ *    alias (il criterio di uscita della Fase 7: `_legacy-aliases.scss`
+ *    vuoto) che l'alias verrebbe cancellato mentre un template lo usa
+ *    ancora. Non si estende ai `.ts`: oggi nessuno vi scrive un
+ *    `var(--nome)` letterale (i grafici lo compongono a runtime
+ *    concatenando stringhe, che non è un riferimento censibile da testo), e
+ *    includerli avvelenerebbe il censimento con questo stesso file, che ne
+ *    cita uno dentro un commento.
+ */
 const proprieta = (() => {
   const nomi = new Set<string>();
-  for (const file of trovaFileScss(SRC)) {
-    const testo = readFileSync(file, 'utf8');
-    for (const nome of proprietaReferenziate(testo)) {
+
+  for (const file of trovaFile(SRC, '.scss', true)) {
+    const css = compile(file, { loadPaths: [SRC] }).css;
+    for (const nome of nomiDaRegex(css, RIFERIMENTO)) {
       nomi.add(nome);
     }
   }
+
+  for (const file of trovaFile(SRC, '.html', false)) {
+    const testo = readFileSync(file, 'utf8');
+    for (const nome of nomiDaRegex(testo, RIFERIMENTO)) {
+      nomi.add(nome);
+    }
+  }
+
   return nomi;
 })();
 
@@ -120,6 +179,38 @@ const proprieta = (() => {
  */
 const cssGlobale = compile(join(SRC, 'styles.scss'), { loadPaths: [SRC] }).css;
 
+/**
+ * GIRO DI REVIEW 1, rilievo 2 — perché non basta che nulla risolva vuoto.
+ *
+ * `styles.scss` stratifica il tema scuro come sovrascrittura: prima
+ * `:root { palette chiara }`, poi `:root[data-theme='dark'] { palette
+ * scura }`. Una proprietà dichiarata solo nella palette chiara, e mai in
+ * quella scura, non risulta mai vuota in tema scuro: legge semplicemente il
+ * valore chiaro (la cascata la fa risalire al primo blocco). Il criterio
+ * "stringa vuota" non può quindi accorgersi di un token perso solo dal lato
+ * scuro — servirebbe un tema scuro rotto (es. uno sfondo bianco dentro un
+ * tema notte) senza che questo file, da solo, se ne accorga.
+ *
+ * Si compilano quindi in isolamento le due sole regole che devono restare
+ * simmetriche — i mixin `light-palette`/`dark-palette` di `_primitives.scss`
+ * (il livello 1 dei token, quello dove ogni colore ha "la stessa chiave nei
+ * due temi" per costruzione, DESIGN_SYSTEM.md §1) — e si confrontano i nomi
+ * dichiarati nei due blocchi. Compilarli da soli invece che leggerli dentro
+ * `cssGlobale` evita di confondere questo confronto con i token di
+ * geometria e tipografia (spaziature, raggi, alias) che by design vivono
+ * solo nel blocco chiaro, perché non cambiano con il tema.
+ */
+const cssPalette = compileString(
+  `
+    @use 'app/shared/styles/primitives' as p;
+    :root { @include p.light-palette; }
+    :root[data-theme='dark'] { @include p.dark-palette; }
+  `,
+  { loadPaths: [SRC] }
+).css;
+const paletteChiara = dichiarateInBlocchi(cssPalette, /:root\s*\{/);
+const paletteScura = dichiarateInBlocchi(cssPalette, /:root\[data-theme=['"]?dark['"]?\]\s*\{/);
+
 describe('token del design system', () => {
   let foglio: HTMLStyleElement | undefined;
 
@@ -130,7 +221,7 @@ describe('token del design system', () => {
   });
 
   for (const tema of ['light', 'dark'] as const) {
-    it(`ogni custom property referenziata risolve nel tema ${tema}`, () => {
+    it(`ogni custom property referenziata nei fogli compilati e nei template risolve nel tema ${tema}`, () => {
       document.documentElement.setAttribute('data-theme', tema);
       foglio = document.createElement('style');
       foglio.textContent = cssGlobale;
@@ -142,8 +233,8 @@ describe('token del design system', () => {
       // se tornasse vuoto (o quasi), l'asserzione sull'elenco vuoto più
       // sotto passerebbe comunque, ma senza aver verificato niente — è
       // esattamente il modo peggiore in cui questo test può fallire. Il
-      // sorgente ne referenzia oltre cinquanta; venti è un pavimento
-      // prudente, non una misura.
+      // sorgente ne referenzia 56; venti è un pavimento prudente, non una
+      // misura.
       expect(proprieta.size).toBeGreaterThanOrEqual(20);
 
       // Il pavimento sul conteggio da solo garantisce quantità, non
@@ -163,4 +254,15 @@ describe('token del design system', () => {
       expect(irrisolte).toEqual([]);
     });
   }
+
+  it('le proprietà dichiarate nella palette chiara e in quella scura coincidono', () => {
+    // Non "nessuna vuota": qui il guasto che si cerca non produce mai una
+    // stringa vuota (vedi il commento sopra `cssPalette`), quindi il
+    // confronto è direttamente sui due insiemi di nomi, e nomina la
+    // differenza — da che lato manca — quando non coincidono.
+    const soloChiaro = [...paletteChiara].filter((nome) => !paletteScura.has(nome));
+    const soloScuro = [...paletteScura].filter((nome) => !paletteChiara.has(nome));
+
+    expect({ soloChiaro, soloScuro }).toEqual({ soloChiaro: [], soloScuro: [] });
+  });
 });
