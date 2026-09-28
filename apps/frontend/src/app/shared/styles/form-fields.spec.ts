@@ -64,6 +64,32 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 const SRC = join(QUI, '../../..');
 const cssGlobale = compile(join(SRC, 'styles.scss'), { loadPaths: [SRC] }).css;
 
+/**
+ * `cssGlobale` SENZA i commenti (blocchi `/* ... *\/`, l'unica forma di
+ * commento che sopravvive alla compilazione Sass — niente `//`). Ogni
+ * asserzione testuale di questo file (`toContain`/`toMatch` su una stringa,
+ * non una lettura di cascata via `getComputedStyle`) legge questa costante,
+ * mai `cssGlobale` direttamente.
+ *
+ * Il motivo, misurato: Sass conserva i commenti nel CSS compilato, e una
+ * riga come `expect(cssGlobale).toMatch(/input\[type=['"]checkbox['"]\]/)`
+ * risultava verde per anni per il motivo sbagliato — non perché la regola
+ * `input[type=checkbox]` (Sass non emette mai apici in un selettore
+ * d'attributo) contenesse quel pattern, ma perché il COMMENTO sopra la
+ * regola, scritto in prosa, citava `input[type="checkbox"]` con gli apici
+ * per leggibilità. Quando l'utente ha riscritto quel commento (per
+ * `.checkbox-control`, un lavoro indipendente da questo), l'asserzione è
+ * diventata rossa senza che nessuno dei cinque selettori veri fosse
+ * cambiato: segnalava una regressione inesistente, e per tre giri di
+ * correzione non aveva segnalato che non stava guardando i selettori.
+ *
+ * La rimozione è ingenua (un solo pattern non-greedy) apposta: verificato
+ * sul CSS compilato reale che nessuna dichiarazione usi `/*` dentro una
+ * stringa (`content: '';` è l'unico `content:` del foglio, letterale vuoto),
+ * quindi non c'è un caso che la romperebbe in questo sorgente.
+ */
+const cssSenzaCommenti = cssGlobale.replace(/\/\*[\s\S]*?\*\//g, '');
+
 describe('stili globali dei campi di modulo', () => {
   let foglio: HTMLStyleElement;
   const elementiDiProva: HTMLElement[] = [];
@@ -162,7 +188,7 @@ describe('stili globali dei campi di modulo', () => {
     // verifica quindi solo che il sorgente NON escluda `[type="file"]` dal
     // selettore `:focus-visible` (a differenza di base/hover/disabled/
     // user-invalid, che lo escludono tutti).
-    const blocco = cssGlobale.match(/input:focus-visible[^{]*\{[^}]*\}/)?.[0] ?? '';
+    const blocco = cssSenzaCommenti.match(/input:focus-visible[^{]*\{[^}]*\}/)?.[0] ?? '';
     expect(blocco).not.toBe('');
     expect(blocco).not.toMatch(/:not\(\[type=file\]\)/);
   });
@@ -185,11 +211,15 @@ describe('stili globali dei campi di modulo', () => {
     // Stati che jsdom non permette di indurre (NOTA 3) o che dipendono da un
     // vero :active del puntatore: qui si verifica solo che la regola esista
     // nel foglio compilato, dichiarato come controllo più debole — non uno
-    // spacciato per il precedente.
-    expect(cssGlobale).toContain('button:active:not(:disabled)');
-    expect(cssGlobale).toContain('--color-primary-active');
-    expect(cssGlobale).toMatch(/input\[type=['"]checkbox['"]\]/);
-    expect(cssGlobale).toMatch(/:not\(\[type=file\]\)/);
-    expect(cssGlobale).toContain(':user-invalid');
+    // spacciato per il precedente. Su `cssSenzaCommenti`, non su `cssGlobale`:
+    // un commento in prosa non deve poter soddisfare nessuna di queste cinque.
+    expect(cssSenzaCommenti).toContain('button:active:not(:disabled)');
+    expect(cssSenzaCommenti).toContain('--color-primary-active');
+    // Sass non emette mai apici in un selettore d'attributo: `[type=checkbox]`,
+    // non `[type='checkbox']` o `[type="checkbox"]` — misurato sul CSS
+    // compilato, non assunto.
+    expect(cssSenzaCommenti).toMatch(/input\[type=checkbox\]/);
+    expect(cssSenzaCommenti).toMatch(/:not\(\[type=file\]\)/);
+    expect(cssSenzaCommenti).toContain(':user-invalid');
   });
 });
