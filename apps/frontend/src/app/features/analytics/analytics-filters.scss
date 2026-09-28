@@ -1,6 +1,27 @@
 @use '../../shared/styles/typography';
 
 /*
+ * La toolbox di `PageLayout` e' alta quanto la finestra e passa la propria
+ * altezza a chi le viene proiettato dentro: questo host e' un elemento di
+ * griglia e si allunga da solo. Il pannello dentro di lui invece no, perche'
+ * `Panel` e' `display: contents` — l'host `app-panel` non genera un box, e il
+ * `.panel` che si vede resta alto quanto il proprio contenuto.
+ *
+ * Una riga `1fr` qui lo allunga senza che nessun selettore debba nominarlo:
+ * proprio perche' `app-panel` e' `display: contents`, e' il `.panel` a
+ * diventare l'elemento di griglia di questo host. Nessuna regola di questo
+ * foglio potrebbe raggiungerlo altrimenti: appartiene al template di `Panel`.
+ *
+ * `1fr` vale `minmax(auto, 1fr)`, ed e' il motivo per cui va bene in
+ * entrambi i casi: con molti filtri aperti la riga cresce col contenuto e la
+ * colonna scorre come prima, con pochi riempie l'altezza.
+ */
+:host {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+/*
  * Il pannello (`app-panel`) ha `--space-panel` di padding su tutti i lati.
  * L'intestazione (`app-section-header`, non più un `<h2>` scritto a mano) è
  * il primo figlio del pannello e resta ferma mentre la toolbox scorre
@@ -30,7 +51,6 @@ app-section-header {
 
 .reset {
   @include typography.text('secondary');
-
   flex: none;
   padding: 0;
   border: none;
