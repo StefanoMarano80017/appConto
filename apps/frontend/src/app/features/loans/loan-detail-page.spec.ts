@@ -122,6 +122,27 @@ describe('LoanDetailPage', () => {
     expect(text()).toContain('MEDIAWORLD VERANO');
   });
 
+  it('un prestito aperto porta un badge neutro, non negativo', async () => {
+    await open();
+
+    const badge = harness.routeNativeElement?.querySelector('app-badge');
+
+    // Il dominio conosce solo OPEN/SETTLED (loan.model.ts): un prestito
+    // ancora aperto non è "negativo", è in attesa.
+    expect(badge?.textContent?.trim()).toBe('Aperto');
+    expect(badge?.querySelector('.badge')?.classList.contains('neutral')).toBe(true);
+    expect(badge?.querySelector('.badge')?.classList.contains('negative')).toBe(false);
+  });
+
+  it('un prestito chiuso porta un badge positivo', async () => {
+    await open(detail({ repaidAmount: 80, remainingAmount: 0, status: 'SETTLED' }));
+
+    const badge = harness.routeNativeElement?.querySelector('app-badge');
+
+    expect(badge?.textContent?.trim()).toBe('Chiuso');
+    expect(badge?.querySelector('.badge')?.classList.contains('positive')).toBe(true);
+  });
+
   it('una restituzione in contanti si vede come tale', async () => {
     await open();
 

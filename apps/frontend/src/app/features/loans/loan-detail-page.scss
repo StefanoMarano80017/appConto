@@ -46,10 +46,18 @@
   /*
    * Il nome di chi ha ricevuto il prestito è sceso a h2 (la rotta dice già
    * "Prestito" nella fascia superiore): qui resta la stessa resa visiv di
-   * prima, solo sul tag giusto.
+   * prima, solo sul tag giusto. L'h3 di "Storico restituzioni" vive anche
+   * lui dentro questo `.header` (accanto al bottone "Registra
+   * restituzione"): senza azzerare il suo margine qui, ricade sulla regola
+   * `h3` più sotto (pensata per un h3 fuori da un `.header` flex) e il
+   * margine sposta in basso il contenuto della riga.
    */
-  h2 {
+  h2,
+  h3 {
     margin: 0;
+  }
+
+  h2 {
     @include typography.text('section-title');
   }
 }
@@ -360,9 +368,18 @@ button.danger {
     @include typography.text('secondary');
   }
 
+  /*
+   * `width`/`height` non sono spaziatura: restano al valore originale,
+   * fuori dallo scope dei token che il gate controlla — non era stato
+   * chiesto di cambiare la dimensione di un pallino di legenda. Il raggio
+   * invece il gate lo controlla davvero ("nessun raggio numerico fuori dai
+   * semantici"): un `2px` letterale qui sarebbe una violazione vera, non
+   * scope preso in più. `--radius-badge` (4px, il più piccolo disponibile)
+   * resta quindi un token, non un ripristino del letterale.
+   */
   .swatch {
-    width: var(--space-4);
-    height: var(--space-4);
+    width: 0.625rem;
+    height: 0.625rem;
     border-radius: var(--radius-badge);
   }
 

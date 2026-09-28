@@ -181,13 +181,26 @@ app-search-input {
   }
 
   /*
-   * Il residuo è la cifra della pagina, ma l'enfasi non passa più dal peso
-   * del carattere: `<app-amount>` fissa il proprio font-weight (ruolo
-   * `financial-row`), e un `font-weight` dichiarato qui sul `<td>` non
-   * raggiungerebbe il testo, che vive nell'host del componente. La stessa
-   * ragione per cui non c'è più un colore: è una magnitudine, non un'uscita.
+   * Il residuo è la cifra della pagina: resta in grassetto. Non è vero che
+   * un `font-weight` dichiarato qui non raggiunga il testo — `Amount`
+   * dichiara tutto (colore, peso) su selettori `:host(...)`, senza regole
+   * proprie sui nodi interni, quindi da fuori l'host si raggiunge: questo
+   * selettore compila a (0,3,1) (due attributi di encapsulation più una
+   * classe, più l'elemento), contro (0,2,0) di `:host(.amount-row)` —
+   * vince qui e il testo interno, senza un proprio peso dichiarato,
+   * eredita dall'host. È lo stesso meccanismo di `.remaining.zero
+   * app-amount` due righe sotto, che infatti già funziona così.
+   */
+  .remaining app-amount {
+    font-weight: 600;
+  }
+
+  /*
+   * Un residuo a zero non chiede più attenzione: né in grassetto né nel
+   * colore di un importo (magnitudine, non un'uscita — v. sopra).
    */
   .remaining.zero app-amount {
+    font-weight: 400;
     color: var(--color-text-muted);
   }
 }

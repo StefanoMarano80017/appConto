@@ -135,6 +135,20 @@ describe('LoansPage', () => {
     expect(card?.querySelector('app-amount')?.classList.contains('amount-positive')).toBe(false);
   });
 
+  it('un prestito aperto porta un badge neutro, non negativo', async () => {
+    await open('/loans');
+    await flush(list({ items: [loan({ status: 'OPEN' })] }));
+
+    const card = harness.routeNativeElement?.querySelector('.loan-card');
+    const badge = card?.querySelector('app-badge');
+
+    // Il dominio conosce solo OPEN/SETTLED (loan.model.ts): un prestito
+    // ancora aperto non è "negativo", è in attesa.
+    expect(badge?.textContent?.trim()).toBe('Aperto');
+    expect(badge?.querySelector('.badge')?.classList.contains('neutral')).toBe(true);
+    expect(badge?.querySelector('.badge')?.classList.contains('negative')).toBe(false);
+  });
+
   it('un prestito chiuso si distingue da uno aperto', async () => {
     await open('/loans');
     await flush();
