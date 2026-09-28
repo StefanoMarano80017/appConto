@@ -11,6 +11,7 @@ import { LoanFormErrors, LoanFormValue, validateLoanForm } from './loan-form';
 import { LoansApi } from './loans.api';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
+import { Amount } from '../../shared/ui/amount';
 import { FormField } from '../../shared/ui/form-field';
 import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 
@@ -26,7 +27,7 @@ import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
  */
 @Component({
   selector: 'app-loan-create-page',
-  imports: [FormField, FormsModule, PageLayout, Panel, RouterLink],
+  imports: [Amount, FormField, FormsModule, PageLayout, Panel, RouterLink],
   templateUrl: './loan-create-page.html',
   styleUrl: './loan-detail-page.scss'
 })

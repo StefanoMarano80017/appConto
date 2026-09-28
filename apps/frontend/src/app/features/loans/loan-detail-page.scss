@@ -1,23 +1,33 @@
+@use '../../shared/styles/typography';
+
+/*
+ * Foglio condiviso con `loan-create-page` (`styleUrl` dichiarato lì): ogni
+ * selettore che tocca `.breadcrumb`, `.origin` (e i suoi figli `.date`,
+ * `.description`, `.type`, `.amount`), `.loan-form` (base, `input`, `select`,
+ * `[aria-invalid]`, `.actions`) o `.message`/`.message.error` serve entrambe
+ * le pagine, non solo questa.
+ */
+
 .breadcrumb {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-6);
 
   a {
-    color: var(--text-muted);
-    font-size: 0.875rem;
+    @include typography.text('secondary');
+    color: var(--color-text-muted);
     text-decoration: none;
   }
 
   a:hover {
-    color: var(--accent);
+    color: var(--color-primary);
   }
 }
 
 .panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-8);
+  margin-bottom: var(--space-8);
 }
 
 /* Durante un'operazione i dati restano leggibili, ma si vede che sono in attesa. */
@@ -30,25 +40,17 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-5) var(--space-8);
+  margin-bottom: var(--space-7);
 
   /*
    * Il nome di chi ha ricevuto il prestito è sceso a h2 (la rotta dice già
-   * "Prestito" nella fascia superiore): qui resta la stessa resa visiva di
+   * "Prestito" nella fascia superiore): qui resta la stessa resa visiv di
    * prima, solo sul tag giusto.
    */
-  h2,
-  h3 {
-    margin: 0;
-  }
-
   h2 {
-    font-size: 1.375rem;
-  }
-
-  h3 {
-    font-size: 1.0625rem;
+    margin: 0;
+    @include typography.text('section-title');
   }
 }
 
@@ -59,36 +61,33 @@
  * "Storico restituzioni").
  */
 h3 {
-  margin: 0 0 0.75rem;
-}
-
-h3 {
-  font-size: 1.0625rem;
+  margin: 0 0 var(--space-5);
+  @include typography.text('section-title');
 }
 
 .subtitle {
-  margin: 0.25rem 0 0;
-  color: var(--text-muted);
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
 }
 
 .lent-at {
-  margin: 0.125rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  margin: var(--space-1) 0 0;
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 }
 
 /* Quanto del prestito è già rientrato, a colpo d'occhio. */
 .progress {
   height: 0.375rem;
-  margin-top: 1.25rem;
-  border-radius: 999px;
-  background: var(--background);
+  margin-top: var(--space-7);
+  border-radius: var(--radius-pill);
+  background: var(--color-background);
   overflow: hidden;
 
   .bar {
     display: block;
     height: 100%;
-    background: var(--positive);
+    background: var(--color-income);
   }
 }
 
@@ -96,35 +95,35 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.25rem;
+  gap: var(--space-4);
+  margin-top: var(--space-7);
 }
 
 .confirm {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  gap: var(--space-4);
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 }
 
 button.secondary {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.875rem;
-  padding: 0.375rem 0.75rem;
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-5);
+  @include typography.text('secondary');
+  color: var(--color-text-primary);
 }
 
 button.secondary:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 button.danger {
-  font-size: 0.875rem;
-  padding: 0.375rem 0.75rem;
+  padding: var(--space-3) var(--space-5);
+  @include typography.text('secondary');
 }
 
 /* Il movimento che ha originato il prestito, o quello di una restituzione. */
@@ -132,14 +131,13 @@ button.danger {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.75rem;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
 
   .date {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('caption');
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
@@ -151,26 +149,16 @@ button.danger {
   }
 
   .type {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-  }
-
-  .amount {
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .amount.negative {
-    color: var(--negative);
+    @include typography.text('caption');
   }
 }
 
 .explore {
-  margin: 0.75rem 0 0;
-  font-size: 0.875rem;
+  margin: var(--space-5) 0 0;
+  @include typography.text('secondary');
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: none;
   }
 
@@ -182,21 +170,21 @@ button.danger {
 .loan-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem 1.5rem;
-  margin-top: 1.25rem;
+  gap: var(--space-6) var(--space-8);
+  margin-top: var(--space-7);
 
   input,
   select {
     font: inherit;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
+    padding: var(--space-4) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
   }
 
   input[aria-invalid='true'] {
-    border-color: var(--negative);
+    border-color: var(--color-error);
   }
 
   .actions {
@@ -204,51 +192,51 @@ button.danger {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-5);
   }
 }
 
 .loan-form.inline {
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
+  padding-top: var(--space-7);
+  border-top: var(--border-width) solid var(--color-border);
 }
 
 .cancel {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
   text-decoration: none;
 }
 
 .cancel:hover {
-  color: var(--accent);
+  color: var(--color-primary);
 }
 
 .message {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .message.error {
-  margin-top: 1rem;
-  color: var(--negative);
+  margin-top: var(--space-6);
+  color: var(--color-error);
 }
 
 .message.warning {
-  margin-top: 0.75rem;
-  color: var(--negative);
-  font-size: 0.875rem;
+  margin-top: var(--space-5);
+  @include typography.text('secondary');
+  color: var(--color-warning);
 }
 
 .hint {
-  margin: 0 0 1rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  margin: 0 0 var(--space-6);
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 }
 
 /* Su schermi stretti scorre la tabella, non la pagina. */
 .scroller {
   overflow-x: auto;
-  margin-top: 1.25rem;
+  margin-top: var(--space-7);
 }
 
 .repayments {
@@ -257,45 +245,36 @@ button.danger {
   border-collapse: collapse;
 
   thead {
-    border-top: 1px solid var(--border);
+    border-top: var(--border-width) solid var(--color-border);
   }
 
   th,
   td {
     text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: var(--border-width) solid var(--color-border);
   }
 
   th {
-    font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-muted);
-    font-weight: 600;
+    @include typography.text('label');
   }
 
   .date {
     white-space: nowrap;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .numeric {
     text-align: right;
     white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .numeric.positive {
-    color: var(--positive);
   }
 
   th.numeric {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .link a {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: none;
     overflow-wrap: anywhere;
   }
@@ -306,12 +285,12 @@ button.danger {
 
   /* Una restituzione in contanti non ha un movimento, e va detto. */
   .cash {
-    color: var(--text-muted);
-    font-size: 0.875rem;
+    @include typography.text('secondary');
+    color: var(--color-text-muted);
   }
 
   .note {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     overflow-wrap: anywhere;
   }
 
@@ -324,15 +303,15 @@ button.danger {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   font: inherit;
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   text-decoration: underline;
   cursor: pointer;
 }
 
 .link-button:hover {
-  color: var(--negative);
+  color: var(--color-error);
 }
 
 /* Visibile agli screen reader, non a schermo. */
@@ -353,50 +332,50 @@ button.danger {
  */
 .split-bar {
   display: flex;
-  height: 0.5rem;
-  margin-top: 1rem;
-  border-radius: 999px;
-  background: var(--negative);
+  height: var(--space-4);
+  margin-top: var(--space-6);
+  border-radius: var(--radius-pill);
+  background: var(--color-expense);
   overflow: hidden;
 
   .lent {
     display: block;
     height: 100%;
-    background: var(--accent);
+    background: var(--color-primary);
   }
 }
 
 .split-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
+  gap: var(--space-4) var(--space-8);
   list-style: none;
-  margin: 0.625rem 0 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
 
   li {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-    font-size: 0.875rem;
+    gap: var(--space-3);
+    @include typography.text('secondary');
   }
 
   .swatch {
-    width: 0.625rem;
-    height: 0.625rem;
-    border-radius: 2px;
+    width: var(--space-4);
+    height: var(--space-4);
+    border-radius: var(--radius-badge);
   }
 
   .swatch.lent {
-    background: var(--accent);
+    background: var(--color-primary);
   }
 
   .swatch.own {
-    background: var(--negative);
+    background: var(--color-expense);
   }
 
   .label {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .value {
@@ -405,21 +384,20 @@ button.danger {
 }
 
 .message.note {
-  margin-top: 0.75rem;
-  font-size: 0.8125rem;
+  margin-top: var(--space-5);
+  @include typography.text('caption');
 }
 
 /* La conseguenza dell'importo scelto, mostrata nel modulo di creazione. */
 .split {
   grid-column: 1 / -1;
   margin: 0;
-  padding: 0.625rem 0.875rem;
-  border-radius: 6px;
-  background: var(--background);
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-control);
+  background: var(--color-background);
+  @include typography.text('caption');
 }
 
 .split.own strong {
-  color: var(--negative);
+  color: var(--color-expense);
 }

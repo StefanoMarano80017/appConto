@@ -20,7 +20,7 @@
         <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
         <span class="description">{{ transaction.description }}</span>
         <span class="type">{{ typeLabels[transaction.type] }}</span>
-        <span class="amount negative">{{ formatAmount(transaction.amount) }}</span>
+        <app-amount [value]="transaction.amount" />
       </div>
 
       @if (alreadyLent() > 0) {

@@ -2,7 +2,7 @@ import { httpResource } from '@angular/common/http';
 import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { formatAmount, formatBookingDate } from '../../core/format';
+import { formatBookingDate } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import {
   EMPTY_LOAN_QUERY,
@@ -18,6 +18,7 @@ import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
+import { Amount } from '../../shared/ui/amount';
 import { Badge } from '../../shared/ui/badge';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
@@ -48,6 +49,7 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
 @Component({
   selector: 'app-loans-page',
   imports: [
+    Amount,
     Badge,
     EmptyState,
     ErrorRetry,
@@ -81,7 +83,6 @@ export class LoansPage implements OnDestroy {
   protected readonly statusFilters = LOAN_STATUS_FILTERS;
   protected readonly statusFilterLabels = LOAN_STATUS_FILTER_LABELS;
   protected readonly statusLabels = LOAN_STATUS_LABELS;
-  protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
 
   protected readonly data = computed<LoanList | undefined>(() =>
@@ -106,7 +107,7 @@ export class LoansPage implements OnDestroy {
    * segno qui la contraddirebbe. Per questo restano magnitudini, con tono
    * neutro invece che dedotto: non sono né un'entrata né un'uscita, sono una
    * posizione di credito. Coerente con il resto della pagina, che li mostra
-   * già così (v. tabella sotto, `formatAmount(loan.amount)` senza segno).
+   * già così (v. tabella sotto, `<app-amount tone="neutral">` senza segno).
    */
   protected readonly kpis = computed<StatCardItem[]>(() => {
     const totals = this.data()?.totals;

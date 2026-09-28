@@ -21,7 +21,7 @@
         </div>
         <app-badge
           [label]="statusLabels[loan.status]"
-          [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+          [tone]="loan.status === 'SETTLED' ? 'positive' : 'neutral'"
         />
       </div>
 
@@ -139,7 +139,7 @@
           <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
           <span class="description">{{ transaction.description }}</span>
           <span class="type">{{ typeLabels[transaction.type] }}</span>
-          <span class="amount negative">{{ formatAmount(transaction.amount) }}</span>
+          <app-amount [value]="transaction.amount" />
         </div>
 
         @if (loan.originSplit; as split) {
@@ -290,7 +290,9 @@
               @for (repayment of loan.repayments; track repayment.id) {
                 <tr>
                   <td class="date">{{ formatBookingDate(repayment.repaymentDate) }}</td>
-                  <td class="numeric positive">{{ formatAmount(repayment.amount) }}</td>
+                  <td class="numeric">
+                    <app-amount [value]="repayment.amount" tone="positive" />
+                  </td>
                   <td class="link">
                     @if (repayment.transaction; as transaction) {
                       <a

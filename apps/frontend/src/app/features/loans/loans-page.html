@@ -105,15 +105,21 @@
             </thead>
             <tbody>
               @for (loan of data.items; track loan.id) {
-                <tr [class.settled]="loan.status === 'SETTLED'">
+                <tr class="loan-card" [class.settled]="loan.status === 'SETTLED'">
                   <td class="borrower-name">
                     <a [routerLink]="['/loans', loan.id]">{{ loan.borrowerName }}</a>
                   </td>
                   <td class="description">{{ loan.description ?? '—' }}</td>
                   <td class="date">{{ formatBookingDate(loan.lentAt) }}</td>
-                  <td class="numeric">{{ formatAmount(loan.amount) }}</td>
+                  <td class="numeric">
+                    <app-amount [value]="loan.amount" tone="neutral" />
+                  </td>
                   <td class="numeric repaid">
-                    {{ loan.repaidAmount === 0 ? '—' : formatAmount(loan.repaidAmount) }}
+                    @if (loan.repaidAmount === 0) {
+                      —
+                    } @else {
+                      <app-amount [value]="loan.repaidAmount" tone="neutral" />
+                    }
                     @if (loan.repaymentCount > 0) {
                       <span class="count"
                         >{{ loan.repaymentCount }}
@@ -122,12 +128,12 @@
                     }
                   </td>
                   <td class="numeric remaining" [class.zero]="loan.remainingAmount === 0">
-                    {{ formatAmount(loan.remainingAmount) }}
+                    <app-amount [value]="loan.remainingAmount" tone="neutral" />
                   </td>
                   <td>
                     <app-badge
                       [label]="statusLabels[loan.status]"
-                      [tone]="loan.status === 'SETTLED' ? 'positive' : 'negative'"
+                      [tone]="loan.status === 'SETTLED' ? 'positive' : 'neutral'"
                     />
                   </td>
                 </tr>

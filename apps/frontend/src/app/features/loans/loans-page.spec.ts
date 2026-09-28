@@ -121,6 +121,20 @@ describe('LoansPage', () => {
     expect(text()).toContain('Chiuso');
   });
 
+  it('una card di prestito porta lo stato in un badge, non nel colore del numero', async () => {
+    await open('/loans');
+    await flush(
+      list({ items: [loan({ status: 'SETTLED', repaidAmount: 80, remainingAmount: 0 })] })
+    );
+
+    const card = harness.routeNativeElement?.querySelector('.loan-card');
+
+    expect(card?.querySelector('app-badge')?.textContent?.trim()).toBe('Chiuso');
+    // Il numero resta neutro: il design system vieta di affidare al solo
+    // colore la distinzione fra entrata e uscita (DS §5).
+    expect(card?.querySelector('app-amount')?.classList.contains('amount-positive')).toBe(false);
+  });
+
   it('un prestito chiuso si distingue da uno aperto', async () => {
     await open('/loans');
     await flush();

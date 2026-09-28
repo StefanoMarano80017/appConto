@@ -1,10 +1,11 @@
+@use '../../shared/styles/typography';
+
 .note {
-  margin: 1.25rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  margin: var(--space-7) 0 0;
+  @include typography.text('caption');
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: none;
   }
 
@@ -18,8 +19,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-5);
+  margin-bottom: var(--space-7);
 }
 
 app-search-input {
@@ -29,72 +30,72 @@ app-search-input {
 
 .filters {
   display: flex;
-  gap: 0.375rem;
+  gap: var(--space-3);
 
   button {
-    padding: 0.375rem 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text-muted);
+    padding: var(--space-3) var(--space-5);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
     font: inherit;
-    font-size: 0.875rem;
+    @include typography.text('secondary');
+    color: var(--color-text-muted);
     cursor: pointer;
   }
 
   button:hover {
-    color: var(--text);
+    color: var(--color-text-primary);
   }
 
   button.active {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
   }
 }
 
 .borrower select {
   font: inherit;
-  font-size: 0.875rem;
+  @include typography.text('secondary');
+  color: var(--color-text-primary);
   max-width: 12rem;
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
 }
 
 .reset {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   font: inherit;
-  font-size: 0.875rem;
+  @include typography.text('secondary');
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
 .reset:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .message {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .message.error {
-  color: var(--negative);
+  color: var(--color-error);
 }
 
 .hint {
-  margin: 0.5rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  margin: var(--space-4) 0 0;
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: none;
   }
 
@@ -104,7 +105,7 @@ app-search-input {
 }
 
 .empty {
-  padding: 1.5rem 0;
+  padding: var(--space-8) 0;
   text-align: center;
 }
 
@@ -119,79 +120,75 @@ app-search-input {
   border-collapse: collapse;
 
   thead {
-    border-top: 1px solid var(--border);
+    border-top: var(--border-width) solid var(--color-border);
   }
 
   th,
   td {
     text-align: left;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: var(--border-width) solid var(--color-border);
   }
 
   th {
-    font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--text-muted);
-    font-weight: 600;
+    @include typography.text('label');
   }
 
   /* Un prestito chiuso resta leggibile ma non chiede attenzione. */
   tr.settled {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .borrower-name a {
-    color: var(--text);
+    color: var(--color-text-primary);
     text-decoration: none;
     font-weight: 600;
   }
 
   .borrower-name a:hover {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: underline;
   }
 
   .description {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     overflow-wrap: anywhere;
   }
 
   .date {
     white-space: nowrap;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .numeric {
     text-align: right;
     white-space: nowrap;
-    font-variant-numeric: tabular-nums;
   }
 
   th.numeric .sort {
     float: right;
   }
 
-  .repaid {
-    color: var(--positive);
-  }
-
+  /*
+   * Niente colore qui: `repaidAmount` è una magnitudine, non un'entrata (v.
+   * commento su `kpis` in loans-page.ts). Colorarla di verde le avrebbe
+   * attribuito un segno che non ha; il segno lo porta solo lo stato, nel
+   * badge dell'ultima colonna.
+   */
   .repaid .count {
     display: block;
-    font-size: 0.75rem;
-    color: var(--text-muted);
+    @include typography.text('caption');
   }
 
-  /* Il residuo è la cifra della pagina: si legge per prima. */
-  .remaining {
-    font-weight: 600;
-    color: var(--negative);
-  }
-
-  .remaining.zero {
-    font-weight: 400;
-    color: var(--text-muted);
+  /*
+   * Il residuo è la cifra della pagina, ma l'enfasi non passa più dal peso
+   * del carattere: `<app-amount>` fissa il proprio font-weight (ruolo
+   * `financial-row`), e un `font-weight` dichiarato qui sul `<td>` non
+   * raggiungerebbe il testo, che vive nell'host del componente. La stessa
+   * ragione per cui non c'è più un colore: è una magnitudine, non un'uscita.
+   */
+  .remaining.zero app-amount {
+    color: var(--color-text-muted);
   }
 }
 
@@ -207,18 +204,18 @@ app-search-input {
 }
 
 .sort:hover {
-  color: var(--text);
+  color: var(--color-text-primary);
 }
 
 .arrow {
-  margin-left: 0.25rem;
-  color: var(--accent);
+  margin-left: var(--space-2);
+  color: var(--color-primary);
 }
 
 .count-line {
-  margin: 1rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  margin: var(--space-6) 0 0;
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 }
 
 /* Visibile agli screen reader, non a schermo. */

@@ -22,6 +22,7 @@ import { LOAN_STATUS_LABELS, LoanDetail } from './loan.model';
 import { LoansApi, loanRequest } from './loans.api';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
+import { Amount } from '../../shared/ui/amount';
 import { Badge } from '../../shared/ui/badge';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { FormField } from '../../shared/ui/form-field';
@@ -61,7 +62,17 @@ const CANDIDATE_PAGE_SIZE = 100;
  */
 @Component({
   selector: 'app-loan-detail-page',
-  imports: [Badge, ErrorRetry, FormField, FormsModule, PageLayout, Panel, RouterLink, StatCardGrid],
+  imports: [
+    Amount,
+    Badge,
+    ErrorRetry,
+    FormField,
+    FormsModule,
+    PageLayout,
+    Panel,
+    RouterLink,
+    StatCardGrid
+  ],
   templateUrl: './loan-detail-page.html',
   styleUrl: './loan-detail-page.scss'
 })
