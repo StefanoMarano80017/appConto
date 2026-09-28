@@ -22,8 +22,13 @@ verifica() {
   fi
 }
 
+# Un esadecimale è una dichiarazione di colore se non è citato. Citato significa
+# preceduto da apice singolo, doppio, backtick o parentesi: 'colore', "colore",
+# `colore`, (ripiego). Il controllo esclude questi casi per non catturare i
+# riferimenti ai colori (nelle fixture, nei commenti, nei valori di ripiego).
+# Non vede gli esadecimali dentro template string CSS (backtick js) — è un limite noto.
 verifica 'nessun esadecimale fuori dai primitivi' \
-  bash -c "grep -rnE ': *#[0-9a-fA-F]{3,8}' src --include=*.scss --include=*.ts | grep -v _primitives"
+  bash -c "grep -rnE '#[0-9a-fA-F]{3,8}' src --include=*.scss --include=*.ts | grep -v _primitives | grep -vE \"['(\\\"\\\`]#\""
 
 verifica 'nessuna dimensione di carattere fuori dalla scala' \
   bash -c "grep -rn 'font-size:' src --include=*.scss --include=*.ts | grep -v _typography"
