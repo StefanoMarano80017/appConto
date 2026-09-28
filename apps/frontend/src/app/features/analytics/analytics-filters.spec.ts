@@ -13,8 +13,8 @@ describe('AnalyticsFilters', () => {
   let store: AnalyticsStore;
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
-  const badge = (): HTMLElement | null => host().querySelector('.header .count');
-  const reset = (): HTMLButtonElement | null => host().querySelector('.header .reset');
+  const badge = (): HTMLElement | null => host().querySelector('app-badge[titleAdornment]');
+  const reset = (): HTMLButtonElement | null => host().querySelector('button[panelActions]');
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({ imports: [AnalyticsFilters] }).compileComponents();
@@ -60,6 +60,6 @@ describe('AnalyticsFilters', () => {
     expect(store.filters().categoryIds).toEqual([]);
     expect(badge()).toBeNull();
     expect(reset()).toBeNull();
-    expect(host().querySelector('.heading h2')?.textContent?.trim()).toBe('Filtri');
+    expect(host().querySelector('app-section-header h2')?.textContent?.trim()).toBe('Filtri');
   });
 });

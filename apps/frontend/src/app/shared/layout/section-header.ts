@@ -5,6 +5,13 @@ import { Component, input } from '@angular/core';
  * per contenuto proiettato (link, pulsante, badge — qualunque cosa la pagina
  * ci metta).
  *
+ * Accanto al titolo ci sono due slot distinti, non un'unica proprietà
+ * configurabile: `titleIcon` per l'icona che introduce la sezione (precede il
+ * titolo) e `titleAdornment` per un'informazione che lo segue (un badge di
+ * conteggio, per esempio). Sono due ruoli diversi — introdurre non è la
+ * stessa cosa che annotare — quindi restano due punti di proiezione separati
+ * invece di un solo slot con un parametro che ne scelga la posizione.
+ *
  * Normalizza i quattro nomi di classe usati oggi per lo stesso concetto
  * (`.header`/`.head`/`.toolbar`/`.panel-header`), tutti con lo stesso CSS
  * flex/gap. Non dipende da `Panel`: le due si compongono perché è così che

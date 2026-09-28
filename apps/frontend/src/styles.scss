@@ -214,3 +214,21 @@ button:disabled:hover {
   color: var(--color-disabled);
   cursor: not-allowed;
 }
+
+/*
+ * L'icona proiettata in `FilterGroup` (`.icon` in filter-group.html, che porta
+ * anche questa classe dal nome proprio) e quella proiettata in `SectionHeader`
+ * (`.title-icon` in section-header.html). Non possono vivere nel foglio
+ * incapsulato del rispettivo componente: quell'SVG appartiene al template del
+ * CHIAMANTE, quindi porta l'attributo di incapsulamento del chiamante e
+ * nessuna regola scritta lì lo raggiunge. Qui, fuori da qualunque
+ * incapsulamento, le raggiunge entrambe.
+ *
+ * Nascono a 24px (le icone Lucide); accanto a un'etichetta o a un titolo la
+ * proporzione giusta è 16px.
+ */
+.filter-group-icon svg,
+.title-icon svg {
+  width: 1rem;
+  height: 1rem;
+}

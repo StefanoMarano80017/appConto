@@ -7,7 +7,7 @@
     [attr.aria-controls]="panelId"
     (click)="open.set(!open())"
   >
-    <span class="icon" aria-hidden="true"><ng-content select="[icon]" /></span>
+    <span class="icon filter-group-icon" aria-hidden="true"><ng-content select="[icon]" /></span>
     <span class="label">{{ label() }}</span>
     @if (count() > 0) {
       <app-badge class="count" [label]="count() + ''" tone="neutral" />

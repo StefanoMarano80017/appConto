@@ -2,51 +2,33 @@
 
 /*
  * Il pannello (`app-panel`) ha `--space-panel` di padding su tutti i lati.
- * Questa riga unisce titolo, badge del conteggio e azzeramento: non c'è più
- * un titolo "Filtri" separato sopra un riepilogo a parte, quindi è lei il
- * primo figlio del pannello. Restando ferma mentre la toolbox scorre
- * (`position: sticky`), deve coprire per intero ciò che le passa sotto:
- * senza margini negativi il suo sfondo si fermerebbe 20px prima dei bordi
- * del pannello e si vedrebbe il contenuto sfilare di lato. Il padding
- * rimesso dentro riallinea il testo alle altre sezioni.
+ * L'intestazione (`app-section-header`, non più un `<h2>` scritto a mano) è
+ * il primo figlio del pannello e resta ferma mentre la toolbox scorre
+ * (`position: sticky`): deve coprire per intero ciò che le passa sotto,
+ * altrimenti il contenuto sfilerebbe di lato 20px prima dei bordi del
+ * pannello. Il padding orizzontale rimesso dentro riallinea il testo alle
+ * altre sezioni.
  *
- * Qui il margine negativo copre anche il lato superiore, ed è corretto
- * proprio perché è il primo figlio: non c'è più nessun titolo sopra con cui
- * i margini possano collassare. Il difetto che c'era in questo stesso file
- * (il riquadro che saliva di 4px sopra "Filtri", tagliandone i discendenti)
- * nasceva dall'avere questa riga *sotto* un titolo separato; unificandoli non
- * esiste più quella situazione. L'angolo va arrotondato di conseguenza,
- * altrimenti il rettangolo sporgerebbe squadrato dagli angoli tondi del
- * pannello.
+ * Il margine negativo qui è SOLO orizzontale, mai superiore. In questo
+ * stesso file l'errore opposto è già stato commesso una volta: un margine
+ * negativo sul lato superiore collassa con quello di ciò che sta sopra, e il
+ * riquadro saliva di 4px oltre "Filtri", tagliandone i discendenti. Il lato
+ * superiore resta perciò lo spazio normale del pannello (nessun
+ * `border-radius` sui due angoli in alto: senza il bleed verticale il
+ * riquadro non li tocca più). Lo spazio sotto non si dichiara qui: è già
+ * quello di default che l'host di `SectionHeader` porta con sé.
  */
-.header {
+app-section-header {
   position: sticky;
   top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin: calc(var(--space-panel) * -1) calc(var(--space-panel) * -1) var(--space-6);
+  margin-left: calc(var(--space-panel) * -1);
+  margin-right: calc(var(--space-panel) * -1);
   padding: var(--space-5) var(--space-panel);
   background: var(--color-surface);
   border-bottom: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
 
-.heading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.heading h2 {
-  @include typography.text('section-title');
-
-  margin: 0;
-}
-
-.header .reset {
+.reset {
   @include typography.text('secondary');
 
   flex: none;
@@ -57,7 +39,7 @@
   cursor: pointer;
 }
 
-.header .reset:focus-visible {
+.reset:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
@@ -144,11 +126,9 @@ app-search-input {
 }
 
 /*
- * L'svg vive qui: e' questo template, non `FilterGroup`, a scriverlo (viene
- * solo proiettato nel suo slot `[icon]`). Nasce a 24px; accanto all'etichetta
- * 'label' la proporzione giusta e' 16px.
+ * La dimensione degli SVG proiettati in `[icon]` (calendario, tag, ecc.) non
+ * si dichiara più qui: vive una volta sola in `styles.scss`
+ * (`.filter-group-icon svg`), da dove raggiunge ogni toolbox — non solo
+ * questa — perché quell'SVG appartiene al template del chiamante e nessuna
+ * regola incapsulata, né qui né in `FilterGroup`, può raggiungerlo.
  */
-svg[icon] {
-  width: 1rem;
-  height: 1rem;
-}

@@ -4,7 +4,8 @@ import {
   LucideCalendarDays,
   LucideListChecks,
   LucideStore,
-  LucideTag
+  LucideTag, 
+  LucideFunnel
 } from '@lucide/angular';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
@@ -15,6 +16,7 @@ import {
 import { ClassificationFilter } from './analytics.model';
 import { PERIOD_PRESETS } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
+import { SectionHeader } from '../../shared/layout/section-header';
 import { Badge } from '../../shared/ui/badge';
 import { ChoiceGroup } from '../../shared/ui/choice-group';
 import { FilterChips } from '../../shared/ui/filter-chips';
@@ -57,8 +59,10 @@ interface ActiveFilter {
     LucideListChecks,
     LucideStore,
     LucideTag,
+    LucideFunnel,
     Panel,
     SearchInput,
+    SectionHeader,
     ToggleButtonGroup
   ],
   templateUrl: './analytics-filters.html',

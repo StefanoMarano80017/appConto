@@ -1,17 +1,57 @@
 @use '../styles/typography';
 
+/*
+ * Il margine sotto vive sull'host, non sul div interno: è l'unico posto che
+ * il foglio di chi chiama può raggiungere legittimamente (l'host è un
+ * elemento del SUO template, non uno annidato nel nostro incapsulamento).
+ * Una pagina come i filtri di Analytics, che sticka questa intestazione in
+ * cima a un pannello, deve poter aggiungere margini propri sull'host senza
+ * doverne prima annullare uno nascosto qui dentro.
+ */
+:host {
+  display: block;
+  margin-bottom: var(--space-6);
+}
+
 .section-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-6);
-  margin-bottom: var(--space-6);
+}
+
+/*
+ * Icona introduttiva, titolo ed eventuale ornamento (un badge di conteggio,
+ * per esempio) stanno sulla stessa riga: due slot distinti, non uno solo
+ * configurabile, perché hanno un ruolo diverso l'uno dall'altro.
+ * `titleIcon` precede il titolo ed è ciò che lo introduce; `titleAdornment` lo
+ * segue ed è un'informazione accanto ad esso (badge, conteggio). `panelActions`
+ * resta un'altra cosa ancora: non sta su questa riga, va all'estremità destra
+ * dell'intestazione.
+ */
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 
   h2 {
     @include typography.text('section-title');
 
     margin: 0;
   }
+}
+
+.title-icon {
+  flex: none;
+}
+
+/*
+ * Come `.icon` in filter-group.html: l'icona è proiettata, quindi se il
+ * chiamante non ne mette una lo span resterebbe vuoto e occuperebbe
+ * comunque il suo spazio nel gap della riga.
+ */
+.title-icon:empty {
+  display: none;
 }
 
 .subtitle {

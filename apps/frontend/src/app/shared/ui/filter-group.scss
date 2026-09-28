@@ -52,6 +52,29 @@
   display: none;
 }
 
+/*
+ * La dimensione dell'SVG NON si dichiara qui. L'SVG proiettato porta
+ * l'attributo di incapsulamento del CHIAMANTE (chi scrive `<svg icon
+ * lucideX>` nel proprio template), non quello di `FilterGroup`: nessun
+ * selettore di questo foglio, incapsulato, può raggiungerlo — `.icon > svg`
+ * risolverebbe in `.icon[_ngcontent-fg] > svg[_ngcontent-fg]`, e l'SVG non ha
+ * quell'attributo.
+ *
+ * Si potrebbe pensare che dimensionare il solo contenitore basti, dato che la
+ * larghezza calcolata da un box vince sull'attributo `width` dell'SVG. Non è
+ * così in pratica: provato in un browser reale (jsdom non fa layout, quindi
+ * qui non è verificabile), rendere `.icon` un `inline-flex` di 1rem×1rem
+ * lascia l'SVG a 16×24 invece che 16×16 — la larghezza si adegua al
+ * contenitore (flex-shrink), l'altezza no, perché l'attributo `height="24"`
+ * dell'SVG conta come dimensione già specificata e batte lo stretch di
+ * default. Il risultato è un'icona deformata che sfonda il basso del
+ * contenitore, non una scalata pulita.
+ *
+ * La regola che dimensiona davvero l'SVG vive in `styles.scss`, globale e
+ * quindi non incapsulata, sotto `.filter-group-icon svg` (nome proprio per
+ * non collidere con altri usi di `.icon` nel foglio globale).
+ */
+
 .label {
   @include typography.text('label');
 }

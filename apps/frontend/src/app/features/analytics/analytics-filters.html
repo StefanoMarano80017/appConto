@@ -1,15 +1,13 @@
 <app-panel>
-  <div class="header">
-    <div class="heading">
-      <h2>Filtri</h2>
-      @if (activeCount() > 0) {
-        <app-badge class="count" [label]="activeBadgeLabel()" tone="neutral" />
-      }
-    </div>
+  <app-section-header title="Filtri">
+    <svg titleIcon lucideFunnel></svg>
     @if (activeCount() > 0) {
-      <button type="button" class="reset" (click)="store.resetFilters()">Azzera</button>
+      <app-badge titleAdornment [label]="activeBadgeLabel()" tone="neutral" />
     }
-  </div>
+    @if (activeCount() > 0) {
+      <button panelActions type="button" class="reset" (click)="store.resetFilters()">Azzera</button>
+    }
+  </app-section-header>
 
   <app-filter-group label="Periodo" [initiallyOpen]="true">
     <svg icon lucideCalendarDays></svg>
@@ -37,7 +35,6 @@
         />
       </label>
     </div>
-    <p class="selected">{{ store.selectedPeriodLabel() }}</p>
   </app-filter-group>
 
   <app-filter-group
