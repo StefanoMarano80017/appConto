@@ -262,9 +262,23 @@ textarea {
  * una perdita. Il focus resta un'eccezione dichiarata piu' sotto: navigabile
  * da tastiera come ogni altro controllo, è un requisito di accessibilita',
  * non un'estetica che gli si somma addosso.
+ *
+ * La stessa esclusione vale piu' sotto per `:disabled` e `:user-invalid`:
+ * escludere `[type="file"]` ma non caselle/radio da quelle due sarebbe stata
+ * un'incoerenza (lo stesso controllo che il browser disegna da se', trattato
+ * diversamente a seconda dello stato). Il `cursor: not-allowed` di
+ * `:disabled` fa eccezione: non ridipinge nulla, quindi resta in una regola
+ * propria che raggiunge anche caselle e radio.
  */
 input[type='checkbox'],
 input[type='radio'] {
+  accent-color: var(--color-primary);
+}
+
+.checkbox-control {
+  width: 1.05rem;
+  height: 1.05rem;
+  cursor: pointer;
   accent-color: var(--color-primary);
 }
 
@@ -290,7 +304,7 @@ textarea:focus-visible {
   outline: none;
 }
 
-input:not([type='file']):disabled,
+input:not([type='checkbox']):not([type='radio']):not([type='file']):disabled,
 select:disabled,
 textarea:disabled {
   background: var(--color-disabled-input);
@@ -298,8 +312,18 @@ textarea:disabled {
   cursor: not-allowed;
 }
 
+/*
+ * Il cursore "non permesso" non ridipinge niente: a differenza di sfondo e
+ * colore, resta utile anche sui controlli che il browser disegna da se'
+ * (checkbox, radio, campo file) — qui non esclusi, separato dalla regola
+ * sopra apposta perche' quella sì li esclude.
+ */
+input:disabled {
+  cursor: not-allowed;
+}
+
 /* Lo stato non valido non si affida al solo colore: porta anche il bordo piu' marcato. */
-input:not([type='file']):user-invalid,
+input:not([type='checkbox']):not([type='radio']):not([type='file']):user-invalid,
 select:user-invalid,
 textarea:user-invalid {
   border-color: var(--color-error);

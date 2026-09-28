@@ -26,13 +26,32 @@
 
   /*
    * Annidato qui apposta (Task 5), non piu' un `input {}` al livello
-   * radice del foglio: la nuova regola globale dei campi di modulo vale
-   * (0,2,1) (due `:not([type=...])`), piu' della vecchia forma non annidata
-   * (0,1,1) con l'attributo di encapsulation di Angular — avrebbe vinto lei,
-   * rimettendo bordo/padding/sfondo su un campo pensato apposta piatto dentro
-   * la pillola. Annidato sotto `.search`, il selettore diventa
-   * `.search[_ngcontent] input[_ngcontent]`, cioe' (0,3,1): torna a vincere
-   * questo, senza cambiare un pixel di resa.
+   * radice del foglio: la vecchia forma non annidata, `input[_ngcontent]`,
+   * vale (0,1,1) con l'encapsulation emulata di Angular — meno della regola
+   * globale di base (`input:not([type=...]):not([type=...]):not([type=...])`,
+   * oggi tre `:not()`, cioe' (0,3,1)), e avrebbe perso, rimettendo
+   * bordo/padding/sfondo su un campo pensato apposta piatto dentro la
+   * pillola. Annidato sotto `.search`, il selettore diventa
+   * `.search[_ngcontent] input[_ngcontent]`, anch'esso (0,3,1): non una
+   * vittoria per specificita', un **pareggio esatto** con la regola globale
+   * di base. A deciderlo e' l'ordine di iniezione dei fogli di stile, perche'
+   * Angular inserisce quelli dei componenti DOPO il CSS globale (stesso
+   * meccanismo gia' documentato per `button.secondary` in `styles.scss`) — il
+   * locale, arrivando dopo, vince il pareggio. Un `:not()` in piu' aggiunto
+   * alla regola globale non cambia questo esito (resta un pareggio, non un
+   * sorpasso), ma la prossima persona che ne aggiunge un altro non deve
+   * dedurre da questo commento di avere margine: e' un pareggio per ordine,
+   * non un locale piu' specifico.
+   *
+   * NIENTE pero' protegge `:hover`: `input:hover:not(:disabled)` globale
+   * batte questo `input {}` (che non ha una propria regola `:hover`) senza
+   * competizione, e dichiara `border-color`/`background`. Non si vede una
+   * doppia cornice sull'hover SOLO perche' `.search:hover` qui sopra usa gli
+   * stessi due token (`--color-border-strong`, `--color-surface-elevated`):
+   * e' una coincidenza di riuso, non un'invariante verificata. Se un giorno
+   * quei due valori divergessero fra questa regola e quella globale, l'input
+   * interno mostrerebbe un hover diverso dalla pillola e nessun test se ne
+   * accorgerebbe: chi tocca uno dei due deve toccare anche l'altro.
    */
   input {
     @include typography.text('body');
@@ -44,6 +63,17 @@
     background: none;
     color: var(--color-text-primary);
     outline: none;
+
+    /*
+     * Per la stessa ragione dell'`outline: none` sopra: l'affordance di
+     * focus la disegna `.search:focus-within` (bordo, sfondo, anello), non
+     * l'input. Senza questo, `input:focus-visible` globale aggiungeva un
+     * secondo `box-shadow` (lo stesso anello, unico competitore mancante fra
+     * le proprieta' di quella regola) sopra quello della pillola: due anelli
+     * concentrici invece di uno. Qui l'input non possiede la propria messa a
+     * fuoco, la possiede il contenitore.
+     */
+    box-shadow: none;
   }
 }
 

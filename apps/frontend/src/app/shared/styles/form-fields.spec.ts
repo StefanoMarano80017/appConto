@@ -18,19 +18,23 @@ import { compile } from 'sass';
  * della build reale e iniettare il CSS risultante in un `<style>` del
  * documento di test — il passo che la pipeline di test non compie da sola.
  *
- * NOTA 2 — perché le asserzioni sotto non leggono mai un colore: misurato,
+ * NOTA 2 — perché le asserzioni sotto quasi mai leggono un colore: misurato,
  * non ipotizzato. jsdom applica la cascata e riconosce gli pseudo-selettori
  * (`:disabled`, `:focus-visible` dopo una vera `.focus()`), ma il suo motore
- * CSS non risolve `var(--token)` dentro `background`/`border-color`/
- * `box-shadow`: un elemento attivo e uno disabilitato risultavano identici
- * (`rgba(0, 0, 0, 0)`, il default, per entrambi) perché l'intera dichiarazione
- * con `var()` non veniva applicata. Per una proprietà singola non composita
- * come `border-radius` il valore torna invece testuale e non risolto
- * (`"var(--radius-input)"`), MAI calcolato in pixel: utile per provare che un
- * selettore ha vinto la cascata, mai per leggere la resa finale.
- * Le uniche proprietà che tornano un valore vero sono quelle SENZA `var()`
- * dentro la dichiarazione: `cursor: not-allowed` (stato disabilitato) e
- * `outline: none` (stato focus-visible). Sono quindi la base di questo test.
+ * CSS non risolve `var(--token)` dentro `background`/`border-color`: un
+ * elemento attivo e uno disabilitato risultavano identici (`rgba(0, 0, 0,
+ * 0)`, il default, per entrambi) perché l'intera dichiarazione con `var()`
+ * non veniva applicata. Per proprietà con un parser piu' permissivo — non
+ * composite in longhand multipli, come `border-radius` e, si scopre,
+ * `box-shadow` — il valore torna invece testuale e non risolto
+ * (`"var(--radius-input)"`, `"0 0 0 3px var(--color-focus-ring)"`), utile per
+ * provare che un selettore ha vinto la cascata (o per confrontarlo con un
+ * `box-shadow: none` letterale, altrettanto leggibile), ma mai per leggere
+ * la resa finale a colori.
+ * Le proprietà che tornano un valore pienamente risolto sono quelle SENZA
+ * `var()` dentro la dichiarazione: `cursor: not-allowed` (stato disabilitato),
+ * `outline: none` (stato focus-visible), `box-shadow: none` (idem). Sono
+ * quindi la base di questo test.
  *
  * NOTA 3 — due stati dichiarati nel Task 5 restano non verificabili qui, per
  * limiti di jsdom confermati con una prova diretta, non per pigrizia:
@@ -98,15 +102,20 @@ describe('stili globali dei campi di modulo', () => {
   });
 
   it('un input a fuoco (:focus-visible) azzera l\'outline dichiarato dalla regola globale', () => {
-    // Attenzione: NON leggere `getComputedStyle` prima di `.focus()` in
-    // questo test. Verificato con una prova dedicata: in questo jsdom la
-    // prima lettura di `getComputedStyle(campo)` per un elemento fissa un
-    // valore che le letture successive dello stesso elemento continuano a
-    // restituire, e un cambio di focus non lo invalida (a differenza di un
-    // attributo come `disabled`). Leggerlo prima del focus, solo per
-    // controllare lo stato "non ancora a fuoco", congela quindi '' anche
-    // dopo la `.focus()` — un artefatto dell'ambiente di prova, non della
-    // regola CSS. Il test verifica quindi solo lo stato dopo il focus.
+    // Attenzione: al massimo UNA lettura di `getComputedStyle` per test dopo
+    // un cambio di focus, e mai una lettura precedente al `.focus()`.
+    // Verificato con prove dedicate, ripetute: in questo jsdom la prima
+    // lettura di `getComputedStyle` dopo un cambio di focus fissa un valore
+    // che OGNI lettura successiva continua a restituire — non solo sullo
+    // stesso elemento, ma anche su un elemento diverso letto subito dopo, e
+    // un nuovo cambio di focus non la invalida. Leggerlo prima del focus,
+    // solo per controllare lo stato "non ancora a fuoco", congela quindi ''
+    // anche dopo la `.focus()`; leggerlo due volte in un solo test (anche su
+    // due elementi distinti) fa sì che la seconda lettura restituisca il
+    // valore della prima — un artefatto dell'ambiente di prova, non della
+    // regola CSS. Il test verifica quindi solo lo stato dopo il focus, con
+    // una sola lettura (lo stesso vincolo vale per `search-input-focus-ring.
+    // spec.ts`, isolato in un file a se' per la stessa ragione).
     const campo = creaCampo('text');
 
     campo.focus();
@@ -157,6 +166,20 @@ describe('stili globali dei campi di modulo', () => {
     expect(blocco).not.toBe('');
     expect(blocco).not.toMatch(/:not\(\[type=file\]\)/);
   });
+
+  // Il test sul doppio anello di `.search` (rilievo 1, giro di correzione 1)
+  // vive in un file a se': `search-input-focus-ring.spec.ts`, non qui.
+  // Verificato con una prova dedicata: la "congelatura" di NOTA 2 (la prima
+  // lettura di `getComputedStyle` dopo un cambio di focus fissa il valore
+  // per OGNI lettura successiva, anche su un elemento diverso) non resta
+  // confinata al singolo test — sopravvive fra un `it` e l'altro dello
+  // stesso file, perche' e' la stessa `window`/`document` per l'intera
+  // suite. Il test sull'outline qui sopra e' gia' la prima lettura
+  // post-focus di questo file: un secondo test con una propria lettura
+  // post-focus, più sotto nello stesso file, avrebbe ereditato quel valore
+  // congelato indipendentemente dall'elemento o dalla regola in gioco (e
+  // difatti falliva, provato). Isolarlo in un file proprio è l'unico modo
+  // di garantire che sia la prima lettura post-focus del suo documento.
 
   it('il CSS compilato contiene ancora button:active, l\'esclusione di checkbox/radio/file e :user-invalid', () => {
     // Stati che jsdom non permette di indurre (NOTA 3) o che dipendono da un
