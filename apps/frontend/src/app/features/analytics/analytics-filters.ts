@@ -2,10 +2,10 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import {
   LucideArrowUpDown,
   LucideCalendarDays,
+  LucideFunnel,
   LucideListChecks,
   LucideStore,
-  LucideTag, 
-  LucideFunnel
+  LucideTag
 } from '@lucide/angular';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
@@ -56,10 +56,10 @@ interface ActiveFilter {
     FilterGroup,
     LucideArrowUpDown,
     LucideCalendarDays,
+    LucideFunnel,
     LucideListChecks,
     LucideStore,
     LucideTag,
-    LucideFunnel,
     Panel,
     SearchInput,
     SectionHeader,
