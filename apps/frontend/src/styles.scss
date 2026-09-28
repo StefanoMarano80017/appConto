@@ -215,6 +215,79 @@ button:disabled:hover {
   cursor: not-allowed;
 }
 
+button:active:not(:disabled) {
+  background: var(--color-primary-active);
+}
+
+/*
+ * I campi di modulo, in un posto solo.
+ *
+ * Prima di questa regola l'unica sorgente era il campo data della toolbox di
+ * Analytics, ventiquattro righe scritte a mano: nove pagine di moduli le
+ * avrebbero copiate. I token `--color-disabled-input` e
+ * `--color-primary-active` esistevano gia' con un nome proprio e zero
+ * consumatori — erano la regola mancante, dichiarata e non scritta.
+ */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  @include typography.text('body');
+
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/*
+ * Caselle e radio sono escluse dalla regola sopra e non ne hanno una propria.
+ *
+ * Un `padding` e un `border-radius` su un `input[type="checkbox"]` lo
+ * sfigurano: il controllo nativo disegna se stesso, e quelle proprieta' gli
+ * si sommano invece di sostituirlo. Restilarli davvero significa
+ * `appearance: none` piu' il segno di spunta ridisegnato a mano, che e' un
+ * lavoro a se' e non ha ancora un caso reale in questa applicazione —
+ * `accent-color: var(--color-primary)` e' l'unica cosa che vale la pena
+ * dichiarare, perche' li allinea al tema senza toccarne la forma.
+ */
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-primary);
+}
+
+input:not([type='checkbox']):not([type='radio']):hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-elevated);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-surface-elevated);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--color-disabled-input);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Lo stato non valido non si affida al solo colore: porta anche il bordo piu' marcato. */
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: var(--color-error);
+  border-width: 2px;
+}
+
 /*
  * L'icona proiettata in `FilterGroup` (`.icon` in filter-group.html, che porta
  * anche questa classe dal nome proprio) e quella proiettata in `SectionHeader`

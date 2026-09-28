@@ -105,28 +105,14 @@ app-section-header {
     gap: var(--space-3);
   }
 
+  /*
+   * Bordo, raggio, sfondo, colore, hover e focus vengono ora dalla regola
+   * globale in `styles.scss` (Task 5): qui resta solo cio' che e' specifico
+   * di questa toolbox, il layout.
+   */
   input {
-    @include typography.text('body');
-
     /* Senza, l'input non scende sotto la propria larghezza naturale e sfonda. */
     min-width: 0;
-    padding: var(--space-3) var(--space-4);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-input);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-  }
-
-  input:hover {
-    border-color: var(--color-border-strong);
-    background: var(--color-surface-elevated);
-  }
-
-  input:focus {
-    border-color: var(--color-primary);
-    background: var(--color-surface-elevated);
-    box-shadow: 0 0 0 3px var(--color-focus-ring);
-    outline: none;
   }
 }
 

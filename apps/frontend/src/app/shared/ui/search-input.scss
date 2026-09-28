@@ -23,6 +23,28 @@
     background: var(--color-surface-elevated);
     box-shadow: 0 0 0 3px var(--color-focus-ring);
   }
+
+  /*
+   * Annidato qui apposta (Task 5), non piu' un `input {}` al livello
+   * radice del foglio: la nuova regola globale dei campi di modulo vale
+   * (0,2,1) (due `:not([type=...])`), piu' della vecchia forma non annidata
+   * (0,1,1) con l'attributo di encapsulation di Angular — avrebbe vinto lei,
+   * rimettendo bordo/padding/sfondo su un campo pensato apposta piatto dentro
+   * la pillola. Annidato sotto `.search`, il selettore diventa
+   * `.search[_ngcontent] input[_ngcontent]`, cioe' (0,3,1): torna a vincere
+   * questo, senza cambiare un pixel di resa.
+   */
+  input {
+    @include typography.text('body');
+
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-text-primary);
+    outline: none;
+  }
 }
 
 .icon {
@@ -35,16 +57,4 @@
     width: 1rem;
     height: 1rem;
   }
-}
-
-input {
-  @include typography.text('body');
-
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-text-primary);
-  outline: none;
 }
