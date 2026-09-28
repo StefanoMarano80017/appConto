@@ -4,7 +4,7 @@
   @include typography.text('secondary');
 
   display: inline-block;
-  padding: 0.0625rem 0.5rem;
+  padding: var(--space-1) var(--space-4);
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
