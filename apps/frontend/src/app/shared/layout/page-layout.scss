@@ -19,15 +19,6 @@
 }
 
 /*
- * Una toolbox senza contenuto non e' una colonna stretta: e' una riga in piu'
- * nella griglia a colonna singola, alta zero ma preceduta dal gap. Nasconderla
- * toglie riga e gap insieme.
- */
-.toolbox:not(:has(> *)) {
-  display: none;
-}
-
-/*
  * Un elemento largo dentro i 300px si adatta invece di sfondare la colonna,
  * come la principale. `sticky` la tiene a schermo mentre la pagina scorre —
  * una colonna di filtri che sparisce scorrendo costringe a tornare su per
@@ -61,6 +52,23 @@
    */
   display: grid;
   grid-template-rows: 1fr;
+
+  /*
+   * Una toolbox senza contenuto non è una colonna stretta: è una riga in più
+   * nella griglia a colonna singola, alta zero ma preceduta dal gap.
+   * Nasconderla toglie riga e gap insieme.
+   *
+   * Nidificata qui e non scritta a parte più in alto, come era prima: questo
+   * selettore ha la stessa specificità di `.toolbox` — `:not()` e `:has()`
+   * valgono quanto il loro argomento, e `*` vale zero, quindi entrambi sono
+   * 0,1,0 — e fra due regole di pari specificità decide l'ordine nel foglio.
+   * Scritta sopra, il `display: grid` qui accanto la sovrascriveva e la
+   * toolbox vuota tornava visibile. Nidificandola l'ordine è garantito da
+   * dove sta, non da chi si ricorda di non aggiungere righe più in basso.
+   */
+  &:not(:has(> *)) {
+    display: none;
+  }
 }
 
 /*

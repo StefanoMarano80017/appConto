@@ -13,11 +13,11 @@
 }
 
 /*
- * L'ultimo pannello non porta la distanza dal successivo, perché non c'è un
- * successivo. Serve dove un pannello deve arrivare a filo del contenitore:
- * nella toolbox, che è alta quanto la finestra, quei 20px lasciavano il
- * riquadro staccato dal fondo della colonna anche quando il pannello era
- * stato allungato apposta per riempirla.
+ * L'ultimo pannello non ha un successivo da cui distanziarsi, quindi non
+ * porta la distanza piena. Serve dove un pannello deve arrivare quasi a filo
+ * del contenitore: nella toolbox, che è alta quanto la finestra, la distanza
+ * fra pannelli lasciava il riquadro visibilmente staccato dal fondo della
+ * colonna anche quando il pannello era stato allungato apposta per riempirla.
  *
  * `:last-child` e non una classe passata dal chiamante: la condizione è una
  * proprietà della posizione nel DOM, non una decisione da ricordarsi in ogni
@@ -26,7 +26,7 @@
  * un pannello condizionale sparisce è quello prima a diventare l'ultimo.
  */
 :host(:last-child) > .panel {
-  margin-bottom: 0;
+  margin-bottom: var(--space-1);
 }
 
 :host(.no-padding) > .panel {
