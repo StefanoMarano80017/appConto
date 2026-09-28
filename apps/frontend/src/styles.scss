@@ -267,8 +267,12 @@ textarea {
  * escludere `[type="file"]` ma non caselle/radio da quelle due sarebbe stata
  * un'incoerenza (lo stesso controllo che il browser disegna da se', trattato
  * diversamente a seconda dello stato). Il `cursor: not-allowed` di
- * `:disabled` fa eccezione: non ridipinge nulla, quindi resta in una regola
- * propria che raggiunge anche caselle e radio.
+ * `:disabled` fa eccezione, e non e' scoped: raggiunge caselle, radio E
+ * campo file (`input:disabled { cursor: not-allowed }` piu' sotto, senza
+ * `:not(...)`), a differenza della regola che lo precede. Va bene cosi':
+ * l'esclusione altrove serve a non ridipingere sfondo/bordo di un controllo
+ * che il browser disegna da se', e un cursore non ridipinge niente —
+ * quindi qui non ha senso escludere nessuno dei tre.
  */
 input[type='checkbox'],
 input[type='radio'] {
