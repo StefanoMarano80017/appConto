@@ -17,7 +17,8 @@
           >{{ merchant.label }}</button>
           <span class="category">{{ merchant.categoryName ?? 'Senza categoria' }}</span>
           <span class="count">{{ merchant.transactionCount }}</span>
-          <span class="amount">{{ formatAmount(merchant.amount) }}</span>
+          <!-- Magnitudine di spesa: si nega e si lascia dedurre il tono (v. analytics-merchants.html). -->
+          <app-amount class="amount" [value]="-merchant.amount" />
         </li>
       }
     </ol>

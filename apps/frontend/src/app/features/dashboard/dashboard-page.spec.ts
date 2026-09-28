@@ -201,7 +201,11 @@ describe('DashboardPage', () => {
     expect(text()).toContain('Top merchant del mese');
     expect(text()).toContain('Confronto con');
     expect(text()).toContain('ESSELUNGA');
-    expect(text()).toContain('+100,00');
+    // `difference` è già firmata e il segno dice «spesa su/giù», non
+    // «denaro entrato o uscito»: una variazione positiva (spesa aumentata)
+    // prende il tono e il segno delle uscite, non un «+» verde (v.
+    // month-comparison.ts, varianceTone).
+    expect(text()).toContain('−100,00');
   });
 
   it('filtra per merchant quando se ne sceglie uno dai top', async () => {

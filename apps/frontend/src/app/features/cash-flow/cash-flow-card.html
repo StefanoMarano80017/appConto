@@ -4,22 +4,19 @@
   <dl class="calculation">
     <div class="row">
       <dt>Saldo iniziale</dt>
-      <dd>{{ formatAmount(cashFlow().openingBalance) }}</dd>
+      <!-- Non è mai stato colorato: resta un riferimento neutro, non un movimento. -->
+      <dd><app-amount [value]="cashFlow().openingBalance" tone="neutral" /></dd>
     </div>
     <div class="row">
       <dt>
         Movimenti
         <span class="month-name">{{ formatMonth(cashFlow().month ?? '') }}</span>
       </dt>
-      <dd [class.negative]="cashFlow().netMovement < 0" [class.positive]="cashFlow().netMovement > 0">
-        {{ formatAmount(cashFlow().netMovement) }}
-      </dd>
+      <dd><app-amount [value]="cashFlow().netMovement" /></dd>
     </div>
     <div class="row total">
       <dt>Disponibile</dt>
-      <dd [class.negative]="cashFlow().closingBalance < 0">
-        {{ formatAmount(cashFlow().closingBalance) }}
-      </dd>
+      <dd><app-amount [value]="cashFlow().closingBalance" size="kpi" /></dd>
     </div>
   </dl>
 
@@ -33,10 +30,7 @@
   @if (showsNetWorth()) {
     <p class="net-worth">
       <span>Variazione patrimonio</span>
-      <strong
-        [class.negative]="cashFlow().netWorthChange < 0"
-        [class.positive]="cashFlow().netWorthChange > 0"
-      >{{ formatAmount(cashFlow().netWorthChange) }}</strong>
+      <strong><app-amount [value]="cashFlow().netWorthChange" /></strong>
       <span class="note">
         esclude prelievi, trasferimenti e prestiti: quel denaro è ancora tuo, solo altrove.
       </span>
@@ -51,9 +45,7 @@
           <li>
             <span class="label">{{ typeLabels[entry.type] }}</span>
             <span class="count">{{ entry.transactionCount }}</span>
-            <span class="amount" [class.negative]="entry.amount < 0" [class.positive]="entry.amount > 0">
-              {{ formatAmount(entry.amount) }}
-            </span>
+            <app-amount class="amount" [value]="entry.amount" />
           </li>
         }
       </ul>

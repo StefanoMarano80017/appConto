@@ -1,6 +1,15 @@
+@use '../../shared/styles/typography';
+
 h2 {
-  margin: 0;
-  font-size: 1.125rem;
+  margin: 0 0 var(--space-7);
+  /*
+   * 'section-title': è un titolo di sezione come quelli che SectionHeader
+   * rende altrove nella dashboard, non il titolo di pagina — resta un <h2>
+   * scritto a mano (non SectionHeader) solo perché porta lo span del mese
+   * con la propria maiuscola, che l'input `title` (stringa semplice) di
+   * SectionHeader non potrebbe rendere.
+   */
+  @include typography.text('section-title');
 }
 
 .month-name {
@@ -8,47 +17,11 @@ h2 {
 }
 
 .message {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
-.totals {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1.5rem;
-  margin: 1.5rem 0;
-}
-
-.figure {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-
-  .label {
-    color: var(--text-muted);
-    font-size: 0.8125rem;
-  }
-
-  .value {
-    font-size: 1.375rem;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .value.muted {
-    color: var(--text-muted);
-  }
-
-  small {
-    font-size: 0.875rem;
-  }
-}
-
-/* Spendere di più è il segnale a cui prestare attenzione. */
-.up {
-  color: var(--negative);
-}
-
-.down {
-  color: var(--positive);
+app-stat-card-grid {
+  margin-bottom: var(--space-8);
 }
 
 .categories {
@@ -59,9 +32,9 @@ h2 {
   li {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
-    padding: 0.375rem 0;
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-5);
+    padding: var(--space-3) 0;
+    border-bottom: var(--border-width) solid var(--color-border);
   }
 
   li:last-child {
@@ -77,11 +50,9 @@ h2 {
   .difference {
     min-width: 6rem;
     text-align: right;
-    font-variant-numeric: tabular-nums;
   }
 
-  .previous,
   .arrow {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 }

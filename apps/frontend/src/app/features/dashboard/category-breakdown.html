@@ -1,5 +1,5 @@
 <app-panel>
-  <h2>Spese per categoria</h2>
+  <app-section-header title="Spese per categoria" />
 
   @if (categories().length === 0) {
     <p class="message">Nessuna spesa nel periodo selezionato.</p>
@@ -18,12 +18,17 @@
                   [attr.aria-label]="'Filtra per ' + category.name"
                 >filtra</button>
                 <span class="count">{{ category.transactionCount }}</span>
-                <span class="amount">{{ formatAmount(category.amount) }}</span>
+                <!--
+                  `amount` è la magnitudine di una spesa, non un valore con
+                  segno (v. analytics-categories.html): si nega qui e si
+                  lascia dedurre il tono, invece di forzarlo.
+                -->
+                <app-amount class="amount" [value]="-category.amount" />
               </span>
               <span class="bar">
                 <span
                   [style.width.%]="barWidth(category.amount)"
-                  [style.background]="category.color ?? 'var(--text-muted)'"
+                  [style.background]="category.color ?? 'var(--color-text-muted)'"
                 ></span>
               </span>
             </summary>
@@ -41,7 +46,7 @@
                           [attr.aria-label]="'Filtra per ' + merchant.label"
                         >{{ merchant.label }}</button>
                         <span class="count">{{ merchant.transactionCount }}</span>
-                        <span class="amount">{{ formatAmount(merchant.amount) }}</span>
+                        <app-amount class="amount" [value]="-merchant.amount" />
                       </span>
                     </summary>
 
@@ -50,7 +55,7 @@
                         <li>
                           <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
                           <span class="description">{{ transaction.description }}</span>
-                          <span class="amount">{{ formatAmount(transaction.amount) }}</span>
+                          <app-amount class="amount" [value]="-transaction.amount" />
                         </li>
                       }
                     </ul>

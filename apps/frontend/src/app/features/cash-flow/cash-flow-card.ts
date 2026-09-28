@@ -1,8 +1,9 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { formatAmount, formatBookingDate, formatMonth } from '../../core/format';
+import { formatBookingDate, formatMonth } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
+import { Amount } from '../../shared/ui/amount';
 import { TRANSACTION_TYPE_PLURAL_LABELS } from '../transactions/transaction-type';
 import { CashFlow } from './cash-flow.model';
 
@@ -14,7 +15,7 @@ import { CashFlow } from './cash-flow.model';
  */
 @Component({
   selector: 'app-cash-flow-card',
-  imports: [Panel, RouterLink, SectionHeader],
+  imports: [Panel, RouterLink, SectionHeader, Amount],
   templateUrl: './cash-flow-card.html',
   styleUrl: './cash-flow-card.scss'
 })
@@ -22,7 +23,6 @@ export class CashFlowCard {
   readonly cashFlow = input.required<CashFlow>();
 
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
-  protected readonly formatAmount = formatAmount;
   protected readonly formatMonth = formatMonth;
   protected readonly formatBookingDate = formatBookingDate;
 

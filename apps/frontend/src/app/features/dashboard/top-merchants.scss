@@ -1,11 +1,13 @@
+@use '../../shared/styles/typography';
+
 .all-link {
-  color: var(--accent);
-  font-size: 0.875rem;
+  @include typography.text('secondary');
+  color: var(--color-primary);
   white-space: nowrap;
 }
 
 .message {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .merchants {
@@ -17,17 +19,16 @@
   li {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-5);
+    padding: var(--space-4) 0;
+    border-bottom: var(--border-width) solid var(--color-border);
     counter-increment: rank;
   }
 
   li::before {
     content: counter(rank);
     min-width: 1rem;
-    color: var(--text-muted);
-    font-size: 0.8125rem;
+    @include typography.text('caption');
     font-variant-numeric: tabular-nums;
   }
 
@@ -40,7 +41,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--color-primary);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -52,18 +53,15 @@
 
 .category {
   flex: 1;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 }
 
 .count {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   font-variant-numeric: tabular-nums;
 }
 
 .amount {
   min-width: 6.5rem;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }

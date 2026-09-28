@@ -47,7 +47,8 @@ describe('CashFlowCard', () => {
 
     expect(text()).toContain('Saldo iniziale');
     expect(text()).toContain('2000,00');
-    expect(text()).toContain('-710,06');
+    // `Amount` usa il meno tipografico U+2212, non il trattino ASCII.
+    expect(text()).toContain('−710,06');
     expect(text()).toContain('Disponibile');
     expect(text()).toContain('1289,94');
   });
@@ -67,7 +68,7 @@ describe('CashFlowCard', () => {
     await render(cashFlow());
 
     expect(text()).toContain('Variazione patrimonio');
-    expect(text()).toContain('-210,06');
+    expect(text()).toContain('−210,06');
   });
 
   it('nasconde la variazione patrimonio quando coincide con i movimenti', async () => {
@@ -80,7 +81,7 @@ describe('CashFlowCard', () => {
     await render(cashFlow());
 
     expect(text()).toContain('Prelievi');
-    expect(text()).toContain('-500,00');
+    expect(text()).toContain('−500,00');
     expect(text()).toContain('Spese');
     expect(text()).toContain('Entrate');
   });
