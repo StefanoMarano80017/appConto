@@ -31,6 +31,12 @@
  */
 .title-row {
   display: flex;
+  /*
+   * `center`, non `baseline` come il resto dell'intestazione: `baseline`
+   * allinea bene due elementi di testo (titolo e badge), ma un'icona non ha
+   * una baseline propria — allineata a quella dell'h2 galleggerebbe invece di
+   * stare in asse col testo che introduce.
+   */
   align-items: center;
   gap: var(--space-4);
 
