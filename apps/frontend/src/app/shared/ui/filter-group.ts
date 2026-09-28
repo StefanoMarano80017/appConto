@@ -31,7 +31,7 @@ let nextId = 0;
   selector: 'app-filter-group',
   imports: [Badge, LucideChevronDown, LucideChevronUp],
   templateUrl: './filter-group.html',
-  styleUrl: './filter-group.scss'
+  styleUrl: './filter-group.scss',
 })
 export class FilterGroup {
   readonly label = input.required<string>();

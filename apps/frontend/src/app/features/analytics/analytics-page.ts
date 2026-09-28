@@ -13,7 +13,6 @@ import {
 } from '../transactions/transaction-query';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
-import { SectionHeader } from '../../shared/layout/section-header';
 import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { Analytics } from './analytics.model';
 import { analyticsRequest } from './analytics.api';
@@ -43,7 +42,6 @@ import { AnalyticsStore } from './analytics.store';
     PageLayout,
     Panel,
     RouterLink,
-    SectionHeader,
     StatCardGrid
   ],
   templateUrl: './analytics-page.html',

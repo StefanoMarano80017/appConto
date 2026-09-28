@@ -39,12 +39,23 @@
  * riquadro non li tocca più). Lo spazio sotto non si dichiara qui: è già
  * quello di default che l'host di `SectionHeader` porta con sé.
  */
+/*
+ * `--space-7` e non `--space-panel`: il secondo è un alias legacy, e il ponte
+ * che lo definisce va restringendosi fino a sparire. I due valgono lo stesso
+ * (20px), quindi la geometria non cambia.
+ *
+ * Resta però una dipendenza che il nome vecchio dichiarava e questo nasconde:
+ * questi tre valori devono restare uguali al padding interno di `Panel`, o il
+ * riquadro smette di arrivare ai bordi. Finché anche `panel.scss` userà
+ * `--space-7` sono allineati; chi cambia il padding del pannello deve
+ * cambiare anche questi.
+ */
 app-section-header {
   position: sticky;
   top: 0;
-  margin-left: calc(var(--space-panel) * -1);
-  margin-right: calc(var(--space-panel) * -1);
-  padding: var(--space-5) var(--space-panel);
+  margin-left: calc(var(--space-7) * -1);
+  margin-right: calc(var(--space-7) * -1);
+  padding: var(--space-4) var(--space-7);
   background: var(--color-surface);
   border-bottom: var(--border-width) solid var(--color-border);
 }

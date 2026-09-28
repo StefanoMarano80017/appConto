@@ -194,7 +194,7 @@ describe('AnalyticsPage', () => {
     expect(sectionText('app-analytics-loans')).toContain('Prestiti');
   });
 
-  it('non duplica il titolo di pagina: "Analytics" è di secondo livello, l\'h1 sta nella shell', async () => {
+  it('non rende il titolo di pagina a nessun livello: lo rende la shell', async () => {
     await settle();
     await flush(analytics());
 
@@ -202,8 +202,18 @@ describe('AnalyticsPage', () => {
 
     expect(host.querySelectorAll('h1').length).toBe(0);
 
-    const h2Titles = Array.from(host.querySelectorAll('h2')).map((el) => el.textContent);
-    expect(h2Titles.some((text) => text?.includes('Analytics'))).toBe(true);
+    /*
+     * La pagina non ripete il proprio titolo a nessun livello: «Analytics» lo
+     * rende la fascia superiore come `h1`, leggendolo dal router. Prima questo
+     * test pretendeva un `h2` «Analytics» dentro la pagina, che era
+     * l'intestazione ormai ridondante col titolo della shell: toglierla rende
+     * l'invariante più forte, non più debole — chi naviga per intestazioni
+     * incontra il titolo della rotta una volta sola.
+     */
+    const intestazioni = Array.from(host.querySelectorAll('h1, h2, h3')).map(
+      (elemento) => elemento.textContent ?? ''
+    );
+    expect(intestazioni.some((testo) => testo.includes('Analytics'))).toBe(false);
   });
 
   it('è una dashboard: non contiene più la tabella dei movimenti', async () => {
