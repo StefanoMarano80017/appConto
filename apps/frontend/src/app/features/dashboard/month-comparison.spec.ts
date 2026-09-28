@@ -82,8 +82,14 @@ describe('MonthComparisonSection', () => {
     const variazione = required(figure('Variazione'), 'la card «Variazione»');
     const value = required(variazione.querySelector('.value'), 'il valore della variazione');
 
-    expect(value.textContent).toContain('-100,00');
-    expect(value.textContent).toContain('-20');
+    // Il meno di queste due asserzioni è U+2212, non il trattino ASCII: i due
+    // glifi sono indistinguibili in un editor, quindi il confronto è scritto
+    // per codice invece che a occhio. Le due cifre accanto a questa passano da
+    // `Amount`, che normalizza a U+2212: se `signed()` tornasse al trattino di
+    // `Intl` la fascia porterebbe due glifi di meno diversi, affiancati.
+    expect(value.textContent).toContain(`${String.fromCodePoint(0x2212)}100,00`);
+    expect(value.textContent).toContain(`${String.fromCodePoint(0x2212)}20`);
+    expect(value.textContent).not.toContain('-100,00');
     expect(value.classList.contains('down')).toBe(true);
     expect(value.classList.contains('up')).toBe(false);
   });

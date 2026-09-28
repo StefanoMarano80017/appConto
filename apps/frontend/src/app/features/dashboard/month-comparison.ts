@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { formatAmount, formatMonth, formatPercent } from '../../core/format';
+import { formatAmount, formatMonth, formatPercent, typographicMinus } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { Amount } from '../../shared/ui/amount';
 import { MonthComparison } from './dashboard.model';
@@ -28,12 +28,20 @@ export class MonthComparisonSection {
    * segni opposti per lo stesso fatto (una spesa aumentata di 100 renderebbe
    * «−100,00» accanto a un «+25%»). Il segno resta quindi legato al valore
    * grezzo, il colore alla classe invertita `.up`/`.down` qui sotto.
+   *
+   * `typographicMinus` per lo stesso motivo per cui lo usa `Amount`: le due
+   * cifre accanto a questa (spese del mese, mese precedente) passano di lì e
+   * mostrano U+2212. Senza, la fascia porterebbe due glifi di meno diversi a
+   * tre centimetri l'uno dall'altro — un difetto che non esisteva prima,
+   * perché prima tutta la fascia passava da `formatAmount` e sbagliava
+   * uniformemente.
    */
   protected signed(amount: number): string {
-    return `${amount > 0 ? '+' : ''}${formatAmount(amount)}`;
+    return `${amount > 0 ? '+' : ''}${typographicMinus(formatAmount(amount))}`;
   }
 
+  /** Stessa convenzione di segno di `signed()`: sta fra parentesi accanto a lei. */
   protected signedPercent(value: number): string {
-    return `${value > 0 ? '+' : ''}${formatPercent(value)}`;
+    return `${value > 0 ? '+' : ''}${typographicMinus(formatPercent(value))}`;
   }
 }

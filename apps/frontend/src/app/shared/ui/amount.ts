@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { formatAmount } from '../../core/format';
+import { formatAmount, typographicMinus } from '../../core/format';
 
 /** Il tono: `auto` lo deduce dal segno del valore. */
 export type AmountTone = 'auto' | 'neutral' | 'positive' | 'negative';
@@ -76,7 +76,7 @@ export class Amount {
       // `Intl` usa il trattino ASCII e segna anche lo zero negativo (`-0,00
       // €`): normalizziamo entrambi, o in colonna il suo meno non si allinea
       // col nostro U+2212.
-      return formatAmount(value === 0 ? 0 : value).replace('-', '−');
+      return typographicMinus(formatAmount(value === 0 ? 0 : value));
     }
 
     // Il segno segue il tono risolto, non il segno grezzo di value: un tono

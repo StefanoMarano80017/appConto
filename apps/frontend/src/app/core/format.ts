@@ -11,6 +11,27 @@ export function formatAmount(amount: number): string {
   return amountFormatter.format(amount);
 }
 
+/**
+ * Il meno tipografico (U+2212 MINUS SIGN) al posto del trattino ASCII che
+ * `Intl` produce per i negativi.
+ *
+ * Non è un vezzo: i due glifi hanno larghezze diverse, e in una colonna di
+ * importi il trattino non si allinea col meno. Sta qui, e non nei chiamanti,
+ * perché i chiamanti sono due — `Amount`, che lo applica a ogni importo, e la
+ * fascia di `MonthComparison`, che rende una variazione firmata senza passare
+ * da `Amount` (v. il commento di `signed()` là). Averlo in due copie era il
+ * modo di ritrovarsi, fra qualche mese, con due convenzioni di segno nella
+ * stessa fascia di tre cifre: è precisamente quello che è appena successo.
+ *
+ * NON è applicato dentro `formatAmount`: gli altri chiamanti (timeline,
+ * prestiti, merchant, tabella movimenti) rendono oggi il trattino ASCII, e
+ * uniformarli è un cambiamento che attraversa quattro feature e i loro test —
+ * da fare come lavoro dichiarato, non di soppiatto dentro questa correzione.
+ */
+export function typographicMinus(text: string): string {
+  return text.replace('-', '−');
+}
+
 /** Una percentuale già calcolata: `38.1` diventa `38,1%`. */
 export function formatPercent(value: number): string {
   return `${percentFormatter.format(value)}%`;
