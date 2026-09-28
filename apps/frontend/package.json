@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "gate": "bash scripts/design-system-gate.sh"
   },
   "private": true,
   "packageManager": "npm@11.6.2",
