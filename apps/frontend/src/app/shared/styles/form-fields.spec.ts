@@ -151,19 +151,29 @@ describe('stili globali dei campi di modulo', () => {
     expect(getComputedStyle(campo).outline).toBe('none');
   });
 
-  it('una casella di controllo resta esclusa dalla regola generica (niente border-radius)', () => {
+  it('casella di controllo e radio restano escluse dalla regola generica (niente border-radius)', () => {
     const campoDiTesto = creaCampo('text');
     const casella = creaCampo('checkbox');
+    const radio = creaCampo('radio');
 
     // Sul campo di testo il selettore generico ha vinto la cascata: il valore
     // torna testuale e non risolto (NOTA 2), ma la sua sola presenza prova che
-    // la regola è stata applicata.
+    // la regola è stata applicata. Sta in questo stesso test apposta: è la
+    // prova che il meccanismo è vivo, e senza di lei le due asserzioni sotto
+    // sarebbero soddisfatte anche da un foglio mai iniettato.
     expect(getComputedStyle(campoDiTesto).borderRadius).toBe('var(--radius-input)');
 
-    // Sulla casella `:not([type='checkbox'])` esclude il match: nessuna
+    // Sulla casella `:not([type=checkbox])` esclude il match: nessuna
     // regola di questo foglio dichiara un border-radius per lei, quindi il
     // valore resta quello iniziale.
     expect(getComputedStyle(casella).borderRadius).toBe('');
+
+    // Il radio è nella stessa catena di `:not()` della casella, ma fino a ora
+    // nessun test dell'intera suite creava un `input[type=radio]`: l'unica
+    // delle tre esclusioni senza prova propria. Che sia scritta accanto alla
+    // casella non la rende verificata — è esattamente la forma di controllo
+    // mancante che questo file ha già ospitato una volta.
+    expect(getComputedStyle(radio).borderRadius).toBe('');
   });
 
   it('un campo file resta escluso dal bordo generico (regola di base)', () => {
