@@ -78,7 +78,14 @@
 
 .message.hint {
   margin-top: var(--space-6);
+  /*
+   * Il mixin porta con sé `color: var(--color-text-secondary)` (ruolo
+   * `secondary`), che qui vince su `.message` per specificità e cambierebbe
+   * silenziosamente il suggerimento da muted a secondary: nessuno l'ha
+   * scelto (giro di correzione 1, M8), lo ripristiniamo esplicitamente.
+   */
   @include typography.text('secondary');
+  color: var(--color-text-muted);
 
   a {
     color: var(--color-primary);
