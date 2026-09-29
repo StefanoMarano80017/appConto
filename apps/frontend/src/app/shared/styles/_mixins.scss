@@ -27,10 +27,18 @@
     color: var(--color-text-primary);
   }
 
+  /*
+   * `--color-on-primary` e non `--color-surface`: su fondo pieno il testo non
+   * è «il colore di una superficie», è il colore che sta *sopra* il primario,
+   * e i due coincidono solo in tema chiaro. In tema scuro `--color-surface`
+   * è quasi nero e dà 3,12:1 sul primario — sotto la soglia di 4,5:1 che
+   * DESIGN_SYSTEM.md §9 fissa e che `_primitives.scss` cita a sua volta.
+   * Con `--color-on-primary` sale a 5,28:1, e resta a 5,29:1 in chiaro.
+   */
   &.active {
     border-color: var(--color-primary);
     background: var(--color-primary);
-    color: var(--color-surface);
+    color: var(--color-on-primary);
   }
 }
 

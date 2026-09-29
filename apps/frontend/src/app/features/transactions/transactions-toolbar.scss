@@ -51,15 +51,16 @@
 /*
  * Il conteggio dei filtri attivi, sullo stesso ruolo tipografico che
  * `shared/ui/badge.scss` usa per ogni pastiglia dell'app: da 12px (letterale)
- * a 14px del ruolo `secondary`, col colore riportato a `--color-surface` (il
- * badge sta su sfondo pieno) invece del `text-secondary` che il ruolo porta.
+ * a 14px del ruolo `secondary`, col colore riportato a `--color-on-primary`
+ * (il badge sta su sfondo pieno) invece del `text-secondary` che il ruolo
+ * porta con sé.
  */
 .badge {
   padding: 0 var(--space-3);
   border-radius: var(--radius-pill);
   background: var(--color-primary);
   @include typography.text('secondary');
-  color: var(--color-surface);
+  color: var(--color-on-primary);
 }
 
 .panel-body {
@@ -98,7 +99,7 @@
   button.active {
     border-color: var(--color-primary);
     background: var(--color-primary);
-    color: var(--color-surface);
+    color: var(--color-on-primary);
   }
 }
 
