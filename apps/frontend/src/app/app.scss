@@ -38,6 +38,28 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+
+  /*
+   * I 2px che la voce attiva si sposta a destra (`transform: translateX(2px)`
+   * più sotto) hanno bisogno di stare da qualche parte.
+   *
+   * Una trasformazione non cambia il layout, ma **entra nella regione di
+   * scorrimento**. E qui l'asse orizzontale non è libero come sembra: per la
+   * cascata, quando un asse ha `overflow` diverso da `visible` l'altro non può
+   * restare `visible` e diventa `auto`. L'`overflow-y: auto` qui sopra rende
+   * quindi scorrevole anche l'orizzontale, e i 2px di una voce larga quanto il
+   * contenitore diventano una barra di scorrimento vera.
+   *
+   * Si riserva lo spazio invece di tagliarlo con `overflow-x: hidden`: il
+   * taglio mangerebbe 2px dell'angolo arrotondato destro della voce attiva,
+   * che è proprio quella che si vuole far notare. Le voci diventano 2px più
+   * strette, differenza che nessuno vede.
+   *
+   * `--space-1` vale esattamente 2px: lo scarto e la sua compensazione restano
+   * così legati allo stesso passo della scala, e chi un domani cambiasse lo
+   * scarto sa dove guardare.
+   */
+  padding-right: var(--space-1);
 }
 
 /*
@@ -222,7 +244,13 @@
     position: absolute;
     width: 1px;
     height: 1px;
-    margin: -1px;
+    /*
+     * Il `-1px` non è una spaziatura e non ha un token: è un pezzo
+     * dell'idioma «visually hidden», dove serve a togliere l'elemento dal
+     * flusso senza toglierlo dall'albero accessibile. Sostituirlo con un
+     * passo della scala romperebbe l'idioma.
+     */
+    margin: -1px; // ds-exception: idioma visually-hidden, non una spaziatura
     padding: 0;
     overflow: hidden;
     clip-path: inset(50%);

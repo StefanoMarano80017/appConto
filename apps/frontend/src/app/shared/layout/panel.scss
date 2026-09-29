@@ -45,3 +45,26 @@
 :host(.stale) > .panel {
   opacity: 0.6;
 }
+/*
+ * Il pannello che contiene un'azione irreversibile — oggi solo l'azzeramento
+ * dei dati — si distingue dagli altri già dal bordo.
+ *
+ * Sta qui e non nel foglio del chiamante per una ragione meccanica, non di
+ * gusto: `.panel` appartiene al template di questo componente e porta il suo
+ * attributo di incapsulamento, quindi nessuna regola scritta altrove può
+ * selezionarlo. Il primo tentativo aveva aggirato il problema ridefinendo una
+ * custom property sull'host, contando sull'ereditarietà: non funzionava,
+ * perché il bordo qui sopra legge `--border` e quell'alias è già risolto in un
+ * colore letterale su `:root` — una custom property si sostituisce
+ * sull'elemento dove è dichiarata, e i discendenti ne ereditano il risultato,
+ * non la ricetta. In più una property ridefinita eredita a tutto il
+ * sottoalbero, e finiva per tingere il campo di conferma e il bottone
+ * «Annulla»: i due elementi non distruttivi del pannello.
+ *
+ * Il 40% tiene il bordo riconoscibile senza urlare: il colore pieno resta al
+ * bottone che cancella davvero, e un riquadro interamente rosso intorno a una
+ * pagina di impostazioni lo renderebbe meno notevole, non più.
+ */
+:host(.danger-zone) > .panel {
+  border-color: color-mix(in srgb, var(--color-error) 40%, var(--border));
+}
