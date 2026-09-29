@@ -5,21 +5,18 @@
 }
 
 /*
- * Il bordo rosso della zona pericolosa (Step 2) non è realizzato qui.
+ * Il bordo rosso della zona pericolosa non è realizzato qui, ed è giusto così.
  *
- * La tecnica precedente ridefiniva `--color-border` su `.danger-zone`,
- * assumendo che `Panel` leggesse quella custom property per il proprio
- * bordo. Non è così: `panel.scss` usa l'alias legacy `--border` (risolto una
- * sola volta su `:root`, in `_legacy-aliases.scss`), quindi la ridefinizione
- * non raggiungeva il bordo — ed ereditando a tutto il sottoalbero coloriva
- * invece il campo di conferma e il bottone «Annulla», i due elementi NON
- * distruttivi del pannello.
+ * Lo disegna `panel.scss`, con `:host(.danger-zone) > .panel`, accanto alle
+ * varianti `:host(.no-padding)` e `:host(.stale)`: `.panel` appartiene al
+ * template di quel componente e porta il suo attributo di incapsulamento,
+ * quindi nessuna regola scritta in questo foglio potrebbe raggiungerlo.
  *
- * Requisito aperto: il bordo va colorato da `panel.scss` stesso (una
- * variante dedicata, accanto a `:host(.no-padding)` e `:host(.stale)` che
- * già esistono lì), file oggi in lavorazione dall'utente e che questa
- * correzione non tocca. Fino ad allora il bordo della zona pericolosa resta
- * grigio, identico a ogni altro pannello dell'app.
+ * La classe `danger-zone` che lo attiva sta già su `<app-panel>` in
+ * `reset-panel.html`. Il commento esteso sul perché una custom property
+ * ridefinita sull'host **non** sia la strada — tinge tutto il sottoalbero,
+ * compresi il campo di conferma e il bottone «Annulla», che distruttivi non
+ * sono — vive accanto alla regola, in `panel.scss`.
  */
 
 h2 {

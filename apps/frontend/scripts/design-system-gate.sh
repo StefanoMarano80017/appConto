@@ -112,8 +112,14 @@ verifica 'shared non conosce le feature' \
 verifica 'nessun alias legacy' \
   bash -c "grep -rnE 'var\( *--(background|surface|border|text|text-muted|accent|on-accent|negative|positive|radius-panel|space-panel) *[,)]' src --include=*.scss --include=*.ts --include=*.html | grep -v _legacy-aliases | senza_commenti"
 
+# `diff master`, non `diff` e basta: senza un termine di paragone git confronta
+# l'albero di lavoro con l'indice, quindi bastava un `git add` — o un commit —
+# perche' una modifica al dominio passasse come [ok]. Il controllo esisteva e
+# non guardava. Con `master` come riferimento vede tutto cio' che il ramo ha
+# cambiato, committato o no. Su master stesso resta il confronto con l'albero
+# di lavoro, che e' l'unica cosa sensata da controllare li'.
 verifica 'dominio intatto' \
-  bash -c "git -C ../.. diff --name-only | grep -E '\.(model|api|store|query)\.ts\$|apps/backend'"
+  bash -c "git -C ../.. diff --name-only master | grep -E '\.(model|api|store|query)\.ts\$|apps/backend'"
 
 printf '\n%s\n' "controlli falliti: $fallimenti"
 [ "$fallimenti" -eq 0 ]

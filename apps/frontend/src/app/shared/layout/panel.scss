@@ -52,14 +52,23 @@
  * Sta qui e non nel foglio del chiamante per una ragione meccanica, non di
  * gusto: `.panel` appartiene al template di questo componente e porta il suo
  * attributo di incapsulamento, quindi nessuna regola scritta altrove può
- * selezionarlo. Il primo tentativo aveva aggirato il problema ridefinendo una
- * custom property sull'host, contando sull'ereditarietà: non funzionava,
- * perché il bordo qui sopra legge `--color-border`, che è dichiarata su
- * `:root` e lì è già risolta in un colore letterale — una custom property si
- * sostituisce sull'elemento dove è dichiarata, e i discendenti ne ereditano il
- * risultato, non la ricetta. In più una property ridefinita eredita a tutto il
+ * selezionarlo.
+ *
+ * Il primo tentativo aveva aggirato il problema ridefinendo una custom
+ * property sull'host, contando sull'ereditarietà, e non funzionava: allora il
+ * bordo leggeva l'alias `--border`, dichiarato su `:root` come
+ * `var(--color-border)` e lì già risolto in un colore letterale — una custom
+ * property si sostituisce sull'elemento dove è dichiarata, e i discendenti ne
+ * ereditano il risultato, non la ricetta.
+ *
+ * ATTENZIONE, quella ragione è scaduta: da quando gli alias sono stati
+ * cancellati il bordo legge `--color-border` direttamente, e ridefinirla
+ * sull'host **raggiungerebbe** il bordo. Quello che regge ancora è l'altro
+ * motivo, ed è sufficiente: una property ridefinita eredita a tutto il
  * sottoalbero, e finiva per tingere il campo di conferma e il bottone
- * «Annulla»: i due elementi non distruttivi del pannello.
+ * «Annulla», i due elementi non distruttivi del pannello. Chi volesse
+ * aggiungere una variante scriva una regola qui, come questa, non una
+ * property sull'host.
  *
  * Il 40% tiene il bordo riconoscibile senza urlare: il colore pieno resta al
  * bottone che cancella davvero, e un riquadro interamente rosso intorno a una

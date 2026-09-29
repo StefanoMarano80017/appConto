@@ -134,9 +134,21 @@ export class LoansPage implements OnDestroy {
     }
   }
 
-  /** Il valore di `aria-sort` della colonna, per chi usa uno screen reader. */
-  protected ariaSort(field: LoanSortField | null): 'ascending' | 'descending' | 'none' {
-    if (field === null || this.query().sortBy !== field) {
+  /**
+   * Il valore di `aria-sort` della colonna, per chi usa uno screen reader.
+   *
+   * `null` — cioè nessun attributo — per le colonne che non si ordinano
+   * affatto. Dichiarare `none` su Descrizione, Restituito e Stato direbbe
+   * «ordinabile, ora non ordinata»: una promessa falsa su tre colonne. È la
+   * stessa correzione già fatta sulla tabella dei movimenti, dove `none` resta
+   * solo dove ordinare si può davvero.
+   */
+  protected ariaSort(field: LoanSortField | null): 'ascending' | 'descending' | 'none' | null {
+    if (field === null) {
+      return null;
+    }
+
+    if (this.query().sortBy !== field) {
       return 'none';
     }
 
