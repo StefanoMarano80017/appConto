@@ -1,6 +1,6 @@
 <app-page-layout>
   <div class="row">
-    <section class="panel">
+    <app-panel>
       <!-- Il titolo "Impostazioni" è già nella fascia superiore della shell. -->
       <p class="hint">
         Il saldo iniziale viene usato come punto di partenza per il calcolo della liquidità.
@@ -61,9 +61,9 @@
           </div>
         </form>
       }
-    </section>
+    </app-panel>
 
-    <section class="panel">
+    <app-panel>
       <h2>Aspetto</h2>
       <p class="hint">
         Vale per questo computer: non finisce nell'archivio, quindi non viaggia con i backup.
@@ -85,7 +85,7 @@
           }
         </div>
       </fieldset>
-    </section>
+    </app-panel>
   </div>
 
   <app-reset-panel />

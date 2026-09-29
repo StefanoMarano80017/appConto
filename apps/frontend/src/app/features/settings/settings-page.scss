@@ -1,27 +1,27 @@
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 34rem;
+@use '../../shared/styles/typography';
 
-  /*
-   * Solo "Aspetto" (la seconda sezione) ha ancora un titolo qui: quello di
-   * "Impostazioni" è già nella fascia superiore della shell.
-   */
-  h2 {
-    margin: 0;
-    font-size: 1.125rem;
-  }
+/*
+ * Il contenuto dei due pannelli (il modulo del saldo, le opzioni del tema)
+ * non ha bisogno di stendersi oltre la lunghezza di lettura di un modulo:
+ * era il `max-width` del vecchio `.panel`, che qui non esiste più.
+ */
+.row {
+  max-width: 34rem;
+}
+
+/* Solo "Aspetto" (la seconda sezione) ha ancora un titolo qui: quello di "Impostazioni" è già nella fascia superiore della shell. */
+h2 {
+  margin: 0;
+  @include typography.text('section-title');
 }
 
 .hint {
-  margin: 0.375rem 0 0;
-  color: var(--text-muted);
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
 }
 
 .theme-choice {
-  margin: 1.25rem 0 0;
+  margin: var(--space-7) 0 0;
   padding: 0;
   border: 0;
 
@@ -32,67 +32,56 @@
   .options {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    margin-top: 0.5rem;
+    gap: var(--space-4) var(--space-8);
+    margin-top: var(--space-4);
   }
 
   label {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
-  }
-
-  input {
-    accent-color: var(--accent);
+    gap: var(--space-3);
   }
 }
 
 .settings-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  gap: var(--space-8);
+  margin-top: var(--space-9);
 
   input {
-    font: inherit;
     max-width: 14rem;
-    padding: 0.4375rem 0.625rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
   }
 
   input[aria-invalid='true'] {
-    border-color: var(--negative);
+    border-color: var(--color-expense);
   }
 }
 
 /* Il legend "Tema" della sezione Aspetto: non migrata a FormField (non è un campo di testo). */
 .field-label {
-  font-weight: 600;
-  font-size: 0.875rem;
+  @include typography.text('label');
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-6);
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
   }
 }
 
 .message {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .message.error {
-  color: var(--negative);
+  color: var(--color-expense);
 }
 
 .message.saved {
-  color: var(--positive);
+  color: var(--color-income);
 }

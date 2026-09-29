@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toErrorMessage } from '../../core/http-error';
+import { Panel } from '../../shared/layout/panel';
 import { MaintenanceApi } from './maintenance.api';
 import { RESET_CONFIRMATION, ResetOutcome } from './maintenance.model';
 
@@ -20,7 +21,7 @@ import { RESET_CONFIRMATION, ResetOutcome } from './maintenance.model';
  */
 @Component({
   selector: 'app-reset-panel',
-  imports: [FormsModule],
+  imports: [FormsModule, Panel],
   templateUrl: './reset-panel.html',
   styleUrl: './reset-panel.scss'
 })

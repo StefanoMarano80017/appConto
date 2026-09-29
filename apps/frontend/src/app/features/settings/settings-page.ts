@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { ThemeMode, ThemeStore } from '../../core/theme';
 import { PageLayout } from '../../shared/layout/page-layout';
+import { Panel } from '../../shared/layout/panel';
 import { FormField } from '../../shared/ui/form-field';
 import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 import { ResetPanel } from '../maintenance/reset-panel';
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-settings-page',
-  imports: [FormsModule, FormField, PageLayout, ResetPanel, RouterLink],
+  imports: [FormsModule, FormField, PageLayout, Panel, ResetPanel, RouterLink],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss'
 })
