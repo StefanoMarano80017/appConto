@@ -679,8 +679,18 @@ Nei tre fogli. Ogni `var(--surface)` → `var(--color-surface)`, `var(--border)`
 Run: `npm run build:frontend && npm run test:frontend`
 Expected: tutti verdi, i due test dello Step 1 compresi.
 
-Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep -c 'transactions'`
+Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep 'features/transactions/' | grep -vc 'ds-exception'`
 Expected: `0`
+
+Due correzioni rispetto alla forma originale di questo comando, entrambe
+imparate sul campo e non teoriche:
+- `features/transactions/` e non `transactions`: il secondo conta anche righe
+  di altri file che nominano i movimenti nel proprio contenuto.
+- `grep -vc 'ds-exception'`: il gate **stampa** le eccezioni dichiarate, quindi
+  un conteggio che non le esclude le riconta. Il raggio di 4px delle celle
+  modificabili in linea di questa pagina è una di quelle (specifica §8): va
+  marcata `// ds-exception: §8, cella modificabile in linea` e conservata, non
+  allineata al token.
 
 - [ ] **Step 6: commit**
 
@@ -837,8 +847,15 @@ La tabella segue il verdetto del Task 6: se `data-table` è stato adottato, si i
 - [ ] **Step 4: verificare**
 
 Run: `npm run build:frontend && npm run test:frontend`
-Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep -c 'merchants'`
+Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep 'features/merchants/' | grep -vc 'ds-exception'`
 Expected: `0`
+
+Stesse due correzioni del task sui Movimenti: il percorso completo invece della
+sola parola, e l'esclusione delle eccezioni dichiarate, che il gate stampa a
+ogni esecuzione. Le celle modificabili in linea di questa pagina (`.name input`,
+`.category select`) portano il raggio di 4px che la specifica §8 chiede
+espressamente di **non** unificare: vanno marcate
+`// ds-exception: §8, cella modificabile in linea`, non allineate al token.
 
 - [ ] **Step 5: commit**
 
@@ -874,7 +891,7 @@ Per ciascun ramo censito allo Step 1, verificare a mano nel template che la cond
 - [ ] **Step 4: verificare**
 
 Run: `npm run build:frontend && npm run test:frontend`
-Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep -c 'import'`
+Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep 'features/import/' | grep -vc 'ds-exception'`
 Expected: `0`
 
 - [ ] **Step 5: commit**
@@ -909,7 +926,7 @@ git commit -m "refactor(import): la pagina Import CSV passa ai token del design 
 - [ ] **Step 4: verificare**
 
 Run: `npm run build:frontend && npm run test:frontend`
-Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep -cE 'settings|maintenance'`
+Run: `bash apps/frontend/scripts/design-system-gate.sh 2>&1 | grep -E 'features/(settings|maintenance)/' | grep -vc 'ds-exception'`
 Expected: `0`
 
 - [ ] **Step 5: commit**
