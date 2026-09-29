@@ -4,13 +4,13 @@
 
 .panel {
   min-width: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
   /* Distanza fra due pannelli, non respiro interno: token separato apposta,
      perché chi stringe la densità interna non deve per forza avvicinare le card. */
   margin-bottom: var(--space-5);
-  padding: var(--space-panel);
+  padding: var(--space-7);
 }
 
 /*
@@ -54,10 +54,10 @@
  * attributo di incapsulamento, quindi nessuna regola scritta altrove può
  * selezionarlo. Il primo tentativo aveva aggirato il problema ridefinendo una
  * custom property sull'host, contando sull'ereditarietà: non funzionava,
- * perché il bordo qui sopra legge `--border` e quell'alias è già risolto in un
- * colore letterale su `:root` — una custom property si sostituisce
- * sull'elemento dove è dichiarata, e i discendenti ne ereditano il risultato,
- * non la ricetta. In più una property ridefinita eredita a tutto il
+ * perché il bordo qui sopra legge `--color-border`, che è dichiarata su
+ * `:root` e lì è già risolta in un colore letterale — una custom property si
+ * sostituisce sull'elemento dove è dichiarata, e i discendenti ne ereditano il
+ * risultato, non la ricetta. In più una property ridefinita eredita a tutto il
  * sottoalbero, e finiva per tingere il campo di conferma e il bottone
  * «Annulla»: i due elementi non distruttivi del pannello.
  *
@@ -66,5 +66,5 @@
  * pagina di impostazioni lo renderebbe meno notevole, non più.
  */
 :host(.danger-zone) > .panel {
-  border-color: color-mix(in srgb, var(--color-error) 40%, var(--border));
+  border-color: color-mix(in srgb, var(--color-error) 40%, var(--color-border));
 }

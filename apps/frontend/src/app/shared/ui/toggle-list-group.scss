@@ -27,12 +27,12 @@ app-search-input {
 
 .label {
   flex: 1;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   @include typography.text('body');
 }
 
 .option:hover .label {
-  color: var(--text);
+  color: var(--color-text-primary);
 }
 
 .message {

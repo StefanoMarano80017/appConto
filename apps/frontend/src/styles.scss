@@ -139,7 +139,15 @@ button:hover {
   position: absolute;
   width: 1px;
   height: 1px;
-  margin: -1px;
+  /*
+   * Il `-1px` non è una spaziatura e non ha un token: è un pezzo dell'idioma
+   * «visually hidden», dove serve a togliere l'elemento dal flusso senza
+   * toglierlo dall'albero accessibile. Sostituirlo con un passo della scala
+   * romperebbe l'idioma. Stessa eccezione, per la stessa ragione, in
+   * `app.scss` dentro il punto di rottura dei 900px, dove le etichette di
+   * gruppo della navigazione ripetono l'idioma solo sotto quella larghezza.
+   */
+  margin: -1px; // ds-exception: idioma visually-hidden, non una spaziatura
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);

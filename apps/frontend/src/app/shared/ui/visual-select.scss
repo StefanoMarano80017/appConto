@@ -40,7 +40,7 @@
 }
 
 .name {
-  margin-top: 0.125rem;
+  margin-top: var(--space-1);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -48,7 +48,7 @@
 }
 
 .chevron {
-  margin-top: 0.125rem;
+  margin-top: var(--space-1);
   align-self: center;
   flex: none;
   width: 0.875rem;

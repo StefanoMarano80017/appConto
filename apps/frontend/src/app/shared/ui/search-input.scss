@@ -78,11 +78,11 @@
 
   &.pill {
     padding: var(--space-2) var(--space-5);
-    border: 1px solid var(--border);
+    border: var(--border-width) solid var(--color-border);
     border-radius: var(--radius-pill);
 
     input {
-      color: var(--text-muted);
+      color: var(--color-text-muted);
 
       &::placeholder {
         color: inherit;
@@ -91,7 +91,7 @@
     }
 
     &:hover input {
-      color: var(--text);
+      color: var(--color-text-primary);
     }
   }
 }

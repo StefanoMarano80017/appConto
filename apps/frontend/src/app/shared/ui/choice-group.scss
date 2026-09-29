@@ -65,7 +65,7 @@ button.active::after {
   width: 2rem;
   height: 2px;
   margin-inline: auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-primary);
   content: '';
   pointer-events: none;
