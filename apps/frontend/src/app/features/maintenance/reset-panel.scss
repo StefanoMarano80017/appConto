@@ -5,26 +5,22 @@
 }
 
 /*
- * L'area distruttiva si distingue dal resto della pagina.
+ * Il bordo rosso della zona pericolosa (Step 2) non è realizzato qui.
  *
- * Non per drammatizzare: perché sta sotto le impostazioni, e chi scorre fino
- * in fondo deve capire che ha cambiato zona prima di leggere i pulsanti.
+ * La tecnica precedente ridefiniva `--color-border` su `.danger-zone`,
+ * assumendo che `Panel` leggesse quella custom property per il proprio
+ * bordo. Non è così: `panel.scss` usa l'alias legacy `--border` (risolto una
+ * sola volta su `:root`, in `_legacy-aliases.scss`), quindi la ridefinizione
+ * non raggiungeva il bordo — ed ereditando a tutto il sottoalbero coloriva
+ * invece il campo di conferma e il bottone «Annulla», i due elementi NON
+ * distruttivi del pannello.
  *
- * L'host di `app-panel` è `display: contents` (non genera un box proprio,
- * vedi `panel.scss`): impostare qui `border-color` non dipingerebbe nulla.
- * Si ridefinisce invece la custom property che il pannello interno legge per
- * il proprio bordo (`border: var(--border-width) solid var(--color-border)`):
- * è una proprietà ereditata, come `color`, quindi attraversa il confine di
- * `display: contents` e raggiunge il div `.panel` senza dover superare
- * l'incapsulamento che ne impedirebbe la selezione diretta.
- *
- * `--negative` era `--color-expense`, il colore finanziario delle uscite:
- * cancellare un archivio non è denaro che esce, quindi il bordo passa a
- * `--color-error`, lo stesso ragionamento di `ErrorRetry` nella Fase 3.
+ * Requisito aperto: il bordo va colorato da `panel.scss` stesso (una
+ * variante dedicata, accanto a `:host(.no-padding)` e `:host(.stale)` che
+ * già esistono lì), file oggi in lavorazione dall'utente e che questa
+ * correzione non tocca. Fino ad allora il bordo della zona pericolosa resta
+ * grigio, identico a ogni altro pannello dell'app.
  */
-.danger-zone {
-  --color-border: color-mix(in srgb, var(--color-error) 40%, var(--color-border));
-}
 
 h2 {
   margin: 0 0 var(--space-4);
@@ -53,7 +49,16 @@ h2 {
   .field-label {
     display: block;
     margin-bottom: var(--space-2);
-    @include typography.text('label');
+    /*
+     * Non `label`: quel ruolo porta 12px + maiuscolo + muted insieme, e
+     * «AZZERA» era l'unica parola maiuscola della frase — così si capiva
+     * cosa scrivere. In maiuscolo generale quel segnale sparisce e la frase
+     * si legge più lentamente, il contrario di ciò che serve subito prima di
+     * un'azione irreversibile. `caption` tiene il tono sommesso (muted, come
+     * `.hint` e `.resta` in questo stesso file) senza il maiuscolo e con un
+     * punto in più di dimensione (13px).
+     */
+    @include typography.text('caption');
   }
 
   input {

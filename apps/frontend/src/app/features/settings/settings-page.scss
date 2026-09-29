@@ -54,7 +54,7 @@ h2 {
   }
 
   input[aria-invalid='true'] {
-    border-color: var(--color-expense);
+    border-color: var(--color-error);
   }
 }
 
