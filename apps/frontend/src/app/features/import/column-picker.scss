@@ -1,83 +1,82 @@
+@use '../../shared/styles/typography';
+
 .picker {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-7);
 
   label {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
+    gap: var(--space-3);
   }
 
   label.inline {
     flex-direction: row;
     align-items: center;
-    gap: 0.375rem;
+    gap: var(--space-3);
   }
 
   select {
     font: inherit;
     max-width: 20rem;
-    padding: 0.4375rem 0.625rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
   }
 
   select[aria-invalid='true'] {
-    border-color: var(--negative);
+    border-color: var(--color-expense);
   }
 
   input[type='radio'] {
-    accent-color: var(--accent);
+    accent-color: var(--color-primary);
   }
 }
 
 .field-label {
-  font-weight: 600;
-  font-size: 0.875rem;
+  @include typography.text('label');
 }
 
 .field-hint {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
 }
 
 .field-error {
-  color: var(--negative);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
+  color: var(--color-expense);
 }
 
 /* Il valore d'esempio è un dato del file, non un'etichetta: font tabellare. */
 .example {
-  color: var(--text-muted);
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   font-variant-numeric: tabular-nums;
 }
 
 .amount {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-5);
   margin: 0;
-  padding: 0.875rem 1rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
 
   legend {
-    padding: 0 0.25rem;
+    padding: 0 var(--space-2);
   }
 
   .options {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
+    gap: var(--space-4) var(--space-8);
   }
 
   .pair {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem 1.5rem;
+    gap: var(--space-6) var(--space-8);
   }
 }
