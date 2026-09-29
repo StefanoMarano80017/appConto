@@ -155,7 +155,24 @@ const proprieta = (() => {
   const nomi = new Set<string>();
 
   for (const file of trovaFile(SRC, '.scss', true)) {
-    const css = compile(file, { loadPaths: [SRC] }).css;
+    /*
+     * `style: 'compressed'` per una ragione sola, e non è la dimensione:
+     * toglie i commenti. Sass conserva i commenti a blocco nel CSS
+     * compilato, quindi senza questo il censimento conta come riferimento
+     * anche una property che un commento si limita a NOMINARE — e un
+     * `var(--x)` dentro un commento non dipinge niente.
+     *
+     * Non è teoria: alla cancellazione di `_legacy-aliases.scss` questo test
+     * ha dichiarato `--negative` orfana. L'unica occorrenza rimasta era la
+     * prosa di `error-retry.scss`, che racconta quale regola c'era prima e
+     * perché è stata tolta — storia vera, che non va riscritta per far
+     * tacere un censimento.
+     *
+     * La nota qui sopra sui `.ts` diceva già che un riferimento dentro un
+     * commento avvelena il censimento, e li escludeva per questo. Lo stesso
+     * ragionamento non era stato applicato ai `.scss`: qui lo è.
+     */
+    const css = compile(file, { loadPaths: [SRC], style: 'compressed' }).css;
     for (const nome of nomiDaRegex(css, RIFERIMENTO)) {
       nomi.add(nome);
     }
