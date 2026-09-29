@@ -81,4 +81,54 @@ describe('TransactionsTable', () => {
       'periodo mostrato'
     );
   });
+
+  /*
+   * I due test che seguono (Task 6, Step 1) non descrivono un comportamento
+   * nuovo: fissano quello di oggi, prima di decidere se la tabella debba
+   * adottare l'involucro condiviso `data-table`. Quel mixin porta un padding
+   * diverso dall'attuale, quindi la geometria cambierà — ed è proprio quando
+   * la geometria cambia che un contenuto lungo smette di starci.
+   *
+   * Vanno letti al contrario: se un giorno diventano rossi, il verdetto sulle
+   * tabelle ha rotto qualcosa che oggi funziona.
+   *
+   * Quello che jsdom NON può dire, e che nessuno dei due finge di verificare:
+   * se il testo esca dalla cella. Qui non c'è layout, `getBoundingClientRect()`
+   * vale zero. Si verifica quindi l'unica cosa osservabile — che il contenuto
+   * ci sia tutto e nella cella giusta — e il resto resta al giro visivo.
+   */
+
+  /** Un merchant con un nome scelto: `label` è ciò che la cella rende. */
+  const conMerchant = (id: string, amount: number, label: string): Transaction => ({
+    ...transaction(id, amount),
+    merchant: {
+      id: `m-${id}`,
+      name: label,
+      displayName: null,
+      label,
+      normalizedName: label.toLowerCase(),
+      category: null
+    }
+  });
+
+  it('un importo a sei cifre arriva intero nella cella, senza troncamenti', async () => {
+    await render([transaction('1', -123456.78)]);
+
+    // `tbody`, non `tfoot`: la riga di totale ha la stessa classe di cella, e
+    // senza questo ancoraggio il test misurerebbe il totale invece del dato.
+    const cella = host().querySelector('tbody td.numeric');
+
+    expect(cella?.textContent).toContain('123.456,78');
+  });
+
+  it('un nome di merchant lunghissimo resta intero e non fa sparire la cella dell’importo', async () => {
+    const nome = 'Supermercato Cooperativo del Lungo Nome Che Non Finisce Mai';
+    await render([conMerchant('1', -300, nome)]);
+
+    // Il nome è reso da uno `<span class="label" appTruncate>`: la direttiva
+    // accorcia a schermo, ma il testo nel DOM deve restare intero, o non
+    // sarebbe più leggibile né copiabile.
+    expect(host().querySelector('tbody td.merchant .label')?.textContent?.trim()).toBe(nome);
+    expect(host().querySelector('tbody td.numeric')).not.toBeNull();
+  });
 });
