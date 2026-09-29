@@ -5,7 +5,7 @@
 }
 
 .message.error {
-  color: var(--color-expense);
+  color: var(--color-error);
 }
 
 .create-form {
@@ -134,9 +134,9 @@
     }
 
     button.danger {
-      border: var(--border-width) solid var(--color-expense);
+      border: var(--border-width) solid var(--color-error);
       background: transparent;
-      color: var(--color-expense);
+      color: var(--color-error);
     }
 
     button.ghost {

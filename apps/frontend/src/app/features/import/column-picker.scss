@@ -28,7 +28,7 @@
   }
 
   select[aria-invalid='true'] {
-    border-color: var(--color-expense);
+    border-color: var(--color-error);
   }
 
   input[type='radio'] {
@@ -46,7 +46,7 @@
 
 .field-error {
   @include typography.text('caption');
-  color: var(--color-expense);
+  color: var(--color-error);
 }
 
 /* Il valore d'esempio è un dato del file, non un'etichetta: font tabellare. */
