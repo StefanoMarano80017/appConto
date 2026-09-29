@@ -10,15 +10,35 @@ cd "$(dirname "$0")/.." || exit 2
 
 fallimenti=0
 
+# Un'eccezione dichiarata è una riga che porta il marcatore `ds-exception` nel
+# proprio commento, col rimando al documento che la motiva. Non conta come
+# fallimento, ma viene STAMPATA a ogni esecuzione.
+#
+# Serve perché esistono valori che la specifica chiede espressamente di NON
+# unificare — il raggio di 4px delle celle modificabili in linea (§8), che deve
+# restare letterale e locale. Senza un modo di dichiararle, quelle righe
+# rendono «zero» irraggiungibile per sempre sui file che le contengono, e il
+# criterio di uscita di ogni task su quei file degenera in un numero da
+# ricordare a memoria, diverso per file. È così che un gate smette di essere
+# un vincolo e diventa un rumore che si impara a ignorare.
+#
+# Stampate e non nascoste, di proposito: un'eccezione che sparisce dalla vista
+# è un'eccezione che nessuno rivede più. Il marcatore rende il silenzio una
+# scelta esplicita di chi scrive la riga, non un effetto collaterale.
 verifica() {
   local nome="$1"; shift
-  local righe
-  righe="$("$@" 2>/dev/null)"
+  local tutte righe eccezioni
+  tutte="$("$@" 2>/dev/null)"
+  righe="$(printf '%s\n' "$tutte" | grep -v 'ds-exception')"
+  eccezioni="$(printf '%s\n' "$tutte" | grep 'ds-exception')"
   if [ -n "$righe" ]; then
     printf '\n[FALLITO] %s\n%s\n' "$nome" "$righe"
     fallimenti=$((fallimenti + 1))
   else
     printf '[ok] %s\n' "$nome"
+  fi
+  if [ -n "$eccezioni" ]; then
+    printf '  [eccezione dichiarata] %s\n%s\n' "$nome" "$eccezioni"
   fi
 }
 
