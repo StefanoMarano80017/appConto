@@ -11,30 +11,14 @@
     <details class="dropdown">
       <summary>Periodo <span class="value">{{ periodLabel() }}</span></summary>
       <div class="panel-body">
-        <app-choice-group
-          [options]="presets"
-          [value]="preset()"
-          ariaLabel="Periodo"
-          (selected)="selectPreset($event)"
+        <app-period-filter
+          [preset]="preset()"
+          [from]="query().from"
+          [to]="query().to"
+          (presetSelected)="selectPreset($event)"
+          (fromChange)="changed.emit({ from: $event })"
+          (toChange)="changed.emit({ to: $event })"
         />
-        <div class="dates">
-          <label>
-            <span>Dal</span>
-            <input
-              type="date"
-              [value]="query().from ?? ''"
-              (change)="changed.emit({ from: $any($event.target).value || null })"
-            />
-          </label>
-          <label>
-            <span>Al</span>
-            <input
-              type="date"
-              [value]="query().to ?? ''"
-              (change)="changed.emit({ to: $any($event.target).value || null })"
-            />
-          </label>
-        </div>
       </div>
     </details>
 

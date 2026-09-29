@@ -10,6 +10,7 @@
           <th scope="col" class="select">
             <input
               type="checkbox"
+              class="checkbox-control"
               [checked]="allSelected()"
               [indeterminate]="someSelected()"
               (change)="allToggled.emit(!allSelected())"
@@ -49,6 +50,7 @@
             <td class="select">
               <input
                 type="checkbox"
+                class="checkbox-control"
                 [checked]="isSelected(transaction)"
                 (change)="selectionToggled.emit(transaction.id)"
                 [attr.aria-label]="'Seleziona ' + transaction.description"
@@ -72,31 +74,23 @@
             }
           </td>
           <td class="type">
-            <select
-              [ngModel]="transaction.type"
-              (ngModelChange)="changeType(transaction, $event)"
+            <app-visual-select
+              [options]="transactionTypeOptions"
+              [value]="transaction.type"
               [disabled]="savingId() === transaction.id"
-              [attr.aria-label]="'Tipo di ' + transaction.description"
-            >
-              @for (type of transactionTypes; track type) {
-                <option [value]="type">{{ typeLabels[type] }}</option>
-              }
-            </select>
+              [ariaLabel]="'Tipo di ' + transaction.description"
+              (valueChange)="changeType(transaction, $event)"
+            />
           </td>
           <td class="category">
             @if (transaction.merchant; as merchant) {
-              <app-color-marker [color]="merchant.category?.color" />
-              <select
-                [ngModel]="merchant.category?.id ?? ''"
-                (ngModelChange)="changeCategory(transaction, $event)"
+              <app-visual-select
+                [options]="categories()"
+                [value]="merchant.category?.id ?? null"
                 [disabled]="savingId() === transaction.id"
-                [attr.aria-label]="'Categoria di ' + merchant.label"
-              >
-                <option value="">—</option>
-                @for (category of categories(); track category.id) {
-                  <option [value]="category.id">{{ category.name }}</option>
-                }
-              </select>
+                [ariaLabel]="'Categoria di ' + merchant.label"
+                (valueChange)="changeCategory(transaction, $event)"
+              />
             } @else {
               —
             }

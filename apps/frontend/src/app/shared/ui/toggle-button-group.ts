@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { LucideX } from '@lucide/angular';
 
 export interface ToggleButtonOption<T> {
   id: T;
@@ -22,6 +23,7 @@ export interface ToggleButtonOption<T> {
   selector: 'app-toggle-button-group',
   templateUrl: './toggle-button-group.html',
   styleUrl: './toggle-button-group.scss',
+  imports: [LucideX],
   host: {
     role: 'group',
     '[attr.aria-label]': 'ariaLabel()'

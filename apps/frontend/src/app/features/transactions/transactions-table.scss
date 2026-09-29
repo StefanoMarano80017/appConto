@@ -89,26 +89,8 @@
     display: block;
   }
 
-  .category select,
-  .type select {
-    font: inherit;
-    max-width: 12rem;
-    /* Un nome di categoria lungo lo taglia il controllo nativo: che si veda. */
-    text-overflow: ellipsis;
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-badge);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-  }
-
-  .category select:disabled,
-  .type select:disabled {
-    opacity: 0.5;
-  }
-
-  .type select {
-    max-width: 9rem;
+  .category {
+    white-space: nowrap;
   }
 
   /*
@@ -229,15 +211,6 @@ th.numeric .sort {
     width: 2.5rem;
     padding-right: 0;
     text-align: center;
-  }
-
-  td.select input,
-  th.select input {
-    /* Il bersaglio del clic deve essere comodo: si seleziona a ripetizione. */
-    width: 1.05rem;
-    height: 1.05rem;
-    cursor: pointer;
-    accent-color: var(--color-primary);
   }
 
   /*

@@ -1,0 +1,16 @@
+<app-choice-group
+  [options]="presets"
+  [value]="preset()"
+  ariaLabel="Periodo"
+  (selected)="presetSelected.emit($event)"
+/>
+<div class="range">
+  <label>
+    <span>Dal</span>
+    <input type="date" [value]="from() ?? ''" (change)="changeFrom($event)" />
+  </label>
+  <label>
+    <span>Al</span>
+    <input type="date" [value]="to() ?? ''" (change)="changeTo($event)" />
+  </label>
+</div>

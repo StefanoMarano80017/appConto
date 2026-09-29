@@ -39,6 +39,10 @@
   outline-offset: 2px;
 }
 
+.toggle:active {
+  background: transparent;
+}
+
 .icon {
   flex: none;
 }
@@ -80,10 +84,10 @@
 }
 
 .count {
-  margin-left: auto;
 }
 
 .chevron {
+  margin-left: auto;
   flex: none;
   color: var(--color-text-muted);
 

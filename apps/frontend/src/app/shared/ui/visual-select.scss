@@ -1,0 +1,79 @@
+:host {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 12rem;
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.picker:hover {
+  background: var(--color-surface-hover);
+}
+
+.picker:has(select:focus-visible):not(.selection-made) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.picker.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.leading-icon {
+  flex: none;
+  width: var(--space-6);
+  height: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.name {
+  margin-top: 0.125rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  margin-top: 0.125rem;
+  align-self: center;
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+select {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  opacity: 0;
+  cursor: pointer;
+}
+
+option {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+select:disabled {
+  cursor: not-allowed;
+}

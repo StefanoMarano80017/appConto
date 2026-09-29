@@ -38,8 +38,11 @@ export class FilterGroup {
   readonly count = input(0);
   readonly initiallyOpen = input(false);
 
-  /** Scrivibile dal click, seminato dall'input: riflette l'input solo finché l'utente non tocca il bottone. */
-  protected readonly open = linkedSignal(() => this.initiallyOpen());
+  /** L'input può aprire la sezione, ma la sua disattivazione non la richiude. */
+  protected readonly open = linkedSignal({
+    source: () => this.initiallyOpen(),
+    computation: (initiallyOpen, previous) => initiallyOpen || previous?.value === true,
+  });
 
   private readonly id = nextId++;
   protected readonly buttonId = `filter-group-button-${this.id}`;

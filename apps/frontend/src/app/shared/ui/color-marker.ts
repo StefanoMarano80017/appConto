@@ -9,8 +9,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   styles: `
     :host {
       display: inline-block;
-      width: 0.8em;
-      height: 0.8em;
+      width: 1em;
+      height: 1em;
       border-radius: 0.15em;
       flex: 0 0 auto;
       vertical-align: middle;

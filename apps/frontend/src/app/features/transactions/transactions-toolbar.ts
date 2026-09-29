@@ -1,9 +1,10 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
-import { PERIOD_PRESETS, PeriodPreset, matchingPreset, resolvePeriod } from '../../core/period';
+import { PeriodPreset, matchingPreset, resolvePeriod } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
 import { ChoiceGroup } from '../../shared/ui/choice-group';
 import { FilterChips } from '../../shared/ui/filter-chips';
+import { PeriodFilter } from '../../shared/ui/period-filter';
 import { SearchInput } from '../../shared/ui/search-input';
 import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
 import { Category } from '../categories/category.model';
@@ -34,7 +35,7 @@ interface ActiveFilter {
  */
 @Component({
   selector: 'app-transactions-toolbar',
-  imports: [ChoiceGroup, FilterChips, Panel, SearchInput, ToggleButtonGroup],
+  imports: [ChoiceGroup, FilterChips, Panel, PeriodFilter, SearchInput, ToggleButtonGroup],
   templateUrl: './transactions-toolbar.html',
   styleUrl: './transactions-toolbar.scss'
 })
@@ -50,11 +51,6 @@ export class TransactionsToolbar {
   readonly searchTyped = output<string>();
   readonly cleared = output<void>();
 
-  protected readonly presets = PERIOD_PRESETS.map((preset) => ({
-    id: preset.id,
-    label: preset.shortLabel,
-    description: preset.label
-  }));
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
   protected readonly transactionTypeOptions = TRANSACTION_TYPES.map((type) => ({

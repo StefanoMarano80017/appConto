@@ -62,6 +62,30 @@ describe('AnalyticsTimeline', () => {
     expect(lines[0]?.getAttribute('points')?.trim().split(/\s+/).length).toBe(4);
   });
 
+  it('non disegna una serie senza valori di entrata', async () => {
+    await render({
+      granularity: 'week',
+      buckets: [bucket('2026-07-06', 0, 125), bucket('2026-07-13', 0, 80)]
+    });
+
+    const lines = host().querySelectorAll('polyline.line');
+
+    expect(lines.length).toBe(1);
+    expect(lines[0]?.getAttribute('data-series')).toBe('expenses');
+  });
+
+  it('non disegna una serie senza valori di uscita', async () => {
+    await render({
+      granularity: 'week',
+      buckets: [bucket('2026-07-06', 125, 0), bucket('2026-07-13', 80, 0)]
+    });
+
+    const lines = host().querySelectorAll('polyline.line');
+
+    expect(lines.length).toBe(1);
+    expect(lines[0]?.getAttribute('data-series')).toBe('income');
+  });
+
   it('il saldo netto non è acceso di partenza, ma si può accendere', async () => {
     await render();
     expect(host().querySelectorAll('polyline.line').length).toBe(2);

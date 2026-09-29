@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { formatAmount, formatBookingDate } from '../../core/format';
@@ -13,7 +12,8 @@ import { SortDirection, TransactionSortField } from './transaction-query';
 import { TRANSACTION_TYPES, TRANSACTION_TYPE_LABELS, TransactionType } from './transaction-type';
 import { Transaction } from './transaction.model';
 import { TransactionsApi } from './transactions.api';
-import { ColorMarkerComponent } from '../../shared/ui/color-marker';
+import { VisualSelect } from '../../shared/ui/visual-select';
+import type { VisualSelectIcon, VisualSelectOption } from '../../shared/ui/visual-select';
 import { Amount } from '../../shared/ui/amount';
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
@@ -29,6 +29,15 @@ const COLUMNS: readonly { label: string; field: TransactionSortField | null; num
 
 /** La colonna dei prestiti: non si ordina, è un'azione. */
 const LOAN_COLUMN = { label: 'Prestito', field: null, numeric: false } as const;
+
+const TRANSACTION_TYPE_ICONS: Record<TransactionType, VisualSelectIcon> = {
+  EXPENSE: 'trending-down',
+  INCOME: 'trending-up',
+  WITHDRAWAL: 'banknote',
+  LOAN: 'hand-coins',
+  TRANSFER: 'arrow-left-right',
+  OTHER: 'ellipsis',
+};
 
 /**
  * Ciò che la colonna dei prestiti mostra per un movimento.
@@ -61,7 +70,7 @@ interface LoanCell {
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [FormsModule, RouterLink, Truncate, ColorMarkerComponent, Amount],
+  imports: [RouterLink, Truncate, VisualSelect, Amount],
   templateUrl: './transactions-table.html',
   styleUrl: './transactions-table.scss',
 })
@@ -165,8 +174,12 @@ export class TransactionsTable implements OnInit {
   /** Riga con una modifica in corso. */
   protected readonly savingId = signal<string | null>(null);
 
-  protected readonly transactionTypes = TRANSACTION_TYPES;
-  protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
+  protected readonly transactionTypeOptions: readonly VisualSelectOption<TransactionType>[] =
+    TRANSACTION_TYPES.map((type) => ({
+      id: type,
+      name: TRANSACTION_TYPE_LABELS[type],
+      icon: TRANSACTION_TYPE_ICONS[type],
+    }));
   protected readonly formatAmount = formatAmount;
   protected readonly formatBookingDate = formatBookingDate;
 
@@ -212,8 +225,8 @@ export class TransactionsTable implements OnInit {
   }
 
   /** Corregge la natura del movimento: riguarda la singola transazione. */
-  protected changeType(transaction: Transaction, type: TransactionType): void {
-    if (transaction.type === type) {
+  protected changeType(transaction: Transaction, type: TransactionType | null): void {
+    if (type === null || transaction.type === type) {
       return;
     }
 
@@ -224,13 +237,13 @@ export class TransactionsTable implements OnInit {
    * Cambia la categoria del merchant: tutte le transazioni dello stesso
    * esercente la ereditano.
    */
-  protected changeCategory(transaction: Transaction, selectedId: string): void {
+  protected changeCategory(transaction: Transaction, selectedId: string | null): void {
     const merchant = transaction.merchant;
     if (merchant === null) {
       return;
     }
 
-    const categoryId = selectedId === '' ? null : selectedId;
+    const categoryId = selectedId;
     if ((merchant.category?.id ?? null) === categoryId) {
       return;
     }

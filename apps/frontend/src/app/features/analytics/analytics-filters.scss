@@ -75,47 +75,6 @@ app-section-header {
   outline-offset: 2px;
 }
 
-/*
- * I due campi data stanno uno sopra l'altro, non affiancati.
- *
- * Non è una preferenza estetica, è una misura: la colonna della toolbox è
- * larga 300px e il pannello ne toglie 20 per lato, quindi lo spazio utile è
- * 260. Un campo data nativo non scende sotto i ~135px (il widget porta con sé
- * "gg/mm/aaaa" e l'icona del calendario), e con l'etichetta accanto una coppia
- * ne chiede circa 338: affiancati non ci stanno a nessuna larghezza che questa
- * colonna possa avere.
- *
- * Impilati per griglia e non lasciati andare a capo con `flex-wrap`: il
- * risultato a schermo è lo stesso, ma così è una scelta dichiarata invece di
- * un ripiego, e ogni campo prende tutta la larghezza disponibile invece di
- * restare della sua larghezza naturale con uno spazio vuoto a destra.
- */
-.custom {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-
-  label {
-    @include typography.text('secondary');
-
-    /* Colonna fissa per "Dal"/"Al": i due input restano allineati fra loro. */
-    display: grid;
-    grid-template-columns: 2rem 1fr;
-    align-items: center;
-    gap: var(--space-3);
-  }
-
-  /*
-   * Bordo, raggio, sfondo, colore, hover e focus vengono ora dalla regola
-   * globale in `styles.scss` (Task 5): qui resta solo cio' che e' specifico
-   * di questa toolbox, il layout.
-   */
-  input {
-    /* Senza, l'input non scende sotto la propria larghezza naturale e sfonda. */
-    min-width: 0;
-  }
-}
-
 .selected {
   @include typography.text('caption');
 

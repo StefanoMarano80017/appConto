@@ -1,0 +1,40 @@
+@use '../styles/typography';
+
+:host {
+  display: block;
+}
+
+app-search-input {
+  margin-bottom: var(--space-3);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.option input {
+  margin: 0;
+}
+
+.label {
+  flex: 1;
+  color: var(--text-muted);
+  @include typography.text('body');
+}
+
+.option:hover .label {
+  color: var(--text);
+}
+
+.message {
+  margin: 0;
+}

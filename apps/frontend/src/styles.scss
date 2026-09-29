@@ -44,6 +44,29 @@ body {
   line-height: 1.5;
 }
 
+.content > router-outlet + * {
+  display: block;
+  animation: route-content-enter 250ms ease-out both;
+}
+
+@keyframes route-content-enter {
+  from {
+    opacity: 0.62;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content > router-outlet + * {
+    animation: none;
+  }
+}
+
 button {
   font: inherit;
   padding: var(--space-4) var(--space-6);
@@ -245,13 +268,10 @@ textarea {
  * stessa famiglia di controlli che il browser disegna da se', non varianti
  * dello stesso campo di testo.
  *
- * Un `padding` e un `border-radius` su un `input[type="checkbox"]` lo
- * sfigurano: il controllo nativo disegna se stesso, e quelle proprieta' gli
- * si sommano invece di sostituirlo. Restilarli davvero significa
- * `appearance: none` piu' il segno di spunta ridisegnato a mano, che e' un
- * lavoro a se' e non ha ancora un caso reale in questa applicazione —
- * `accent-color: var(--color-primary)` e' l'unica cosa che vale la pena
- * dichiarare, perche' li allinea al tema senza toccarne la forma.
+ * Checkbox e radio restano nativi e usano `accent-color`. La sola eccezione
+ * e' `.checkbox-control`, condivisa da selezione tabella e toggle-list: usa
+ * `appearance: none` per avere un bordo tenue come gli altri campi, senza
+ * alterare la forma nativa dei controlli non coinvolti.
  *
  * `input[type="file"]` e' nella stessa famiglia per lo stesso motivo, ma non
  * ha un equivalente di `accent-color`: rende un bottone ("Scegli file") gia'
@@ -267,12 +287,8 @@ textarea {
  * escludere `[type="file"]` ma non caselle/radio da quelle due sarebbe stata
  * un'incoerenza (lo stesso controllo che il browser disegna da se', trattato
  * diversamente a seconda dello stato). Il `cursor: not-allowed` di
- * `:disabled` fa eccezione, e non e' scoped: raggiunge caselle, radio E
- * campo file (`input:disabled { cursor: not-allowed }` piu' sotto, senza
- * `:not(...)`), a differenza della regola che lo precede. Va bene cosi':
- * l'esclusione altrove serve a non ridipingere sfondo/bordo di un controllo
- * che il browser disegna da se', e un cursore non ridipinge niente —
- * quindi qui non ha senso escludere nessuno dei tre.
+ * `:disabled` fa eccezione: non ridipinge nulla, quindi resta in una regola
+ * propria che raggiunge anche caselle e radio.
  */
 input[type='checkbox'],
 input[type='radio'] {
@@ -280,10 +296,51 @@ input[type='radio'] {
 }
 
 .checkbox-control {
+  appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
   width: 1.05rem;
   height: 1.05rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   cursor: pointer;
-  accent-color: var(--color-primary);
+}
+
+.checkbox-control::before {
+  width: 0.3rem;
+  height: 0.55rem;
+  border: solid var(--color-on-primary);
+  border-width: 0 2px 2px 0;
+  content: '';
+  transform: rotate(45deg) scale(0);
+}
+
+.checkbox-control:checked,
+.checkbox-control:indeterminate {
+  background: var(--color-primary);
+}
+
+.checkbox-control:checked::before {
+  transform: translateY(-2px) rotate(45deg) scale(1);
+}
+
+.checkbox-control:indeterminate::before {
+  width: 0.5rem;
+  height: 2px;
+  border: 0;
+  background: var(--color-on-primary);
+  transform: none;
+}
+
+.checkbox-control:hover:not(:disabled):not(:checked):not(:indeterminate) {
+  border-color: var(--color-border-strong);
+}
+
+.checkbox-control:checked:focus-visible,
+.checkbox-control:indeterminate:focus-visible {
+  background: var(--color-primary);
 }
 
 input:not([type='checkbox']):not([type='radio']):not([type='file']):hover:not(:disabled),
@@ -347,7 +404,8 @@ textarea:user-invalid {
  * proporzione giusta è 16px.
  */
 .filter-group-icon svg,
-.title-icon svg {
+.title-icon svg,
+.toggle-button-group-icon svg {
   width: 1rem;
   height: 1rem;
 }

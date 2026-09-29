@@ -79,6 +79,17 @@ describe('FilterGroup', () => {
     expect(bottone().getAttribute('aria-expanded')).toBe('false');
   });
 
+  it("non si chiude quando l'input initiallyOpen torna false", async () => {
+    fixture.componentRef.setInput('initiallyOpen', true);
+    await fixture.whenStable();
+    expect(pannello().hidden).toBe(false);
+
+    fixture.componentRef.setInput('initiallyOpen', false);
+    await fixture.whenStable();
+
+    expect(pannello().hidden).toBe(false);
+  });
+
   it('collega bottone e region per lo screen reader', async () => {
     await fixture.whenStable();
 

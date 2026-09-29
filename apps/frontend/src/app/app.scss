@@ -93,6 +93,11 @@
   border-radius: var(--radius-control);
   color: var(--color-text-muted);
   text-decoration: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 
   /* L'svg di Lucide nasce a 24px: qui accanto al testo 'body' (15px) serve piccolo. */
   svg {
@@ -106,6 +111,10 @@
   color: var(--color-text-primary);
 }
 
+.nav a:active {
+  transform: scale(0.98);
+}
+
 /*
  * La voce attiva porta anche una barra a sinistra: lo sfondo tenue da solo
  * non basta a distinguerla (stessa formula di tableRow.selected). Chi non
@@ -116,6 +125,7 @@
   background: var(--color-surface-elevated);
   box-shadow: inset 2px 0 0 var(--color-primary);
   color: var(--color-text-primary);
+  transform: translateX(2px);
 }
 
 /*
@@ -129,6 +139,12 @@
 .nav a:focus-visible {
   outline: 2px solid var(--color-text-primary);
   outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav a {
+    transition: none;
+  }
 }
 
 /*

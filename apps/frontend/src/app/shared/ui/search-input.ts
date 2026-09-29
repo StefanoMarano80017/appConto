@@ -17,6 +17,7 @@ export class SearchInput {
   readonly value = input.required<string>();
   readonly placeholder = input.required<string>();
   readonly ariaLabel = input<string | undefined>(undefined);
+  readonly variant = input<'default' | 'pill'>('default');
 
   readonly valueChange = output<string>();
 }

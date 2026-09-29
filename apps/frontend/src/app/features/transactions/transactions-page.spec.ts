@@ -262,7 +262,7 @@ describe('TransactionsPage', () => {
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
 
     const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-table .type select'
+      'app-transactions-table .type app-visual-select select'
     );
     select!.value = 'WITHDRAWAL';
     select!.dispatchEvent(new Event('change'));
@@ -283,7 +283,7 @@ describe('TransactionsPage', () => {
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
 
     const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-table .category select'
+      'app-transactions-table .category app-visual-select select'
     );
     select!.value = '';
     select!.dispatchEvent(new Event('change'));

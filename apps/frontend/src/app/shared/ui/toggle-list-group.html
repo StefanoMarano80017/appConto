@@ -1,0 +1,26 @@
+<app-search-input
+  [value]="searchTerm()"
+  [placeholder]="searchPlaceholder()"
+  [ariaLabel]="searchAriaLabel()"
+  (valueChange)="searchTerm.set($event)"
+/>
+
+@if (visibleOptions().length === 0) {
+  <p class="message message--hint">{{ noResultsMessage() }}</p>
+} @else {
+  <div class="options">
+    @for (option of visibleOptions(); track option.id) {
+      <label class="option">
+        <input
+          type="checkbox"
+          class="checkbox-control"
+          [checked]="value().includes(option.id)"
+          [attr.aria-label]="option.label"
+          (change)="toggled.emit(option.id)"
+        />
+
+        <span class="label" [title]="option.label">{{ displayLabel(option.label) }}</span>
+      </label>
+    }
+  </div>
+}

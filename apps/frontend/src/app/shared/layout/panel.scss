@@ -3,12 +3,13 @@
 }
 
 .panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-panel);
   /* Distanza fra due pannelli, non respiro interno: token separato apposta,
      perché chi stringe la densità interna non deve per forza avvicinare le card. */
-  margin-bottom: var(--space-7);
+  margin-bottom: var(--space-5);
   padding: var(--space-panel);
 }
 
@@ -25,9 +26,7 @@
  * di Angular inserisce commenti, che non contano come figli — quindi quando
  * un pannello condizionale sparisce è quello prima a diventare l'ultimo.
  */
-:host(:last-child) > .panel {
-  margin-bottom: 0;
-}
+
 
 :host(.no-padding) > .panel {
   padding: 0;
@@ -45,6 +44,7 @@
 :host(.stale) > .panel {
   opacity: 0.6;
 }
+
 /*
  * Il pannello che contiene un'azione irreversibile — oggi solo l'azzeramento
  * dei dati — si distingue dagli altri già dal bordo.

@@ -2,6 +2,14 @@
   <button
     type="button"
     [class.active]="value().includes(option.id)"
+    [attr.aria-pressed]="value().includes(option.id)"
     (click)="toggled.emit(option.id)"
-  >{{ option.label }}</button>
+  >
+    @if (value().includes(option.id)) {
+      <span class="icon toggle-button-group-icon" aria-hidden="true">
+        <svg lucideX></svg>
+      </span>
+    }
+    <span class="label">{{ option.label }}</span>
+  </button>
 }

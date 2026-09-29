@@ -85,6 +85,10 @@ $series-tokens: (
   }
 }
 
+:host {
+  display: block;
+}
+
 /*
  * Su schermi stretti il grafico scorre invece di rimpicciolirsi: schiacciato in
  * 270 pixel le etichette degli assi diventerebbero illeggibili.
@@ -94,28 +98,10 @@ $series-tokens: (
   padding-bottom: var(--space-2);
 }
 
-/*
- * Il `max-width` è l'unico punto in cui il grafico non segue la pagina, e non
- * è una preferenza: l'SVG ha un `viewBox` fisso e `width: 100%`, quindi scala
- * uniformemente — testo degli assi compreso. Il corpo reso è
- * `15px × larghezza / 760`: a 1188px vale 23,4px, appena sotto il tetto di
- * 25px che DESIGN_SYSTEM.md §4 impone a qualunque numerale. Senza tetto, su un
- * monitor da 2560 la stessa etichetta arriverebbe a 38px e il grafico a 660 di
- * altezza.
- *
- * 74rem sono i 1188px che il grafico già occupava quando `.content` aveva un
- * `max-width` di 100rem: togliendo quello, questa riga tiene il grafico della
- * dimensione di prima mentre tabelle, KPI e pannelli si allargano.
- *
- * La forma durevole è far seguire `VIEW.width` alla larghezza reale del
- * contenitore, così una unità di `viewBox` vale un pixel e il testo resta a
- * 15px a qualunque larghezza. Richiede di misurare il contenitore, quindi non
- * è una riga di CSS.
- */
 .plot {
   position: relative;
   min-width: 30rem;
-  max-width: 74rem;
+  width: 100%;
 
   svg {
     display: block;
@@ -148,10 +134,11 @@ $series-tokens: (
  * dichiara alcun `color`, quindi senza `fill` non avrebbero colore affatto).
  */
 .tick {
-  /* Un numerale finanziario: stessa famiglia e stessa dimensione della cifra in tabella. */
+  /* Le tacche sono riferimenti secondari, più compatte dei valori finali. */
   fill: var(--color-text-muted);
   @include typography.text('financial-row');
   text-anchor: end;
+  font-size: 0.8rem;
 }
 
 .time {

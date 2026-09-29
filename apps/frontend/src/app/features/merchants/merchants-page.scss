@@ -82,25 +82,7 @@ app-search-input.search {
     width: 38%;
   }
 
-  /*
-   * Le due celle modificabili in linea (rinomina, categoria) restano a 4px
-   * invece dei 6px di `--radius-control`. Non è un letterale dimenticato:
-   * allinearlo al token cambierebbe l'aspetto di una modifica in linea che
-   * oggi funziona, cosa che questa migrazione non deve fare.
-   *
-   * `frontend-shared-components-proposal.md` §8 inventaria proprio questa
-   * pagina (insieme a `transactions-table`) come divergenza voluta: qui la
-   * copertura del documento è reale, non per coerenza con altre celle come
-   * in Categorie.
-   *
-   * Non si usa `--radius-badge`, che pure vale 4px: un token che si chiama
-   * «badge» su un controllo di modulo direbbe al prossimo lettore una cosa
-   * falsa sul perché quel valore è quello.
-   *
-   * Il marcatore `ds-exception` sulle due righe le dichiara al gate del
-   * design system, che le stampa a ogni esecuzione invece di contarle come
-   * fallimenti.
-   */
+  /* Il campo rinomina inline conserva il raggio legacy di 4px, distinto dal token del controllo. */
   .name input {
     font: inherit;
     width: 100%;
@@ -126,16 +108,6 @@ app-search-input.search {
     display: block;
     padding: 0 var(--space-3);
     @include typography.text('caption');
-  }
-
-  .category select {
-    font: inherit;
-    max-width: 12rem;
-    padding: var(--space-2) var(--space-3);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: 4px; // ds-exception: §8, stessa di .name input sopra
-    background: var(--color-surface);
-    color: var(--color-text-primary);
   }
 
   .numeric {

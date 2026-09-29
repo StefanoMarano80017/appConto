@@ -1,0 +1,20 @@
+@use '../styles/typography';
+
+.range {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+
+  label {
+    @include typography.text('secondary');
+
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  input {
+    min-width: 0;
+  }
+}

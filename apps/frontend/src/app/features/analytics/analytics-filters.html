@@ -11,31 +11,14 @@
 
   <app-filter-group label="Periodo" [initiallyOpen]="true">
     <svg icon lucideCalendarDays></svg>
-    <app-choice-group
-      [options]="presets"
-      [value]="store.preset()"
-      ariaLabel="Periodo"
-      (selected)="store.selectPreset($event)"
+    <app-period-filter
+      [preset]="store.preset()"
+      [from]="store.dateRange().from"
+      [to]="store.dateRange().to"
+      (presetSelected)="store.selectPreset($event)"
+      (fromChange)="store.setCustomRange($event, store.dateRange().to)"
+      (toChange)="store.setCustomRange(store.dateRange().from, $event)"
     />
-    <div class="custom">
-      <label>
-        <span>Dal</span>
-        <input
-          type="date"
-          [value]="store.dateRange().from ?? ''"
-          (change)="onFromChange($any($event.target).value)"
-        />
-      </label>
-      <label>
-        <span>Al</span>
-        <input
-          type="date"
-          [value]="store.dateRange().to ?? ''"
-          (change)="onToChange($any($event.target).value)"
-        />
-      </label>
-    </div>
-    <p class="selected">{{ store.selectedPeriodLabel() }}</p>
   </app-filter-group>
 
   <app-filter-group
@@ -72,22 +55,16 @@
     [initiallyOpen]="store.filters().merchantIds.length > 0"
   >
     <svg icon lucideStore></svg>
-    <app-search-input
-      [value]="merchantSearch()"
-      placeholder="Cerca un merchant…"
-      ariaLabel="Cerca un merchant"
-      (valueChange)="merchantSearch.set($event)"
+    <app-toggle-list-group
+      [options]="merchants()"
+      [value]="store.filters().merchantIds"
+      ariaLabel="Merchant"
+      searchPlaceholder="Cerca un merchant…"
+      searchAriaLabel="Cerca un merchant"
+      noResultsMessage="Nessun merchant corrisponde alla ricerca."
+      [maxOptions]="suggestedMerchantsLimit"
+      (toggled)="store.toggleMerchant($event)"
     />
-    @if (merchantOptions().length === 0) {
-      <p class="message message--hint">Nessun merchant corrisponde alla ricerca.</p>
-    } @else {
-      <app-toggle-button-group
-        [options]="merchantOptions()"
-        [value]="store.filters().merchantIds"
-        ariaLabel="Merchant"
-        (toggled)="store.toggleMerchant($event)"
-      />
-    }
   </app-filter-group>
 
   <app-filter-group
@@ -112,4 +89,5 @@
       (cleared)="store.resetFilters()"
     />
   }
+
 </app-panel>

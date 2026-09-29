@@ -32,6 +32,7 @@ button {
   @include typography.text('body');
   flex: 1 1 0%;
   min-width: 0;
+  position: relative;
   padding: var(--space-3) var(--space-4);
   border: none;
   border-radius: calc(var(--radius-control) - 2px);
@@ -39,6 +40,11 @@ button {
   color: var(--color-text-muted);
   text-align: center;
   cursor: pointer;
+}
+
+button:focus {
+  outline: none;
+  background: transparent;
 }
 
 button:hover:not(.active) {
@@ -49,6 +55,20 @@ button.active {
   background: var(--color-surface-elevated);
   color: var(--color-text-primary);
   font-weight: 600;
+}
+
+button.active::after {
+  position: absolute;
+  right: 0;
+  bottom: var(--space-1);
+  left: 0;
+  width: 2rem;
+  height: 2px;
+  margin-inline: auto;
+  border-radius: 999px;
+  background: var(--color-primary);
+  content: '';
+  pointer-events: none;
 }
 
 button:focus-visible {

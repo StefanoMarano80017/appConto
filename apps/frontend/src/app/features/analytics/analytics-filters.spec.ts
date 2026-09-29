@@ -60,6 +60,85 @@ describe('AnalyticsFilters', () => {
     expect(host().querySelector('.selected')?.textContent?.trim()).toBe('Quest\'anno');
   });
 
+  it('tronca il nome merchant visibile conservando nome completo e nome accessibile', async () => {
+    const label = 'MERCANTE CON UNA DESCRIZIONE MOLTO LUNGA PER ESSERE TRONCATA';
+    fixture.componentRef.setInput('merchants', [
+      {
+        id: 'merchant-long',
+        name: label,
+        displayName: null,
+        label,
+        normalizedName: label.toLowerCase(),
+        category: null,
+        transactionCount: 0,
+        totalSpent: 0,
+        lastTransactionDate: null,
+      },
+    ]);
+    await fixture.whenStable();
+
+    const visibleLabel = host().querySelector<HTMLElement>('app-toggle-list-group .label');
+    const checkbox = host().querySelector<HTMLInputElement>(
+      'app-toggle-list-group input[type="checkbox"]',
+    );
+
+    expect(visibleLabel?.textContent).toBe(`${Array.from(label).slice(0, 22).join('')}...`);
+    expect(visibleLabel?.getAttribute('title')).toBe(label);
+    expect(checkbox?.getAttribute('aria-label')).toBe(label);
+  });
+
+  it('la ricerca merchant filtra tutte le opzioni prima di applicare il limite visibile', async () => {
+    const merchants = Array.from({ length: 8 }, (_, index) => {
+      const label = `Merchant ${index + 1}`;
+      return {
+        id: `merchant-${index + 1}`,
+        name: label,
+        displayName: null,
+        label,
+        normalizedName: label.toLowerCase(),
+        category: null,
+        transactionCount: 0,
+        totalSpent: 0,
+        lastTransactionDate: null,
+      };
+    });
+    const lastMerchant = {
+      id: 'merchant-last',
+      name: 'Merchant da cercare',
+      displayName: null,
+      label: 'Merchant da cercare',
+      normalizedName: 'merchant da cercare',
+      category: null,
+      transactionCount: 0,
+      totalSpent: 0,
+      lastTransactionDate: null,
+    };
+    fixture.componentRef.setInput('merchants', [...merchants, lastMerchant]);
+    await fixture.whenStable();
+
+    expect(
+      host().querySelector('app-toggle-list-group app-search-input .search.pill'),
+    ).not.toBeNull();
+
+    const search = host().querySelector<HTMLInputElement>(
+      'app-toggle-list-group input[type="search"]',
+    );
+    expect(host().querySelectorAll('app-toggle-list-group .option').length).toBe(8);
+
+    if (search === null) {
+      throw new Error('campo di ricerca merchant non trovato');
+    }
+    search.value = 'cercare';
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+
+    expect(
+      [...host().querySelectorAll('app-toggle-list-group .option .label')].map((label) =>
+        label.textContent?.trim(),
+      ),
+    ).toEqual(['Merchant da cercare']);
+  });
+
   it('il tasto azzera riporta i criteri a zero, senza far sparire l\'intestazione', async () => {
     store.toggleCategory('cat-1');
     await fixture.whenStable();

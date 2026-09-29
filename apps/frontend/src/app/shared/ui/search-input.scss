@@ -75,6 +75,25 @@
      */
     box-shadow: none;
   }
+
+  &.pill {
+    padding: var(--space-2) var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+
+    input {
+      color: var(--text-muted);
+
+      &::placeholder {
+        color: inherit;
+        opacity: 1;
+      }
+    }
+
+    &:hover input {
+      color: var(--text);
+    }
+  }
 }
 
 .icon {

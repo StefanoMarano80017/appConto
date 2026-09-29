@@ -1,0 +1,43 @@
+<span
+  class="picker"
+  [class.disabled]="disabled()"
+  [class.selection-made]="selectionMade()"
+>
+  @if (selected()?.icon; as icon) {
+    @switch (icon) {
+      @case ('trending-down') {
+        <svg class="leading-icon" aria-hidden="true" lucideTrendingDown></svg>
+      }
+      @case ('trending-up') {
+        <svg class="leading-icon" aria-hidden="true" lucideTrendingUp></svg>
+      }
+      @case ('banknote') {
+        <svg class="leading-icon" aria-hidden="true" lucideBanknote></svg>
+      }
+      @case ('hand-coins') {
+        <svg class="leading-icon" aria-hidden="true" lucideHandCoins></svg>
+      }
+      @case ('arrow-left-right') {
+        <svg class="leading-icon" aria-hidden="true" lucideArrowLeftRight></svg>
+      }
+      @case ('ellipsis') {
+        <svg class="leading-icon" aria-hidden="true" lucideEllipsis></svg>
+      }
+    }
+  } @else {
+    <app-color-marker [color]="selected()?.color" />
+  }
+  <span class="name" [title]="selected()?.name ?? '—'">{{ selected()?.name ?? '—' }}</span>
+  <svg class="chevron" aria-hidden="true" lucideChevronDown></svg>
+  <select
+    [disabled]="disabled()"
+    [attr.aria-label]="ariaLabel()"
+    (change)="change($event)"
+    (blur)="selectionMade.set(false)"
+  >
+    <option value="" [selected]="value() === null">—</option>
+    @for (option of options(); track option.id) {
+      <option [value]="option.id" [selected]="option.id === value()">{{ option.name }}</option>
+    }
+  </select>
+</span>

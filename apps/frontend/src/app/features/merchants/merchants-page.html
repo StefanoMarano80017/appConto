@@ -95,22 +95,13 @@
               </td>
 
               <td class="category">
-                <app-color-marker [color]="merchant.category?.color" />
-
-                <select
-                  [ngModel]="merchant.category?.id ?? ''"
-                  (ngModelChange)="changeCategory(merchant, $event)"
+                <app-visual-select
+                  [options]="categories()"
+                  [value]="merchant.category?.id ?? null"
                   [disabled]="savingId() === merchant.id"
-                  [attr.aria-label]="'Categoria di ' + merchant.label"
-                >
-                  <option value="">—</option>
-
-                  @for (category of categories(); track category.id) {
-                    <option [value]="category.id">
-                      {{ category.name }}
-                    </option>
-                  }
-                </select>
+                  [ariaLabel]="'Categoria di ' + merchant.label"
+                  (valueChange)="changeCategory(merchant, $event)"
+                />
               </td>
 
               <td class="numeric">{{ merchant.transactionCount }}</td>

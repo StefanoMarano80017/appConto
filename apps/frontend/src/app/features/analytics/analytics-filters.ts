@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import {
   LucideArrowUpDown,
   LucideCalendarDays,
@@ -14,16 +14,16 @@ import {
   TRANSACTION_TYPE_PLURAL_LABELS
 } from '../transactions/transaction-type';
 import { ClassificationFilter } from './analytics.model';
-import { PERIOD_PRESETS } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Badge } from '../../shared/ui/badge';
 import { ChoiceGroup } from '../../shared/ui/choice-group';
 import { FilterChips } from '../../shared/ui/filter-chips';
 import { FilterGroup } from '../../shared/ui/filter-group';
-import { SearchInput } from '../../shared/ui/search-input';
+import { PeriodFilter } from '../../shared/ui/period-filter';
 import { ToggleButtonGroup } from '../../shared/ui/toggle-button-group';
 import { AnalyticsStore } from './analytics.store';
+import { ToggleListGroup } from '../../shared/ui/toggle-list-group';
 
 /** Quanti merchant proporre alla volta: l'elenco completo è quasi sempre lungo. */
 const SUGGESTED_MERCHANTS = 8;
@@ -61,9 +61,10 @@ interface ActiveFilter {
     LucideStore,
     LucideTag,
     Panel,
-    SearchInput,
+    PeriodFilter,
     SectionHeader,
-    ToggleButtonGroup
+    ToggleButtonGroup,
+    ToggleListGroup
   ],
   templateUrl: './analytics-filters.html',
   styleUrl: './analytics-filters.scss'
@@ -74,11 +75,6 @@ export class AnalyticsFilters {
 
   protected readonly store = inject(AnalyticsStore);
 
-  protected readonly presets = PERIOD_PRESETS.map((preset) => ({
-    id: preset.id,
-    label: preset.shortLabel,
-    description: preset.label
-  }));
   protected readonly classifications = CLASSIFICATIONS;
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_PLURAL_LABELS;
@@ -87,25 +83,10 @@ export class AnalyticsFilters {
     label: TRANSACTION_TYPE_PLURAL_LABELS[type]
   }));
 
-  protected readonly merchantSearch = signal('');
-
-  /** I merchant proposti: quelli cercati, altrimenti quelli su cui si è speso di più. */
-  protected readonly suggestedMerchants = computed(() => {
-    const search = this.merchantSearch().trim().toLowerCase();
-    const merchants =
-      search === ''
-        ? this.merchants()
-        : this.merchants().filter((merchant) => merchant.label.toLowerCase().includes(search));
-
-    return merchants.slice(0, SUGGESTED_MERCHANTS);
-  });
+  protected readonly suggestedMerchantsLimit = SUGGESTED_MERCHANTS;
 
   protected readonly categoryOptions = computed(() =>
     this.categories().map((category) => ({ id: category.id, label: category.name }))
-  );
-
-  protected readonly merchantOptions = computed(() =>
-    this.suggestedMerchants().map((merchant) => ({ id: merchant.id, label: merchant.label }))
   );
 
   /** I criteri attivi, con i nomi risolti: un identificativo non dice nulla a video. */
@@ -141,14 +122,6 @@ export class AnalyticsFilters {
           ])
     ];
   });
-
-  protected onFromChange(value: string): void {
-    this.store.setCustomRange(value, this.store.dateRange().to);
-  }
-
-  protected onToChange(value: string): void {
-    this.store.setCustomRange(this.store.dateRange().from, value);
-  }
 
   protected removeFilter(key: string): void {
     this.activeFilters().find((filter) => filter.key === key)?.remove();

@@ -162,7 +162,12 @@ export class AnalyticsTimeline {
     SERIES.map((definition) => ({ ...definition, visible: !this.hidden().has(definition.key) }))
   );
 
-  private readonly visibleSeries = computed(() => this.series().filter((s) => s.visible));
+  private readonly visibleSeries = computed(() =>
+    this.series().filter(
+      (series) =>
+        series.visible && this.buckets().some((bucket) => series.value(bucket) !== 0)
+    )
+  );
 
   protected readonly scale = computed(() =>
     timelineScale(
