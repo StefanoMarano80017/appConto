@@ -9,9 +9,9 @@ ol {
   li {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
-    padding: 0.4375rem 0;
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-5);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border);
     counter-increment: merchant;
   }
 
@@ -35,7 +35,7 @@ ol {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--color-primary);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -46,7 +46,7 @@ ol {
 }
 
 .link.disabled {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   cursor: default;
 }
 
@@ -63,11 +63,11 @@ ol {
 }
 
 .more {
-  margin-top: 0.875rem;
+  margin-top: var(--space-5);
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--color-primary);
   font: inherit;
   @include typography.text('body');
   cursor: pointer;

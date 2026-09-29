@@ -2,13 +2,13 @@
 
 .totals {
   display: flex;
-  gap: 2rem;
+  gap: var(--space-9);
 }
 
 .figure {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--space-1);
 
   .label {
     @include typography.text('label');
@@ -33,9 +33,9 @@ ul {
   li {
     display: flex;
     align-items: baseline;
-    gap: 0.75rem;
-    padding: 0.375rem 0;
-    border-bottom: 1px solid var(--border);
+    gap: var(--space-5);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--color-border);
   }
 
   li:last-child {
@@ -70,23 +70,23 @@ ul {
 }
 
 .note {
-  margin: 1rem 0 0;
+  margin: var(--space-6) 0 0;
   @include typography.text('caption');
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
   }
 }
 
 .explore {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
-  margin: 0 0 0.75rem;
+  gap: var(--space-7);
+  margin: 0 0 var(--space-5);
   @include typography.text('body');
 
   a {
-    color: var(--accent);
+    color: var(--color-primary);
     text-decoration: none;
   }
 
