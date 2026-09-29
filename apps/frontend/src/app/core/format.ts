@@ -32,6 +32,26 @@ export function typographicMinus(text: string): string {
   return text.replace('-', '−');
 }
 
+/**
+ * Una percentuale di variazione col segno esplicito: `+25%`, `−20%`, `0%`.
+ *
+ * Il `+` davanti ai positivi non è decorativo: queste percentuali dicono
+ * «quanto è salita o scesa», e senza il segno un `25%` si legge come un
+ * valore assoluto.
+ *
+ * Sta qui, e non nei componenti, perché i chiamanti sono due — il chip di
+ * `StatCardGrid` e la fascia di `MonthComparison` — e fino a poco fa erano
+ * due copie identiche della stessa riga, con un commento in una che
+ * dichiarava l'equivalenza con l'altra. Una modifica a una sola delle due le
+ * ha fatte divergere: sulla stessa pagina della dashboard i due chip
+ * mostravano glifi di meno diversi per la stessa specie di dato. Il commento
+ * che prometteva l'equivalenza non l'ha impedito, perché un commento non è
+ * un vincolo.
+ */
+export function signedPercent(value: number): string {
+  return `${value > 0 ? '+' : ''}${typographicMinus(formatPercent(value))}`;
+}
+
 /** Una percentuale già calcolata: `38.1` diventa `38,1%`. */
 export function formatPercent(value: number): string {
   return `${percentFormatter.format(value)}%`;

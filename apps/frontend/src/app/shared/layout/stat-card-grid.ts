@@ -7,7 +7,7 @@ import {
   LucideTrendingUp,
   LucideWallet
 } from '@lucide/angular';
-import { formatPercent } from '../../core/format';
+import { signedPercent } from '../../core/format';
 import { Amount, AmountTone } from '../ui/amount';
 
 /**
@@ -100,8 +100,12 @@ export type StatCardItem =
 export class StatCardGrid {
   readonly items = input.required<readonly StatCardItem[]>();
 
-  /** Con il segno esplicito, come `signedPercent` in month-comparison.ts. */
-  protected signedPercent(value: number): string {
-    return `${value > 0 ? '+' : ''}${formatPercent(value)}`;
-  }
+  /*
+   * Esposta al template, non reimplementata: la formattazione vive in
+   * `core/format.ts`, una volta sola. Prima stava qui e in `month-comparison`
+   * in due copie identiche, con un commento in ciascuna che rimandava
+   * all'altra — e una modifica a una sola delle due le ha fatte divergere
+   * davvero, mostrando due glifi di meno diversi sulla stessa pagina.
+   */
+  protected readonly signedPercent = signedPercent;
 }

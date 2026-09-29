@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { formatAmount, formatMonth, formatPercent, typographicMinus } from '../../core/format';
+import { formatAmount, formatMonth, signedPercent, typographicMinus } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { Amount } from '../../shared/ui/amount';
 import { MonthComparison } from './dashboard.model';
@@ -40,8 +40,9 @@ export class MonthComparisonSection {
     return `${amount > 0 ? '+' : ''}${typographicMinus(formatAmount(amount))}`;
   }
 
-  /** Stessa convenzione di segno di `signed()`: sta fra parentesi accanto a lei. */
-  protected signedPercent(value: number): string {
-    return `${value > 0 ? '+' : ''}${typographicMinus(formatPercent(value))}`;
-  }
+  /**
+   * Stessa convenzione di segno di `signed()`: sta fra parentesi accanto a
+   * lei. Esposta al template, non reimplementata — v. `core/format.ts`.
+   */
+  protected readonly signedPercent = signedPercent;
 }
