@@ -8,7 +8,7 @@
     </app-section-header>
 
     @if (error(); as message) {
-      <p class="message error">{{ message }}</p>
+      <p class="message message--error">{{ message }}</p>
     }
 
     <form class="create-form" (submit)="create($event)">
@@ -33,7 +33,7 @@
     </form>
 
     @if (createError(); as message) {
-      <p class="message error">{{ message }}</p>
+      <p class="message message--error">{{ message }}</p>
     }
 
     @if (loading()) {

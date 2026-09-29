@@ -4,8 +4,8 @@
  * Foglio condiviso con `loan-create-page` (`styleUrl` dichiarato lì): ogni
  * selettore che tocca `.breadcrumb`, `.origin` (e i suoi figli `.date`,
  * `.description`, `.type`, `.amount`), `.loan-form` (base, `input`, `select`,
- * `[aria-invalid]`, `.actions`) o `.message`/`.message.error` serve entrambe
- * le pagine, non solo questa.
+ * `[aria-invalid]`, `.actions`) o `.message`/`.message.message--error` serve
+ * entrambe le pagine, non solo questa.
  */
 
 .breadcrumb {
@@ -224,9 +224,13 @@ button.danger {
   color: var(--color-text-muted);
 }
 
-.message.error {
+/*
+ * Il colore lo porta l'utility globale `.message--error`; qui resta solo lo
+ * spazio sopra, che non è una proprietà dell'errore ma del layout di questo
+ * form (separarlo dal resto quando compare).
+ */
+.message.message--error {
   margin-top: var(--space-6);
-  color: var(--color-error);
 }
 
 .message.warning {

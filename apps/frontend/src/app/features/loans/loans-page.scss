@@ -85,10 +85,6 @@ app-search-input {
   color: var(--color-text-muted);
 }
 
-.message.error {
-  color: var(--color-error);
-}
-
 .hint {
   margin: var(--space-4) 0 0;
   @include typography.text('secondary');

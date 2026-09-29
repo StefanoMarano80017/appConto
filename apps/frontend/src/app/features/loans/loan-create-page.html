@@ -6,7 +6,7 @@
   <app-panel>
     <!-- Il titolo "Crea prestito" è già nella fascia superiore della shell. -->
     @if (error(); as message) {
-      <p class="message error">{{ message }}</p>
+      <p class="message message--error">{{ message }}</p>
     }
 
     @if (loading()) {
@@ -31,7 +31,7 @@
       }
 
       @if (wrongType()) {
-        <p class="message error">
+        <p class="message message--error">
           Questo movimento è di tipo «{{ typeLabels[transaction.type] }}». Un prestito può nascere
           solo da un movimento di tipo «Prestito»: correggi prima la natura del movimento
           nell'<a routerLink="/transactions">elenco dei movimenti</a>.

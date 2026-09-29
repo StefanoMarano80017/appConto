@@ -21,10 +21,6 @@
   margin-bottom: var(--space-4);
 }
 
-.message.error {
-  color: var(--color-error);
-}
-
 /*
  * Un avviso, non un errore e tantomeno una spesa. `--color-warning` esiste già
  * ed è quello che questa stessa classe usa altrove: la utility globale
