@@ -1,3 +1,4 @@
+@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
 .toolbar {
@@ -57,20 +58,27 @@ app-search-input.search {
   color: var(--color-text-muted);
 }
 
-.merchants {
-  width: 100%;
-  border-collapse: collapse;
+/*
+ * L'involucro condiviso delle tabelle (v. shared/styles/_mixins.scss).
+ *
+ * `overflow-x: auto` arriva da lì, ed è il punto: cinque colonne a 900px con
+ * la barra laterale ancora presente lasciano poco più di 600px, e una tabella
+ * che non ci sta deve scorrere dentro il proprio riquadro — mai spingere la
+ * pagina.
+ */
+.scroller {
+  @include mixins.data-table;
+}
 
+.merchants {
+  /*
+   * In cima e non al centro: la cella del nome può avere due righe (il nome
+   * corrente e quello originale della banca), e le altre celle devono
+   * allinearsi alla prima, non fluttuare a metà.
+   */
   th,
   td {
-    text-align: left;
-    padding: var(--space-4) var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-border);
     vertical-align: top;
-  }
-
-  th {
-    @include typography.text('label');
   }
 
   tr.saving {
@@ -110,9 +118,8 @@ app-search-input.search {
     @include typography.text('caption');
   }
 
+  /* Il mixin allinea e non manda a capo; le cifre qui vogliono anche il monospaziato tabellare. */
   .numeric {
-    text-align: right;
-    white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
 

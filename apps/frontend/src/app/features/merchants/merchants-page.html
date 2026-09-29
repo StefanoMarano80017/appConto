@@ -65,58 +65,60 @@
     </app-panel-content>
 
     @if (!loading() && merchants().length > 0 && visible().length > 0) {
-      <table class="merchants">
-        <thead>
-          <tr>
-            <th scope="col">Nome</th>
-            <th scope="col">Categoria</th>
-            <th scope="col" class="numeric">Transazioni</th>
-            <th scope="col" class="numeric">Totale speso</th>
-            <th scope="col">Ultima transazione</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @for (merchant of visible(); track merchant.id) {
-            <tr [class.saving]="savingId() === merchant.id">
-              <td class="name">
-                <input
-                  type="text"
-                  [value]="merchant.displayName ?? ''"
-                  [placeholder]="merchant.name"
-                  [disabled]="savingId() === merchant.id"
-                  [attr.aria-label]="'Nome di ' + merchant.name"
-                  (change)="rename(merchant, $any($event.target).value)"
-                />
-
-                @if (merchant.displayName !== null) {
-                  <span class="original">{{ merchant.name }}</span>
-                }
-              </td>
-
-              <td class="category">
-                <app-visual-select
-                  [options]="categories()"
-                  [value]="merchant.category?.id ?? null"
-                  [disabled]="savingId() === merchant.id"
-                  [ariaLabel]="'Categoria di ' + merchant.label"
-                  (valueChange)="changeCategory(merchant, $event)"
-                />
-              </td>
-
-              <td class="numeric">{{ merchant.transactionCount }}</td>
-              <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
-              <td class="date">
-                {{
-                  merchant.lastTransactionDate
-                    ? formatBookingDate(merchant.lastTransactionDate)
-                    : '—'
-                }}
-              </td>
+      <div class="scroller">
+        <table class="merchants">
+          <thead>
+            <tr>
+              <th scope="col">Nome</th>
+              <th scope="col">Categoria</th>
+              <th scope="col" class="numeric">Transazioni</th>
+              <th scope="col" class="numeric">Totale speso</th>
+              <th scope="col">Ultima transazione</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+  
+          <tbody>
+            @for (merchant of visible(); track merchant.id) {
+              <tr [class.saving]="savingId() === merchant.id">
+                <td class="name">
+                  <input
+                    type="text"
+                    [value]="merchant.displayName ?? ''"
+                    [placeholder]="merchant.name"
+                    [disabled]="savingId() === merchant.id"
+                    [attr.aria-label]="'Nome di ' + merchant.name"
+                    (change)="rename(merchant, $any($event.target).value)"
+                  />
+  
+                  @if (merchant.displayName !== null) {
+                    <span class="original">{{ merchant.name }}</span>
+                  }
+                </td>
+  
+                <td class="category">
+                  <app-visual-select
+                    [options]="categories()"
+                    [value]="merchant.category?.id ?? null"
+                    [disabled]="savingId() === merchant.id"
+                    [ariaLabel]="'Categoria di ' + merchant.label"
+                    (valueChange)="changeCategory(merchant, $event)"
+                  />
+                </td>
+  
+                <td class="numeric">{{ merchant.transactionCount }}</td>
+                <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
+                <td class="date">
+                  {{
+                    merchant.lastTransactionDate
+                      ? formatBookingDate(merchant.lastTransactionDate)
+                      : '—'
+                  }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     }
   </app-panel>
 </app-page-layout>
