@@ -42,22 +42,45 @@ verifica() {
   fi
 }
 
+# Una riga di commento non è una dichiarazione. I cinque controlli sui valori la
+# escludono, perché i commenti di questo progetto **citano** di continuo i valori
+# e i nomi che stiamo togliendo — per documentare com'era prima, o perché una
+# scelta è stata fatta così. Senza questo filtro il gate resta rosso su prosa che
+# descrive il passato, e l'unico modo di farlo tacere sarebbe smettere di
+# spiegarsi nei commenti: il contrario di quello che serve.
+#
+# Il filtro guarda cosa viene dopo il `file:riga:` che grep antepone, e scarta le
+# righe che cominciano con `*`, `//` o `/*`. Una dichiarazione vera non può
+# cominciare così in nessuno dei linguaggi che il gate scandisce; un commento di
+# coda (`color: red; // nota`) resta invece controllato, come deve.
+senza_commenti() {
+  grep -vE ':[0-9]+:[[:space:]]*(\*|//|/\*)'
+}
+# I controlli girano in `bash -c`, che è una shell nuova: senza l'export la
+# funzione non esisterebbe là dentro.
+export -f senza_commenti
+
 # Un esadecimale è una dichiarazione di colore se non è citato. Citato significa
 # preceduto da apice singolo, doppio, backtick o parentesi: 'colore', "colore",
 # `colore`, (ripiego). Il controllo esclude questi casi per non catturare i
 # riferimenti ai colori (nelle fixture, nei commenti, nei valori di ripiego).
 # Non vede gli esadecimali dentro template string CSS (backtick js) — è un limite noto.
 verifica 'nessun esadecimale fuori dai primitivi' \
-  bash -c "grep -rnE '#[0-9a-fA-F]{3,8}' src --include=*.scss --include=*.ts | grep -v _primitives | grep -vE \"['(\\\"\\\`]#\""
+  bash -c "grep -rnE '#[0-9a-fA-F]{3,8}' src --include=*.scss --include=*.ts | grep -v _primitives | grep -vE \"['(\\\"\\\`]#\" | senza_commenti"
 
 verifica 'nessuna dimensione di carattere fuori dalla scala' \
-  bash -c "grep -rn 'font-size:' src --include=*.scss --include=*.ts | grep -v _typography"
+  bash -c "grep -rn 'font-size:' src --include=*.scss --include=*.ts | grep -v _typography | senza_commenti"
 
+# Le unità relative al carattere (`em`, `ch`, `ex`) sono escluse: un
+# `border-radius: 0.15em` non è un raggio della scala, è una proporzione che
+# cresce col testo intorno. Nessun token fisso può sostituirlo senza togliergli
+# la proprietà per cui è scritto così. `rem` invece resta controllato, perché è
+# una misura assoluta travestita: `[0-9.]+` non può consumare la `r`.
 verifica 'nessun raggio numerico fuori dai semantici' \
-  bash -c "grep -rnE 'border-radius: *[0-9]' src --include=*.scss --include=*.ts | grep -v _semantic"
+  bash -c "grep -rnE 'border-radius: *[0-9]' src --include=*.scss --include=*.ts | grep -v _semantic | grep -vE 'border-radius: *[0-9.]+(em|ch|ex)\b' | senza_commenti"
 
 verifica 'nessuna spaziatura letterale fuori dai semantici' \
-  bash -c "grep -rnE '(padding|margin|gap|row-gap|column-gap)(-(top|right|bottom|left))?: *[^v;]*[0-9](rem|px)' src --include=*.scss --include=*.ts | grep -vE '_semantic|: *0(rem|px)?;'"
+  bash -c "grep -rnE '(padding|margin|gap|row-gap|column-gap)(-(top|right|bottom|left))?: *[^v;]*[0-9](rem|px)' src --include=*.scss --include=*.ts | grep -vE '_semantic|: *0(rem|px)?;' | senza_commenti"
 
 verifica 'shared non conosce le feature' \
   bash -c "grep -rn 'features/' src/app/shared"
@@ -67,7 +90,7 @@ verifica 'shared non conosce le feature' \
 # --border-width, --text catturerebbe --text-primary e --text-secondary.
 # Questo vincolo discrimina i veri alias legacy dai nomi nuovi.
 verifica 'nessun alias legacy' \
-  bash -c "grep -rnE 'var\( *--(background|surface|border|text|text-muted|accent|on-accent|negative|positive|radius-panel|space-panel) *[,)]' src --include=*.scss --include=*.ts | grep -v _legacy-aliases"
+  bash -c "grep -rnE 'var\( *--(background|surface|border|text|text-muted|accent|on-accent|negative|positive|radius-panel|space-panel) *[,)]' src --include=*.scss --include=*.ts --include=*.html | grep -v _legacy-aliases | senza_commenti"
 
 verifica 'dominio intatto' \
   bash -c "git -C ../.. diff --name-only | grep -E '\.(model|api|store|query)\.ts\$|apps/backend'"
