@@ -15,6 +15,7 @@ import { TransactionsApi } from './transactions.api';
 import { VisualSelect } from '../../shared/ui/visual-select';
 import type { VisualSelectIcon, VisualSelectOption } from '../../shared/ui/visual-select';
 import { Amount } from '../../shared/ui/amount';
+import { SortableHeader } from '../../shared/ui/sortable-header';
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
 const COLUMNS: readonly { label: string; field: TransactionSortField | null; numeric: boolean }[] =
@@ -70,7 +71,7 @@ interface LoanCell {
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [RouterLink, Truncate, VisualSelect, Amount],
+  imports: [RouterLink, Truncate, VisualSelect, Amount, SortableHeader],
   templateUrl: './transactions-table.html',
   styleUrl: './transactions-table.scss',
 })
@@ -207,15 +208,6 @@ export class TransactionsTable implements OnInit {
 
     return selezionate > 0 && selezionate < righe.length;
   });
-
-  /** Il valore di `aria-sort` della colonna, per chi usa uno screen reader. */
-  protected ariaSort(field: TransactionSortField | null): 'ascending' | 'descending' | 'none' {
-    if (field === null || this.sortBy() !== field) {
-      return 'none';
-    }
-
-    return this.sortDirection() === 'asc' ? 'ascending' : 'descending';
-  }
 
   ngOnInit(): void {
     this.categoriesApi.list().subscribe({

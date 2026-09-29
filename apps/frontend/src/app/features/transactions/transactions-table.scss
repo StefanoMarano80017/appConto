@@ -1,3 +1,4 @@
+@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
 :host {
@@ -13,47 +14,26 @@
   color: var(--color-expense);
 }
 
-/* Su schermi stretti scorre la tabella, non la pagina. */
+/*
+ * L'involucro condiviso delle tabelle: bordi, spaziature, allineamento dei
+ * numeri e riga selezionata vengono da lì (v. shared/styles/_mixins.scss).
+ * Qui restano solo le celle, che è dove questa tabella è davvero diversa
+ * dalle altre.
+ *
+ * Su schermi stretti scorre la tabella, non la pagina.
+ */
 .scroller {
-  overflow-x: auto;
+  @include mixins.data-table;
+
+  /* Sette colonne sotto le 44rem diventano illeggibili: meglio scorrere. */
+  table {
+    min-width: 44rem;
+  }
 }
 
 .transactions {
-  width: 100%;
-  min-width: 44rem;
-  border-collapse: collapse;
-
   thead {
     border-top: var(--border-width) solid var(--color-border);
-  }
-
-  th,
-  td {
-    text-align: left;
-  }
-
-  /*
-   * Righe più arieggiate: più respiro verticale di prima, non solo un
-   * separatore diverso. L'intestazione resta più compatta della riga dati e
-   * usa il ruolo tipografico `label` (maiuscoletto, spaziato, muted) invece
-   * di un `font-size` letterale.
-   */
-  th {
-    @include typography.text('label');
-
-    padding: var(--space-4) var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-border);
-  }
-
-  /*
-   * Il separatore fra righe è sottile apposta: `--color-row-divider` esiste
-   * per questo, distinto da `--color-border` (usato invece per il bordo più
-   * marcato sotto l'intestazione). Non è un bordo pieno per cella: solo
-   * `border-bottom`, mai laterale.
-   */
-  td {
-    padding: var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-row-divider);
   }
 
   .date {
@@ -92,41 +72,6 @@
   .category {
     white-space: nowrap;
   }
-
-  /*
-   * Allineamento soltanto: segno, mono e colore del tono sono di
-   * `<app-amount>` (v. transactions-table.html), non di questa cella. Prima
-   * la formattazione e il colore erano fatti a mano qui — la stessa logica
-   * che il design system vieta di ricostruire fuori da `Amount`.
-   */
-  .numeric {
-    text-align: right;
-    white-space: nowrap;
-  }
-}
-
-.sort {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-transform: inherit;
-  letter-spacing: inherit;
-  cursor: pointer;
-}
-
-.sort:hover {
-  color: var(--color-text-primary);
-}
-
-th.numeric .sort {
-  float: right;
-}
-
-.arrow {
-  margin-left: 0.25rem;
-  color: var(--color-primary);
 }
 
 /* La colonna dei prestiti: un'azione, non un dato del movimento. */
@@ -212,16 +157,6 @@ th.numeric .sort {
     padding-right: 0;
     text-align: center;
   }
-
-  /*
-   * La riga selezionata si distingue da sola.
-   *
-   * Non solo dalla casella spuntata: con venticinque righe a schermo, capire
-   * cosa sta per essere eliminato deve costare un colpo d'occhio.
-   */
-  tr.selected {
-    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  }
 }
 
 /*
@@ -231,10 +166,6 @@ th.numeric .sort {
 .transactions tfoot {
   tr {
     border-top: var(--border-width) solid var(--color-border-strong);
-  }
-
-  td {
-    padding: var(--space-5);
   }
 
   .total-label {

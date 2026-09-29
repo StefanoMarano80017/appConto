@@ -19,24 +19,18 @@
           </th>
         }
         @for (column of columns(); track column.label) {
-          <th
-            scope="col"
-            [class.numeric]="column.numeric"
-            [attr.aria-sort]="ariaSort(column.field)"
-          >
-            @if (sortBy() !== null && column.field; as field) {
-              <button type="button" class="sort" (click)="sortSelected.emit(field)">
-                {{ column.label }}
-                @if (sortBy() === field) {
-                  <span class="arrow" aria-hidden="true">{{
-                    sortDirection() === 'asc' ? '↑' : '↓'
-                  }}</span>
-                }
-              </button>
-            } @else {
-              {{ column.label }}
-            }
-          </th>
+          @if (sortBy() !== null && column.field; as field) {
+            <th
+              app-sortable-header
+              [class.numeric]="column.numeric"
+              [label]="column.label"
+              [active]="sortBy() === field"
+              [direction]="sortDirection()"
+              (sorted)="sortSelected.emit(field)"
+            ></th>
+          } @else {
+            <th scope="col" [class.numeric]="column.numeric">{{ column.label }}</th>
+          }
         }
       </tr>
     </thead>

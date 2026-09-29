@@ -121,6 +121,51 @@ describe('TransactionsTable', () => {
     expect(cella?.textContent).toContain('123.456,78');
   });
 
+  /*
+   * Le intestazioni ordinabili sono `<app-sortable-header>` (Task 6, Step 3).
+   * Il componente dichiara `aria-sort` da sé, e la colonna non ordinabile
+   * adesso tace invece di dire `none`: i tre test che seguono fissano quel
+   * cambio, perché è l'unica parte dell'adozione che si vede solo con uno
+   * screen reader e che nessun altro test guardava.
+   */
+  const conOrdinamento = async (): Promise<void> => {
+    fixture.componentRef.setInput('sortBy', 'amount');
+    fixture.componentRef.setInput('sortDirection', 'asc');
+    await render([transaction('1', -300)]);
+  };
+
+  it('dichiara aria-sort solo sulle colonne che si possono davvero ordinare', async () => {
+    await conOrdinamento();
+
+    const intestazioni = [...host().querySelectorAll('thead th')];
+
+    expect(intestazioni.length).toBe(6);
+
+    // «Descrizione» è l'unica senza `field` (v. COLUMNS): dichiarare anche lì
+    // `aria-sort="none"` direbbe a uno screen reader che la colonna è
+    // ordinabile e che semplicemente non lo è adesso. Non lo è affatto.
+    const mute = intestazioni.filter((th) => !th.hasAttribute('aria-sort'));
+
+    expect(mute.map((th) => th.textContent?.trim())).toEqual(['Descrizione']);
+  });
+
+  it('la colonna ordinata dichiara la direzione, non solo che è attiva', async () => {
+    await conOrdinamento();
+
+    expect(host().querySelector('thead th.numeric')?.getAttribute('aria-sort')).toBe(
+      'ascending'
+    );
+  });
+
+  // Dove la tabella è un riepilogo e non un elenco su cui agire — la
+  // dashboard — `sortBy` è `null` e nessuna intestazione si clicca.
+  it('senza ordinamento nessuna intestazione è un pulsante né si dichiara ordinabile', async () => {
+    await render([transaction('1', -300)]);
+
+    expect(host().querySelector('thead .sort')).toBeNull();
+    expect(host().querySelector('thead th[aria-sort]')).toBeNull();
+  });
+
   it('un nome di merchant lunghissimo resta intero e non fa sparire la cella dell’importo', async () => {
     const nome = 'Supermercato Cooperativo del Lungo Nome Che Non Finisce Mai';
     await render([conMerchant('1', -300, nome)]);
