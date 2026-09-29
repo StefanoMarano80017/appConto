@@ -49,12 +49,28 @@ verifica() {
 # descrive il passato, e l'unico modo di farlo tacere sarebbe smettere di
 # spiegarsi nei commenti: il contrario di quello che serve.
 #
-# Il filtro guarda cosa viene dopo il `file:riga:` che grep antepone, e scarta le
-# righe che cominciano con `*`, `//` o `/*`. Una dichiarazione vera non può
-# cominciare così in nessuno dei linguaggi che il gate scandisce; un commento di
-# coda (`color: red; // nota`) resta invece controllato, come deve.
+# Il filtro guarda cosa viene dopo il `file:riga:` che grep antepone. Un commento
+# di coda (`color: red; // nota`) resta controllato, come deve: si scartano solo
+# le righe che **iniziano** come un commento.
+#
+# La prima versione scartava ogni riga che iniziasse con `*`, sulla premessa che
+# nessuna dichiarazione possa cominciare così. **La premessa era falsa**, e una
+# review l'ha dimostrata con una prova: `* { padding: 8px; }` è il selettore
+# universale, ed è CSS legittimo — spariva da tutti e cinque i controlli. Il
+# difetto non era teorico: `* {` esiste già in `styles.scss`, oggi innocuo solo
+# perché il valore sta sulla riga dopo.
+#
+# Il discriminante giusto è cosa segue l'asterisco: in una riga di commento lo
+# segue del testo, nel selettore universale lo segue una graffa. Quindi si scarta
+# `* qualcosa` e si tiene `* {` e `*{`.
+#
+# Sugli `.html` il filtro è più largo del necessario — l'HTML commenta con
+# `<!--`, non con `//` o `/*` — ma una riga di testo di una pagina che cominci
+# con quei caratteri e contenga un alias è prosa, non una dichiarazione. Lo
+# dichiaro invece di sostenere, come prima, che il caso non esista.
 senza_commenti() {
-  grep -vE ':[0-9]+:[[:space:]]*(\*|//|/\*)'
+  grep -vE ':[0-9]+:[[:space:]]*(//|/\*)' \
+    | grep -vE ':[0-9]+:[[:space:]]*\*[[:space:]]*[^{[:space:]]'
 }
 # I controlli girano in `bash -c`, che è una shell nuova: senza l'export la
 # funzione non esisterebbe là dentro.
@@ -72,12 +88,16 @@ verifica 'nessuna dimensione di carattere fuori dalla scala' \
   bash -c "grep -rn 'font-size:' src --include=*.scss --include=*.ts | grep -v _typography | senza_commenti"
 
 # Le unità relative al carattere (`em`, `ch`, `ex`) sono escluse: un
+# Il `;` finale nel filtro non è decorativo: senza, una forma abbreviata come
+# `border-radius: 0.15em 6px 6px 0.15em` sarebbe sparita per intero, nascondendo
+# anche i due `6px` veri. Si esclude solo il caso in cui **tutto** il valore è
+# relativo al carattere.
 # `border-radius: 0.15em` non è un raggio della scala, è una proporzione che
 # cresce col testo intorno. Nessun token fisso può sostituirlo senza togliergli
 # la proprietà per cui è scritto così. `rem` invece resta controllato, perché è
 # una misura assoluta travestita: `[0-9.]+` non può consumare la `r`.
 verifica 'nessun raggio numerico fuori dai semantici' \
-  bash -c "grep -rnE 'border-radius: *[0-9]' src --include=*.scss --include=*.ts | grep -v _semantic | grep -vE 'border-radius: *[0-9.]+(em|ch|ex)\b' | senza_commenti"
+  bash -c "grep -rnE 'border-radius: *[0-9]' src --include=*.scss --include=*.ts | grep -v _semantic | grep -vE 'border-radius: *[0-9.]+(em|ch|ex) *;' | senza_commenti"
 
 verifica 'nessuna spaziatura letterale fuori dai semantici' \
   bash -c "grep -rnE '(padding|margin|gap|row-gap|column-gap)(-(top|right|bottom|left))?: *[^v;]*[0-9](rem|px)' src --include=*.scss --include=*.ts | grep -vE '_semantic|: *0(rem|px)?;' | senza_commenti"
