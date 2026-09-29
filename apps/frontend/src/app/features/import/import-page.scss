@@ -25,8 +25,16 @@
   color: var(--color-error);
 }
 
+/*
+ * Un avviso, non un errore e tantomeno una spesa. `--color-warning` esiste già
+ * ed è quello che questa stessa classe usa altrove: la utility globale
+ * `.message--warning` (`styles.scss`) e `loan-detail-page.scss`, che distingue
+ * riga per riga `.message.error` da `.message.warning`. Questa pagina era
+ * l'unica a dipingere un avviso col colore delle uscite, eredità dell'alias
+ * `--negative` che stava per entrambi.
+ */
 .message.warning {
-  color: var(--color-expense);
+  color: var(--color-warning);
 }
 
 .message.success {
@@ -118,8 +126,9 @@
     color: var(--color-income);
   }
 
+  /* Il conteggio delle righe scartate: stesso ragionamento di `.message.warning`. */
   dd.warning {
-    color: var(--color-expense);
+    color: var(--color-warning);
   }
 }
 
