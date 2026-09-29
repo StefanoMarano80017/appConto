@@ -10,13 +10,13 @@
 }
 
 .badge.negative {
-  background: color-mix(in srgb, var(--negative) 12%, transparent);
-  color: var(--negative);
+  background: color-mix(in srgb, var(--color-expense) 12%, transparent);
+  color: var(--color-expense);
 }
 
 .badge.positive {
-  background: color-mix(in srgb, var(--positive) 12%, transparent);
-  color: var(--positive);
+  background: color-mix(in srgb, var(--color-income) 12%, transparent);
+  color: var(--color-income);
 }
 
 .badge.neutral {

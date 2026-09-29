@@ -30,14 +30,14 @@
 
   margin-top: var(--space-5);
   padding: var(--space-3) var(--space-5);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--surface);
-  color: var(--text);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
 .retry:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
