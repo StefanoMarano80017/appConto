@@ -9,6 +9,7 @@ import { LoanLinks } from '../loans/loan.model';
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
 import { PageLayout } from '../../shared/layout/page-layout';
+import { Panel } from '../../shared/layout/panel';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import {
@@ -45,6 +46,7 @@ const SKELETON_ROWS = 8;
     EmptyState,
     ErrorRetry,
     PageLayout,
+    Panel,
     TransactionsPagination,
     TransactionsTable,
     TransactionsToolbar,

@@ -1,16 +1,18 @@
+@use '../../shared/styles/typography';
+
 .pagination {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-  padding: 1.1rem 1rem;
+  gap: var(--space-5) var(--space-8);
+  padding: var(--space-6);
 }
 
 .range {
   margin: 0;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -18,30 +20,29 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-2);
 }
 
 .page,
 .step {
-  padding: 0.3125rem 0.625rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text-muted);
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
   font: inherit;
-  font-size: 0.8125rem;
+  @include typography.text('caption');
   cursor: pointer;
 }
 
 .page:hover:not(.current),
 .step:hover:not(:disabled) {
-  color: var(--text);
+  color: var(--color-text-primary);
 }
 
 .page.current {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--surface);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
 }
 
 .step:disabled {
@@ -50,24 +51,24 @@
 }
 
 .gap {
-  padding: 0 0.25rem;
-  color: var(--text-muted);
+  padding: 0 var(--space-2);
+  color: var(--color-text-muted);
 }
 
 .size {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  gap: var(--space-4);
+  @include typography.text('secondary');
+  color: var(--color-text-muted);
 
   select {
-    padding: 0.25rem 0.375rem;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
+    padding: var(--space-2) var(--space-3);
+    border: var(--border-width) solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-surface);
     font: inherit;
-    font-size: 0.8125rem;
+    @include typography.text('caption');
+    color: var(--color-text-primary);
   }
 }

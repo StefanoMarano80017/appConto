@@ -10,13 +10,13 @@
   />
 
   @if (error(); as message) {
-    <section class="panel">
+    <app-panel [noPadding]="true">
       <app-error-retry [message]="message" (retry)="transactions.reload()" />
-    </section>
+    </app-panel>
   }
 
   @if (page(); as data) {
-    <section class="panel" [class.updating]="transactions.isLoading()">
+    <app-panel [noPadding]="true" [class.stale]="transactions.isLoading()">
       @if (data.items.length === 0) {
         <div class="empty">
           <app-empty-state
@@ -85,15 +85,15 @@
           (pageSizeSelected)="apply({ pageSize: $event })"
         />
       }
-    </section>
+    </app-panel>
   } @else if (transactions.isLoading()) {
-    <section class="panel" aria-busy="true">
+    <app-panel [noPadding]="true" aria-busy="true">
       <p class="message">Caricamento in corso…</p>
       <div class="skeleton">
         @for (row of skeletonRows; track $index) {
           <span class="line"></span>
         }
       </div>
-    </section>
+    </app-panel>
   }
 </app-page-layout>

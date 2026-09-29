@@ -1,44 +1,32 @@
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-}
-
-/* Durante un aggiornamento i dati restano leggibili, ma si vede che sono vecchi. */
-.panel.updating {
-  opacity: 0.6;
-}
-
 app-transactions-table {
   display: block;
-  margin: 1rem 0;
+  margin: var(--space-6) 0;
 }
 
 .message {
   margin: 0;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .message.error {
-  color: var(--negative);
+  color: var(--color-expense);
 }
 
 .empty {
-  padding: 1.5rem 0;
+  padding: var(--space-8) 0;
   text-align: center;
 }
 
 .skeleton {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  margin-top: 1rem;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
 
   .line {
     height: 1.25rem;
-    border-radius: 4px;
-    background: var(--background);
+    border-radius: var(--radius-badge);
+    background: var(--color-background);
     animation: pulse 1.4s ease-in-out infinite;
   }
 }
@@ -65,17 +53,23 @@ app-transactions-table {
  * Appare solo quando c'è qualcosa selezionato: una barra di azioni sempre
  * presente ma quasi sempre inerte è rumore, e sposta la tabella verso il basso
  * senza motivo.
+ *
+ * Raggio e spaziatura seguono lo stesso raggruppamento di `.origin` in
+ * loan-detail-page.scss: una barra bordata di riga, non un pannello — da qui
+ * `--radius-control` invece di `--radius-card` per gli 8px originali, e
+ * `--space-4 --space-5` per il padding invece di un arrotondamento cieco al
+ * token più vicino.
  */
 .selection {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  gap: var(--space-5);
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 
   .count {
     font-weight: 600;
@@ -84,14 +78,14 @@ app-transactions-table {
 
   /* La domanda di conferma sta accanto ai pulsanti, non in una finestra. */
   .ask {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   button {
-    padding: 0.35rem 0.75rem;
-    border-radius: 0.375rem;
-    border: 1px solid var(--border);
-    background: var(--surface);
+    padding: var(--space-3) var(--space-5);
+    border-radius: var(--radius-control);
+    border: var(--border-width) solid var(--color-border);
+    background: var(--color-surface);
     color: inherit;
     font: inherit;
     cursor: pointer;
@@ -104,17 +98,17 @@ app-transactions-table {
 
   /* L'azione distruttiva si riconosce prima di leggerla. */
   button.danger {
-    border-color: var(--negative);
-    color: var(--negative);
+    border-color: var(--color-expense);
+    color: var(--color-expense);
     font-weight: 600;
   }
 
   button.danger:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--negative) 12%, transparent);
+    background: color-mix(in srgb, var(--color-expense) 12%, transparent);
   }
 
   button.ghost {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .message {
@@ -123,10 +117,10 @@ app-transactions-table {
   }
 
   .message.error {
-    color: var(--negative);
+    color: var(--color-expense);
   }
 
   .message.done {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 }

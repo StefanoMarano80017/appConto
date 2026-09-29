@@ -278,6 +278,31 @@ describe('TransactionsPage', () => {
     expect(url).toContain('page=2');
   });
 
+  it('la conversione dei pannelli non riordina il contenuto della pagina', async () => {
+    await open('/transactions');
+    await flush();
+
+    const host = harness.routeNativeElement!;
+    const tutti = [...host.querySelectorAll('*')];
+    const posizione = (elemento: Element | null): number => tutti.indexOf(elemento!);
+    const paginazioni = [...host.querySelectorAll('app-transactions-pagination')];
+
+    // Toolbar, paginazione, tabella, paginazione. `Panel` proietta il contenuto
+    // con un solo `<ng-content />` e l'host è `display: contents`, quindi
+    // l'ordine dovrebbe reggere da solo: questo test è lì per accorgersene se
+    // durante la conversione qualcosa viene spostato di blocco.
+    expect(paginazioni.length).toBe(2);
+    expect(posizione(host.querySelector('app-transactions-toolbar'))).toBeLessThan(
+      posizione(paginazioni[0])
+    );
+    expect(posizione(paginazioni[0])).toBeLessThan(
+      posizione(host.querySelector('app-transactions-table'))
+    );
+    expect(posizione(host.querySelector('app-transactions-table'))).toBeLessThan(
+      posizione(paginazioni[1])
+    );
+  });
+
   it('cambiare la categoria del merchant ricarica la stessa pagina', async () => {
     await open('/transactions?page=2');
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
