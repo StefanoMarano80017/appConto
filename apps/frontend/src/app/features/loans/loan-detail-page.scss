@@ -1,3 +1,4 @@
+@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
 /*
@@ -245,43 +246,25 @@ button.danger {
   color: var(--color-text-muted);
 }
 
-/* Su schermi stretti scorre la tabella, non la pagina. */
+/*
+ * L'involucro condiviso delle tabelle (v. shared/styles/_mixins.scss).
+ * Su schermi stretti scorre la tabella, non la pagina.
+ */
 .scroller {
-  overflow-x: auto;
+  @include mixins.data-table;
+
   margin-top: var(--space-7);
 }
 
 .repayments {
-  width: 100%;
   min-width: 34rem;
-  border-collapse: collapse;
 
   thead {
     border-top: var(--border-width) solid var(--color-border);
   }
 
-  th,
-  td {
-    text-align: left;
-    padding: var(--space-4) var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-border);
-  }
-
-  th {
-    @include typography.text('label');
-  }
-
   .date {
     white-space: nowrap;
-    color: var(--color-text-muted);
-  }
-
-  .numeric {
-    text-align: right;
-    white-space: nowrap;
-  }
-
-  th.numeric {
     color: var(--color-text-muted);
   }
 

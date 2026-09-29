@@ -1,3 +1,4 @@
+@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
 .note {
@@ -105,33 +106,30 @@ app-search-input {
   text-align: center;
 }
 
-/* Su schermi stretti scorre la tabella, non la pagina. */
+/*
+ * L'involucro condiviso delle tabelle (v. shared/styles/_mixins.scss): bordi,
+ * spaziature e allineamento dei numeri vengono da lì. Su schermi stretti
+ * scorre la tabella, non la pagina.
+ */
 .scroller {
-  overflow-x: auto;
+  @include mixins.data-table;
 }
 
 .loans {
-  width: 100%;
   min-width: 46rem;
-  border-collapse: collapse;
 
   thead {
     border-top: var(--border-width) solid var(--color-border);
   }
 
-  th,
-  td {
-    text-align: left;
-    padding: var(--space-4) var(--space-5);
-    border-bottom: var(--border-width) solid var(--color-border);
-  }
-
-  th {
-    @include typography.text('label');
-  }
-
-  /* Un prestito chiuso resta leggibile ma non chiede attenzione. */
-  tr.settled {
+  /*
+   * Un prestito chiuso resta leggibile ma non chiede attenzione.
+   *
+   * Il colore va sulle celle e non sulla riga: da quando l'involucro
+   * condiviso dichiara un colore sulle `td`, quello ereditato dalla `tr` non
+   * le raggiunge più.
+   */
+  tr.settled td {
     color: var(--color-text-muted);
   }
 
@@ -154,11 +152,6 @@ app-search-input {
   .date {
     white-space: nowrap;
     color: var(--color-text-muted);
-  }
-
-  .numeric {
-    text-align: right;
-    white-space: nowrap;
   }
 
   th.numeric .sort {
