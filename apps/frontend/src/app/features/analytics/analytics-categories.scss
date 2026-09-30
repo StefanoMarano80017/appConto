@@ -51,6 +51,10 @@ li + li {
       opacity 150ms ease,
       transform 150ms ease;
   }
+
+  &:active {
+    background: transparent;
+  }
 }
 
 .row:hover .name {

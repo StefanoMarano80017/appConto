@@ -1,0 +1,181 @@
+import { describe, expect, it } from 'vitest';
+import { formatAmount } from '../../../core/format';
+import { lineChartData, lineChartOptions, lineChartValueRange } from './line-chart-config';
+import { LINE_CHART_GEOMETRY, type LineChartTheme } from './line-chart-theme';
+import type { LinePointMarker, LineSeries } from './line-chart.model';
+import { niceScale } from './value-scale';
+
+interface Point {
+  label: string;
+  a: number;
+  b: number;
+  partial?: boolean;
+}
+
+const THEME: LineChartTheme = {
+  axisText: 'muted',
+  grid: 'border',
+  hollowFill: 'surface',
+  guideSelected: 'primary',
+  guideHover: 'hover',
+  labelFont: { family: 'Inter', size: 11, weight: 400 },
+  valueFont: { family: 'Mono', size: 12, weight: 600 },
+  series: {
+    'chart-1': 'c1',
+    'chart-2': 'c2',
+    'chart-3': 'c3',
+    'chart-4': 'c4',
+    'chart-5': 'c5',
+    'chart-6': 'c6',
+    'chart-7': 'c7',
+    'chart-neutral': 'cn',
+  },
+};
+
+const SERIES: readonly LineSeries<Point>[] = [
+  { key: 'a', label: 'Entrate', color: 'chart-1', value: (p) => p.a },
+  { key: 'b', label: 'Uscite', color: 'chart-5', value: (p) => p.b },
+];
+
+const marker = (p: Point): LinePointMarker => (p.partial ? 'hollow' : 'auto');
+const xLabel = (p: Point): string => p.label;
+
+function points(count: number, partialAt: readonly number[] = []): Point[] {
+  return Array.from({ length: count }, (_, i) => ({
+    label: `p${i}`,
+    a: i * 10,
+    b: i * 5,
+    partial: partialAt.includes(i),
+  }));
+}
+
+describe('lineChartData', () => {
+  it('stila ogni serie con il colore del tema e la geometria condivisa', () => {
+    const { datasets } = lineChartData(points(3), SERIES, marker, xLabel, THEME);
+
+    expect(datasets.map((d) => d.label)).toEqual(['Entrate', 'Uscite']);
+    expect(datasets[0]?.borderColor).toBe('c1');
+    expect(datasets[1]?.borderColor).toBe('c5');
+    expect(datasets[0]?.pointBorderColor).toBe('c1');
+    expect(datasets[0]?.data).toEqual([0, 10, 20]);
+    expect(datasets[1]?.data).toEqual([0, 5, 10]);
+    expect(datasets[0]?.borderWidth).toBe(LINE_CHART_GEOMETRY.lineWidth);
+    expect(datasets[0]?.borderCapStyle).toBe('round');
+    expect(datasets[0]?.borderJoinStyle).toBe('round');
+    expect(datasets[0]?.tension).toBe(0);
+    expect(datasets[0]?.fill).toBe(false);
+    expect(datasets[0]?.pointHoverRadius).toBe(LINE_CHART_GEOMETRY.pointHoverRadius);
+    expect(datasets[0]?.pointBorderWidth).toBe(LINE_CHART_GEOMETRY.pointBorderWidth);
+  });
+
+  it('con pochi punti mostra tutti i marcatori', () => {
+    const { datasets } = lineChartData(points(24), SERIES, marker, xLabel, THEME);
+
+    expect(datasets[0]?.pointRadius).toEqual(Array<number>(24).fill(3));
+  });
+
+  it('oltre la soglia restano solo primo, ultimo e gli hollow', () => {
+    const { datasets } = lineChartData(points(30, [10]), SERIES, marker, xLabel, THEME);
+    const radius = datasets[0]?.pointRadius;
+
+    expect(Array.isArray(radius)).toBe(true);
+    const visible = Array.isArray(radius)
+      ? radius.flatMap((r, i) => (r === 3 ? [i] : []))
+      : [];
+    expect(visible).toEqual([0, 10, 29]);
+  });
+
+  it('i punti hollow usano il fondo del tema, gli altri il colore serie', () => {
+    const { datasets } = lineChartData(points(3, [1]), SERIES, marker, xLabel, THEME);
+
+    expect(datasets[0]?.pointBackgroundColor).toEqual(['c1', 'surface', 'c1']);
+  });
+
+  it('le etichette vengono da xLabel', () => {
+    expect(lineChartData(points(3), SERIES, marker, xLabel, THEME).labels).toEqual(['p0', 'p1', 'p2']);
+  });
+
+  it('senza serie restano le etichette e nessun dataset', () => {
+    const data = lineChartData(points(2), [], marker, xLabel, THEME);
+
+    expect(data.datasets).toEqual([]);
+    expect(data.labels).toEqual(['p0', 'p1']);
+  });
+});
+
+describe('lineChartValueRange', () => {
+  it('applica la scala dell’asse ai valori', () => {
+    expect(lineChartValueRange('amount', [120, 480])).toEqual(niceScale([120, 480]));
+  });
+});
+
+describe('lineChartOptions', () => {
+  const guides = { selected: 1, hover: null };
+  const build = (theme: LineChartTheme = THEME, values: readonly number[] = [10, 40]) =>
+    lineChartOptions(theme, 'amount', lineChartValueRange('amount', values), guides);
+  it('la scala Y viene da niceScale e include lo zero', () => {
+    const y = build(THEME, [120, 480]).scales?.['y'];
+    const { min, max } = niceScale([120, 480]);
+
+    expect(y).toMatchObject({ min, max });
+    expect(min).toBeLessThanOrEqual(0);
+  });
+
+  it('la callback dei tick Y usa formatAmount', () => {
+    const ticks = build().scales?.['y']?.ticks;
+    const callback = ticks?.callback;
+
+    expect(callback?.call({} as never, 1234.5, 0, [])).toBe(formatAmount(1234.5));
+  });
+
+  it('non impone passo né tick alla scala Y', () => {
+    const y = build().scales?.['y'];
+
+    expect(y).not.toHaveProperty('ticks.stepSize');
+    expect(y).not.toHaveProperty('afterBuildTicks');
+  });
+
+  it('asse X con il font etichetta, asse Y con il font valori', () => {
+    const scales = build().scales;
+
+    expect(scales?.['x']?.ticks?.font).toEqual({ family: 'Inter', size: 11, weight: 400 });
+    expect(scales?.['y']?.ticks?.font).toEqual({ family: 'Mono', size: 12, weight: 600 });
+    expect(scales?.['x']?.ticks?.color).toBe('muted');
+    expect(scales?.['y']?.grid).toMatchObject({ color: 'border', drawTicks: false });
+  });
+
+  it('omette famiglia vuota e dimensione/peso indefiniti', () => {
+    const theme: LineChartTheme = {
+      ...THEME,
+      labelFont: { family: '', size: undefined, weight: undefined },
+      valueFont: { family: 'Mono', size: undefined, weight: 500 },
+    };
+    const scales = build(theme).scales;
+
+    expect(scales?.['x']?.ticks?.font).toEqual({});
+    expect(scales?.['y']?.ticks?.font).toEqual({ family: 'Mono', weight: 500 });
+  });
+
+  it('passa stato e stili delle guide al plugin', () => {
+    expect(build().plugins?.lineGuides).toEqual({
+      selected: 1,
+      hover: null,
+      styles: {
+        selected: { color: 'primary', width: 2, dash: [] },
+        hover: { color: 'hover', width: 1, dash: [3, 3] },
+      },
+    });
+  });
+
+  it('opzioni generali: senza animazioni, legenda e tooltip nativi', () => {
+    const options = build();
+
+    expect(options.responsive).toBe(true);
+    expect(options.maintainAspectRatio).toBe(false);
+    expect(options.animation).toBe(false);
+    expect(options.interaction).toEqual({ mode: 'index', intersect: false });
+    expect(options.plugins?.legend).toEqual({ display: false });
+    expect(options.plugins?.tooltip).toEqual({ enabled: false });
+    expect(options.layout?.padding).toEqual(LINE_CHART_GEOMETRY.layoutPadding);
+  });
+});

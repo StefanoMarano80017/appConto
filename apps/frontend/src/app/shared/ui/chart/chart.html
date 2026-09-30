@@ -1,0 +1,9 @@
+<canvas
+  #canvas
+  [attr.role]="role()"
+  [attr.aria-label]="ariaLabel()"
+  [attr.tabindex]="tabIndex()"
+  (keydown)="keyDown.emit($event)"
+  (focus)="focused.emit($event)"
+  (blur)="blurred.emit($event)"
+></canvas>

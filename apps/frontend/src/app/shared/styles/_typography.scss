@@ -63,3 +63,29 @@ $_roles: (
     font-variant-numeric: tabular-nums;
   }
 }
+
+/*
+ * Ponte per chi non può leggere un mixin: il canvas di Chart.js riceve
+ * famiglia, dimensione e peso come valori JS, non come regole CSS, quindi
+ * `text()` non gli serve. Questo mixin emette lo stesso ruolo come custom
+ * property con ambito (`--<nome>-font-family|size|weight`), che il tema del
+ * grafico legge con `getComputedStyle`.
+ *
+ * È un'eccezione voluta e circoscritta alla regola dell'intestazione («non
+ * una custom property per ruolo»): quella regola esiste per impedire di usare
+ * la dimensione senza la famiglia, e qui le tre proprietà escono sempre
+ * insieme, da un solo `@include`, e solo per un consumatore canvas. Passare
+ * di qui, e non ricopiare i numeri in TS, mantiene questo file l'unico luogo
+ * in cui vivono le dimensioni.
+ */
+@mixin role-properties($role, $name) {
+  $spec: map.get($_roles, $role);
+
+  @if $spec == null {
+    @error "Ruolo tipografico sconosciuto: #{$role}. Ammessi: #{map.keys($_roles)}.";
+  }
+
+  --#{$name}-font-family: var(--font-#{map.get($spec, family)});
+  --#{$name}-font-size: #{map.get($spec, size)};
+  --#{$name}-font-weight: #{map.get($spec, weight)};
+}

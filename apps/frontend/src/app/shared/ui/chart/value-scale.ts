@@ -1,12 +1,12 @@
 /**
- * Scala verticale della spezzata.
+ * Scala verticale di un grafico a linee.
  *
  * Gli estremi arrotondati a valori "tondi" e i valori delle linee guida sono una
  * funzione pura dei dati: stanno qui per poter essere verificati senza montare
  * il grafico.
  */
 
-export interface TimelineScale {
+export interface ValueScale {
   min: number;
   max: number;
   /** Valori delle linee guida, dal basso verso l'alto. */
@@ -41,7 +41,7 @@ function niceStep(rough: number): number {
  * Lo zero è sempre compreso: su una serie di importi nel tempo una base che non
  * parte da zero esagera le variazioni.
  */
-export function timelineScale(values: readonly number[], targetTicks = 4): TimelineScale {
+export function niceScale(values: readonly number[], targetTicks = 4): ValueScale {
   const min = Math.min(0, ...values);
   const max = Math.max(0, ...values);
 

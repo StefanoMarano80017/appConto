@@ -2,8 +2,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
+import { AnalyticsTimeline } from './analytics-timeline';
 import { AnalyticsPage } from './analytics-page';
 import { Analytics } from './analytics.model';
 import { AnalyticsStore } from './analytics.store';
@@ -416,6 +418,25 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
 
     expect(router.url).toContain('merchantIds=m-1');
     expect(router.url).toContain('from=2026-01-01');
+  });
+
+  it('il tooltip apre i movimenti sul suo intervallo mantenendo i filtri attivi', async () => {
+    await load();
+    store.toggleType('EXPENSE');
+    await settle();
+    http.expectOne(`${API_BASE_URL}/analytics?${RANGE}&types=EXPENSE&${STEP}`).flush(analytics());
+    await settle();
+
+    const timeline = fixture.debugElement.query(By.directive(AnalyticsTimeline))
+      .componentInstance as AnalyticsTimeline;
+    timeline.transactionsRequested.emit({ from: '2026-07-06', to: '2026-07-12' });
+    await settle();
+    await settle();
+
+    expect(router.url).toContain('/transactions');
+    expect(router.url).toContain('from=2026-07-06');
+    expect(router.url).toContain('to=2026-07-12');
+    expect(router.url).toContain('types=EXPENSE');
   });
 
   it('i prestiti portano ai movimenti di tipo LOAN', async () => {

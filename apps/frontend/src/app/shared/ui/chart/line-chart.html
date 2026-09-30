@@ -1,0 +1,20 @@
+@let chartData = data();
+@let chartOptions = options();
+<!-- Senza tema risolto non si disegna: niente primo fotogramma senza colori. -->
+@if (chartData && chartOptions) {
+  <app-chart
+    type="line"
+    [data]="chartData"
+    [options]="chartOptions"
+    [plugins]="plugins"
+    [activeElements]="activeElements()"
+    [ariaLabel]="ariaLabel()"
+    [tabIndex]="0"
+    (hovered)="onHover($event)"
+    (clicked)="onClick($event)"
+    (keyDown)="onKeyDown($event)"
+    (focused)="onFocus()"
+    (blurred)="onBlur()"
+  />
+}
+<ng-content />

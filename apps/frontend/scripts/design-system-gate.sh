@@ -105,6 +105,12 @@ verifica 'nessuna spaziatura letterale fuori dai semantici' \
 verifica 'shared non conosce le feature' \
   bash -c "grep -rn 'features/' src/app/shared"
 
+# Chart.js è parte della presentazione di un grafico e deve restare confinato
+# nel modulo shared/ui/chart. Le feature possono usare i componenti pubblici
+# (line-chart, line-chart.model) ma non le implementazioni interne.
+verifica 'Chart.js resta dentro shared/ui/chart' \
+  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\)['\\\"']\" src/app/features"
+
 # Il nome dell'alias legacy deve essere seguito subito da ) o da , per evitare
 # di catturare i nomi nuovi verso cui stiamo migrando: --border catturerebbe
 # --border-width, --text catturerebbe --text-primary e --text-secondary.

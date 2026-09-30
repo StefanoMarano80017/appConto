@@ -1,0 +1,18 @@
+@use '../../styles/typography';
+
+/*
+ * `position: relative` perché il contenuto proiettato (il tooltip della
+ * feature) si posiziona rispetto al grafico, non a un antenato qualunque.
+ */
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+
+  // I nomi devono coincidere con LINE_CHART_FONT_PREFIXES (line-chart-theme.ts):
+  // il canvas non legge var(), quindi il tema li risolve da qui per nome.
+  @include typography.role-properties('caption', 'chart-label');
+  @include typography.role-properties('financial-row', 'chart-value');
+}

@@ -22,6 +22,7 @@
         [timeline]="data.timeline"
         [granularity]="store.granularity()"
         (granularitySelected)="store.setGranularity($event)"
+        (transactionsRequested)="onTimelineTransactionsRequested($event)"
       />
 
       <div class="columns">

@@ -295,7 +295,7 @@ Esempi (nessun test scritto in questa fase, solo indicazione):
 | Pagina | Panel/SectionHeader | StatCardGrid | SegmentedControl | ToggleButtonGroup | FormField | SearchInput | FilterChips | EmptyState/ErrorRetry | Resta feature-specific |
 |---|---|---|---|---|---|---|---|---|---|
 | **Dashboard** (`dashboard-page`) | ✅ (ogni sezione) | ✅ (5 card riepilogo) | — | — | — | — | ✅ (chip filtro dashboard) | — | `CashFlowCard`, `CategoryBreakdownSection`, `TopMerchantsSection`, `MonthComparisonSection`, `TransactionsTable` |
-| **Analytics** (`analytics-page` + sotto-componenti) | ✅ | ✅ (KPI periodo, KPI prestiti) | ✅ (preset periodo, classificazione) | ✅ (tipo, categoria, merchant) | — | ✅ (ricerca merchant nei filtri) | ✅ | — | `AnalyticsTimeline` (grafico SVG, resta interamente feature-specific), `AnalyticsCategories`/`AnalyticsMerchants` (liste con barra, gerarchia propria) |
+| **Analytics** (`analytics-page` + sotto-componenti) | ✅ | ✅ (KPI periodo, KPI prestiti) | ✅ (preset periodo, classificazione) | ✅ (tipo, categoria, merchant) | — | ✅ (ricerca merchant nei filtri) | ✅ | — | `AnalyticsTimeline` (usa shared `<app-line-chart>`, feature mantiene dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella), `AnalyticsCategories`/`AnalyticsMerchants` (liste con barra, gerarchia propria) |
 | **Movimenti** (`transactions-page` + toolbar/tabella/paginazione) | ✅ | — | ✅ (dropdown classificazione) | ✅ (dropdown tipo/categoria) | — | ✅ | ✅ | ✅ EmptyState, ✅ ErrorRetry | `TransactionsTable` (contenuto colonne troppo specifico), `TransactionsPagination` (logica pagine), selezione multipla + conferma eliminazione |
 | **Prestiti — elenco** (`loans-page`) | ✅ | ✅ (KPI) | ✅ (stato) | — | — | ✅ | — | ✅ EmptyState, ✅ ErrorRetry | Tabella prestiti (contenuto colonne specifico), badge stato → `Badge` |
 | **Prestiti — dettaglio** (`loan-detail-page`) | ✅ | ✅ (importo/restituito/residuo) | — | — | ✅ (form modifica, form restituzione) | — | — | ✅ ErrorRetry | Breadcrumb (CSS utility, non componente), progress bar, split bar, tabella restituzioni, `Badge` di stato |
@@ -490,3 +490,25 @@ Un componente viene promosso a shared/ solo se, al momento dell'estrazione, esis
 - **Migrazione in 7 fasi** (§12: Fondamenta → **PoC mirato (nuova)** → Panel/SectionHeader → StatCardGrid/Badge → SegmentedControl/ToggleButtonGroup → FormField → resto), a rischio crescente, ognuna behavior-preserving e con l'app funzionante al termine di ogni commit. Nessuna fase di rollout di massa parte prima che il PoC (Fase 0.5) abbia validato build e comportamento su un caso reale per ciascun componente architetturalmente significativo.
 
 Revisione critica di round 2 completata (§16): decisioni confermate o corrette dove l'evidenza nel codice lo richiedeva (Panel/SectionHeader separati, SegmentedControl/ToggleButtonGroup separati, accessibilità di FormField precisata, token confermati con due eccezioni preesistenti da preservare, dipendenze formalizzate, PoC aggiunto al piano). Nessun codice è stato modificato in questa fase. In attesa di una nuova approvazione prima di procedere all'implementazione.
+
+---
+
+## 17. Grafici a linee condivisi
+
+Il grafico dell'andamento nel tempo non è più un SVG della feature: vive in `src/app/shared/ui/chart/`, a strati, e Chart.js non ne esce.
+
+```text
+Feature (AnalyticsTimeline)      dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella
+  └─ <app-line-chart>            line-chart.ts: tema reattivo, guide, hover/click/tastiera/focus come un solo indice
+       ├─ builder puri           line-chart-config.ts (dati e opzioni), line-guides-plugin.ts, value-scale.ts
+       ├─ tema                   line-chart-theme.ts (nomi dei token, geometria, risoluzione)
+       └─ <app-chart>            chart.ts: ciclo di vita dell'istanza Chart.js
+```
+
+**API pubblica** (le feature importano solo `line-chart` e `line-chart.model`): `LineChart<T>` riceve le righe di dominio `points: T[]`, le serie da disegnare `LineSeries<T>[]` (`key`, `label`, `color: ChartSeriesColor`, `value(point)`), `xLabel(point)`, `marker(point)` (`'auto' | 'hollow'`), `valueAxis` (`'amount'`) e `ariaLabel`; la selezione è un `model` `selectedIndex`, e il tooltip della feature si proietta dentro l'host. Le serie sono funzioni sulle stesse righe delle etichette: lunghezze incoerenti non sono rappresentabili, e le feature non vedono mai tipi Chart.js né indici di dataset. `chartColorVar(color)` dà lo stesso colore alle legende HTML.
+
+**Tema**: il canvas non legge `var()`. In TS stanno solo i *nomi* dei token (`--color-text-muted`, `--color-border`, `--color-surface`, `--color-primary`, `--color-chart-*`); i valori si leggono con `getComputedStyle` sull'host in un `afterRenderEffect` che dipende da `ThemeStore.theme()`, quindi si risolvono di nuovo a ogni cambio di tema. La tipografia passa dal mixin `role-properties` di `_typography.scss`: `caption` per le etichette dell'asse X, `financial-row` per i valori dell'asse Y (§4). La geometria (tratti, raggi dei punti, tratteggi, soglia di densità dei marcatori) non cambia col tema e sta in `LINE_CHART_GEOMETRY`. Nessun esadecimale di ripiego.
+
+**Dove si estende**: un asse percentuale è un letterale in `LineChartValueAxis` più una voce in `VALUE_AXES`; un marcatore nascosto è `'hidden'` in `LinePointMarker`; un asse temporale vero è un nuovo input `xAxis` più la registrazione dell'adapter in `chart.ts`; una legenda condivisa diventa un componente a sé quando esiste un secondo consumer. Non si espone `ChartOptions`: ogni capacità nuova entra con un nome.
+
+**Gate**: il controllo «Chart.js resta dentro shared/ui/chart» fallisce se un `.ts` fuori da quella cartella (spec escluse) importa `chart.js`, o se una feature importa i moduli interni (`chart`, `line-chart-config`, `line-chart-theme`, `line-guides-plugin`).

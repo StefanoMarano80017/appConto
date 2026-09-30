@@ -2,6 +2,7 @@ import { httpResource } from '@angular/common/http';
 import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
+import { DateRange } from '../../core/period';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
@@ -171,6 +172,10 @@ export class AnalyticsPage implements OnInit {
 
   private openExplorer(extra: Partial<TransactionQueryState>): void {
     void this.router.navigate(['/transactions'], { queryParams: this.explorerParams(extra) });
+  }
+
+  protected onTimelineTransactionsRequested(range: DateRange): void {
+    this.openExplorer(range);
   }
 
   /** Il drill down su una categoria: senza categoria significa "da classificare". */

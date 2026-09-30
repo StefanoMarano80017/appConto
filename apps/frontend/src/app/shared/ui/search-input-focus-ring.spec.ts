@@ -61,30 +61,46 @@ const cssRicerca = compile(join(SRC, 'app/shared/ui/search-input.scss'), {
 
 describe('anello di focus di app-search-input', () => {
   it('il campo dentro .search non porta un proprio box-shadow di focus (niente doppio anello)', () => {
+    // Un documento nuovo, quello di un iframe `about:blank`, non il `document`
+    // della suite: il builder esegue le spec senza isolamento, quindi
+    // `document` è condiviso con i file eseguiti prima nello stesso worker, e
+    // con lui la cache dei selettori di jsdom. Con quella cache già calda
+    // (per esempio dopo form-fields.spec.ts, che inietta lo stesso
+    // styles.scss), @asamuzakjp/dom-selector 6.8.1 restituisce per
+    // `input:focus-visible, ...` l'AST dell'ultimo selettore analizzato
+    // (nel caso osservato `.search.pill:hover input`, (0,3,1)), e il cascade
+    // di jsdom dava alla regola globale una specificità che non ha: il test
+    // falliva a caso, circa una volta su tre. Il documento dell'iframe ha
+    // cache e storia del focus proprie, quindi questa è davvero la prima
+    // lettura post-focus del proprio documento, come richiesto sopra.
+    const cornice = document.createElement('iframe');
+    document.body.append(cornice);
+    const finestra = cornice.contentWindow!;
+    const doc = finestra.document;
+
     // Ordine di iniezione deliberato: il globale prima, il foglio del
     // componente dopo — lo stesso ordine in cui Angular li inietta a
     // runtime, e l'unico che decide quando le due regole pareggiano.
-    const foglioGlobale = document.createElement('style');
+    const foglioGlobale = doc.createElement('style');
     foglioGlobale.textContent = cssGlobale;
-    document.head.appendChild(foglioGlobale);
+    doc.head.appendChild(foglioGlobale);
 
-    const foglioRicerca = document.createElement('style');
+    const foglioRicerca = doc.createElement('style');
     foglioRicerca.textContent = cssRicerca;
-    document.head.appendChild(foglioRicerca);
+    doc.head.appendChild(foglioRicerca);
 
     // Niente attributi finti: il CSS compilato da Sass seleziona `.search
     // input` per struttura, senza bisogno di simulare l'encapsulation.
-    const contenitore = document.createElement('div');
+    const contenitore = doc.createElement('div');
     contenitore.className = 'search';
-    const campo = document.createElement('input');
+    const campo = doc.createElement('input');
     contenitore.append(campo);
-    document.body.append(contenitore);
+    doc.body.append(contenitore);
 
     campo.focus();
-    expect(getComputedStyle(campo).boxShadow).toBe('none');
+    expect(doc.activeElement).toBe(campo);
+    expect(finestra.getComputedStyle(campo).boxShadow).toBe('none');
 
-    foglioGlobale.remove();
-    foglioRicerca.remove();
-    contenitore.remove();
+    cornice.remove();
   });
 });
