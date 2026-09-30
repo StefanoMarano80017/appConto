@@ -1,0 +1,27 @@
+@let chartData = data();
+<!-- Senza tema risolto non si disegna: niente primo fotogramma senza colori. -->
+@if (chartData) {
+  <app-chart
+    type="doughnut"
+    [data]="chartData"
+    [options]="options"
+    [plugins]="plugins"
+    [activeElements]="activeElements()"
+    [ariaLabel]="ariaLabel()"
+    [tabIndex]="0"
+    (hovered)="onHover($event)"
+    (clicked)="onClick($event)"
+    (keyDown)="onKeyDown($event)"
+    (focused)="onFocus()"
+    (blurred)="onBlur()"
+  />
+}
+<!-- Annunciato a chi usa un lettore di schermo mentre scorre le fette da tastiera. -->
+<div class="center" aria-live="polite">
+  @if (center(); as center) {
+    <ng-container
+      [ngTemplateOutlet]="center.template"
+      [ngTemplateOutletContext]="{ $implicit: activeSlice() }"
+    />
+  }
+</div>
