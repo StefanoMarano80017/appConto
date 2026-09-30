@@ -107,9 +107,12 @@ verifica 'shared non conosce le feature' \
 
 # Chart.js è parte della presentazione di un grafico e deve restare confinato
 # nel modulo shared/ui/chart. Le feature possono usare i componenti pubblici
-# (line-chart, line-chart.model) ma non le implementazioni interne.
+# (line-chart, line-chart.model, doughnut-chart, doughnut-chart.model,
+# chart.model) ma non le implementazioni interne (chart, chart-theme,
+# line-chart-config, line-chart-theme, line-guides-plugin,
+# doughnut-chart-config, doughnut-chart-theme, doughnut-grouping).
 verifica 'Chart.js resta dentro shared/ui/chart' \
-  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\)['\\\"']\" src/app/features"
+  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|chart-theme\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\|doughnut-chart-config\\|doughnut-chart-theme\\|doughnut-grouping\\)['\\\"']\" src/app/features"
 
 # Il nome dell'alias legacy deve essere seguito subito da ) o da , per evitare
 # di catturare i nomi nuovi verso cui stiamo migrando: --border catturerebbe
@@ -124,8 +127,10 @@ verifica 'nessun alias legacy' \
 # non guardava. Con `master` come riferimento vede tutto cio' che il ramo ha
 # cambiato, committato o no. Su master stesso resta il confronto con l'albero
 # di lavoro, che e' l'unica cosa sensata da controllare li'.
+# Sono esclusi i file sotto shared/ui/: i loro *.model.ts sono modelli di
+# presentazione dello strato UI condiviso, non modelli di dominio.
 verifica 'dominio intatto' \
-  bash -c "git -C ../.. diff --name-only master | grep -E '\.(model|api|store|query)\.ts\$|apps/backend'"
+  bash -c "git -C ../.. diff --name-only master | grep -E '\.(model|api|store|query)\.ts\$|apps/backend' | grep -v 'apps/frontend/src/app/shared/ui/'"
 
 printf '\n%s\n' "controlli falliti: $fallimenti"
 [ "$fallimenti" -eq 0 ]

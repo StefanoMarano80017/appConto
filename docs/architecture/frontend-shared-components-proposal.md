@@ -295,7 +295,7 @@ Esempi (nessun test scritto in questa fase, solo indicazione):
 | Pagina | Panel/SectionHeader | StatCardGrid | SegmentedControl | ToggleButtonGroup | FormField | SearchInput | FilterChips | EmptyState/ErrorRetry | Resta feature-specific |
 |---|---|---|---|---|---|---|---|---|---|
 | **Dashboard** (`dashboard-page`) | ✅ (ogni sezione) | ✅ (5 card riepilogo) | — | — | — | — | ✅ (chip filtro dashboard) | — | `CashFlowCard`, `CategoryBreakdownSection`, `TopMerchantsSection`, `MonthComparisonSection`, `TransactionsTable` |
-| **Analytics** (`analytics-page` + sotto-componenti) | ✅ | ✅ (KPI periodo, KPI prestiti) | ✅ (preset periodo, classificazione) | ✅ (tipo, categoria, merchant) | — | ✅ (ricerca merchant nei filtri) | ✅ | — | `AnalyticsTimeline` (usa shared `<app-line-chart>`, feature mantiene dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella), `AnalyticsCategories`/`AnalyticsMerchants` (liste con barra, gerarchia propria) |
+| **Analytics** (`analytics-page` + sotto-componenti) | ✅ | ✅ (KPI periodo, KPI prestiti) | ✅ (preset periodo, classificazione) | ✅ (tipo, categoria, merchant) | — | ✅ (ricerca merchant nei filtri) | ✅ | — | `AnalyticsTimeline` (usa shared `<app-line-chart>`, feature mantiene dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella), `AnalyticsCategories` (lista o `<app-doughnut-chart>`, a scelta con toggle), `AnalyticsMerchants` (lista con barra, gerarchia propria) |
 | **Movimenti** (`transactions-page` + toolbar/tabella/paginazione) | ✅ | — | ✅ (dropdown classificazione) | ✅ (dropdown tipo/categoria) | — | ✅ | ✅ | ✅ EmptyState, ✅ ErrorRetry | `TransactionsTable` (contenuto colonne troppo specifico), `TransactionsPagination` (logica pagine), selezione multipla + conferma eliminazione |
 | **Prestiti — elenco** (`loans-page`) | ✅ | ✅ (KPI) | ✅ (stato) | — | — | ✅ | — | ✅ EmptyState, ✅ ErrorRetry | Tabella prestiti (contenuto colonne specifico), badge stato → `Badge` |
 | **Prestiti — dettaglio** (`loan-detail-page`) | ✅ | ✅ (importo/restituito/residuo) | — | — | ✅ (form modifica, form restituzione) | — | — | ✅ ErrorRetry | Breadcrumb (CSS utility, non componente), progress bar, split bar, tabella restituzioni, `Badge` di stato |
@@ -511,4 +511,22 @@ Feature (AnalyticsTimeline)      dominio: serie, bucket, significato della selez
 
 **Dove si estende**: un asse percentuale è un letterale in `LineChartValueAxis` più una voce in `VALUE_AXES`; un marcatore nascosto è `'hidden'` in `LinePointMarker`; un asse temporale vero è un nuovo input `xAxis` più la registrazione dell'adapter in `chart.ts`; una legenda condivisa diventa un componente a sé quando esiste un secondo consumer. Non si espone `ChartOptions`: ogni capacità nuova entra con un nome.
 
-**Gate**: il controllo «Chart.js resta dentro shared/ui/chart» fallisce se un `.ts` fuori da quella cartella (spec escluse) importa `chart.js`, o se una feature importa i moduli interni (`chart`, `line-chart-config`, `line-chart-theme`, `line-guides-plugin`).
+**Gate**: il controllo «Chart.js resta dentro shared/ui/chart» fallisce se un `.ts` fuori da quella cartella (spec escluse) importa `chart.js`, o se una feature importa i moduli interni (`chart`, `chart-theme`, `line-chart-config`, `line-chart-theme`, `line-guides-plugin`, `doughnut-chart-config`, `doughnut-chart-theme`, `doughnut-grouping`). I moduli pubblici sono `line-chart`, `line-chart.model`, `doughnut-chart`, `doughnut-chart.model` e `chart.model`. Il controllo «dominio intatto» ignora i file sotto `shared/ui/`: i loro `*.model.ts` sono modelli di presentazione, non di dominio.
+
+### Grafico a ciambella
+
+Lo stesso strato ospita `<app-doughnut-chart>`; `AppChart` è generico sul tipo (`'line' | 'doughnut'`) e ha un solo ciclo di vita per entrambi.
+
+```text
+Feature (AnalyticsCategories)     dominio: toggle, significato dell'attivazione, contenuto del centro, Lista
+  └─ <app-doughnut-chart>         doughnut-chart.ts: tema reattivo, fetta attiva, hover/click/tastiera/focus
+       ├─ builder puri            doughnut-grouping.ts (top N + Altri), doughnut-chart-config.ts (dati e opzioni)
+       ├─ tema                    doughnut-chart-theme.ts (token, geometria) + chart-theme.ts (colori-serie condivisi)
+       └─ <app-chart>             chart.ts: ciclo di vita dell'istanza Chart.js
+```
+
+**API pubblica** (le feature importano solo `doughnut-chart` e `doughnut-chart.model`): `DoughnutChart<T>` riceve `items: readonly T[]`, `value(item)`, `label(item)`, `color(item): SliceColor`, `topN` (default 5), `othersLabel` (default `'Altri'`) e `ariaLabel`. Le voci oltre le prime `topN` confluiscono in una sola fetta «Altri» (`DoughnutSlice` di tipo `others`, con le voci raggruppate); valori ≤ 0 sono scartati. L'output `sliceActivated: DoughnutSlice<T>` parte al click su una fetta e con Invio/Spazio sulla fetta attiva; il significato lo decide la feature. Il centro è un `<ng-template appDoughnutCenter let-slice>` con contesto `{ $implicit: DoughnutSlice<T> | null }` (`null` = nessuna fetta attiva), reso in HTML sovrapposto al foro con `aria-live="polite"`.
+
+**Colori**: `SliceColor` è un token del design system (`ChartSeriesColor`) oppure `{ custom: string }`. Il `custom` (es. il colore scelto per la categoria) passa al canvas così com'è; un token si risolve dal tema; «Altri» usa sempre `chart-neutral`. Nessun esadecimale di ripiego.
+
+**Limite noto**: Angular non può dedurre `T` per `DoughnutCenter` (la direttiva non ha input), quindi la fetta nel template del centro è tipata in modo lasco. Le feature calcolano il contenuto del centro in un metodo tipato del componente, come fa `AnalyticsCategories`.
