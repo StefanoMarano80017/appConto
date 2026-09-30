@@ -1,4 +1,14 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  Injector,
+  input,
+  output,
+  signal
+} from '@angular/core';
 import { formatPercent } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
@@ -42,6 +52,9 @@ export class AnalyticsCategories {
   readonly categorySelected = output<string | null>();
 
   protected readonly formatPercent = formatPercent;
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly view = signal<CategoriesView>('chart');
   protected readonly views: readonly ChoiceOption<CategoriesView>[] = [
@@ -102,6 +115,27 @@ export class AnalyticsCategories {
       this.categorySelected.emit(slice.item.categoryId);
     } else {
       this.view.set('list');
+      this.focusGroupedRow(slice.items[0]);
     }
+  }
+
+  /**
+   * Passare alla Lista distrugge il canvas che aveva il focus, che da tastiera
+   * finirebbe su <body>. Lo si porta sulla prima categoria raggruppata, cioè
+   * dove chi ha scelto «Altri» voleva arrivare; se la riga non si trova, sul
+   * toggle, che resta comunque nella scheda. Solo a Lista resa: prima non esiste.
+   */
+  private focusGroupedRow(first: CategoryDistribution | undefined): void {
+    afterNextRender(
+      () => {
+        const index = first === undefined ? -1 : this.categories().indexOf(first);
+        const host = this.host.nativeElement;
+        const target =
+          host.querySelectorAll<HTMLElement>('ul .row')[index] ??
+          host.querySelector<HTMLElement>('app-choice-group button[aria-pressed="true"]');
+        target?.focus();
+      },
+      { injector: this.injector }
+    );
   }
 }

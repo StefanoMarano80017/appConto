@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal, type WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
+import { formatPercent } from '../../core/format';
 import { ThemeStore } from '../../core/theme';
 import { CHART_CONSTRUCTOR } from '../../shared/ui/chart/doughnut-chart';
 import { AnalyticsCategories } from './analytics-categories';
@@ -68,10 +69,16 @@ describe('AnalyticsCategories', () => {
     chart().options.onClick({}, [{ datasetIndex: 0, index }]);
     await fixture.whenStable();
   };
-  // Sette voci con topN 5: le ultime due (20 e 10) finiscono in «Altri».
+  // Sette voci con topN 5: le ultime due (20 e 10) finiscono in «Altri». Le
+  // percentuali sono diverse dagli importi, così l'una non si scambia per l'altro.
   const many = (): CategoryDistribution[] =>
     [70, 60, 50, 40, 30, 20, 10].map((amount, index) =>
-      category({ categoryId: `cat-${index}`, name: `Categoria ${index}`, amount, percentage: amount })
+      category({
+        categoryId: `cat-${index}`,
+        name: `Categoria ${index}`,
+        amount,
+        percentage: amount / 4
+      })
     );
 
   beforeEach(async () => {
@@ -147,6 +154,22 @@ describe('AnalyticsCategories', () => {
     expect(host().querySelectorAll('ul .row')).toHaveLength(7);
   });
 
+  it('attivare «Altri» da tastiera porta il focus sulla prima categoria raggruppata', async () => {
+    await render(many());
+    const canvas = host().querySelector<HTMLCanvasElement>('app-doughnut-chart canvas')!;
+    canvas.focus();
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', cancelable: true }));
+    await fixture.whenStable();
+
+    canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }));
+    await fixture.whenStable();
+
+    // Il canvas non c'è più: senza spostarlo, il focus cadrebbe su <body>.
+    const row = host().querySelectorAll<HTMLButtonElement>('ul .row')[5];
+    expect(row.getAttribute('aria-label')).toBe('Filtra per Categoria 5');
+    expect(document.activeElement).toBe(row);
+  });
+
   it('una categoria senza colore prende il neutro del design system', async () => {
     await render([
       category({ categoryId: null, color: null, amount: 30 }),
@@ -186,7 +209,7 @@ describe('AnalyticsCategories', () => {
 
     expect(center()).toContain('Altri');
     expect(center()).toContain('−30,00');
-    expect(center()).toContain('30');
+    expect(center()).toContain(formatPercent(5 + 2.5));
   });
 
   it("senza categorie non c'è il toggle e resta il messaggio", async () => {
