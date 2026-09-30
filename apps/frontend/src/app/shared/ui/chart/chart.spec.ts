@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { Chart, registry } from 'chart.js';
-import { AppChart, CHART_CONSTRUCTOR } from './chart';
+import { AppChart, CHART_CONSTRUCTOR, type AppChartType } from './chart';
 
 // Il costruttore finto entra tramite `CHART_CONSTRUCTOR` e non con
 // `vi.mock('chart.js')`: il builder esegue le spec senza isolamento e mette
@@ -45,9 +45,9 @@ const registeredIds = (typedRegistry: object): string[] =>
   Object.keys((typedRegistry as { items: Record<string, unknown> }).items).sort();
 
 describe('registrazione Chart.js', () => {
-  it('al caricamento del modulo registra esattamente i componenti del grafico a linee', () => {
-    expect(registeredIds(registry.controllers)).toEqual(['line']);
-    expect(registeredIds(registry.elements)).toEqual(['line', 'point']);
+  it('registra esattamente i componenti dei grafici a linee e a ciambella', () => {
+    expect(registeredIds(registry.controllers)).toEqual(['doughnut', 'line']);
+    expect(registeredIds(registry.elements)).toEqual(['arc', 'line', 'point']);
     expect(registeredIds(registry.scales)).toEqual(['category', 'linear']);
     expect(registeredIds(registry.plugins)).toEqual([]);
   });
@@ -58,7 +58,7 @@ describe('registrazione Chart.js', () => {
 });
 
 describe('AppChart', () => {
-  let fixture: ComponentFixture<AppChart>;
+  let fixture: ComponentFixture<AppChart<AppChartType>>;
 
   const chart = () => chartMocks.instances.at(-1)!;
 
@@ -219,6 +219,29 @@ describe('AppChart', () => {
 
     expect(instance.update).toHaveBeenCalledWith('none');
     expect(instance.activeElements).toEqual(declared);
+  });
+
+  it('con type doughnut crea il grafico di quel tipo e ne applica gli elementi attivi', async () => {
+    fixture = TestBed.createComponent(AppChart);
+    fixture.componentRef.setInput('type', 'doughnut');
+    fixture.componentRef.setInput('data', { labels: ['A', 'B'], datasets: [{ data: [4, 6] }] });
+    fixture.componentRef.setInput('activeElements', [{ datasetIndex: 0, index: 1 }]);
+    fixture.componentRef.setInput('ariaLabel', 'Spese per categoria');
+    fixture.detectChanges();
+    const instance = chart();
+
+    expect(instance.config.type).toBe('doughnut');
+    expect(instance.setActiveElements).toHaveBeenCalledWith([{ datasetIndex: 0, index: 1 }]);
+
+    fixture.componentRef.setInput('data', { labels: ['A'], datasets: [{ data: [4] }] });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(chartMocks.instances).toHaveLength(1);
+    expect(instance.setActiveElements).not.toHaveBeenLastCalledWith([
+      { datasetIndex: 0, index: 1 }
+    ]);
+    expect(instance.activeElements).toEqual([]);
   });
 
   it('emette indici delle interazioni e inoltra gli eventi accessibili del canvas', () => {

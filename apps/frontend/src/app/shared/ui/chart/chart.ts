@@ -12,18 +12,30 @@ import {
   ViewChild
 } from '@angular/core';
 import {
+  ArcElement,
   Chart as ChartJS,
   CategoryScale,
+  DoughnutController,
   LinearScale,
   LineController,
   LineElement,
   PointElement,
+  type ActiveElement,
+  type ChartEvent,
   type ChartData,
   type ChartOptions,
   type Plugin
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, LineController, LineElement, PointElement);
+ChartJS.register(
+  ArcElement,
+  CategoryScale,
+  DoughnutController,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement
+);
 
 /**
  * Costruttore Chart.js usato da `AppChart`. I test lo sostituiscono con un
@@ -36,7 +48,13 @@ export const CHART_CONSTRUCTOR = new InjectionToken<typeof ChartJS>('CHART_CONST
   factory: () => ChartJS
 });
 
-export type ChartOptionsWithoutInteractionCallbacks = Omit<ChartOptions<'line'>, 'onHover' | 'onClick'>;
+/** I tipi di grafico che l'app disegna: solo di questi sono registrati i componenti. */
+export type AppChartType = 'line' | 'doughnut';
+
+export type ChartOptionsWithoutInteractionCallbacks<TType extends AppChartType = 'line'> = Omit<
+  ChartOptions<TType>,
+  'onHover' | 'onClick'
+>;
 
 export interface ChartDataPoint {
   readonly datasetIndex: number;
@@ -49,11 +67,15 @@ export interface ChartDataPoint {
   styleUrl: './chart.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppChart implements AfterViewInit, OnDestroy {
-  readonly type = input.required<'line'>();
-  readonly data = input.required<ChartData<'line', number[], string>>();
-  readonly options = input<ChartOptionsWithoutInteractionCallbacks>({});
-  readonly plugins = input<readonly Plugin<'line'>[]>([]);
+export class AppChart<TType extends AppChartType> implements AfterViewInit, OnDestroy {
+  readonly type = input.required<TType>();
+  readonly data = input.required<ChartData<TType, number[], string>>();
+  // Le opzioni di Chart.js sono tutte facoltative, ma con `TType` ancora aperto
+  // TypeScript non riesce a dimostrare che `{}` le soddisfi per ogni tipo.
+  readonly options = input<ChartOptionsWithoutInteractionCallbacks<TType>>(
+    {} as ChartOptionsWithoutInteractionCallbacks<TType>
+  );
+  readonly plugins = input<readonly Plugin<TType>[]>([]);
   readonly activeElements = input<readonly ChartDataPoint[]>([]);
   readonly ariaLabel = input.required<string>();
   readonly role = input('img');
@@ -68,11 +90,11 @@ export class AppChart implements AfterViewInit, OnDestroy {
   @ViewChild('canvas') private canvas?: ElementRef<HTMLCanvasElement>;
 
   private readonly chartConstructor = inject(CHART_CONSTRUCTOR);
-  private chart?: ChartJS<'line', number[], string>;
-  private configuredType?: 'line';
-  private configuredPlugins?: readonly Plugin<'line'>[];
-  private appliedData?: ChartData<'line', number[], string>;
-  private appliedOptions?: ChartOptionsWithoutInteractionCallbacks;
+  private chart?: ChartJS<TType, number[], string>;
+  private configuredType?: TType;
+  private configuredPlugins?: readonly Plugin<TType>[];
+  private appliedData?: ChartData<TType, number[], string>;
+  private appliedOptions?: ChartOptionsWithoutInteractionCallbacks<TType>;
 
   constructor() {
     effect(() => {
@@ -115,10 +137,10 @@ export class AppChart implements AfterViewInit, OnDestroy {
   }
 
   private updateChart(
-    type: 'line',
-    data: ChartData<'line', number[], string>,
-    options: ChartOptionsWithoutInteractionCallbacks,
-    plugins: readonly Plugin<'line'>[],
+    type: TType,
+    data: ChartData<TType, number[], string>,
+    options: ChartOptionsWithoutInteractionCallbacks<TType>,
+    plugins: readonly Plugin<TType>[],
     activeElements: readonly ChartDataPoint[]
   ): void {
     if (!this.chart) {
@@ -172,19 +194,22 @@ export class AppChart implements AfterViewInit, OnDestroy {
     this.chart.update('none');
   }
 
-  private optionsWithEvents(options = this.options()): ChartOptions<'line'> {
+  private optionsWithEvents(options = this.options()): ChartOptions<TType> {
+    // Rimettere le due callback tolte da `Omit` restituisce proprio
+    // `ChartOptions<TType>`, ma con `TType` aperto TypeScript non ricompone
+    // `Omit<X, K> & Pick<X, K>` in `X`: da qui il cast.
     return {
       ...options,
-      onHover: (_event, activeElements) => {
+      onHover: (_event: ChartEvent, activeElements: ActiveElement[]) => {
         this.hovered.emit(
           activeElements.map(({ datasetIndex, index }) => ({ datasetIndex, index }))
         );
       },
-      onClick: (_event, activeElements) => {
+      onClick: (_event: ChartEvent, activeElements: ActiveElement[]) => {
         this.clicked.emit(
           activeElements.map(({ datasetIndex, index }) => ({ datasetIndex, index }))
         );
       }
-    };
+    } as ChartOptions<TType>;
   }
 }
