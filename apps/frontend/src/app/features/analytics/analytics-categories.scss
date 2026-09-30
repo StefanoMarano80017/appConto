@@ -82,3 +82,28 @@ li + li {
     border-radius: var(--radius-badge);
   }
 }
+
+.message {
+  margin: var(--space-7) 0 0;
+}
+
+/*
+ * Il design system non ha token di dimensione per i grafici (la timeline usa
+ * anch'essa un valore fisso): l'altezza è una sola, in rem. La ciambella è
+ * quadrata e riempie l'altezza, quindi il foro ha un diametro utile al testo.
+ */
+.chart {
+  height: 16.25rem;
+}
+
+/* Il foro è stretto: nome e importo vanno a capo invece di sbordare sulle fette. */
+.center-label,
+.center-percentage {
+  @include typography.text('caption');
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.center-amount {
+  display: block;
+}

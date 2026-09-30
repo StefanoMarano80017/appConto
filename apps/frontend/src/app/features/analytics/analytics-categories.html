@@ -1,10 +1,44 @@
 <app-panel>
-  <app-section-header title="Spese per categoria" />
+  <app-section-header title="Spese per categoria">
+    @if (categories().length > 0) {
+      <app-choice-group
+        panelActions
+        [options]="views"
+        [value]="view()"
+        ariaLabel="Vista delle categorie"
+        (selected)="view.set($event)"
+      />
+    }
+  </app-section-header>
 
   @if (categories().length === 0) {
     <p class="message">
       Nessuna spesa nel periodo selezionato.
     </p>
+  } @else if (view() === 'chart') {
+    @if (drawnTotal() > 0) {
+      <div class="chart">
+        <app-doughnut-chart
+          [items]="categories()"
+          [value]="value"
+          [label]="label"
+          [color]="color"
+          ariaLabel="Distribuzione delle spese per categoria"
+          (sliceActivated)="onSliceActivated($event)"
+        >
+          <ng-template appDoughnutCenter let-slice>
+            @let summary = center(slice);
+            <p class="center-label">{{ summary.label }}</p>
+            <app-amount class="center-amount" [value]="-summary.amount" />
+            @if (summary.percentage !== null) {
+              <p class="center-percentage">{{ formatPercent(summary.percentage) }}</p>
+            }
+          </ng-template>
+        </app-doughnut-chart>
+      </div>
+    } @else {
+      <p class="message">Nessuna spesa netta da rappresentare.</p>
+    }
   } @else {
     <ul>
       @for (category of categories(); track category.categoryId ?? 'none') {

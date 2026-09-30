@@ -357,6 +357,18 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
     await settle();
   };
 
+  // La scheda apre sul grafico: le righe cliccabili stanno nella Lista.
+  const showCategoryList = async (): Promise<void> => {
+    Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        'app-analytics-categories app-choice-group button'
+      )
+    )
+      .find((button) => button.textContent?.trim() === 'Lista')
+      ?.click();
+    await settle();
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AnalyticsPage],
@@ -381,6 +393,7 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
 
   it('una categoria porta ai suoi movimenti, mantenendo il periodo', async () => {
     await load();
+    await showCategoryList();
     await click('app-analytics-categories .row');
 
     expect(router.url).toContain('/transactions');
@@ -405,6 +418,7 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
         ]
       })
     );
+    await showCategoryList();
     await click('app-analytics-categories .row');
 
     expect(router.url).toContain('classification=unclassified');
