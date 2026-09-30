@@ -1,4 +1,8 @@
-import type { ChartSeriesColor } from './line-chart.model';
+import { resolveSeriesColors } from './chart-theme';
+import type { ChartSeriesColor } from './chart.model';
+
+// `seriesColorToken` vive nello strato comune: riesportato per chi lo importava da qui.
+export { seriesColorToken } from './chart-theme';
 
 /*
  * Interno al layer del grafico: le feature non lo importano.
@@ -15,11 +19,6 @@ export const LINE_CHART_TOKENS = {
   guideSelected: '--color-primary',
   guideHover: '--color-text-muted',
 } as const satisfies Record<string, `--color-${string}`>;
-
-/** Il token di una serie, derivato dal tipo chiuso dei colori-serie. */
-export function seriesColorToken(color: ChartSeriesColor): `--color-${ChartSeriesColor}` {
-  return `--color-${color}`;
-}
 
 /**
  * Prefissi delle custom property tipografiche (vedi `role-properties` in
@@ -92,7 +91,6 @@ export function resolveLineChartTheme(
   style: Pick<CSSStyleDeclaration, 'getPropertyValue'>,
 ): LineChartTheme {
   const read = (name: string): string => style.getPropertyValue(name).trim();
-  const seriesColor = (color: ChartSeriesColor): string => read(seriesColorToken(color));
   const font = (prefix: string): LineChartFont => ({
     family: read(`--${prefix}-font-family`),
     size: toNumber(read(`--${prefix}-font-size`)),
@@ -107,16 +105,6 @@ export function resolveLineChartTheme(
     guideHover: read(LINE_CHART_TOKENS.guideHover),
     labelFont: font(LINE_CHART_FONT_PREFIXES.label),
     valueFont: font(LINE_CHART_FONT_PREFIXES.value),
-    // Letterale e non costruito in ciclo: così il compilatore verifica che l'insieme chiuso sia coperto, senza cast.
-    series: {
-      'chart-1': seriesColor('chart-1'),
-      'chart-2': seriesColor('chart-2'),
-      'chart-3': seriesColor('chart-3'),
-      'chart-4': seriesColor('chart-4'),
-      'chart-5': seriesColor('chart-5'),
-      'chart-6': seriesColor('chart-6'),
-      'chart-7': seriesColor('chart-7'),
-      'chart-neutral': seriesColor('chart-neutral'),
-    },
+    series: resolveSeriesColors(style),
   };
 }
