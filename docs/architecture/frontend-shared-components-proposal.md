@@ -511,7 +511,7 @@ Feature (AnalyticsTimeline)      dominio: serie, bucket, significato della selez
 
 **Dove si estende**: un asse percentuale è un letterale in `LineChartValueAxis` più una voce in `VALUE_AXES`; un marcatore nascosto è `'hidden'` in `LinePointMarker`; un asse temporale vero è un nuovo input `xAxis` più la registrazione dell'adapter in `chart.ts`; una legenda condivisa diventa un componente a sé quando esiste un secondo consumer. Non si espone `ChartOptions`: ogni capacità nuova entra con un nome.
 
-**Gate**: il controllo «Chart.js resta dentro shared/ui/chart» fallisce se un `.ts` fuori da quella cartella (spec escluse) importa `chart.js`, o se una feature importa i moduli interni (`chart`, `chart-theme`, `line-chart-config`, `line-chart-theme`, `line-guides-plugin`, `doughnut-chart-config`, `doughnut-chart-theme`, `doughnut-grouping`). I moduli pubblici sono `line-chart`, `line-chart.model`, `doughnut-chart`, `doughnut-chart.model` e `chart.model`. Il controllo «dominio intatto» ignora i file sotto `shared/ui/`: i loro `*.model.ts` sono modelli di presentazione, non di dominio.
+**Gate**: il controllo «Chart.js resta dentro shared/ui/chart» fallisce se un `.ts` fuori da quella cartella (spec escluse) importa `chart.js`, o se una feature importa i moduli interni (`chart`, `chart-theme`, `line-chart-config`, `line-chart-theme`, `line-guides-plugin`, `doughnut-chart-config`, `doughnut-chart-theme`, `doughnut-grouping`). I moduli pubblici sono `line-chart`, `line-chart.model`, `doughnut-chart`, `doughnut-chart.model` e `chart.model`. Il controllo «dominio intatto» ignora i soli `*.model.ts` sotto `shared/ui/`: sono modelli di presentazione, non di dominio; un `*.api`, `*.store` o `*.query.ts` lì resta segnalato.
 
 ### Grafico a ciambella
 

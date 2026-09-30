@@ -63,7 +63,7 @@ describe('token del tema della ciambella', () => {
   for (const [tema, testo] of Object.entries(palette)) {
     it(`ogni token usato è dichiarato nella palette ${tema}`, () => {
       for (const nome of nomi) {
-        expect(testo, nome).toMatch(new RegExp(`${nome}\s*:`));
+        expect(testo, nome).toMatch(new RegExp(`${nome}\\s*:`));
       }
     });
   }

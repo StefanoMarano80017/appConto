@@ -22,7 +22,7 @@ export function doughnutChartData<T>(
     datasets: [
       {
         data: slices.map((slice) => slice.value),
-        // «Altre» è sempre neutro: non ha un colore proprio da chiedere a chi consuma.
+        // «Altri» è sempre neutro: non ha un colore proprio da chiedere a chi consuma.
         backgroundColor: slices.map((slice) =>
           slice.kind === 'item' ? sliceColor(color(slice.item), theme) : theme.series['chart-neutral'],
         ),

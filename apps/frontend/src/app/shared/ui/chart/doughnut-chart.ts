@@ -222,9 +222,13 @@ export class DoughnutChart<T> {
     this.focusIndex.set(next);
   }
 
-  /** Chi arriva col tab vede subito una fetta, senza perdere quella già scelta. */
-  protected onFocus(): void {
-    if (this.slices().length > 0) {
+  /**
+   * Chi arriva col tab vede subito una fetta, senza perdere quella già scelta.
+   * Solo da tastiera: anche il click dà il focus al canvas, e lì accendere la
+   * prima fetta la lascerebbe al centro dopo che il puntatore è uscito.
+   */
+  protected onFocus(event: FocusEvent): void {
+    if (this.slices().length > 0 && isKeyboardFocus(event.target)) {
       this.focusIndex.set(this.focusIndex() ?? 0);
     }
   }
@@ -232,5 +236,21 @@ export class DoughnutChart<T> {
   protected onBlur(): void {
     this.hover.set(null);
     this.focusIndex.set(null);
+  }
+}
+
+/**
+ * `:focus-visible` è il giudizio del browser su un focus da tastiera. Dove il
+ * selettore non è supportato `matches` lancia: si tratta il focus come da
+ * tastiera, perché perdere l'accesso da tastiera costa più di una fetta accesa.
+ */
+function isKeyboardFocus(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return true;
+  }
+  try {
+    return target.matches(':focus-visible');
+  } catch {
+    return true;
   }
 }

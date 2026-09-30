@@ -1,6 +1,9 @@
 /*
  * `position: relative` perché il centro si posiziona rispetto al grafico, non
  * a un antenato qualunque. Niente font da risolvere: sul canvas non c'è testo.
+ * `container-type: size` perché il centro si misuri sull'host: l'host ha già
+ * dimensioni proprie (riempie il contenitore), quindi il contenimento non lo
+ * fa collassare.
  */
 :host {
   display: block;
@@ -8,18 +11,22 @@
   width: 100%;
   height: 100%;
   min-width: 0;
+  container-type: size;
 }
 
 /*
- * Sovrapposto al foro: centrato sul canvas e largo meno del foro (cutout 68%),
- * così il testo non sborda sulle fette. Non intercetta il puntatore, altrimenti
- * passarci sopra spegnerebbe l'hover delle fette sotto.
+ * Sovrapposto al foro e centrato sul canvas. La ciambella prende il diametro
+ * dal lato più corto dell'host (su una scheda larga, dall'altezza), quindi
+ * anche il centro si misura da lì: il 55% di quel lato sta dentro il foro
+ * (cutout 68%, meno il margine dell'hover), così il testo, che la feature
+ * manda a capo, non sborda sulle fette. Non intercetta il puntatore, altrimenti passarci sopra
+ * spegnerebbe l'hover delle fette sotto.
  */
 .center {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 55%;
+  width: calc(min(100cqw, 100cqh) * 0.55);
   transform: translate(-50%, -50%);
   text-align: center;
   pointer-events: none;

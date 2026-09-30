@@ -127,10 +127,12 @@ verifica 'nessun alias legacy' \
 # non guardava. Con `master` come riferimento vede tutto cio' che il ramo ha
 # cambiato, committato o no. Su master stesso resta il confronto con l'albero
 # di lavoro, che e' l'unica cosa sensata da controllare li'.
-# Sono esclusi i file sotto shared/ui/: i loro *.model.ts sono modelli di
-# presentazione dello strato UI condiviso, non modelli di dominio.
+# Sono esclusi solo i *.model.ts sotto shared/ui/: sono modelli di
+# presentazione dello strato UI condiviso, non modelli di dominio. Un
+# *.api/.store/.query.ts lì dentro non avrebbe ragione di esistere, quindi
+# resta segnalato.
 verifica 'dominio intatto' \
-  bash -c "git -C ../.. diff --name-only master | grep -E '\.(model|api|store|query)\.ts\$|apps/backend' | grep -v 'apps/frontend/src/app/shared/ui/'"
+  bash -c "git -C ../.. diff --name-only master | grep -E '\.(model|api|store|query)\.ts\$|apps/backend' | grep -vE 'apps/frontend/src/app/shared/ui/.*\.model\.ts\$'"
 
 printf '\n%s\n' "controlli falliti: $fallimenti"
 [ "$fallimenti" -eq 0 ]

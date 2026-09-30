@@ -58,8 +58,10 @@ const ENTRIES: readonly Entry[] = [
   { name: 'Varie', amount: 10, color: 'chart-1' }
 ];
 
-// Il test passa anche dal controllo dei template: `[items]`, le funzioni e il
-// contesto del centro devono concordare su `Entry`, altrimenti non compila.
+// Il test passa anche dal controllo dei template: `[items]` e le funzioni devono
+// concordare su `Entry`, altrimenti non compila. Il contesto del centro invece
+// resta tipizzato alla larga: Angular non ricava `T` di `DoughnutCenter` dal
+// contenuto proiettato, quindi `slice` qui non è controllato contro `Entry`.
 @Component({
   imports: [DoughnutChart, DoughnutCenter],
   template: `
@@ -127,6 +129,17 @@ describe('DoughnutChart', () => {
     await fixture.whenStable();
   };
 
+  // Un evento `focus` sintetico non rende l'elemento `:focus-visible`: si
+  // simula quel che il browser dice di un focus arrivato da tastiera.
+  const keyboardFocus = async (): Promise<void> => {
+    const target = canvas();
+    const matches = target.matches.bind(target);
+    vi.spyOn(target, 'matches').mockImplementation(
+      (selector: string) => selector === ':focus-visible' || matches(selector)
+    );
+    await dispatch(target, 'focus');
+  };
+
   beforeEach(async () => {
     chartMocks.instances.length = 0;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
@@ -157,11 +170,19 @@ describe('DoughnutChart', () => {
     expect(center()).toBe('nessuna');
   });
 
-  it('senza tema risolto non crea il grafico', () => {
-    fixture = TestBed.createComponent(HostComponent);
+  it('il primo disegno ha già i colori del tema: niente fotogramma senza colori', async () => {
+    const computed = vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      getPropertyValue: (name: string) => (name === '--color-chart-1' ? 'rgb(1, 1, 1)' : '')
+    } as CSSStyleDeclaration);
+    try {
+      await render();
+    } finally {
+      computed.mockRestore();
+    }
 
-    expect(chartMocks.instances).toHaveLength(0);
-    expect(canvas()).toBeNull();
+    // La configurazione passata al costruttore è quella del primo disegno.
+    expect(chartMocks.instances).toHaveLength(1);
+    expect(chart().config.data.datasets[0].backgroundColor[1]).toBe('rgb(1, 1, 1)');
   });
 
   it('il passaggio attiva la fetta e la mostra al centro; uscire dall’host la toglie', async () => {
@@ -202,10 +223,10 @@ describe('DoughnutChart', () => {
     expect(activated()).toHaveLength(2);
   });
 
-  it('il focus attiva la prima fetta; le frecce girano in cerchio', async () => {
+  it('il focus da tastiera attiva la prima fetta; le frecce girano in cerchio', async () => {
     await render();
 
-    await dispatch(canvas(), 'focus');
+    await keyboardFocus();
     expect(center()).toBe('Casa');
     expect(chart().activeElements).toEqual(at(0));
 
@@ -235,6 +256,18 @@ describe('DoughnutChart', () => {
     expect(chart().activeElements).toEqual(at(4));
   });
 
+  it('il focus dato col puntatore non attiva fette: uscendo non resta la più grande', async () => {
+    await render();
+
+    await dispatch(canvas(), 'focus');
+    expect(center()).toBe('nessuna');
+    expect(chart().activeElements).toEqual([]);
+
+    await hover(2);
+    await dispatch(host(), 'pointerleave');
+    expect(center()).toBe('nessuna');
+  });
+
   it('senza fetta attiva, → va alla prima e ← all’ultima', async () => {
     await render();
     await key('ArrowRight');
@@ -260,7 +293,7 @@ describe('DoughnutChart', () => {
 
   it('Invio e Spazio emettono la fetta attiva e bloccano il comportamento predefinito', async () => {
     await render();
-    await dispatch(canvas(), 'focus');
+    await keyboardFocus();
     await key('ArrowRight');
 
     const enter = await key('Enter');
@@ -287,7 +320,7 @@ describe('DoughnutChart', () => {
 
   it('Escape e blur tolgono la fetta attiva', async () => {
     await render();
-    await dispatch(canvas(), 'focus');
+    await keyboardFocus();
     await key('ArrowRight');
 
     await key('Escape');
@@ -303,7 +336,7 @@ describe('DoughnutChart', () => {
 
   it('se le voci si riducono, l’indice da tastiera fuori dalle fette si scarta', async () => {
     await render();
-    await dispatch(canvas(), 'focus');
+    await keyboardFocus();
     await key('End');
     expect(center()).toBe('Altri');
 
@@ -353,7 +386,7 @@ describe('DoughnutChart', () => {
     await fixture.whenStable();
     expect(chart().data.labels).toEqual([]);
 
-    await dispatch(canvas(), 'focus');
+    await keyboardFocus();
     for (const name of ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter', ' ']) {
       const event = await key(name);
       expect(event.defaultPrevented).toBe(false);
