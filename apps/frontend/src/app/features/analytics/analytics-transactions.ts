@@ -10,6 +10,7 @@ import {
   input,
   linkedSignal,
   output,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -46,6 +47,12 @@ import { AnalyticsSelectionValue, selectionLabel } from './analytics-selection';
 export class AnalyticsTransactions {
   readonly selection = input.required<AnalyticsSelectionValue>();
   readonly query = input.required<TransactionQueryState>();
+  /**
+   * Spento, il pannello non si porta in vista alla nascita: serve a chi lo
+   * rimonta con una selezione già fatta, che non è una selezione nuova.
+   * Letto solo alla prima esecuzione: le selezioni successive si mostrano sempre.
+   */
+  readonly revealOnInit = input(true);
 
   readonly closed = output<void>();
 
@@ -90,8 +97,15 @@ export class AnalyticsTransactions {
   constructor() {
     // A ogni nuova selezione, a pannello reso: chi ha cliccato sul grafico deve
     // vedere dove sono finite le righe, e da tastiera ritrovarsi sul titolo.
+    let first = true;
     effect(() => {
       this.selection();
+
+      const skip = first && !untracked(this.revealOnInit);
+      first = false;
+      if (skip) {
+        return;
+      }
 
       afterNextRender(
         () => {

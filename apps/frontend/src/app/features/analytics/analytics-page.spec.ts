@@ -725,6 +725,43 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     await panelRequest();
   });
 
+  it('la prima selezione porta in vista il pannello', async () => {
+    const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    await load();
+    await click('app-analytics-merchants .link');
+    await panelRequest();
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(panel()?.querySelector('h2'));
+  });
+
+  it('rientrando con una selezione il pannello non ruba scroll e focus, una nuova selezione sì', async () => {
+    const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    await load();
+    await click('app-analytics-merchants .link');
+    await panelRequest();
+
+    fixture.destroy();
+    (document.activeElement as HTMLElement | null)?.blur();
+    scroll.mockClear();
+    fixture = TestBed.createComponent(AnalyticsPage);
+    await load();
+    await panelRequest();
+
+    // Il rientro non è una nuova selezione: il pannello c'è, ma resta dov'è.
+    expect(panel()).not.toBeNull();
+    expect(scroll).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBe(panel()?.querySelector('h2'));
+
+    host().querySelectorAll<HTMLElement>('app-analytics-merchants .link')[1]?.click();
+    await settle();
+    await settle();
+    expect((await panelRequest()).get('merchantIds')).toBe('m-2');
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(panel()?.querySelector('h2'));
+  });
+
   it('il pulsante chiudi toglie il pannello', async () => {
     await load();
     await click('app-analytics-merchants .link');

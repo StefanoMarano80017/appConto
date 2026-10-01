@@ -69,6 +69,14 @@ export class AnalyticsPage implements OnInit {
   protected readonly store = inject(AnalyticsStore);
   protected readonly selection = inject(AnalyticsSelection);
 
+  /**
+   * La selezione trovata entrando nella pagina, persistita da una visita
+   * precedente. Il pannello che la mostra non deve prendersi scroll e focus:
+   * entrare non è selezionare. Ogni `select()` crea un oggetto nuovo, quindi
+   * basta l'identità per riconoscere una selezione fatta qui.
+   */
+  protected readonly initialSelection = this.selection.selection();
+
   protected readonly analytics = httpResource<Analytics>(() =>
     analyticsRequest(this.store.query())
   );

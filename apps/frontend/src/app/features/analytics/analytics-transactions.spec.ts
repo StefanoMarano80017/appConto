@@ -250,4 +250,29 @@ describe('AnalyticsTransactions', () => {
     expect(document.activeElement).toBe(title());
     expect(title()?.getAttribute('tabindex')).toBe('-1');
   });
+
+  it('con revealOnInit spento non si porta in vista alla nascita, ma alla selezione successiva sì', async () => {
+    const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    const before = document.activeElement;
+
+    fixture = TestBed.createComponent(AnalyticsTransactions);
+    fixture.componentRef.setInput('selection', merchantSelection);
+    fixture.componentRef.setInput('query', merchantQuery);
+    fixture.componentRef.setInput('revealOnInit', false);
+    await settle();
+
+    expect(scroll).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(before);
+    expect(document.activeElement).not.toBe(title());
+
+    fixture.componentRef.setInput('selection', {
+      kind: 'merchant',
+      merchantId: 'm-2',
+      name: 'CARREFOUR'
+    } satisfies AnalyticsSelectionValue);
+    await settle();
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(title());
+  });
 });

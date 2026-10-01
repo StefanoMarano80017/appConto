@@ -44,6 +44,7 @@
           <app-analytics-transactions
             [selection]="selected"
             [query]="query"
+            [revealOnInit]="selected !== initialSelection"
             (closed)="onPanelClosed()"
           />
         }
