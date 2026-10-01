@@ -10,7 +10,11 @@
     <app-error-retry [message]="message" (retry)="transactions.reload()" />
   } @else if (page(); as data) {
     <!-- Durante il ricaricamento restano le righe di prima, attenuate. -->
-    <div class="content" [class.stale]="transactions.isLoading()">
+    <div
+      class="content"
+      [class.stale]="transactions.isLoading()"
+      [attr.aria-busy]="transactions.isLoading()"
+    >
       @if (data.items.length === 0) {
         <app-empty-state message="Nessuna transazione per questa selezione." />
       } @else {

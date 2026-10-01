@@ -64,6 +64,14 @@ describe('AnalyticsTransactions', () => {
     await settle();
   };
 
+  // Chiude i conti con le richieste ancora attese (quelle annullate non contano).
+  const finish = async (): Promise<void> => {
+    for (const request of pending().filter((candidate) => !candidate.cancelled)) {
+      request.flush(page(0, 0));
+    }
+    await settle();
+  };
+
   beforeEach(async () => {
     // jsdom non implementa scrollIntoView: senza, il componente solleverebbe.
     Element.prototype.scrollIntoView = vi.fn();
@@ -77,6 +85,8 @@ describe('AnalyticsTransactions', () => {
   });
 
   afterEach(() => {
+    // Nessuna richiesta deve restare aperta: ogni test risponde a quelle ancora attese.
+    http.verify();
     delete (Element.prototype as Partial<Element>).scrollIntoView;
   });
 
@@ -114,6 +124,7 @@ describe('AnalyticsTransactions', () => {
     for (const [selection, label] of cases) {
       await render(selection);
       expect(title()?.textContent?.trim()).toBe(`Transazioni · ${label}`);
+      await respond(page(0, 0));
       fixture.destroy();
     }
   });
@@ -195,6 +206,7 @@ describe('AnalyticsTransactions', () => {
     host().querySelector<HTMLButtonElement>('button[aria-label="Chiudi dettaglio"]')!.click();
 
     expect(closed).toBe(1);
+    await finish();
   });
 
   it('cambiando selezione in volo, vince l’ultima', async () => {
@@ -227,6 +239,52 @@ describe('AnalyticsTransactions', () => {
     expect(rows[0].textContent).toContain('CARREFOUR');
   });
 
+  it('ricaricando la stessa selezione, le righe di prima restano attenuate finché non arrivano le nuove', async () => {
+    await render();
+    await respond(page(2, 2, 'ESSELUNGA'));
+
+    fixture.componentRef.setInput('query', { ...merchantQuery, search: 'bio' });
+    await settle();
+
+    const content = host().querySelector('.content');
+    expect(content?.classList.contains('stale')).toBe(true);
+    expect(content?.getAttribute('aria-busy')).toBe('true');
+    expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(2);
+
+    await respond(page(3, 3, 'BIO'));
+
+    expect(host().querySelector('.content.stale')).toBeNull();
+    expect(host().querySelector('.content')?.getAttribute('aria-busy')).toBe('false');
+    const rows = host().querySelectorAll('app-transactions-table tbody tr');
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain('BIO');
+  });
+
+  it('cambiando selezione, le righe della precedente spariscono fino alla nuova risposta', async () => {
+    await render();
+    await respond(page(25, 312, 'ESSELUNGA'));
+
+    fixture.componentRef.setInput('selection', {
+      kind: 'merchant',
+      merchantId: 'm-2',
+      name: 'CARREFOUR'
+    } satisfies AnalyticsSelectionValue);
+    fixture.componentRef.setInput('query', { ...EMPTY_QUERY, merchantIds: ['m-2'] });
+    await settle();
+
+    expect(text()).toContain('Caricamento in corso…');
+    expect(text()).not.toContain('ESSELUNGA');
+    expect(text()).not.toContain('Mostrate');
+    expect(host().querySelector('app-transactions-table')).toBeNull();
+
+    await respond(page(2, 2, 'CARREFOUR'));
+
+    expect(text()).not.toContain('Caricamento in corso…');
+    const rows = host().querySelectorAll('app-transactions-table tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain('CARREFOUR');
+  });
+
   it('a ogni nuova selezione porta in vista il pannello e ne mette a fuoco il titolo', async () => {
     await render();
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
@@ -238,6 +296,9 @@ describe('AnalyticsTransactions', () => {
       name: 'CARREFOUR'
     } satisfies AnalyticsSelectionValue);
     await settle();
+    // Il fuoco va altrove: alla selezione successiva deve tornare sul titolo.
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).not.toBe(title());
     fixture.componentRef.setInput('selection', {
       kind: 'category',
       categoryId: 'cat-1',
@@ -249,6 +310,7 @@ describe('AnalyticsTransactions', () => {
     expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
     expect(document.activeElement).toBe(title());
     expect(title()?.getAttribute('tabindex')).toBe('-1');
+    await finish();
   });
 
   it('con revealOnInit spento non si porta in vista alla nascita, ma alla selezione successiva sì', async () => {
@@ -274,5 +336,6 @@ describe('AnalyticsTransactions', () => {
 
     expect(scroll).toHaveBeenCalledTimes(1);
     expect(document.activeElement).toBe(title());
+    await finish();
   });
 });

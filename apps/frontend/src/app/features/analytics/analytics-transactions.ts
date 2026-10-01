@@ -26,6 +26,12 @@ import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-optio
 import { transactionsRequest } from '../transactions/transactions.api';
 import { AnalyticsSelectionValue, selectionLabel } from './analytics-selection';
 
+/** Una pagina caricata, con la selezione a cui appartiene. */
+interface LoadedPage {
+  selection: AnalyticsSelectionValue;
+  page: TransactionPage;
+}
+
 /**
  * Le transazioni dietro l'elemento del grafico selezionato.
  *
@@ -73,13 +79,27 @@ export class AnalyticsTransactions {
    * L'ultima pagina caricata, che resta a schermo mentre ne arriva un'altra.
    *
    * Come in `AnalyticsPage`: `httpResource` azzera il valore quando la
-   * richiesta cambia, e passare da un elemento all'altro farebbe sparire e
-   * ricomparire la tabella.
+   * richiesta cambia, e un filtro nuovo farebbe sparire e ricomparire la
+   * tabella. Vale però solo per la stessa selezione: cambiata quella, le righe
+   * di prima non le appartengono più e si torna al caricamento.
    */
-  protected readonly page = linkedSignal<TransactionPage | undefined, TransactionPage | undefined>({
-    source: () => (this.transactions.hasValue() ? this.transactions.value() : undefined),
-    computation: (caricata, precedente) => caricata ?? precedente?.value,
+  private readonly loaded = linkedSignal<
+    { selection: AnalyticsSelectionValue; page: TransactionPage | undefined },
+    LoadedPage | undefined
+  >({
+    source: () => ({
+      selection: this.selection(),
+      page: this.transactions.hasValue() ? this.transactions.value() : undefined,
+    }),
+    computation: ({ selection, page }, precedente) =>
+      page !== undefined
+        ? { selection, page }
+        : precedente?.value?.selection === selection
+          ? precedente.value
+          : undefined,
   });
+
+  protected readonly page = computed(() => this.loaded()?.page);
 
   protected readonly error = computed(() => {
     const error = this.transactions.error();

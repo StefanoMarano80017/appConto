@@ -223,7 +223,7 @@ describe('AnalyticsPage', () => {
     expect(intestazioni.some((testo) => testo.includes('Analytics'))).toBe(false);
   });
 
-  it('è una dashboard: non contiene più la tabella dei movimenti', async () => {
+  it('senza selezione non mostra la tabella dei movimenti', async () => {
     await settle();
     await flush(analytics());
 

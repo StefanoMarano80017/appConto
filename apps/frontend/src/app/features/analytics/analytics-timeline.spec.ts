@@ -392,7 +392,7 @@ describe('AnalyticsTimeline', () => {
     expect(tooltip()?.classList.contains('left-side')).toBe(true);
   });
 
-  it('apre i movimenti sul periodo completo della settimana selezionata', async () => {
+  it('chiede le transazioni del periodo completo della settimana selezionata', async () => {
     await render();
     const requested: TimelineSelection[] = [];
     fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
@@ -410,7 +410,7 @@ describe('AnalyticsTimeline', () => {
     ]);
   });
 
-  it('apre i movimenti dal primo all’ultimo giorno del mese selezionato', async () => {
+  it('chiede le transazioni dal primo all’ultimo giorno del mese selezionato', async () => {
     await render(
       {
         granularity: 'month',
