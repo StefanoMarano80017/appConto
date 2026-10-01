@@ -12,7 +12,8 @@ import {
   TRANSACTION_TYPE_LABELS,
   TransactionType
 } from '../transactions/transaction-type';
-import { TransactionsTable } from '../transactions/transactions-table';
+import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
+import { TransactionsTable } from '../../shared/ui/transactions-table';
 import { CategoryBreakdownSection } from './category-breakdown';
 import { DashboardFilterStore } from './dashboard-filter.store';
 import { Dashboard, MonthComparison } from './dashboard.model';
@@ -51,8 +52,15 @@ export class DashboardPage {
   protected readonly dashboard = signal<Dashboard | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
-  /** Cresce ad ogni modifica fatta dalla tabella, per forzare un ricaricamento. */
-  private readonly reloadToken = signal(0);
+
+  /**
+   * I tipi con etichetta e icona, per la tabella in sola lettura.
+   *
+   * Qui i movimenti sono un riepilogo: si correggono nella pagina dei
+   * movimenti, non dalla dashboard, quindi la tabella non salva nulla e non
+   * c'è niente da ricaricare dopo.
+   */
+  protected readonly transactionTypeOptions = TRANSACTION_TYPE_OPTIONS;
 
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
@@ -146,7 +154,6 @@ export class DashboardPage {
   constructor() {
     effect((onCleanup) => {
       const filters = this.filters.filters();
-      this.reloadToken();
 
       this.loading.set(true);
       this.error.set(null);
@@ -185,9 +192,5 @@ export class DashboardPage {
     } else {
       this.filters.setMerchant(null);
     }
-  }
-
-  protected reload(): void {
-    this.reloadToken.update((token) => token + 1);
   }
 }

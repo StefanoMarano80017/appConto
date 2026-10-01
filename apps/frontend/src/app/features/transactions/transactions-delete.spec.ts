@@ -268,8 +268,13 @@ describe('TransactionsPage — selezione ed eliminazione', () => {
 
     // È ciò che accade correggendo il tipo di un movimento: la tabella viene
     // ricostruita, e una selezione che vivesse dentro di essa sparirebbe.
-    const tabella = harness.routeNativeElement?.querySelector('app-transactions-table');
-    tabella?.dispatchEvent(new CustomEvent('changed'));
+    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
+      'app-transactions-table .type app-visual-select select'
+    );
+    select!.value = 'WITHDRAWAL';
+    select!.dispatchEvent(new Event('change'));
+    await settle();
+    http.expectOne(`${API_BASE_URL}/transactions/1/type`).flush({ id: '1', type: 'WITHDRAWAL' });
     await settle();
     await flush();
 

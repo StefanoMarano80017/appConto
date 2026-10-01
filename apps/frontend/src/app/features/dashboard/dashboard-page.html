@@ -69,7 +69,11 @@
       @if (data.transactions.length === 0) {
         <p class="message">Nessuna transazione corrisponde ai filtri.</p>
       } @else {
-        <app-transactions-table [transactions]="data.transactions" (changed)="reload()" />
+        <app-transactions-table
+          mode="readonly"
+          [transactions]="data.transactions"
+          [typeOptions]="transactionTypeOptions"
+        />
       }
     </app-panel>
   }

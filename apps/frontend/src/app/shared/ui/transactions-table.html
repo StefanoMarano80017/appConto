@@ -6,7 +6,7 @@
   <table class="transactions">
     <thead>
       <tr>
-        @if (selectable()) {
+        @if (showSelection()) {
           <th scope="col" class="select">
             <input
               type="checkbox"
@@ -18,7 +18,7 @@
             />
           </th>
         }
-        @for (column of columns(); track column.label) {
+        @for (column of columns; track column.label) {
           @if (sortBy() !== null && column.field; as field) {
             <th
               app-sortable-header
@@ -32,15 +32,15 @@
             <th scope="col" [class.numeric]="column.numeric">{{ column.label }}</th>
           }
         }
+        @if (extraColumn(); as extra) {
+          <th scope="col" class="extra">{{ extra.label() }}</th>
+        }
       </tr>
     </thead>
     <tbody>
       @for (transaction of transactions(); track transaction.id) {
-        <tr
-          [class.saving]="savingId() === transaction.id"
-          [class.selected]="isSelected(transaction)"
-        >
-          @if (selectable()) {
+        <tr [class.saving]="isSaving(transaction)" [class.selected]="isSelected(transaction)">
+          @if (showSelection()) {
             <td class="select">
               <input
                 type="checkbox"
@@ -69,9 +69,10 @@
           </td>
           <td class="type">
             <app-visual-select
-              [options]="transactionTypeOptions"
+              [options]="typeOptions()"
               [value]="transaction.type"
-              [disabled]="savingId() === transaction.id"
+              [readonly]="!editable()"
+              [disabled]="isSaving(transaction)"
               [ariaLabel]="'Tipo di ' + transaction.description"
               (valueChange)="changeType(transaction, $event)"
             />
@@ -81,7 +82,8 @@
               <app-visual-select
                 [options]="categories()"
                 [value]="merchant.category?.id ?? null"
-                [disabled]="savingId() === transaction.id"
+                [readonly]="!editable()"
+                [disabled]="isSaving(transaction)"
                 [ariaLabel]="'Categoria di ' + merchant.label"
                 (valueChange)="changeCategory(transaction, $event)"
               />
@@ -92,38 +94,12 @@
           <td class="numeric">
             <app-amount [value]="transaction.amount" />
           </td>
-          @if (showLoans()) {
-            @let loans = loanCell(transaction);
-            <td class="loan">
-              @for (link of loans.origins; track link.loanId) {
-                <a class="loan-link origin" [routerLink]="['/loans', link.loanId]">
-                  <span class="name" appTruncate>{{ link.borrowerName }}</span>
-                  <span class="remaining" [class.zero]="link.remainingAmount === 0">{{
-                    link.remainingAmount === 0 ? 'chiuso' : formatAmount(link.remainingAmount)
-                  }}</span>
-                </a>
-              }
-
-              @for (link of loans.repayments; track link.loanId) {
-                <a class="loan-link repayment" appTruncate [routerLink]="['/loans', link.loanId]">
-                  Restituzione · {{ link.borrowerName }}
-                </a>
-              }
-
-              @if (loans.ownExpense > 0) {
-                <span class="own-expense">{{ formatAmount(loans.ownExpense) }} spesa tua</span>
-              }
-
-              @if (loans.creatable) {
-                <a
-                  class="create"
-                  routerLink="/loans/new"
-                  [queryParams]="{ transactionId: transaction.id }"
-                  >{{ loans.origins.length === 0 ? 'Crea prestito' : '+ Aggiungi' }}</a
-                >
-              } @else if (loans.origins.length === 0 && loans.repayments.length === 0) {
-                <span class="none">—</span>
-              }
+          @if (extraColumn(); as extra) {
+            <td class="extra">
+              <ng-container
+                [ngTemplateOutlet]="extra.template"
+                [ngTemplateOutletContext]="{ $implicit: transaction }"
+              />
             </td>
           }
         </tr>
@@ -136,13 +112,13 @@
         chi la ospita e non mostra mai tutte le transazioni esistenti.
       -->
       <tr class="total">
-        <td class="total-label" [attr.colspan]="amountColumnIndex + (selectable() ? 1 : 0)">
+        <td class="total-label" [attr.colspan]="amountColumnIndex + (showSelection() ? 1 : 0)">
           Totale del periodo mostrato
         </td>
         <td class="numeric">
           <app-amount [value]="totalAmount()" />
         </td>
-        @if (showLoans()) {
+        @if (extraColumn()) {
           <td></td>
         }
       </tr>

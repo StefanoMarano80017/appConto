@@ -105,13 +105,14 @@ describe('DashboardPage', () => {
   const text = (): string =>
     ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\./g, '');
 
-  /** Risponde alla richiesta della dashboard e a quella delle categorie della tabella. */
+  /**
+   * Risponde alla richiesta della dashboard.
+   *
+   * È l'unica: la tabella dei movimenti qui è in sola lettura e non carica più
+   * le categorie per conto suo — se lo rifacesse, `http.verify()` lo direbbe.
+   */
   const flush = async (data: Dashboard, url: string): Promise<void> => {
     http.expectOne(url).flush(data);
-    await fixture.whenStable();
-    for (const request of http.match(`${API_BASE_URL}/categories`)) {
-      request.flush([{ id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' }]);
-    }
     await fixture.whenStable();
   };
 
@@ -191,6 +192,23 @@ describe('DashboardPage', () => {
 
     expect(rows.length).toBe(1);
     expect(text()).toContain('SOLO QUESTA');
+  });
+
+  // Qui i movimenti sono un riepilogo: si correggono nella pagina dei
+  // movimenti. Tipo e categoria si vedono, ma non si toccano.
+  it('la tabella dei movimenti è in sola lettura: niente select né caselle', async () => {
+    await fixture.whenStable();
+    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+
+    const tabella = (fixture.nativeElement as HTMLElement).querySelector(
+      'app-transactions-table'
+    );
+
+    expect(tabella).not.toBeNull();
+    expect(tabella!.querySelector('select')).toBeNull();
+    expect(tabella!.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(tabella!.querySelectorAll('app-visual-select .picker.readonly').length).toBe(4);
+    expect(tabella!.querySelector('tbody td.category')?.textContent).toContain('Alimentari');
   });
 
   it('mostra drill down, top merchant e confronto', async () => {

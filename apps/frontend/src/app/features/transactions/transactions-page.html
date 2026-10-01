@@ -67,17 +67,36 @@
         }
 
         <app-transactions-table
+          mode="edit"
           [transactions]="data.items"
+          [typeOptions]="typeOptions"
+          [categoryOptions]="categoryItems()"
           [sortBy]="query().sortBy"
           [sortDirection]="query().sortDirection"
-          [loanLinks]="links()"
           [selectable]="true"
           [selectedIds]="selected()"
+          [savingId]="edits.savingId()"
+          [error]="edits.error()"
           (sortSelected)="sortBy($event)"
           (selectionToggled)="toggleSelection($event)"
           (allToggled)="toggleAll($event)"
-          (changed)="reload()"
-        />
+          (typeChange)="edits.changeType($event.row, $event.type)"
+          (categoryChange)="edits.changeCategory($event.row, $event.categoryId)"
+        >
+          <!--
+            La colonna dei prestiti resta nascosta finché i legami non sono
+            arrivati. Un elenco, anche vuoto, la mostra: «crea prestito» ha
+            senso anche se nessun prestito esiste ancora.
+          -->
+          @if (links() !== null) {
+            <ng-template appTransactionsTableExtraColumn="Prestito" let-transaction>
+              <app-transaction-loan-cell
+                [transaction]="transaction"
+                [links]="linksOf(transaction.id)"
+              />
+            </ng-template>
+          }
+        </app-transactions-table>
 
         <app-transactions-pagination
           [pagination]="data.pagination"

@@ -303,6 +303,96 @@ describe('TransactionsPage', () => {
     );
   });
 
+  /*
+   * La colonna «Prestito» è un template proiettato nella tabella condivisa,
+   * avvolto in un `@if`: finché i legami non sono arrivati non si sa cosa
+   * mostrarci, e la colonna non c'è. Arrivati, ogni riga ha la sua cella.
+   */
+  it('la colonna Prestito compare solo quando i legami con i prestiti sono arrivati', async () => {
+    await open('/transactions');
+    const [request] = http.match((candidate) =>
+      candidate.url.startsWith(`${API_BASE_URL}/transactions`)
+    );
+    request!.flush(
+      page({
+        items: [
+          { ...transaction('1', 'ESSELUNGA', -300), type: 'LOAN' },
+          { ...transaction('2', 'CARREFOUR', -200), type: 'LOAN' }
+        ]
+      })
+    );
+    await settle();
+
+    const host = harness.routeNativeElement!;
+    const intestazioni = (): (string | undefined)[] =>
+      [...host.querySelectorAll('app-transactions-table thead th')].map((th) =>
+        th.textContent?.trim()
+      );
+
+    expect(intestazioni()).not.toContain('Prestito');
+    expect(host.querySelector('app-transaction-loan-cell')).toBeNull();
+
+    for (const lookup of http.match(`${API_BASE_URL}/categories`)) {
+      lookup.flush([]);
+    }
+    for (const lookup of http.match(`${API_BASE_URL}/merchants/summary`)) {
+      lookup.flush([]);
+    }
+    http.expectOne(`${API_BASE_URL}/loans/links`).flush({
+      links: [
+        {
+          transactionId: '1',
+          loanId: 'loan-1',
+          role: 'ORIGIN',
+          borrowerName: 'Marco',
+          amount: 100,
+          remainingAmount: 100,
+          status: 'OPEN'
+        }
+      ]
+    });
+    await settle();
+
+    expect(intestazioni().at(-1)).toBe('Prestito');
+
+    const celle = [...host.querySelectorAll('app-transactions-table td.extra')];
+    expect(celle.length).toBe(2);
+    // Il primo ha già un prestito: lo mostra, con la quota rimasta a carico
+    // proprio, e propone di aggiungerne un altro.
+    expect(celle[0].querySelector('.loan-link.origin')?.textContent).toContain('Marco');
+    expect(celle[0].querySelector('.own-expense')?.textContent).toContain('200,00');
+    expect(celle[0].querySelector('a.create')?.textContent?.trim()).toBe('+ Aggiungi');
+    // Il secondo non ne ha: propone di crearlo.
+    expect(celle[1].querySelector('a.create')?.textContent?.trim()).toBe('Crea prestito');
+  });
+
+  // Prima la tabella ricaricava le categorie per conto suo, appena resa. Ora
+  // le riceve dalla pagina, che le carica già per i filtri: una richiesta sola.
+  it('le categorie della tabella sono quelle della pagina: una sola richiesta', async () => {
+    await open('/transactions');
+    const [request] = http.match((candidate) =>
+      candidate.url.startsWith(`${API_BASE_URL}/transactions`)
+    );
+    request!.flush(page());
+    await settle();
+
+    // La tabella è ormai resa: se chiedesse le sue, sarebbero due.
+    expect(harness.routeNativeElement?.querySelector('app-transactions-table')).not.toBeNull();
+    const categorie = http.match(`${API_BASE_URL}/categories`);
+    expect(categorie.length).toBe(1);
+    categorie[0].flush([{ id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' }]);
+
+    await flushLookups();
+
+    const opzioni = [
+      ...(harness.routeNativeElement?.querySelectorAll<HTMLOptionElement>(
+        'app-transactions-table tbody tr:first-child td.category select option'
+      ) ?? [])
+    ].map((option) => option.textContent?.trim());
+
+    expect(opzioni).toEqual(['—', 'Alimentari']);
+  });
+
   it('cambiare la categoria del merchant ricarica la stessa pagina', async () => {
     await open('/transactions?page=2');
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));

@@ -5,13 +5,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
 import { toErrorMessage } from '../../core/http-error';
 import { Category } from '../categories/category.model';
-import { LoanLinks } from '../loans/loan.model';
+import { LoanLink, LoanLinks, indexLinksByTransaction } from '../loans/loan.model';
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { Panel } from '../../shared/layout/panel';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
+import {
+  TransactionsTable,
+  TransactionsTableExtraColumn,
+} from '../../shared/ui/transactions-table';
 import {
   TransactionQueryState,
   hasFilters,
@@ -22,16 +26,21 @@ import {
 import { TransactionPage } from './transaction.model';
 import { TransactionsApi, transactionsRequest } from './transactions.api';
 import { TransactionsPagination } from './transactions-pagination';
-import { TransactionsTable } from './transactions-table';
 import { TransactionsToolbar } from './transactions-toolbar';
 import { createDeleteState } from './transaction-delete';
 import { createSelectionState } from './transaction-selection';
+import { createTransactionEdits } from './transaction-edits';
+import { TransactionLoanCell } from './transaction-loan-cell';
+import { TRANSACTION_TYPE_OPTIONS } from './transaction-type-options';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
 
 /** Righe finte mostrate durante il primo caricamento. */
 const SKELETON_ROWS = 8;
+
+/** Un solo elenco vuoto per tutte le righe senza legami: niente array nuovi a ogni giro. */
+const NO_LINKS: readonly LoanLink[] = [];
 
 /**
  * Esplorazione dei movimenti.
@@ -47,8 +56,10 @@ const SKELETON_ROWS = 8;
     ErrorRetry,
     PageLayout,
     Panel,
+    TransactionLoanCell,
     TransactionsPagination,
     TransactionsTable,
+    TransactionsTableExtraColumn,
     TransactionsToolbar,
   ],
   templateUrl: './transactions-page.html',
@@ -84,11 +95,18 @@ export class TransactionsPage implements OnDestroy {
     this.loanLinks.hasValue() ? this.loanLinks.value().links : null,
   );
 
+  /** I legami indicizzati per movimento: una volta per risposta, non una per cella. */
+  private readonly linksByTransaction = computed(() => indexLinksByTransaction(this.links() ?? []));
+
   /** Il testo digitato, prima che diventi un criterio nell'URL. */
   protected readonly searchText = signal('');
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  /** Servono ai filtri per mostrare nomi al posto di identificativi. */
+  /**
+   * Servono ai filtri per mostrare nomi al posto di identificativi; le
+   * categorie anche alla tabella, come scelte della colonna «Categoria». Una
+   * sola richiesta per entrambi: prima la tabella le ricaricava per conto suo.
+   */
   protected readonly categories = httpResource<Category[]>(() => ({
     url: `${API_BASE_URL}/categories`,
   }));
@@ -104,6 +122,8 @@ export class TransactionsPage implements OnDestroy {
   );
 
   protected readonly skeletonRows = Array.from({ length: SKELETON_ROWS });
+
+  protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
 
   protected readonly page = computed<TransactionPage | undefined>(() =>
     this.transactions.hasValue() ? this.transactions.value() : undefined,
@@ -127,6 +147,14 @@ export class TransactionsPage implements OnDestroy {
   private readonly selection = createSelectionState();
   protected readonly selected = this.selection.selected;
   protected readonly selectedCount = this.selection.count;
+
+  /**
+   * Le correzioni in linea di tipo e categoria.
+   *
+   * Dopo ogni salvataggio, riuscito o no, si ricarica: i dati ricaricati sono
+   * ciò che la tabella deve mostrare, anche quando il salvataggio è fallito.
+   */
+  protected readonly edits = createTransactionEdits(() => this.reload());
 
   /** Lo stato dell'eliminazione: prima si chiede conferma, poi si esegue. */
   private readonly deleteState = createDeleteState();
@@ -192,6 +220,11 @@ export class TransactionsPage implements OnDestroy {
   protected reload(): void {
     this.transactions.reload();
     this.loanLinks.reload();
+  }
+
+  /** I legami con i prestiti di un movimento, per la sua cella. */
+  protected linksOf(transactionId: string): readonly LoanLink[] {
+    return this.linksByTransaction().get(transactionId) ?? NO_LINKS;
   }
 
   protected goToPage(page: number): void {

@@ -44,6 +44,8 @@ Ogni duplicazione citata sotto è stata verificata leggendo il file sorgente, no
 
 **Un'osservazione architetturale non-visuale**: `TransactionsTable` (usata sia in `transactions-page` sia in `dashboard-page`) inietta direttamente `CategoriesApi`, `MerchantsApi`, `TransactionsApi` e gestisce da sé salvataggio ed errori. Funziona, ma è l'eccezione rispetto al resto dei componenti di presentazione (che ricevono dati via `input()` ed emettono `output()`). Non la tocco (comportamento da preservare), ma la cito come il pattern da **non replicare** nei nuovi componenti condivisi (regola in §13).
 
+> **Aggiornamento**: `TransactionsTable` è poi diventata un componente condiviso di sola presentazione (`shared/ui/transactions-table`), con due modalità: `edit` nei movimenti, `readonly` nella dashboard. Non inietta più nulla: il salvataggio di tipo e categoria vive nella feature (`features/transactions/transaction-edits.ts`), e la colonna dei prestiti è un template proiettato dalla pagina dei movimenti (`appTransactionsTableExtraColumn` + `TransactionLoanCell`).
+
 ---
 
 ## 2. Problemi architetturali rilevati
@@ -169,7 +171,8 @@ shared/layout   →  core
 shared/ui       ╳  shared/layout      (nessuna dipendenza in nessuna delle due direzioni: sono pari)
 features        →  core, shared/ui, shared/layout, altre features (solo per modelli/tipi o
                     riuso di un intero componente — prassi già esistente oggi, es.
-                    `dashboard-page` usa `TransactionsTable`; non viene modificata da questa proposta)
+                    `dashboard-page` usava `TransactionsTable` della feature transazioni; oggi
+                    entrambe le pagine usano quella di `shared/ui`, v. aggiornamento in §1)
 shared/*        ╳  features                (MAI, in nessun caso — regola rigida, vedi sotto)
 ```
 
@@ -275,7 +278,7 @@ Nessuna scala 4/8/12/16/24/32, nessun sistema di elevazione a livelli, nessuna t
 
 ## 10. Considerazioni sulla testabilità
 
-Regola architetturale per tutto `shared/`: **nessun componente shared inietta servizi, store o `Router`**. Riceve dati via `input()`, comunica intenzioni via `output()`. Questo è già lo stile della maggioranza dei componenti di feature (`TransactionsToolbar`, `TransactionsPagination`) — la regola lo rende esplicito e vincolante per `shared/`, mentre `TransactionsTable` (che inietta le sue API) resta l'eccezione feature-specific consentita ma non il modello da imitare altrove (§1).
+Regola architetturale per tutto `shared/`: **nessun componente shared inietta servizi, store o `Router`**. Riceve dati via `input()`, comunica intenzioni via `output()`. Questo è già lo stile della maggioranza dei componenti di feature (`TransactionsToolbar`, `TransactionsPagination`) — la regola lo rende esplicito e vincolante per `shared/`, e vale anche per `TransactionsTable`, che era l'eccezione feature-specific con le API iniettate e oggi è in `shared/ui` come componente di presentazione (§1).
 
 Conseguenza pratica: ogni componente shared è testabile con `TestBed.createComponent` e nessun `provideHttpClientTesting`/mock di store, in linea con la configurazione Vitest già presente nel progetto.
 
@@ -294,9 +297,9 @@ Esempi (nessun test scritto in questa fase, solo indicazione):
 
 | Pagina | Panel/SectionHeader | StatCardGrid | SegmentedControl | ToggleButtonGroup | FormField | SearchInput | FilterChips | EmptyState/ErrorRetry | Resta feature-specific |
 |---|---|---|---|---|---|---|---|---|---|
-| **Dashboard** (`dashboard-page`) | ✅ (ogni sezione) | ✅ (5 card riepilogo) | — | — | — | — | ✅ (chip filtro dashboard) | — | `CashFlowCard`, `CategoryBreakdownSection`, `TopMerchantsSection`, `MonthComparisonSection`, `TransactionsTable` |
+| **Dashboard** (`dashboard-page`) | ✅ (ogni sezione) | ✅ (5 card riepilogo) | — | — | — | — | ✅ (chip filtro dashboard) | — | `CashFlowCard`, `CategoryBreakdownSection`, `TopMerchantsSection`, `MonthComparisonSection` (`TransactionsTable` è shared, in modalità `readonly`) |
 | **Analytics** (`analytics-page` + sotto-componenti) | ✅ | ✅ (KPI periodo, KPI prestiti) | ✅ (preset periodo, classificazione) | ✅ (tipo, categoria, merchant) | — | ✅ (ricerca merchant nei filtri) | ✅ | — | `AnalyticsTimeline` (usa shared `<app-line-chart>`, feature mantiene dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella), `AnalyticsCategories` (lista o `<app-doughnut-chart>`, a scelta con toggle), `AnalyticsMerchants` (lista con barra, gerarchia propria) |
-| **Movimenti** (`transactions-page` + toolbar/tabella/paginazione) | ✅ | — | ✅ (dropdown classificazione) | ✅ (dropdown tipo/categoria) | — | ✅ | ✅ | ✅ EmptyState, ✅ ErrorRetry | `TransactionsTable` (contenuto colonne troppo specifico), `TransactionsPagination` (logica pagine), selezione multipla + conferma eliminazione |
+| **Movimenti** (`transactions-page` + toolbar/tabella/paginazione) | ✅ | — | ✅ (dropdown classificazione) | ✅ (dropdown tipo/categoria) | — | ✅ | ✅ | ✅ EmptyState, ✅ ErrorRetry | `TransactionEdits` (salvataggio tipo/categoria per la `TransactionsTable` shared in modalità `edit`), `TransactionLoanCell` (colonna prestiti proiettata), `TransactionsPagination` (logica pagine), selezione multipla + conferma eliminazione |
 | **Prestiti — elenco** (`loans-page`) | ✅ | ✅ (KPI) | ✅ (stato) | — | — | ✅ | — | ✅ EmptyState, ✅ ErrorRetry | Tabella prestiti (contenuto colonne specifico), badge stato → `Badge` |
 | **Prestiti — dettaglio** (`loan-detail-page`) | ✅ | ✅ (importo/restituito/residuo) | — | — | ✅ (form modifica, form restituzione) | — | — | ✅ ErrorRetry | Breadcrumb (CSS utility, non componente), progress bar, split bar, tabella restituzioni, `Badge` di stato |
 | **Prestiti — crea** (`loan-create-page`) | ✅ | — | — | — | ✅ (4 campi) | — | — | — | Breadcrumb (CSS), riepilogo movimento d'origine |
@@ -359,7 +362,7 @@ Estrazioni indipendenti fra loro, da fare in qualsiasi ordine dopo la Fase 3 (Fi
 ## 13. Decisioni architetturali
 
 - **`shared/layout` vs `shared/ui` come due cartelle, non una**: separare "dispone" da "si comporta" aiuta a capire dove cercare un componente. Se in futuro il confine si rivelasse artificioso, l'appiattimento è un cambio di percorso di import, non una riscrittura.
-- **`shared/` non inietta mai servizi/store/router** (§10): è la regola che rende i componenti shared testabili senza infrastruttura e riutilizzabili in qualunque pagina futura senza sapere nulla del dominio. `TransactionsTable` resta l'eccezione storica, non il modello.
+- **`shared/` non inietta mai servizi/store/router** (§10): è la regola che rende i componenti shared testabili senza infrastruttura e riutilizzabili in qualunque pagina futura senza sapere nulla del dominio. `TransactionsTable`, che ne era l'eccezione storica, oggi la rispetta (§1).
 - **`StatusMessage` come CSS, non come componente** (§9): zero logica → zero beneficio da un wrapper Angular, un costo (un file, un selettore, un test) in più. Coerente con come il progetto già tratta `.truncate`.
 - **Nessuna libreria UI esterna** (Material/PrimeNG/Spectrum): il progetto ha già un intero linguaggio visivo custom, coerente e funzionante (temi, tipografia, colori verificati per accessibilità). Introdurre una libreria significherebbe o riscrivere quel linguaggio o conviverci accanto in conflitto — sproporzionato per ~10 pagine.
 - **Nessun `<app-data-table>` generico** (§14): il costo di un'API a celle configurabili (content projection per colonna, o `TemplateRef` per cella) supera il beneficio, perché le 5 tabelle esistenti differiscono nel contenuto delle celle (select inline, link a prestiti, input di rinomina) più che nel loro involucro.

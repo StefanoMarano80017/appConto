@@ -1,0 +1,27 @@
+@let loans = cell();
+@for (link of loans.origins; track link.loanId) {
+  <a class="loan-link origin" [routerLink]="['/loans', link.loanId]">
+    <span class="name" appTruncate>{{ link.borrowerName }}</span>
+    <span class="remaining" [class.zero]="link.remainingAmount === 0">{{
+      link.remainingAmount === 0 ? 'chiuso' : formatAmount(link.remainingAmount)
+    }}</span>
+  </a>
+}
+
+@for (link of loans.repayments; track link.loanId) {
+  <a class="loan-link repayment" appTruncate [routerLink]="['/loans', link.loanId]">
+    Restituzione · {{ link.borrowerName }}
+  </a>
+}
+
+@if (loans.ownExpense > 0) {
+  <span class="own-expense">{{ formatAmount(loans.ownExpense) }} spesa tua</span>
+}
+
+@if (loans.creatable) {
+  <a class="create" routerLink="/loans/new" [queryParams]="{ transactionId: transaction().id }">{{
+    loans.origins.length === 0 ? 'Crea prestito' : '+ Aggiungi'
+  }}</a>
+} @else if (loans.origins.length === 0 && loans.repayments.length === 0) {
+  <span class="none">—</span>
+}

@@ -1,0 +1,106 @@
+@use '../styles/mixins';
+@use '../styles/typography';
+
+:host {
+  display: block;
+}
+
+.message {
+  margin: 0 0 var(--space-5);
+  color: var(--color-text-muted);
+}
+
+.message.error {
+  color: var(--color-error);
+}
+
+/*
+ * L'involucro condiviso delle tabelle: bordi, spaziature, allineamento dei
+ * numeri e riga selezionata vengono da lì (v. shared/styles/_mixins.scss).
+ * Qui restano solo le celle, che è dove questa tabella è davvero diversa
+ * dalle altre.
+ *
+ * Su schermi stretti scorre la tabella, non la pagina.
+ */
+.scroller {
+  @include mixins.data-table;
+
+  /* Sette colonne sotto le 44rem diventano illeggibili: meglio scorrere. */
+  table {
+    min-width: 44rem;
+  }
+}
+
+.transactions {
+  thead {
+    border-top: var(--border-width) solid var(--color-border);
+  }
+
+  .date {
+    white-space: nowrap;
+  }
+
+  /*
+   * Le colonne di testo libero: un tetto, poi l'ellissi.
+   *
+   * Senza un massimo è la descrizione più lunga a decidere la larghezza
+   * della tabella, e a trascinare nello scorrimento orizzontale anche gli
+   * schermi larghi. Il testo intero non si perde: `appTruncate` lo mette nel
+   * tooltip di ciò che ha tagliato.
+   */
+  .description {
+    max-width: 26rem;
+  }
+
+  .merchant {
+    max-width: 16rem;
+    color: var(--color-text-muted);
+  }
+
+  /* Le due righe del merchant troncano una per una, non insieme. */
+  .merchant .label {
+    display: block;
+  }
+
+  /* Il nome della banca resta visibile quando il merchant è stato rinominato. */
+  .merchant .original {
+    @include typography.text('caption');
+
+    display: block;
+  }
+
+  .category {
+    white-space: nowrap;
+  }
+
+  /*
+   * La colonna aggiuntiva non ha stile proprio: il suo contenuto è di chi la
+   * proietta (la colonna dei prestiti, per esempio, porta i propri stili nel
+   * componente della feature, `transaction-loan-cell.scss`). Qui resta solo
+   * l'involucro della cella, che il mixin `data-table` già disegna.
+   */
+}
+
+/* La colonna di selezione: presente solo dove selezionare ha un senso. */
+.transactions {
+  th.select,
+  td.select {
+    width: 2.5rem;
+    padding-right: 0;
+    text-align: center;
+  }
+}
+
+/*
+ * La riga di totale: separata dal corpo con un bordo più marcato di quello
+ * fra due righe qualunque, non lo stesso divisore sottile.
+ */
+.transactions tfoot {
+  tr {
+    border-top: var(--border-width) solid var(--color-border-strong);
+  }
+
+  .total-label {
+    @include typography.text('label');
+  }
+}

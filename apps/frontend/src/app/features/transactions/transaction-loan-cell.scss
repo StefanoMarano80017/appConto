@@ -1,0 +1,99 @@
+@use '../../shared/styles/typography';
+
+/*
+ * La colonna dei prestiti: un'azione, non un dato del movimento.
+ *
+ * Il tetto di larghezza stava sulla `td.loan` della vecchia tabella; ora la
+ * cella è della tabella condivisa (`td.extra`), e il limite lo porta l'host,
+ * che ne occupa tutto il contenuto. Un blocco con `max-width` è anche ciò che
+ * serve ad `appTruncate` per sapere dove tagliare.
+ */
+:host {
+  display: block;
+  max-width: 16rem;
+  white-space: nowrap;
+}
+
+/*
+ * Niente `font-size` qui: eredita i 14px del ruolo `table-text` che il
+ * mixin `data-table` applica già a ogni `td` (v. shared/styles/_mixins.scss).
+ * Il letterale che c'era prima valeva lo stesso 0.875rem — una riaffermazione
+ * ridondante, non una scelta diversa da quella ambiente.
+ */
+.loan-link {
+  display: block;
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+/*
+ * Il nome si stringe, la cifra no.
+ *
+ * Un nome lungo mangerebbe altrimenti l'importo rimasto, che è il dato per
+ * cui questa colonna si guarda.
+ */
+.loan-link.origin {
+  display: flex;
+  align-items: baseline;
+}
+
+.loan-link .name {
+  /* In un flex nulla scende sotto il proprio contenuto: qui invece deve. */
+  min-width: 0;
+}
+
+.loan-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+/*
+ * Non `financial-row`: lo span non è sempre una cifra, è «chiuso» quando il
+ * prestito è saldato (v. transaction-loan-cell.html). Il mono di un ruolo
+ * finanziario starebbe bene sul numero e male sulla parola — resta quindi
+ * `caption`, il ruolo testuale più vicino ai 13px originali, col colore
+ * riportato al tono di spesa che `caption` non porta con sé.
+ */
+.loan-link .remaining {
+  flex: none;
+  margin-left: var(--space-3);
+  @include typography.text('caption');
+  color: var(--color-expense);
+  font-variant-numeric: tabular-nums;
+}
+
+.loan-link .remaining.zero {
+  color: var(--color-text-muted);
+}
+
+.loan-link.repayment {
+  @include typography.text('caption');
+}
+
+/*
+ * La quota del movimento rimasta a carico proprio: entra fra le uscite.
+ * Stesso testo misto di `.remaining` sopra («12,50 € spesa tua», non un
+ * numero isolato): `caption` invece di `financial-row`, da 12 a 13px.
+ */
+.own-expense {
+  display: block;
+  @include typography.text('caption');
+  color: var(--color-expense);
+  font-variant-numeric: tabular-nums;
+}
+
+.create {
+  display: inline-block;
+  margin-top: var(--space-1);
+  @include typography.text('caption');
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.create:hover {
+  text-decoration: underline;
+}
+
+.none {
+  color: var(--color-text-muted);
+}
