@@ -76,4 +76,15 @@ describe('VisualSelect', () => {
     expect(host().querySelector('select')?.disabled).toBe(true);
     expect(host().querySelector('.picker')?.classList.contains('disabled')).toBe(true);
   });
+
+  it('in modalità readonly mostra il valore senza controlli interattivi', async () => {
+    fixture.componentRef.setInput('readonly', true);
+    await fixture.whenStable();
+
+    expect(host().querySelector('.name')?.textContent?.trim()).toBe('Alimentari');
+    expect(host().querySelector('app-color-marker')).not.toBeNull();
+    expect(host().querySelector('select')).toBeNull();
+    expect(host().querySelector('.chevron')).toBeNull();
+    expect(host().querySelector('.picker')?.classList.contains('readonly')).toBe(true);
+  });
 });

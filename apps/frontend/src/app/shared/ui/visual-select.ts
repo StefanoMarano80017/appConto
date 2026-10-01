@@ -11,12 +11,7 @@ import {
 import { ColorMarkerComponent } from './color-marker';
 
 export type VisualSelectIcon =
-  | 'trending-down'
-  | 'trending-up'
-  | 'banknote'
-  | 'hand-coins'
-  | 'arrow-left-right'
-  | 'ellipsis';
+  'trending-down' | 'trending-up' | 'banknote' | 'hand-coins' | 'arrow-left-right' | 'ellipsis';
 
 export interface VisualSelectOption<T extends string = string> {
   readonly id: T;
@@ -45,6 +40,7 @@ export class VisualSelect<T extends string = string> {
   readonly value = input<T | null>(null);
   readonly ariaLabel = input.required<string>();
   readonly disabled = input(false);
+  readonly readonly = input(false);
   readonly valueChange = output<T | null>();
 
   protected readonly selectionMade = signal(false);
