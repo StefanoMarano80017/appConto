@@ -38,6 +38,17 @@
         />
       </div>
 
+      <!-- Il secondo @if serve solo al tipo: c'è una query esattamente quando c'è una selezione. -->
+      @if (panelQuery(); as query) {
+        @if (selection.selection(); as selected) {
+          <app-analytics-transactions
+            [selection]="selected"
+            [query]="query"
+            (closed)="onPanelClosed()"
+          />
+        }
+      }
+
       <app-analytics-loans
         [class.stale]="isStale()"
         [loans]="data.loans"

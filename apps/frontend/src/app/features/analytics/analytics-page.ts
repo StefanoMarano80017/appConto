@@ -1,6 +1,17 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
-import { Params, Router, RouterLink } from '@angular/router';
+import {
+  Component,
+  ElementRef,
+  Injector,
+  OnInit,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal
+} from '@angular/core';
+import { Params, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
@@ -19,7 +30,9 @@ import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
 import { AnalyticsLoans } from './analytics-loans';
 import { AnalyticsMerchants } from './analytics-merchants';
+import { AnalyticsSelection, isSelectionAvailable, selectionCriteria } from './analytics-selection';
 import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
+import { AnalyticsTransactions } from './analytics-transactions';
 import { AnalyticsFilters } from './analytics-filters';
 import { AnalyticsStore } from './analytics.store';
 
@@ -39,6 +52,7 @@ import { AnalyticsStore } from './analytics.store';
     AnalyticsLoans,
     AnalyticsMerchants,
     AnalyticsTimeline,
+    AnalyticsTransactions,
     PageLayout,
     Panel,
     RouterLink,
@@ -50,8 +64,10 @@ import { AnalyticsStore } from './analytics.store';
 export class AnalyticsPage implements OnInit {
   private readonly categoriesApi = inject(CategoriesApi);
   private readonly merchantsApi = inject(MerchantsApi);
-  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly store = inject(AnalyticsStore);
+  protected readonly selection = inject(AnalyticsSelection);
 
   protected readonly analytics = httpResource<Analytics>(() =>
     analyticsRequest(this.store.query())
@@ -141,6 +157,53 @@ export class AnalyticsPage implements OnInit {
     ];
   });
 
+  /**
+   * I criteri del pannello: quelli dell'analisi, con sopra quelli dell'elemento
+   * selezionato. Pagina, dimensione e ordinamento restano i predefiniti di
+   * `EMPTY_QUERY`: la prima pagina, per data decrescente.
+   */
+  protected readonly panelQuery = computed<TransactionQueryState | null>(() => {
+    const selection = this.selection.selection();
+    if (selection === null) {
+      return null;
+    }
+
+    const { from, to } = this.store.dateRange();
+    const { types, categoryIds, merchantIds, classification } = this.store.filters();
+
+    return {
+      ...EMPTY_QUERY,
+      from,
+      to,
+      types,
+      categoryIds,
+      merchantIds,
+      classification,
+      ...selectionCriteria(selection)
+    };
+  });
+
+  constructor() {
+    /*
+     * Un cambio di filtri, periodo o passo può togliere dai dati l'elemento
+     * selezionato: allora il pannello si chiude. Si guarda solo ai dati
+     * arrivati: durante un caricamento quelli a schermo sono i precedenti, e
+     * rientrando nella pagina non ce ne sono ancora. La selezione resta finché
+     * una risposta non dice che l'elemento non c'è più.
+     */
+    effect(() => {
+      const data = this.data();
+      const selection = this.selection.selection();
+      if (data === undefined || selection === null) {
+        return;
+      }
+
+      if (this.isEmpty() || !isSelectionAvailable(selection, data)) {
+        this.selection.clear();
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.categoriesApi.list().subscribe({ next: (categories) => this.categories.set(categories) });
     this.merchantsApi.summary().subscribe({ next: (merchants) => this.merchants.set(merchants) });
@@ -169,24 +232,44 @@ export class AnalyticsPage implements OnInit {
     });
   }
 
-  private openExplorer(extra: Partial<TransactionQueryState>): void {
-    void this.router.navigate(['/transactions'], { queryParams: this.explorerParams(extra) });
-  }
-
   protected onTimelineTransactionsRequested(selection: TimelineSelection): void {
-    this.openExplorer(selection.range);
+    this.selection.select({ kind: 'period', ...selection });
   }
 
-  /** Il drill down su una categoria: senza categoria significa "da classificare". */
+  /** Senza categoria significa "da classificare": il titolo lo dice da sé. */
   protected onCategorySelected(categoryId: string | null): void {
-    this.openExplorer(
-      categoryId === null
-        ? { classification: 'unclassified', types: ['EXPENSE'] }
-        : { categoryIds: [categoryId], types: ['EXPENSE'] }
-    );
+    const entry = this.data()?.byCategory.find((category) => category.categoryId === categoryId);
+
+    this.selection.select({ kind: 'category', categoryId, name: entry?.name ?? '' });
   }
 
   protected onMerchantSelected(merchantId: string): void {
-    this.openExplorer({ merchantIds: [merchantId] });
+    const entry = this.data()?.byMerchant.find((merchant) => merchant.merchantId === merchantId);
+
+    this.selection.select({ kind: 'merchant', merchantId, name: entry?.name ?? '' });
+  }
+
+  /**
+   * Chiuso il pannello, il pulsante che aveva il focus non esiste più: da
+   * tastiera si finirebbe su <body>. Lo si porta sulla prima intestazione della
+   * pagina, a pannello tolto. Un `h2` non è focalizzabile da sé: `tabindex` -1
+   * lo rende raggiungibile da programma senza aggiungerlo al giro del Tab.
+   */
+  protected onPanelClosed(): void {
+    this.selection.clear();
+
+    afterNextRender(
+      () => {
+        const heading = this.host.nativeElement.querySelector<HTMLElement>('h2');
+        if (heading === null) {
+          return;
+        }
+        if (!heading.hasAttribute('tabindex')) {
+          heading.setAttribute('tabindex', '-1');
+        }
+        heading.focus();
+      },
+      { injector: this.injector }
+    );
   }
 }
