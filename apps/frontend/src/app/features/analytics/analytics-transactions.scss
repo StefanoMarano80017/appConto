@@ -1,0 +1,84 @@
+@use '../../shared/styles/typography';
+
+/* Un blocco vero, non in linea: è l'host che si porta in vista. */
+:host {
+  display: block;
+}
+
+/*
+ * Stessa geometria di `SectionHeader` (titolo a sinistra, azioni a destra,
+ * stesso respiro sotto): qui è scritta a mano solo perché il titolo deve
+ * poter ricevere il focus.
+ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+
+  h2 {
+    @include typography.text('section-title');
+
+    margin: 0;
+  }
+
+  /* Il focus arriva da programma, non da Tab: niente anello su un titolo. */
+  h2:focus {
+    outline: none;
+  }
+}
+
+.close {
+  display: grid;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+}
+
+/* Come i grafici di Analytics: i dati restano leggibili, ma non sono più quelli richiesti. */
+.content.stale {
+  opacity: 0.6;
+}
+
+.message {
+  margin: 0;
+}
+
+.footer {
+  @include typography.text('secondary');
+
+  margin: var(--space-5) 0 0;
+  text-align: right;
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
