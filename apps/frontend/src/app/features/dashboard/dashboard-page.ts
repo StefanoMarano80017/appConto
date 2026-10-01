@@ -3,7 +3,6 @@ import { formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
-import { SectionHeader } from '../../shared/layout/section-header';
 import { FilterChips } from '../../shared/ui/filter-chips';
 import { StatCardDelta, StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
@@ -12,8 +11,6 @@ import {
   TRANSACTION_TYPE_LABELS,
   TransactionType
 } from '../transactions/transaction-type';
-import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
-import { TransactionsTable } from '../../shared/ui/transactions-table';
 import { CategoryBreakdownSection } from './category-breakdown';
 import { DashboardFilterStore } from './dashboard-filter.store';
 import { Dashboard, MonthComparison } from './dashboard.model';
@@ -37,10 +34,8 @@ import { TopMerchantsSection } from './top-merchants';
     MonthComparisonSection,
     Panel,
     PageLayout,
-    SectionHeader,
     StatCardGrid,
-    TopMerchantsSection,
-    TransactionsTable
+    TopMerchantsSection
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss'
@@ -52,15 +47,6 @@ export class DashboardPage {
   protected readonly dashboard = signal<Dashboard | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
-
-  /**
-   * I tipi con etichetta e icona, per la tabella in sola lettura.
-   *
-   * Qui i movimenti sono un riepilogo: si correggono nella pagina dei
-   * movimenti, non dalla dashboard, quindi la tabella non salva nulla e non
-   * c'è niente da ricaricare dopo.
-   */
-  protected readonly transactionTypeOptions = TRANSACTION_TYPE_OPTIONS;
 
   protected readonly transactionTypes = TRANSACTION_TYPES;
   protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
