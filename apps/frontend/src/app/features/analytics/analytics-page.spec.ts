@@ -124,6 +124,16 @@ const empty = (): Analytics =>
     loans: { lent: 0, transactionCount: 0, entries: [] }
   });
 
+/** Le richieste aperte della tabella delle transazioni, risposte con una pagina vuota. */
+const flushPanel = (): void => {
+  const http = TestBed.inject(HttpTestingController);
+  for (const request of http.match((candidate) => candidate.url === `${API_BASE_URL}/transactions`)) {
+    if (!request.cancelled) {
+      request.flush({ items: [], pagination: { page: 1, pageSize: 25, total: 0, totalPages: 1 } });
+    }
+  }
+};
+
 const RANGE = 'from=2026-01-01&to=2026-12-31';
 /** Il passo chiude sempre la query string: viene aggiunto per ultimo. */
 const STEP = 'granularity=week';
@@ -149,7 +159,11 @@ describe('AnalyticsPage', () => {
     TestBed.tick();
   };
 
-  /** Risponde alle richieste di contorno: categorie e merchant dei filtri. */
+  /**
+   * Risponde alle richieste di contorno: categorie e merchant dei filtri, e la
+   * tabella delle transazioni, che con dei dati c'è sempre (qui non la si
+   * guarda: ha la sua describe più sotto).
+   */
   const flushLookups = async (): Promise<void> => {
     for (const request of http.match(`${API_BASE_URL}/categories`)) {
       request.flush([{ id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' }]);
@@ -157,6 +171,10 @@ describe('AnalyticsPage', () => {
     for (const request of http.match(`${API_BASE_URL}/merchants/summary`)) {
       request.flush([]);
     }
+    await settle();
+    // La richiesta della tabella parte al giro dopo la nascita del pannello.
+    await settle();
+    flushPanel();
     await settle();
   };
 
@@ -221,16 +239,6 @@ describe('AnalyticsPage', () => {
       (elemento) => elemento.textContent ?? ''
     );
     expect(intestazioni.some((testo) => testo.includes('Analytics'))).toBe(false);
-  });
-
-  it('senza selezione non mostra la tabella dei movimenti', async () => {
-    await settle();
-    await flush(analytics());
-
-    const host = fixture.nativeElement as HTMLElement;
-
-    expect(host.querySelector('app-transactions-table')).toBeNull();
-    expect(host.querySelector('table')).toBeNull();
   });
 
   it('mostra i KPI, separando prelievi e prestiti dalle uscite', async () => {
@@ -353,6 +361,10 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
       request.flush([]);
     }
     await settle();
+    // La richiesta della tabella parte al giro dopo la nascita del pannello.
+    await settle();
+    flushPanel();
+    await settle();
   };
 
   beforeEach(async () => {
@@ -397,13 +409,15 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
   });
 });
 
+
 /*
- * Un click su un elemento del grafico non porta più a Movimenti: apre sotto i
- * grafici il pannello con le transazioni di quell'elemento. Ogni test controlla
- * entrambe le metà: l'URL resta quello di Analytics, e la richiesta del
- * pannello porta i criteri giusti.
+ * La tabella delle transazioni c'è sempre, appena sotto l'andamento: senza
+ * selezione mostra il periodo con i filtri dell'analisi, e un click su un
+ * bucket o su una categoria la restringe a quell'elemento, senza lasciare la
+ * pagina. Il merchant invece porta ancora a Movimenti. Ogni test guarda la
+ * richiesta del pannello, che è ciò che decide quali righe si vedono.
  */
-describe('AnalyticsPage: le transazioni della selezione', () => {
+describe('AnalyticsPage: la tabella delle transazioni', () => {
   let fixture: ComponentFixture<AnalyticsPage>;
   let http: HttpTestingController;
   let store: AnalyticsStore;
@@ -413,7 +427,11 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const panel = (): HTMLElement | null => host().querySelector('app-analytics-transactions');
-  const panelTitle = (): string => panel()?.querySelector('h2')?.textContent ?? '';
+  const panelTitle = (): string => panel()?.querySelector('h2')?.textContent?.trim() ?? '';
+  const showAll = (): HTMLButtonElement | undefined =>
+    Array.from(panel()?.querySelectorAll<HTMLButtonElement>('button') ?? []).find(
+      (button) => button.textContent?.trim() === 'Mostra tutto'
+    );
 
   const settle = async (): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve));
@@ -437,9 +455,11 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     await flushLookups();
   };
 
-  /** Le richieste del pannello ancora aperte. */
+  /** Le richieste del pannello ancora attese: quelle annullate non arriveranno mai a schermo. */
   const panelRequests = (): TestRequest[] =>
-    http.match((request) => request.url === `${API_BASE_URL}/transactions`);
+    http
+      .match((request) => request.url === `${API_BASE_URL}/transactions`)
+      .filter((request) => !request.cancelled);
 
   /** L'unica richiesta del pannello in volo: risponde con una pagina vuota e ne restituisce i parametri. */
   const panelRequest = async (): Promise<HttpParams> => {
@@ -471,6 +491,12 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     await settle();
   };
 
+  /** Seleziona la prima categoria dalla Lista. */
+  const selectCategory = async (): Promise<void> => {
+    await showCategoryList();
+    await click('app-analytics-categories .row');
+  };
+
   /** Il tooltip della timeline chiede le transazioni di un bucket settimanale. */
   const requestBucket = async (): Promise<void> => {
     const timeline = fixture.debugElement.query(By.directive(AnalyticsTimeline))
@@ -486,7 +512,7 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
   };
 
   beforeEach(async () => {
-    // jsdom non implementa scrollIntoView, che il pannello chiama all'apertura.
+    // jsdom non implementa scrollIntoView: lo stub serve a verificare che nessuno lo chiami.
     Element.prototype.scrollIntoView = vi.fn();
 
     await TestBed.configureTestingModule({
@@ -514,29 +540,78 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     delete (Element.prototype as Partial<Element>).scrollIntoView;
   });
 
-  it('senza selezione il pannello non c\'è', async () => {
+  it('senza nessun click mostra le transazioni del periodo, fra l’andamento e le colonne', async () => {
     await load();
+
+    expect(panel()).not.toBeNull();
+    expect(panelTitle()).toBe('Transazioni del periodo');
+    expect(showAll()).toBeUndefined();
+
+    const tutti = [...host().querySelectorAll('*')];
+    const posizione = (elemento: Element | null): number => tutti.indexOf(elemento!);
+    expect(posizione(host().querySelector('app-analytics-timeline'))).toBeLessThan(
+      posizione(panel())
+    );
+    expect(posizione(panel())).toBeLessThan(posizione(host().querySelector('.columns')));
+    // Fra i due, non dentro: né nella timeline né nelle colonne.
+    expect(host().querySelector('app-analytics-timeline')?.contains(panel())).toBe(false);
+    expect(host().querySelector('.columns')?.contains(panel())).toBe(false);
+
+    const params = await panelRequest();
+    // Pagina 1, 25 righe, bookingDate desc: tutti predefiniti, quindi assenti.
+    expect(params.keys().sort()).toEqual(['from', 'to']);
+    expect(params.get('from')).toBe('2026-01-01');
+    expect(params.get('to')).toBe('2026-12-31');
+  });
+
+  it('senza selezione la richiesta porta periodo e filtri dello store, e nessun criterio di elemento', async () => {
+    store.toggleType('EXPENSE');
+    store.toggleCategory('cat-1');
+    await load(analytics(), `${RANGE}&types=EXPENSE&categoryIds=cat-1&${STEP}`);
+
+    const params = await panelRequest();
+    expect(params.get('from')).toBe('2026-01-01');
+    expect(params.get('to')).toBe('2026-12-31');
+    expect(params.get('types')).toBe('EXPENSE');
+    expect(params.get('categoryIds')).toBe('cat-1');
+    expect(params.has('merchantIds')).toBe(false);
+    expect(params.has('classification')).toBe(false);
+  });
+
+  it('con dati vuoti la tabella non c’è', async () => {
+    await load(empty());
 
     expect(panel()).toBeNull();
     expect(panelRequests()).toEqual([]);
   });
 
-  it('una categoria apre le sue transazioni nel pannello, senza navigare', async () => {
+  it('una categoria restringe la tabella alle sue transazioni, e «Mostra tutto» torna al periodo', async () => {
     await load();
-    await showCategoryList();
-    await click('app-analytics-categories .row');
+    await panelRequest();
+
+    await selectCategory();
 
     expect(router.url).toBe(startUrl);
-    expect(panel()).not.toBeNull();
     const params = await panelRequest();
     expect(params.get('categoryIds')).toBe('cat-1');
     expect(params.get('types')).toBe('EXPENSE');
     expect(params.get('from')).toBe('2026-01-01');
     expect(params.get('to')).toBe('2026-12-31');
-    expect(panelTitle()).toContain('Alimentari');
+    expect(panelTitle()).toBe('Transazioni · Alimentari');
+    expect(showAll()).toBeDefined();
+
+    showAll()!.click();
+    await settle();
+    await settle();
+
+    expect(selection.selection()).toBeNull();
+    expect(panel()).not.toBeNull();
+    expect(panelTitle()).toBe('Transazioni del periodo');
+    expect(showAll()).toBeUndefined();
+    expect((await panelRequest()).keys().sort()).toEqual(['from', 'to']);
   });
 
-  it('una categoria senza nome apre le transazioni da classificare', async () => {
+  it('una categoria senza nome restringe la tabella alle transazioni da classificare', async () => {
     await load(
       analytics({
         byCategory: [
@@ -551,8 +626,8 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
         ]
       })
     );
-    await showCategoryList();
-    await click('app-analytics-categories .row');
+    await panelRequest();
+    await selectCategory();
 
     expect(router.url).toBe(startUrl);
     const params = await panelRequest();
@@ -562,21 +637,10 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     expect(panelTitle()).toContain('Da classificare');
   });
 
-  it('un merchant apre le proprie transazioni', async () => {
-    await load();
-    await click('app-analytics-merchants .link');
-
-    expect(router.url).toBe(startUrl);
-    const params = await panelRequest();
-    expect(params.get('merchantIds')).toBe('m-1');
-    expect(params.get('from')).toBe('2026-01-01');
-    expect(panelTitle()).toContain('ESSELUNGA');
-  });
-
-  it('il tooltip apre le transazioni del bucket, mantenendo i filtri attivi', async () => {
-    await load();
+  it('il tooltip restringe la tabella al bucket, mantenendo i filtri attivi', async () => {
     store.toggleType('EXPENSE');
     await load(analytics(), `${RANGE}&types=EXPENSE&${STEP}`);
+    await panelRequest();
 
     await requestBucket();
 
@@ -586,42 +650,26 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     expect(params.get('from')).toBe('2026-07-06');
     expect(params.get('to')).toBe('2026-07-12');
     expect(params.get('types')).toBe('EXPENSE');
-    expect(panelTitle()).toContain('settimana del 6 luglio');
+    expect(panelTitle()).toBe('Transazioni · settimana del 6 luglio');
   });
 
-  it('la richiesta del pannello porta periodo e filtri dello store, con pagina e ordinamento predefiniti', async () => {
-    store.toggleType('EXPENSE');
-    await load(analytics(), `${RANGE}&types=EXPENSE&${STEP}`);
-
-    await click('app-analytics-merchants .link');
-
-    const params = await panelRequest();
-    expect(params.get('from')).toBe('2026-01-01');
-    expect(params.get('to')).toBe('2026-12-31');
-    expect(params.get('types')).toBe('EXPENSE');
-    expect(params.get('merchantIds')).toBe('m-1');
-    // Pagina 1, 25 righe, bookingDate desc: tutti predefiniti, quindi assenti.
-    expect(params.keys().sort()).toEqual(['from', 'merchantIds', 'to', 'types']);
-  });
-
-  it('il pannello sta fra categorie e merchant e i prestiti', async () => {
+  it('un merchant porta ai propri movimenti, con periodo e filtri', async () => {
     await load();
-    await click('app-analytics-merchants .link');
     await panelRequest();
 
-    const tutti = [...host().querySelectorAll('*')];
-    const posizione = (elemento: Element | null): number => tutti.indexOf(elemento!);
+    await click('app-analytics-merchants .link');
 
-    expect(panel()).not.toBeNull();
-    expect(posizione(host().querySelector('.columns'))).toBeLessThan(posizione(panel()));
-    // Dopo l'ultimo figlio delle colonne, non dentro di esse.
-    expect(host().querySelector('.columns')?.contains(panel())).toBe(false);
-    expect(posizione(panel())).toBeLessThan(posizione(host().querySelector('app-analytics-loans')));
+    expect(router.url).toContain('/transactions');
+    expect(router.url).toContain('merchantIds=m-1');
+    expect(router.url).toContain('from=2026-01-01');
+    expect(router.url).toContain('to=2026-12-31');
+    // Non è una selezione: la tabella non viene ristretta.
+    expect(selection.selection()).toBeNull();
+    expect(panelRequests()).toEqual([]);
   });
 
-  it('un cambio di filtro ricarica il pannello con i nuovi criteri', async () => {
+  it('senza selezione, un cambio di filtro ricarica la tabella del periodo', async () => {
     await load();
-    await click('app-analytics-merchants .link');
     await panelRequest();
 
     store.toggleType('INCOME');
@@ -630,11 +678,29 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     expect(panel()).not.toBeNull();
     const params = await panelRequest();
     expect(params.get('types')).toBe('INCOME');
-    expect(params.get('merchantIds')).toBe('m-1');
+    expect(params.get('from')).toBe('2026-01-01');
+    expect(panelTitle()).toBe('Transazioni del periodo');
   });
 
-  it('cambiare il passo chiude la selezione di un bucket solo all’arrivo dei nuovi dati', async () => {
+  it('con una selezione, un cambio di filtro ricarica la tabella con i nuovi criteri', async () => {
     await load();
+    await panelRequest();
+    await requestBucket();
+    await panelRequest();
+
+    store.toggleType('INCOME');
+    await load(analytics(), `${RANGE}&types=INCOME&${STEP}`);
+
+    const params = await panelRequest();
+    expect(params.get('types')).toBe('INCOME');
+    expect(params.get('from')).toBe('2026-07-06');
+    expect(params.get('to')).toBe('2026-07-12');
+    expect(panelTitle()).toBe('Transazioni · settimana del 6 luglio');
+  });
+
+  it('cambiare il passo riporta la tabella al periodo solo all’arrivo dei nuovi dati', async () => {
+    await load();
+    await panelRequest();
     await requestBucket();
     await panelRequest();
 
@@ -642,8 +708,8 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
     await settle();
 
     // I dati a schermo sono ancora quelli settimanali: lì il bucket esiste.
-    expect(panel()).not.toBeNull();
     expect(selection.selection()).not.toBeNull();
+    expect(panelTitle()).toBe('Transazioni · settimana del 6 luglio');
 
     await load(
       analytics({
@@ -655,14 +721,18 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
       `${RANGE}&granularity=month`
     );
 
-    expect(panel()).toBeNull();
     expect(selection.selection()).toBeNull();
+    expect(panel()).not.toBeNull();
+    expect(panelTitle()).toBe('Transazioni del periodo');
+    const params = await panelRequest();
+    expect(params.get('from')).toBe('2026-01-01');
+    expect(params.get('to')).toBe('2026-12-31');
   });
 
-  it('un elemento sparito dai nuovi dati chiude il pannello', async () => {
+  it('un elemento sparito dai nuovi dati riporta la tabella al periodo', async () => {
     await load();
-    await showCategoryList();
-    await click('app-analytics-categories .row');
+    await panelRequest();
+    await selectCategory();
     await panelRequest();
 
     store.toggleType('INCOME');
@@ -682,33 +752,37 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
       `${RANGE}&types=INCOME&${STEP}`
     );
 
-    expect(panel()).toBeNull();
     expect(selection.selection()).toBeNull();
-    // La richiesta partita col nuovo filtro, prima della risposta Analytics, è annullata.
-    expect(panelRequests().map((request) => request.cancelled)).toEqual([true]);
+    expect(panel()).not.toBeNull();
+    expect(panelTitle()).toBe('Transazioni del periodo');
+    // La richiesta partita col nuovo filtro per la categoria è annullata: resta quella del periodo.
+    const params = await panelRequest();
+    expect(params.has('categoryIds')).toBe(false);
+    expect(params.get('types')).toBe('INCOME');
   });
 
-  it('con dati vuoti il pannello sparisce e la selezione si chiude', async () => {
+  it('con dati vuoti la tabella sparisce e la selezione si chiude', async () => {
     await load();
-    await click('app-analytics-merchants .link');
+    await panelRequest();
+    await selectCategory();
     await panelRequest();
 
     store.toggleType('INCOME');
     await load(
       // L'elemento c'è ancora: a chiudere è il dataset vuoto, non la sua assenza.
-      { ...empty(), byMerchant: analytics().byMerchant },
+      { ...empty(), byCategory: analytics().byCategory },
       `${RANGE}&types=INCOME&${STEP}`
     );
 
     expect(panel()).toBeNull();
     expect(selection.selection()).toBeNull();
-    // La richiesta partita col nuovo filtro, prima della risposta Analytics, è annullata.
-    expect(panelRequests().map((request) => request.cancelled)).toEqual([true]);
+    expect(panelRequests()).toEqual([]);
   });
 
   it('la selezione sopravvive all’uscita e al rientro nella pagina', async () => {
     await load();
-    await click('app-analytics-merchants .link');
+    await panelRequest();
+    await selectCategory();
     await panelRequest();
 
     fixture.destroy();
@@ -720,57 +794,27 @@ describe('AnalyticsPage: le transazioni della selezione', () => {
 
     await load();
 
-    expect(panel()).not.toBeNull();
-    expect(panelTitle()).toContain('ESSELUNGA');
-    await panelRequest();
+    expect(panelTitle()).toBe('Transazioni · Alimentari');
+    expect((await panelRequest()).get('categoryIds')).toBe('cat-1');
   });
 
-  it('la prima selezione porta in vista il pannello', async () => {
+  it('una selezione non sposta la pagina né il focus', async () => {
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
-    await load();
-    await click('app-analytics-merchants .link');
-    await panelRequest();
-
-    expect(scroll).toHaveBeenCalledTimes(1);
-    expect(document.activeElement).toBe(panel()?.querySelector('h2'));
-  });
-
-  it('rientrando con una selezione il pannello non ruba scroll e focus, una nuova selezione sì', async () => {
-    const scroll = vi.mocked(Element.prototype.scrollIntoView);
-    await load();
-    await click('app-analytics-merchants .link');
-    await panelRequest();
-
-    fixture.destroy();
     (document.activeElement as HTMLElement | null)?.blur();
-    scroll.mockClear();
-    fixture = TestBed.createComponent(AnalyticsPage);
+    const before = document.activeElement;
+
     await load();
     await panelRequest();
+    await selectCategory();
+    await panelRequest();
+    await requestBucket();
+    await panelRequest();
 
-    // Il rientro non è una nuova selezione: il pannello c'è, ma resta dov'è.
-    expect(panel()).not.toBeNull();
     expect(scroll).not.toHaveBeenCalled();
+    // Il click sulla riga lascia il focus dov'era il click, o sul body: mai sul titolo della tabella.
     expect(document.activeElement).not.toBe(panel()?.querySelector('h2'));
-
-    host().querySelectorAll<HTMLElement>('app-analytics-merchants .link')[1]?.click();
-    await settle();
-    await settle();
-    expect((await panelRequest()).get('merchantIds')).toBe('m-2');
-
-    expect(scroll).toHaveBeenCalledTimes(1);
-    expect(document.activeElement).toBe(panel()?.querySelector('h2'));
-  });
-
-  it('il pulsante chiudi toglie il pannello', async () => {
-    await load();
-    await click('app-analytics-merchants .link');
-    await panelRequest();
-
-    await click('app-analytics-transactions button[aria-label="Chiudi dettaglio"]');
-
-    expect(selection.selection()).toBeNull();
-    expect(panel()).toBeNull();
-    expect(document.activeElement).toBe(host().querySelector('h2'));
+    expect([before, host().querySelector('app-analytics-categories .row')]).toContain(
+      document.activeElement
+    );
   });
 });

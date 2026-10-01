@@ -22,12 +22,6 @@ const category = (categoryId: string | null, name = 'Spesa'): AnalyticsSelection
   name
 });
 
-const merchant = (merchantId: string): AnalyticsSelectionValue => ({
-  kind: 'merchant',
-  merchantId,
-  name: 'Coop'
-});
-
 /** Il minimo che serve a stabilire se un elemento esiste ancora nei grafici. */
 const analytics = (withUnclassified = true): Analytics =>
   ({
@@ -35,7 +29,6 @@ const analytics = (withUnclassified = true): Analytics =>
       { categoryId: 'cat-1', name: 'Spesa' },
       ...(withUnclassified ? [{ categoryId: null, name: 'Da classificare' }] : [])
     ],
-    byMerchant: [{ merchantId: 'm-1', name: 'Coop' }],
     timeline: {
       granularity: 'week',
       buckets: [{ period: '2026-07-06' }]
@@ -76,17 +69,12 @@ describe('selectionCriteria', () => {
       types: ['EXPENSE']
     });
   });
-
-  it('un merchant diventa il filtro per merchant', () => {
-    expect(selectionCriteria(merchant('m-1'))).toEqual({ merchantIds: ['m-1'] });
-  });
 });
 
 describe('isSelectionAvailable', () => {
-  it('è vera per un periodo, una categoria e un merchant presenti', () => {
+  it('è vera per un periodo e una categoria presenti', () => {
     expect(isSelectionAvailable(WEEK, analytics())).toBe(true);
     expect(isSelectionAvailable(category('cat-1'), analytics())).toBe(true);
-    expect(isSelectionAvailable(merchant('m-1'), analytics())).toBe(true);
   });
 
   it('è falsa per un periodo che non è tra i bucket', () => {
@@ -109,10 +97,6 @@ describe('isSelectionAvailable', () => {
     expect(isSelectionAvailable(category(null), analytics(true))).toBe(true);
     expect(isSelectionAvailable(category(null), analytics(false))).toBe(false);
   });
-
-  it('è falsa per un merchant assente', () => {
-    expect(isSelectionAvailable(merchant('m-2'), analytics())).toBe(false);
-  });
 });
 
 describe('selectionLabel', () => {
@@ -123,9 +107,5 @@ describe('selectionLabel', () => {
   it('per una categoria è il nome, o "Da classificare" se nulla', () => {
     expect(selectionLabel(category('cat-1', 'Spesa'))).toBe('Spesa');
     expect(selectionLabel(category(null, 'Altro'))).toBe('Da classificare');
-  });
-
-  it('per un merchant è il nome', () => {
-    expect(selectionLabel(merchant('m-1'))).toBe('Coop');
   });
 });

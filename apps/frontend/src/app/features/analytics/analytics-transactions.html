@@ -1,10 +1,10 @@
 <app-panel>
-  <div class="header">
-    <h2 #heading tabindex="-1">{{ title() }}</h2>
-    <button type="button" class="close" aria-label="Chiudi dettaglio" (click)="closed.emit()">
-      <svg lucideX aria-hidden="true"></svg>
-    </button>
-  </div>
+  <app-section-header [title]="title()">
+    <!-- Solo con una selezione: senza, si sta già guardando tutto. -->
+    @if (selection() !== null) {
+      <button panelActions type="button" class="show-all" (click)="cleared.emit()">Mostra tutto</button>
+    }
+  </app-section-header>
 
   @if (error(); as message) {
     <app-error-retry [message]="message" (retry)="transactions.reload()" />

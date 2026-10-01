@@ -1,17 +1,6 @@
 import { httpResource } from '@angular/common/http';
-import {
-  Component,
-  ElementRef,
-  Injector,
-  OnInit,
-  afterNextRender,
-  computed,
-  effect,
-  inject,
-  linkedSignal,
-  signal
-} from '@angular/core';
-import { Params, RouterLink } from '@angular/router';
+import { Component, OnInit, computed, effect, inject, linkedSignal, signal } from '@angular/core';
+import { Params, Router, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
@@ -64,18 +53,9 @@ import { AnalyticsStore } from './analytics.store';
 export class AnalyticsPage implements OnInit {
   private readonly categoriesApi = inject(CategoriesApi);
   private readonly merchantsApi = inject(MerchantsApi);
-  private readonly injector = inject(Injector);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly router = inject(Router);
   protected readonly store = inject(AnalyticsStore);
   protected readonly selection = inject(AnalyticsSelection);
-
-  /**
-   * La selezione trovata entrando nella pagina, persistita da una visita
-   * precedente. Il pannello che la mostra non deve prendersi scroll e focus:
-   * entrare non è selezionare. Ogni `select()` crea un oggetto nuovo, quindi
-   * basta l'identità per riconoscere una selezione fatta qui.
-   */
-  protected readonly initialSelection = this.selection.selection();
 
   protected readonly analytics = httpResource<Analytics>(() =>
     analyticsRequest(this.store.query())
@@ -167,15 +147,12 @@ export class AnalyticsPage implements OnInit {
 
   /**
    * I criteri del pannello: quelli dell'analisi, con sopra quelli dell'elemento
-   * selezionato. Pagina, dimensione e ordinamento restano i predefiniti di
-   * `EMPTY_QUERY`: la prima pagina, per data decrescente.
+   * selezionato, se ce n'è uno; senza, il periodo intero con i suoi filtri.
+   * Pagina, dimensione e ordinamento restano i predefiniti di `EMPTY_QUERY`:
+   * la prima pagina, per data decrescente.
    */
-  protected readonly panelQuery = computed<TransactionQueryState | null>(() => {
+  protected readonly panelQuery = computed<TransactionQueryState>(() => {
     const selection = this.selection.selection();
-    if (selection === null) {
-      return null;
-    }
-
     const { from, to } = this.store.dateRange();
     const { types, categoryIds, merchantIds, classification } = this.store.filters();
 
@@ -187,16 +164,16 @@ export class AnalyticsPage implements OnInit {
       categoryIds,
       merchantIds,
       classification,
-      ...selectionCriteria(selection)
+      ...(selection === null ? {} : selectionCriteria(selection))
     };
   });
 
   constructor() {
     /*
      * Un cambio di filtri, periodo o passo può togliere dai dati l'elemento
-     * selezionato: allora il pannello si chiude. Si guarda solo ai dati
-     * arrivati: durante un caricamento quelli a schermo sono i precedenti, e
-     * rientrando nella pagina non ce ne sono ancora. La selezione resta finché
+     * selezionato: allora la selezione cade e il pannello torna al periodo
+     * intero. Si guarda solo ai dati arrivati: durante un caricamento quelli a
+     * schermo sono i precedenti, e rientrando nella pagina non ce ne sono ancora. La selezione resta finché
      * una risposta non dice che l'elemento non c'è più.
      */
     effect(() => {
@@ -251,33 +228,20 @@ export class AnalyticsPage implements OnInit {
     this.selection.select({ kind: 'category', categoryId, name: entry?.name ?? '' });
   }
 
+  /** Un merchant non restringe la tabella: porta ai suoi movimenti, con periodo e filtri. */
   protected onMerchantSelected(merchantId: string): void {
-    const entry = this.data()?.byMerchant.find((merchant) => merchant.merchantId === merchantId);
-
-    this.selection.select({ kind: 'merchant', merchantId, name: entry?.name ?? '' });
+    void this.router.navigate(['/transactions'], {
+      queryParams: this.explorerParams({ merchantIds: [merchantId] })
+    });
   }
 
   /**
-   * Chiuso il pannello, il pulsante che aveva il focus non esiste più: da
-   * tastiera si finirebbe su <body>. Lo si porta sulla prima intestazione della
-   * pagina, a pannello tolto. Un `h2` non è focalizzabile da sé: `tabindex` -1
-   * lo rende raggiungibile da programma senza aggiungerlo al giro del Tab.
+   * «Mostra tutto»: la tabella torna al periodo intero, e il pannello resta
+   * dov'è. Il pulsante sparisce col click, ma di proposito il focus non viene
+   * spostato da programma: la pagina non muove più né scroll né focus da sé
+   * (revisione del 2026-10-01 della specifica).
    */
-  protected onPanelClosed(): void {
+  protected onSelectionCleared(): void {
     this.selection.clear();
-
-    afterNextRender(
-      () => {
-        const heading = this.host.nativeElement.querySelector<HTMLElement>('h2');
-        if (heading === null) {
-          return;
-        }
-        if (!heading.hasAttribute('tabindex')) {
-          heading.setAttribute('tabindex', '-1');
-        }
-        heading.focus();
-      },
-      { injector: this.injector }
-    );
   }
 }

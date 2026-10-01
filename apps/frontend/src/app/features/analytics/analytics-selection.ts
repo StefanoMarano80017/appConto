@@ -3,7 +3,12 @@ import { DateRange } from '../../core/period';
 import { TransactionQueryState } from '../transactions/transaction-query';
 import { Analytics, TimelineGranularity } from './analytics.model';
 
-/** L'elemento di un grafico di cui il pannello mostra le transazioni. */
+/**
+ * L'elemento di un grafico a cui il pannello restringe le transazioni.
+ *
+ * Solo bucket e categorie: il click su un merchant non seleziona, porta ancora
+ * ai suoi movimenti in Movimenti (`AnalyticsPage.onMerchantSelected`).
+ */
 export type AnalyticsSelectionValue =
   | {
       kind: 'period';
@@ -12,8 +17,7 @@ export type AnalyticsSelectionValue =
       range: DateRange;
       label: string;
     }
-  | { kind: 'category'; categoryId: string | null; name: string }
-  | { kind: 'merchant'; merchantId: string; name: string };
+  | { kind: 'category'; categoryId: string | null; name: string };
 
 /**
  * L'elemento del grafico selezionato.
@@ -48,8 +52,6 @@ export function selectionCriteria(
       return selection.categoryId === null
         ? { classification: 'unclassified', types: ['EXPENSE'] }
         : { categoryIds: [selection.categoryId], types: ['EXPENSE'] };
-    case 'merchant':
-      return { merchantIds: [selection.merchantId] };
   }
 }
 
@@ -66,8 +68,6 @@ export function isSelectionAvailable(
       );
     case 'category':
       return data.byCategory.some((entry) => entry.categoryId === selection.categoryId);
-    case 'merchant':
-      return data.byMerchant.some((entry) => entry.merchantId === selection.merchantId);
   }
 }
 
@@ -78,7 +78,5 @@ export function selectionLabel(selection: AnalyticsSelectionValue): string {
       return selection.label;
     case 'category':
       return selection.categoryId === null ? 'Da classificare' : selection.name;
-    case 'merchant':
-      return selection.name;
   }
 }

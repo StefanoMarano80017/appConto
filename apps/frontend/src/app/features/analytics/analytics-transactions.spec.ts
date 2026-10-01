@@ -8,13 +8,37 @@ import { Transaction, TransactionPage } from '../transactions/transaction.model'
 import { AnalyticsSelectionValue } from './analytics-selection';
 import { AnalyticsTransactions } from './analytics-transactions';
 
-const merchantSelection: AnalyticsSelectionValue = {
-  kind: 'merchant',
-  merchantId: 'm-1',
-  name: 'ESSELUNGA'
+const categorySelection: AnalyticsSelectionValue = {
+  kind: 'category',
+  categoryId: 'cat-1',
+  name: 'Alimentari'
 };
 
-const merchantQuery: TransactionQueryState = { ...EMPTY_QUERY, merchantIds: ['m-1'] };
+const categoryQuery: TransactionQueryState = {
+  ...EMPTY_QUERY,
+  categoryIds: ['cat-1'],
+  types: ['EXPENSE']
+};
+
+/** Un'altra selezione, per i cambi di selezione. */
+const otherSelection: AnalyticsSelectionValue = {
+  kind: 'category',
+  categoryId: 'cat-2',
+  name: 'Casa'
+};
+
+const otherQuery: TransactionQueryState = {
+  ...EMPTY_QUERY,
+  categoryIds: ['cat-2'],
+  types: ['EXPENSE']
+};
+
+/** Senza selezione: il periodo dell'analisi, coi suoi filtri. */
+const periodQuery: TransactionQueryState = {
+  ...EMPTY_QUERY,
+  from: '2026-01-01',
+  to: '2026-12-31'
+};
 
 const transaction = (id: string, description = 'ESSELUNGA'): Transaction => ({
   id,
@@ -37,6 +61,10 @@ describe('AnalyticsTransactions', () => {
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => host().textContent ?? '';
   const title = (): HTMLElement | null => host().querySelector('h2');
+  const showAll = (): HTMLButtonElement | undefined =>
+    Array.from(host().querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => button.textContent?.trim() === 'Mostra tutto'
+    );
 
   // Non `whenStable()`: aspetterebbe la risposta, che qui la dà il test.
   const settle = async (): Promise<void> => {
@@ -45,8 +73,8 @@ describe('AnalyticsTransactions', () => {
   };
 
   const render = async (
-    selection: AnalyticsSelectionValue = merchantSelection,
-    query: TransactionQueryState = merchantQuery
+    selection: AnalyticsSelectionValue | null = categorySelection,
+    query: TransactionQueryState = categoryQuery
   ): Promise<void> => {
     fixture = TestBed.createComponent(AnalyticsTransactions);
     fixture.componentRef.setInput('selection', selection);
@@ -73,7 +101,7 @@ describe('AnalyticsTransactions', () => {
   };
 
   beforeEach(async () => {
-    // jsdom non implementa scrollIntoView: senza, il componente solleverebbe.
+    // jsdom non implementa scrollIntoView: lo stub serve a verificare che nessuno lo chiami.
     Element.prototype.scrollIntoView = vi.fn();
 
     await TestBed.configureTestingModule({
@@ -96,7 +124,8 @@ describe('AnalyticsTransactions', () => {
     const request = http.expectOne((candidate) => candidate.url === `${API_BASE_URL}/transactions`);
     const params = request.request.params;
 
-    expect(params.get('merchantIds')).toBe('m-1');
+    expect(params.get('categoryIds')).toBe('cat-1');
+    expect(params.get('types')).toBe('EXPENSE');
     // 25 è il predefinito, e bookingDate/desc l'ordinamento predefinito: non compaiono.
     expect(params.has('pageSize')).toBe(false);
     expect(Number(params.get('page') ?? 1)).toBeLessThanOrEqual(1);
@@ -117,8 +146,7 @@ describe('AnalyticsTransactions', () => {
         'Luglio 2026'
       ],
       [{ kind: 'category', categoryId: null, name: 'Senza categoria' }, 'Da classificare'],
-      [{ kind: 'category', categoryId: 'cat-1', name: 'Alimentari' }, 'Alimentari'],
-      [merchantSelection, 'ESSELUNGA']
+      [categorySelection, 'Alimentari']
     ];
 
     for (const [selection, label] of cases) {
@@ -127,6 +155,23 @@ describe('AnalyticsTransactions', () => {
       await respond(page(0, 0));
       fixture.destroy();
     }
+  });
+
+  it('senza selezione il titolo dice che sono le transazioni del periodo', async () => {
+    await render(null, periodQuery);
+
+    expect(title()?.textContent?.trim()).toBe('Transazioni del periodo');
+    const [request] = pending();
+    expect(request!.request.params.get('from')).toBe('2026-01-01');
+    expect(request!.request.params.get('to')).toBe('2026-12-31');
+    request!.flush(page(25, 312));
+    await settle();
+
+    // Il resto non cambia: stessa anteprima, stesso collegamento.
+    expect(text()).toContain('Mostrate 25 di 312');
+    expect(host().querySelector('a[href*="/transactions"]')?.getAttribute('href')).toContain(
+      'from=2026-01-01'
+    );
   });
 
   it('un’anteprima parziale lo dichiara e nasconde il totale', async () => {
@@ -171,7 +216,7 @@ describe('AnalyticsTransactions', () => {
     const link = host().querySelector<HTMLAnchorElement>('a[href*="/transactions"]');
     expect(link).not.toBeNull();
     expect(link!.textContent).toContain('Apri in Movimenti →');
-    expect(link!.getAttribute('href')).toContain('merchantIds=m-1');
+    expect(link!.getAttribute('href')).toContain('categoryIds=cat-1');
   });
 
   it('mostra il caricamento, poi l’errore con riprova', async () => {
@@ -198,14 +243,23 @@ describe('AnalyticsTransactions', () => {
     expect(host().querySelector('app-transactions-table')).toBeNull();
   });
 
-  it('il pulsante chiudi emette closed', async () => {
+  it('«Mostra tutto» c’è solo con una selezione, ed emette cleared', async () => {
+    await render(null, periodQuery);
+    // Senza selezione non c'è niente da togliere: nessun pulsante, né la × di prima.
+    expect(showAll()).toBeUndefined();
+    expect(host().querySelector('button[aria-label="Chiudi dettaglio"]')).toBeNull();
+    await finish();
+    fixture.destroy();
+
     await render();
-    let closed = 0;
-    fixture.componentInstance.closed.subscribe(() => closed++);
+    let cleared = 0;
+    fixture.componentInstance.cleared.subscribe(() => cleared++);
 
-    host().querySelector<HTMLButtonElement>('button[aria-label="Chiudi dettaglio"]')!.click();
+    expect(showAll()).toBeDefined();
+    expect(host().querySelector('button[aria-label="Chiudi dettaglio"]')).toBeNull();
+    showAll()!.click();
 
-    expect(closed).toBe(1);
+    expect(cleared).toBe(1);
     await finish();
   });
 
@@ -213,16 +267,12 @@ describe('AnalyticsTransactions', () => {
     await render();
     const [first] = pending();
 
-    fixture.componentRef.setInput('selection', {
-      kind: 'merchant',
-      merchantId: 'm-2',
-      name: 'CARREFOUR'
-    } satisfies AnalyticsSelectionValue);
-    fixture.componentRef.setInput('query', { ...EMPTY_QUERY, merchantIds: ['m-2'] });
+    fixture.componentRef.setInput('selection', otherSelection);
+    fixture.componentRef.setInput('query', otherQuery);
     await settle();
 
     const [second] = pending().filter((request) => request !== first);
-    expect(second.request.params.get('merchantIds')).toBe('m-2');
+    expect(second.request.params.get('categoryIds')).toBe('cat-2');
     second.flush(page(2, 2, 'CARREFOUR'));
     await settle();
 
@@ -233,7 +283,7 @@ describe('AnalyticsTransactions', () => {
     }
     expect(first.cancelled).toBe(true);
 
-    expect(title()?.textContent?.trim()).toBe('Transazioni · CARREFOUR');
+    expect(title()?.textContent?.trim()).toBe('Transazioni · Casa');
     const rows = host().querySelectorAll('app-transactions-table tbody tr');
     expect(rows).toHaveLength(2);
     expect(rows[0].textContent).toContain('CARREFOUR');
@@ -243,7 +293,7 @@ describe('AnalyticsTransactions', () => {
     await render();
     await respond(page(2, 2, 'ESSELUNGA'));
 
-    fixture.componentRef.setInput('query', { ...merchantQuery, search: 'bio' });
+    fixture.componentRef.setInput('query', { ...categoryQuery, search: 'bio' });
     await settle();
 
     const content = host().querySelector('.content');
@@ -260,16 +310,31 @@ describe('AnalyticsTransactions', () => {
     expect(rows[0].textContent).toContain('BIO');
   });
 
+  it('senza selezione, un cambio di filtri tiene attenuate le righe di prima', async () => {
+    // Nessuna selezione prima e dopo: è la stessa "selezione" (null), quindi
+    // le righe a schermo appartengono ancora a ciò che si sta guardando.
+    await render(null, periodQuery);
+    await respond(page(2, 2, 'ESSELUNGA'));
+
+    fixture.componentRef.setInput('query', { ...periodQuery, types: ['INCOME'] });
+    await settle();
+
+    expect(host().querySelector('.content')?.classList.contains('stale')).toBe(true);
+    expect(text()).not.toContain('Caricamento in corso…');
+    expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(2);
+
+    await respond(page(1, 1, 'STIPENDIO'));
+
+    expect(host().querySelector('.content.stale')).toBeNull();
+    expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(1);
+  });
+
   it('cambiando selezione, le righe della precedente spariscono fino alla nuova risposta', async () => {
     await render();
     await respond(page(25, 312, 'ESSELUNGA'));
 
-    fixture.componentRef.setInput('selection', {
-      kind: 'merchant',
-      merchantId: 'm-2',
-      name: 'CARREFOUR'
-    } satisfies AnalyticsSelectionValue);
-    fixture.componentRef.setInput('query', { ...EMPTY_QUERY, merchantIds: ['m-2'] });
+    fixture.componentRef.setInput('selection', otherSelection);
+    fixture.componentRef.setInput('query', otherQuery);
     await settle();
 
     expect(text()).toContain('Caricamento in corso…');
@@ -285,57 +350,42 @@ describe('AnalyticsTransactions', () => {
     expect(rows[0].textContent).toContain('CARREFOUR');
   });
 
-  it('a ogni nuova selezione porta in vista il pannello e ne mette a fuoco il titolo', async () => {
+  it('togliendo la selezione, le righe dell’elemento spariscono fino a quelle del periodo', async () => {
     await render();
-    const scroll = vi.mocked(Element.prototype.scrollIntoView);
-    scroll.mockClear();
+    await respond(page(2, 2, 'ESSELUNGA'));
 
-    fixture.componentRef.setInput('selection', {
-      kind: 'merchant',
-      merchantId: 'm-2',
-      name: 'CARREFOUR'
-    } satisfies AnalyticsSelectionValue);
-    await settle();
-    // Il fuoco va altrove: alla selezione successiva deve tornare sul titolo.
-    (document.activeElement as HTMLElement | null)?.blur();
-    expect(document.activeElement).not.toBe(title());
-    fixture.componentRef.setInput('selection', {
-      kind: 'category',
-      categoryId: 'cat-1',
-      name: 'Alimentari'
-    } satisfies AnalyticsSelectionValue);
+    fixture.componentRef.setInput('selection', null);
+    fixture.componentRef.setInput('query', periodQuery);
     await settle();
 
-    expect(scroll).toHaveBeenCalledTimes(2);
-    expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
-    expect(document.activeElement).toBe(title());
-    expect(title()?.getAttribute('tabindex')).toBe('-1');
-    await finish();
+    expect(text()).toContain('Caricamento in corso…');
+    expect(host().querySelector('app-transactions-table')).toBeNull();
+
+    await respond(page(3, 3, 'CARREFOUR'));
+
+    expect(title()?.textContent?.trim()).toBe('Transazioni del periodo');
+    expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(3);
   });
 
-  it('con revealOnInit spento non si porta in vista alla nascita, ma alla selezione successiva sì', async () => {
+  it('una selezione non porta in vista il pannello e non ne sposta il focus', async () => {
     const scroll = vi.mocked(Element.prototype.scrollIntoView);
+    (document.activeElement as HTMLElement | null)?.blur();
     const before = document.activeElement;
 
-    fixture = TestBed.createComponent(AnalyticsTransactions);
-    fixture.componentRef.setInput('selection', merchantSelection);
-    fixture.componentRef.setInput('query', merchantQuery);
-    fixture.componentRef.setInput('revealOnInit', false);
+    await render(null, periodQuery);
+    await finish();
+
+    fixture.componentRef.setInput('selection', categorySelection);
+    fixture.componentRef.setInput('query', categoryQuery);
+    await settle();
+    fixture.componentRef.setInput('selection', otherSelection);
+    fixture.componentRef.setInput('query', otherQuery);
     await settle();
 
     expect(scroll).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(before);
-    expect(document.activeElement).not.toBe(title());
-
-    fixture.componentRef.setInput('selection', {
-      kind: 'merchant',
-      merchantId: 'm-2',
-      name: 'CARREFOUR'
-    } satisfies AnalyticsSelectionValue);
-    await settle();
-
-    expect(scroll).toHaveBeenCalledTimes(1);
-    expect(document.activeElement).toBe(title());
+    // Il titolo non è più un bersaglio del focus da programma.
+    expect(title()?.hasAttribute('tabindex')).toBe(false);
     await finish();
   });
 });
