@@ -89,11 +89,25 @@ li + li {
 
 /*
  * Il design system non ha token di dimensione per i grafici (la timeline usa
- * anch'essa un valore fisso): l'altezza è una sola, in rem. La ciambella è
- * quadrata e riempie l'altezza, quindi il foro ha un diametro utile al testo.
+ * anch'essa un valore fisso): l'altezza è una sola, in rem, ed è quella del
+ * corpo della scheda in ogni stato (ciambella, Lista, messaggi). Così cambiare
+ * vista non fa saltare la pagina. La ciambella riempie l'altezza, quindi il
+ * foro ha un diametro utile al testo.
  */
-.chart {
-  height: 16.25rem;
+.body {
+  height: 25rem;
+}
+
+/*
+ * La Lista scorre dentro il corpo invece di allungare la scheda; la barra
+ * compare solo se le categorie non ci stanno. Il respiro a destra tiene la
+ * barra lontana dall'importo, quello in alto e in basso evita che l'anello di
+ * focus della prima e dell'ultima riga venga tagliato dal bordo di scorrimento.
+ */
+.list {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4) var(--space-2) 0;
 }
 
 /* Il foro è stretto: nome e importo vanno a capo invece di sbordare sulle fette. */

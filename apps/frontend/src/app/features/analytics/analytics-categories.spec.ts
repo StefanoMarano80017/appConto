@@ -212,6 +212,25 @@ describe('AnalyticsCategories', () => {
     expect(center()).toContain(formatPercent(5 + 2.5));
   });
 
+  // jsdom non fa layout: l'altezza (25rem) si vede in pagina. Qui si prova ciò che la rende
+  // uguale fra le viste, cioè che ogni stato viva nello stesso corpo, e che la Lista scorra
+  // dentro un contenitore proprio invece di allungare la scheda.
+  it('ogni stato della scheda sta nello stesso corpo ad altezza fissa', async () => {
+    await render([category()]);
+    expect(host().querySelectorAll('.body')).toHaveLength(1);
+    expect(host().querySelector('.body app-doughnut-chart')).not.toBeNull();
+
+    await choose('Lista');
+    expect(host().querySelectorAll('.body')).toHaveLength(1);
+    expect(host().querySelector('.body .list ul .row')).not.toBeNull();
+
+    await render([]);
+    expect(host().querySelector('.body .message')).not.toBeNull();
+
+    await render([category({ amount: -50 })]);
+    expect(host().querySelector('.body .message')).not.toBeNull();
+  });
+
   it("senza categorie non c'è il toggle e resta il messaggio", async () => {
     await render([]);
 

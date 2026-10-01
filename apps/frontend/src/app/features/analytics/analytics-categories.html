@@ -11,13 +11,14 @@
     }
   </app-section-header>
 
-  @if (categories().length === 0) {
-    <p class="message">
-      Nessuna spesa nel periodo selezionato.
-    </p>
-  } @else if (view() === 'chart') {
-    @if (drawnTotal() > 0) {
-      <div class="chart">
+  <!-- Un solo corpo ad altezza fissa per ogni stato: cambiando vista la scheda non salta. -->
+  <div class="body">
+    @if (categories().length === 0) {
+      <p class="message">
+        Nessuna spesa nel periodo selezionato.
+      </p>
+    } @else if (view() === 'chart') {
+      @if (drawnTotal() > 0) {
         <app-doughnut-chart
           [items]="categories()"
           [value]="value"
@@ -35,45 +36,47 @@
             }
           </ng-template>
         </app-doughnut-chart>
-      </div>
-    } @else {
-      <p class="message">Nessuna spesa netta da rappresentare.</p>
-    }
-  } @else {
-    <ul>
-      @for (category of categories(); track category.categoryId ?? 'none') {
-        <li>
-          <button
-            type="button"
-            class="row"
-            (click)="categorySelected.emit(category.categoryId)"
-            [attr.aria-label]="'Filtra per ' + category.name"
-          >
-            <span class="count">
-              {{ category.transactionCount }}
-            </span>
-            <span class="name">
-              {{ category.name }}
-            </span>
-            <span class="percentage">
-              {{ formatPercent(category.percentage) }}
-            </span>
-            <!--
-              `amount` è la magnitudine di una spesa (v. analytics.service), non un valore
-              con segno: un rimborso netto la rende negativa. Si nega qui, non con un tono
-              forzato, così l'auto deduce il segno vero invece di ribaltarlo sempre.
-            -->
-            <app-amount class="amount" [value]="-category.amount" />
-            <span class="navigation-hint" aria-hidden="true"> → </span>
-          </button>
-          <span class="bar">
-            <span
-              [style.width.%]="barWidth(category.amount)"
-              [style.background]="category.color ?? 'var(--color-text-muted)'"
-            ></span>
-          </span>
-        </li>
+      } @else {
+        <p class="message">Nessuna spesa netta da rappresentare.</p>
       }
-    </ul>
-  }
+    } @else {
+      <div class="list">
+        <ul>
+          @for (category of categories(); track category.categoryId ?? 'none') {
+            <li>
+              <button
+                type="button"
+                class="row"
+                (click)="categorySelected.emit(category.categoryId)"
+                [attr.aria-label]="'Filtra per ' + category.name"
+              >
+                <span class="count">
+                  {{ category.transactionCount }}
+                </span>
+                <span class="name">
+                  {{ category.name }}
+                </span>
+                <span class="percentage">
+                  {{ formatPercent(category.percentage) }}
+                </span>
+                <!--
+                  `amount` è la magnitudine di una spesa (v. analytics.service), non un valore
+                  con segno: un rimborso netto la rende negativa. Si nega qui, non con un tono
+                  forzato, così l'auto deduce il segno vero invece di ribaltarlo sempre.
+                -->
+                <app-amount class="amount" [value]="-category.amount" />
+                <span class="navigation-hint" aria-hidden="true"> → </span>
+              </button>
+              <span class="bar">
+                <span
+                  [style.width.%]="barWidth(category.amount)"
+                  [style.background]="category.color ?? 'var(--color-text-muted)'"
+                ></span>
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
 </app-panel>
