@@ -2,7 +2,6 @@ import { httpResource } from '@angular/common/http';
 import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, Router, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
-import { DateRange } from '../../core/period';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
@@ -20,7 +19,7 @@ import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
 import { AnalyticsLoans } from './analytics-loans';
 import { AnalyticsMerchants } from './analytics-merchants';
-import { AnalyticsTimeline } from './analytics-timeline';
+import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { AnalyticsFilters } from './analytics-filters';
 import { AnalyticsStore } from './analytics.store';
 
@@ -174,8 +173,8 @@ export class AnalyticsPage implements OnInit {
     void this.router.navigate(['/transactions'], { queryParams: this.explorerParams(extra) });
   }
 
-  protected onTimelineTransactionsRequested(range: DateRange): void {
-    this.openExplorer(range);
+  protected onTimelineTransactionsRequested(selection: TimelineSelection): void {
+    this.openExplorer(selection.range);
   }
 
   /** Il drill down su una categoria: senza categoria significa "da classificare". */

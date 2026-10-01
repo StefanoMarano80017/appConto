@@ -443,7 +443,12 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
 
     const timeline = fixture.debugElement.query(By.directive(AnalyticsTimeline))
       .componentInstance as AnalyticsTimeline;
-    timeline.transactionsRequested.emit({ from: '2026-07-06', to: '2026-07-12' });
+    timeline.transactionsRequested.emit({
+      granularity: 'week',
+      period: '2026-07-06',
+      range: { from: '2026-07-06', to: '2026-07-12' },
+      label: 'settimana del 6 luglio',
+    });
     await settle();
     await settle();
 

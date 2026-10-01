@@ -137,6 +137,17 @@ interface TimelineRow {
 }
 
 /**
+ * Il bucket scelto sul grafico: il passo con cui si leggono i bucket mostrati,
+ * il suo periodo, l'intervallo che copre e l'etichetta che lo racconta.
+ */
+export interface TimelineSelection {
+  readonly granularity: TimelineGranularity;
+  readonly period: string;
+  readonly range: DateRange;
+  readonly label: string;
+}
+
+/**
  * Andamento nel tempo, come grafico a linee.
  *
  * Rappresenta lo stesso insieme filtrato di tutta la pagina: il passo cambia
@@ -165,7 +176,7 @@ export class AnalyticsTimeline {
   readonly granularity = input.required<TimelineGranularity>();
 
   readonly granularitySelected = output<TimelineGranularity>();
-  readonly transactionsRequested = output<DateRange>();
+  readonly transactionsRequested = output<TimelineSelection>();
 
   protected readonly granularities = GRANULARITIES;
   protected readonly partialMarker = partialMarker;
@@ -265,7 +276,14 @@ export class AnalyticsTimeline {
   }
 
   protected openBucketTransactions(bucket: TimelineBucket): void {
-    this.transactionsRequested.emit(this.step().range(bucket.period));
+    const granularity = this.timeline().granularity;
+    const step = this.step();
+    this.transactionsRequested.emit({
+      granularity,
+      period: bucket.period,
+      range: step.range(bucket.period),
+      label: step.long(bucket.period),
+    });
   }
 
   /** L'ultima serie visibile non si nasconde: un grafico vuoto non dice nulla. */

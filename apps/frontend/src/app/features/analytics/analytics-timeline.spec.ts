@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
 import { CHART_CONSTRUCTOR, LineChart } from '../../shared/ui/chart/line-chart';
-import { AnalyticsTimeline } from './analytics-timeline';
+import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 
 // Il grafico vero e proprio (tratti, guide, tastiera, focus) è coperto da
@@ -394,13 +394,20 @@ describe('AnalyticsTimeline', () => {
 
   it('apre i movimenti sul periodo completo della settimana selezionata', async () => {
     await render();
-    const requested: { from: string | null; to: string | null }[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((range) => requested.push(range));
+    const requested: TimelineSelection[] = [];
+    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
     await select(1);
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
 
-    expect(requested).toEqual([{ from: '2026-07-06', to: '2026-07-12' }]);
+    expect(requested).toEqual([
+      {
+        granularity: 'week',
+        period: '2026-07-06',
+        range: { from: '2026-07-06', to: '2026-07-12' },
+        label: 'settimana del 6 luglio',
+      },
+    ]);
   });
 
   it('apre i movimenti dal primo all’ultimo giorno del mese selezionato', async () => {
@@ -411,13 +418,20 @@ describe('AnalyticsTimeline', () => {
       },
       'month'
     );
-    const requested: { from: string | null; to: string | null }[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((range) => requested.push(range));
+    const requested: TimelineSelection[] = [];
+    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
     await select(0);
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
 
-    expect(requested).toEqual([{ from: '2026-02-01', to: '2026-02-28' }]);
+    expect(requested).toEqual([
+      {
+        granularity: 'month',
+        period: '2026-02',
+        range: { from: '2026-02-01', to: '2026-02-28' },
+        label: 'febbraio 2026',
+      },
+    ]);
   });
 
   // La pagina cambia subito il passo ma tiene i bucket vecchi finché arrivano
@@ -438,14 +452,21 @@ describe('AnalyticsTimeline', () => {
     );
     expect(rowLabels).toEqual(['giugno 2026', 'luglio 2026']);
 
-    const requested: { from: string | null; to: string | null }[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((range) => requested.push(range));
+    const requested: TimelineSelection[] = [];
+    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
     await select(1);
     expect(host().querySelector('.when')?.textContent).toContain('luglio 2026');
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
 
-    expect(requested).toEqual([{ from: '2026-07-01', to: '2026-07-31' }]);
+    expect(requested).toEqual([
+      {
+        granularity: 'month',
+        period: '2026-07',
+        range: { from: '2026-07-01', to: '2026-07-31' },
+        label: 'luglio 2026',
+      },
+    ]);
   });
 
   it('intestazioni e totali della tabella seguono le serie', async () => {
