@@ -22,6 +22,14 @@
  * manda a capo, non sborda sulle fette. Non intercetta il puntatore, altrimenti passarci sopra
  * spegnerebbe l'hover delle fette sotto.
  */
+/*
+ * Il canvas dentro app-chart sta dietro il view boundary di encapsulation:
+ * ::ng-deep lo raggiunge. Il cursore pointer avvisa che le fette sono cliccabili.
+ */
+::ng-deep app-chart canvas {
+  cursor: pointer;
+}
+
 .center {
   position: absolute;
   top: 50%;
