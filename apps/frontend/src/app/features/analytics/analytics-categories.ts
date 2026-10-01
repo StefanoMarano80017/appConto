@@ -7,8 +7,9 @@ import {
   Injector,
   input,
   output,
-  signal
+  signal,
 } from '@angular/core';
+import { LucideChartPie, LucideList } from '@lucide/angular';
 import { formatPercent } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
@@ -43,7 +44,7 @@ interface CenterSummary {
   selector: 'app-analytics-categories',
   imports: [Panel, SectionHeader, Amount, ChoiceGroup, DoughnutChart, DoughnutCenter],
   templateUrl: './analytics-categories.html',
-  styleUrl: './analytics-categories.scss'
+  styleUrl: './analytics-categories.scss',
 })
 export class AnalyticsCategories {
   readonly categories = input.required<CategoryDistribution[]>();
@@ -58,29 +59,29 @@ export class AnalyticsCategories {
 
   protected readonly view = signal<CategoriesView>('chart');
   protected readonly views: readonly ChoiceOption<CategoriesView>[] = [
-    { id: 'chart', label: 'Grafico' },
-    { id: 'list', label: 'Lista' }
+    { id: 'chart', label: 'Grafico', icon: LucideChartPie.icon },
+    { id: 'list', label: 'Lista', icon: LucideList.icon },
   ];
 
   // Campi e non metodi: il grafico li riceve come input, e un riferimento nuovo
   // a ogni rendering gli farebbe ricalcolare le fette per niente.
-  protected readonly value = (category: CategoryDistribution): number => category.amount;
-  protected readonly label = (category: CategoryDistribution): string => category.name;
-  protected readonly color = (category: CategoryDistribution): SliceColor =>
+  protected readonly sliceValue = (category: CategoryDistribution): number => category.amount;
+  protected readonly sliceLabel = (category: CategoryDistribution): string => category.name;
+  protected readonly sliceColor = (category: CategoryDistribution): SliceColor =>
     category.color ? { custom: category.color } : 'chart-neutral';
 
-  private readonly widest = computed(() =>
-    this.categories().reduce((max, category) => Math.max(max, category.amount), 0)
+  private readonly maxAmountCategory = computed(() =>
+    this.categories().reduce((max, category) => Math.max(max, category.amount), 0),
   );
 
   /** Il grafico disegna solo importi positivi: un rimborso netto non è una fetta. */
-  protected readonly drawnTotal = computed(() =>
-    this.categories().reduce((sum, category) => sum + Math.max(category.amount, 0), 0)
+  protected readonly chartTotal = computed(() =>
+    this.categories().reduce((sum, category) => sum + Math.max(category.amount, 0), 0),
   );
 
   /** La barra è proporzionale alla categoria più consistente, non al totale. */
   protected barWidth(amount: number): number {
-    const widest = this.widest();
+    const widest = this.maxAmountCategory();
 
     return widest === 0 ? 0 : (amount / widest) * 100;
   }
@@ -92,21 +93,21 @@ export class AnalyticsCategories {
    */
   protected center(slice: DoughnutSlice<CategoryDistribution> | null): CenterSummary {
     if (slice === null) {
-      return { label: 'Totale spese', amount: this.drawnTotal(), percentage: null };
+      return { label: 'Totale spese', amount: this.chartTotal(), percentage: null };
     }
 
     if (slice.kind === 'item') {
       return {
         label: slice.item.name,
         amount: slice.item.amount,
-        percentage: slice.item.percentage
+        percentage: slice.item.percentage,
       };
     }
 
     return {
       label: 'Altri',
       amount: slice.items.reduce((sum, category) => sum + category.amount, 0),
-      percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0)
+      percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0),
     };
   }
 
@@ -128,14 +129,21 @@ export class AnalyticsCategories {
   private focusGroupedRow(first: CategoryDistribution | undefined): void {
     afterNextRender(
       () => {
-        const index = first === undefined ? -1 : this.categories().indexOf(first);
-        const host = this.host.nativeElement;
-        const target =
-          host.querySelectorAll<HTMLElement>('ul .row')[index] ??
-          host.querySelector<HTMLElement>('app-choice-group button[aria-pressed="true"]');
+        const target = first ? this.rowForCategory(first) : this.activeViewToggle();
         target?.focus();
       },
-      { injector: this.injector }
+      { injector: this.injector },
+    );
+  }
+
+  private rowForCategory(category: CategoryDistribution): HTMLElement | null {
+    const index = this.categories().indexOf(category);
+    return this.host.nativeElement.querySelectorAll<HTMLElement>('ul .row')[index] ?? null;
+  }
+
+  private activeViewToggle(): HTMLElement | null {
+    return this.host.nativeElement.querySelector<HTMLElement>(
+      'app-choice-group button[aria-pressed="true"]',
     );
   }
 }

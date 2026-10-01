@@ -53,7 +53,7 @@ describe('AnalyticsCategories', () => {
 
   const button = (label: string): HTMLButtonElement | undefined =>
     Array.from(host().querySelectorAll<HTMLButtonElement>('app-choice-group button')).find(
-      (candidate) => candidate.textContent?.trim() === label
+      (candidate) => candidate.getAttribute('aria-label') === label
     );
   const choose = async (label: string): Promise<void> => {
     button(label)?.click();

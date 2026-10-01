@@ -1,10 +1,22 @@
+<span class="indicator" aria-hidden="true" #indicator [class.visible]="hasActive()" [class.ready]="ready()"></span>
 @for (option of options(); track option.id) {
+  @let hasIcon = !!option.icon && display() !== 'label';
+  @let iconOnly = hasIcon && display() === 'icon';
   <button
+    #segment
     type="button"
     [class.active]="active().has(option.id)"
+    [class.icon-only]="iconOnly"
     [attr.aria-pressed]="active().has(option.id)"
-    [attr.title]="option.description ?? null"
-    [attr.aria-label]="option.description ? option.label + ', ' + option.description : null"
+    [attr.title]="option.description ?? (iconOnly ? option.label : null)"
+    [attr.aria-label]="option.description ? option.label + ', ' + option.description : (iconOnly ? option.label : null)"
     (click)="choose(option.id)"
-  >{{ option.label }}</button>
+  >
+    @if (hasIcon) {
+      <svg class="icon" aria-hidden="true" [lucideIcon]="option.icon!"></svg>
+    }
+    @if (!iconOnly) {
+      {{ option.label }}
+    }
+  </button>
 }

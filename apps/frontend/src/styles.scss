@@ -416,3 +416,32 @@ textarea:user-invalid {
   width: 1rem;
   height: 1rem;
 }
+
+/*
+ * Scrollbar globale.
+ *
+ * Sottile e discreta: il thumb usa il bordo semantico, mentre il track
+ * resta trasparente per non aggiungere una fascia visiva permanente.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+}

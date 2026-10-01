@@ -19,9 +19,10 @@
  * una sola parola.
  */
 :host {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-2);
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-control);
@@ -32,14 +33,32 @@ button {
   @include typography.text('body');
   flex: 1 1 0%;
   min-width: 0;
+  overflow-wrap: normal;
   position: relative;
-  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  --padding-inline: var(--space-4);
+  padding: var(--space-3) var(--padding-inline);
   border: none;
   border-radius: calc(var(--radius-control) - 2px);
   background: transparent;
   color: var(--color-text-muted);
   text-align: center;
   cursor: pointer;
+}
+
+/* Solo icona: niente testo da far respirare, bastano padding più stretti sui lati. */
+button.icon-only {
+  --padding-inline: var(--space-3);
+}
+
+/* Eredita currentColor dal bottone, così hover e attivo la colorano senza regole proprie. */
+.icon {
+  flex: none;
+  width: 1.1em;
+  height: 1.1em;
 }
 
 button:focus {
@@ -52,23 +71,67 @@ button:hover:not(.active) {
 }
 
 button.active {
-  background: var(--color-surface-elevated);
   color: var(--color-text-primary);
   font-weight: 600;
 }
 
-button.active::after {
+/*
+ * La pillola attiva è un elemento a parte che scorre da un segmento all'altro:
+ * sfondo e trattino stanno qui, testo e colore restano sul bottone. Il
+ * componente ne misura il bottone attivo e scrive --x/--y/--w/--h (posizione e
+ * dimensione rispetto all'host) e --pad (padding inline di quel bottone).
+ * Sta prima dei bottoni nel DOM, che sono `position: relative`: li copre, quindi
+ * testo e icone restano sopra lo sfondo.
+ */
+.indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  --x: 0px;
+  --y: 0px;
+  --w: 0px;
+  --h: 0px;
+  --pad: 0px;
+  width: var(--w);
+  height: var(--h);
+  transform: translate(var(--x), var(--y));
+  border-radius: calc(var(--radius-control) - 2px);
+  background: var(--color-surface-elevated);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.indicator.visible {
+  opacity: 1;
+}
+
+/* Solo dopo il primo posizionamento: altrimenti la pillola scivolerebbe da 0,0 al caricamento. */
+.indicator.ready {
+  transition:
+    transform 200ms ease-out,
+    width 200ms ease-out,
+    height 200ms ease-out,
+    opacity 200ms ease-out;
+}
+
+.indicator::after {
   position: absolute;
   right: 0;
   bottom: var(--space-1);
   left: 0;
-  width: 2rem;
+  /* Quanto il contenuto, fino a 2rem (il 100% è la larghezza animata della pillola): sul solo-icona il trattino non sporge dall'icona. */
+  width: min(2rem, calc(100% - 2 * var(--pad)));
   height: 2px;
   margin-inline: auto;
   border-radius: var(--radius-pill);
   background: var(--color-primary);
   content: '';
-  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator.ready {
+    transition: none;
+  }
 }
 
 button:focus-visible {

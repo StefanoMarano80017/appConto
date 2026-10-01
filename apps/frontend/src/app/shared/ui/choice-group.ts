@@ -1,10 +1,25 @@
-import { Component, computed, input, output } from '@angular/core';
+import {
+  afterRenderEffect,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+  viewChildren
+} from '@angular/core';
+import { LucideDynamicIcon, LucideIconData } from '@lucide/angular';
 
 export interface ChoiceOption<T> {
   readonly id: T;
   readonly label: string;
   /** Forma estesa, quando `label` è un'abbreviazione: alimenta `title` e il nome accessibile. */
   readonly description?: string;
+  /** Icona Lucide passata come dato (es. `LucideX.icon`); si vede solo se il gruppo ha `display` diverso da `label`. */
+  readonly icon?: LucideIconData;
 }
 
 /**
@@ -36,6 +51,7 @@ export interface ChoiceOption<T> {
   selector: 'app-choice-group',
   templateUrl: './choice-group.html',
   styleUrl: './choice-group.scss',
+  imports: [LucideDynamicIcon],
   host: {
     role: 'group',
     '[attr.aria-label]': 'ariaLabel()'
@@ -66,6 +82,14 @@ export class ChoiceGroup<T> {
 
   readonly ariaLabel = input.required<string>();
 
+  /**
+   * Cosa mostrare di ogni opzione: solo etichetta (default, il markup di
+   * sempre), solo icona o entrambe. In `icon` l'etichetta resta come nome
+   * accessibile e `title`; un'opzione senza `icon` mostra comunque il testo,
+   * perché un bottone vuoto non direbbe a nessuno cosa sceglie.
+   */
+  readonly display = input<'label' | 'icon' | 'both'>('label');
+
   /** L'id su cui si è fatto clic. Che significhi "seleziona" o "inverti" lo decide il chiamante. */
   readonly selected = output<T>();
 
@@ -74,6 +98,70 @@ export class ChoiceGroup<T> {
     const current = this.value();
     return new Set(Array.isArray(current) ? (current as readonly T[]) : [current as T]);
   });
+
+  /** Almeno un'opzione è attiva: altrimenti la pillola non ha un segmento su cui stare e si nasconde. */
+  protected readonly hasActive = computed(() => this.options().some((option) => this.active().has(option.id)));
+
+  /** Vero dopo il primo posizionamento: da lì in poi la pillola può animarsi, prima deve solo comparire al suo posto. */
+  protected readonly ready = signal(false);
+
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  private readonly indicator = viewChild<ElementRef<HTMLElement>>('indicator');
+  private readonly segments = viewChildren<ElementRef<HTMLButtonElement>>('segment');
+  private frame: number | null = null;
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+
+    // Dopo il rendering, così i bottoni hanno già classi e contenuto aggiornati. Con più opzioni attive
+    // (modalità multipla) la pillola segue la prima: un solo indicatore non può coprirne due.
+    afterRenderEffect(() => {
+      this.active();
+      this.options();
+      this.display();
+      this.segments();
+      this.measure();
+    });
+
+    // Un ridimensionamento (a capo diverso, font caricato) sposta i segmenti senza toccare nessun input.
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => this.measure());
+      observer.observe(this.host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    }
+
+    destroyRef.onDestroy(() => {
+      if (this.frame !== null) {
+        cancelAnimationFrame(this.frame);
+      }
+    });
+  }
+
+  /** Copia posizione e misure del bottone attivo (relative all'host) sulle variabili CSS della pillola. */
+  private measure(): void {
+    const indicator = this.indicator()?.nativeElement;
+    const segment = this.segments()
+      .map((ref) => ref.nativeElement)
+      .find((button) => button.classList.contains('active'));
+
+    if (!indicator || !segment) {
+      return;
+    }
+
+    indicator.style.setProperty('--x', `${segment.offsetLeft}px`);
+    indicator.style.setProperty('--y', `${segment.offsetTop}px`);
+    indicator.style.setProperty('--w', `${segment.offsetWidth}px`);
+    indicator.style.setProperty('--h', `${segment.offsetHeight}px`);
+    indicator.style.setProperty('--pad', getComputedStyle(segment).paddingLeft);
+
+    if (!this.ready() && this.frame === null) {
+      // Un frame di attesa: la transition non deve partire dal primo posizionamento.
+      this.frame = requestAnimationFrame(() => {
+        this.frame = null;
+        this.ready.set(true);
+      });
+    }
+  }
 
   protected choose(id: T): void {
     if (this.mode() === 'single' && this.active().has(id)) {

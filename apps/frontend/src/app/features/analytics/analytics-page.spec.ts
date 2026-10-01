@@ -364,7 +364,7 @@ describe('AnalyticsPage: deep link verso l\'esplorazione', () => {
         'app-analytics-categories app-choice-group button'
       )
     )
-      .find((button) => button.textContent?.trim() === 'Lista')
+      .find((button) => button.getAttribute('aria-label') === 'Lista')
       ?.click();
     await settle();
   };

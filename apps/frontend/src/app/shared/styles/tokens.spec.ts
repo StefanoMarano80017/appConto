@@ -153,6 +153,14 @@ const SRC = join(QUI, '../../..');
  */
 const proprieta = (() => {
   const nomi = new Set<string>();
+  /*
+   * Le proprietà che un foglio di componente dichiara da sé (`--padding-inline`
+   * di ChoiceGroup, le variabili di posizione della sua pillola) sono locali:
+   * le risolve il componente, non `:root`, e non c'è nulla da cercare nel foglio
+   * globale. `styles.scss` è escluso, perché lì la dichiarazione È il token.
+   */
+  const locali = new Set<string>();
+  const globale = join(SRC, 'styles.scss');
 
   for (const file of trovaFile(SRC, '.scss', true)) {
     /*
@@ -176,6 +184,11 @@ const proprieta = (() => {
     for (const nome of nomiDaRegex(css, RIFERIMENTO)) {
       nomi.add(nome);
     }
+    if (file !== globale) {
+      for (const nome of nomiDaRegex(css, DICHIARAZIONE)) {
+        locali.add(nome);
+      }
+    }
   }
 
   for (const file of trovaFile(SRC, '.html', false)) {
@@ -183,6 +196,10 @@ const proprieta = (() => {
     for (const nome of nomiDaRegex(testo, RIFERIMENTO)) {
       nomi.add(nome);
     }
+  }
+
+  for (const nome of locali) {
+    nomi.delete(nome);
   }
 
   return nomi;

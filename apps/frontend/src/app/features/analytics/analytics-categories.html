@@ -6,6 +6,7 @@
         [options]="views"
         [value]="view()"
         ariaLabel="Vista delle categorie"
+        display="icon"
         (selected)="view.set($event)"
       />
     }
@@ -18,12 +19,12 @@
         Nessuna spesa nel periodo selezionato.
       </p>
     } @else if (view() === 'chart') {
-      @if (drawnTotal() > 0) {
+      @if (chartTotal() > 0) {
         <app-doughnut-chart
           [items]="categories()"
-          [value]="value"
-          [label]="label"
-          [color]="color"
+          [value]="sliceValue"
+          [label]="sliceLabel"
+          [color]="sliceColor"
           ariaLabel="Distribuzione delle spese per categoria"
           (sliceActivated)="onSliceActivated($event)"
         >
