@@ -22,18 +22,25 @@
         [timeline]="data.timeline"
         [granularity]="store.granularity()"
         (granularitySelected)="store.setGranularity($event)"
-        (transactionsRequested)="onTimelineTransactionsRequested($event)"
+        (periodSelected)="onPeriodSelected($event)"
       />
 
+      <!-- Sempre presente, subito sotto l'andamento: le transazioni dei filtri correnti. -->
+      <app-analytics-transactions [query]="panelQuery()" />
+
       <div class="columns">
+        <!-- Cross-filter: categorie e merchant ignorano ciascuno il filtro della propria dimensione. -->
         <app-analytics-categories
-          [class.stale]="isStale()"
-          [categories]="data.byCategory"
+          [class.stale]="categorySection.stale()"
+          [categories]="categorySection.data()?.byCategory ?? data.byCategory"
+          [activeCategoryIds]="store.filters().categoryIds"
+          [unclassifiedActive]="store.filters().classification === 'unclassified'"
           (categorySelected)="onCategorySelected($event)"
         />
         <app-analytics-merchants
-          [class.stale]="isStale()"
-          [merchants]="data.byMerchant"
+          [class.stale]="merchantSection.stale()"
+          [merchants]="merchantSection.data()?.byMerchant ?? data.byMerchant"
+          [activeMerchantIds]="store.filters().merchantIds"
           (merchantSelected)="onMerchantSelected($event)"
         />
       </div>

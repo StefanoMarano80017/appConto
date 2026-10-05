@@ -16,6 +16,8 @@ const INITIAL_LIMIT = 10;
 })
 export class AnalyticsMerchants {
   readonly merchants = input.required<MerchantDistribution[]>();
+  /** I merchant già nei filtri: le loro righe si vedono premute. */
+  readonly activeMerchantIds = input<readonly string[]>([]);
 
   /** Richiesta di restringere l'analisi ad un merchant. */
   readonly merchantSelected = output<string>();

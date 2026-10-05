@@ -69,10 +69,10 @@ describe('AnalyticsCategories', () => {
     chart().options.onClick({}, [{ datasetIndex: 0, index }]);
     await fixture.whenStable();
   };
-  // Sette voci con topN 5: le ultime due (20 e 10) finiscono in «Altri». Le
+  // Otto voci con topN 6: le ultime due (20 e 10) finiscono in «Altre 2 categorie». Le
   // percentuali sono diverse dagli importi, così l'una non si scambia per l'altro.
   const many = (): CategoryDistribution[] =>
-    [70, 60, 50, 40, 30, 20, 10].map((amount, index) =>
+    [80, 70, 60, 50, 40, 30, 20, 10].map((amount, index) =>
       category({
         categoryId: `cat-${index}`,
         name: `Categoria ${index}`,
@@ -148,10 +148,10 @@ describe('AnalyticsCategories', () => {
     await clickSlice(0);
     expect(emitted).toEqual(['cat-0']);
 
-    await clickSlice(5);
+    await clickSlice(6);
     expect(emitted).toEqual(['cat-0']);
     expect(host().querySelector('app-doughnut-chart')).toBeNull();
-    expect(host().querySelectorAll('ul .row')).toHaveLength(7);
+    expect(host().querySelectorAll('ul .row')).toHaveLength(8);
   });
 
   it('attivare «Altri» da tastiera porta il focus sulla prima categoria raggruppata', async () => {
@@ -165,8 +165,8 @@ describe('AnalyticsCategories', () => {
     await fixture.whenStable();
 
     // Il canvas non c'è più: senza spostarlo, il focus cadrebbe su <body>.
-    const row = host().querySelectorAll<HTMLButtonElement>('ul .row')[5];
-    expect(row.getAttribute('aria-label')).toBe('Filtra per Categoria 5');
+    const row = host().querySelectorAll<HTMLButtonElement>('ul .row')[6];
+    expect(row.getAttribute('aria-label')).toBe('Filtra per Categoria 6');
     expect(document.activeElement).toBe(row);
   });
 
@@ -205,11 +205,23 @@ describe('AnalyticsCategories', () => {
 
   it('con «Altri» attiva il centro somma importi e percentuali delle voci raggruppate', async () => {
     await render(many());
-    await overSlice(5);
+    await overSlice(6);
 
-    expect(center()).toContain('Altri');
+    expect(center()).toContain('Altre 2 categorie');
     expect(center()).toContain('−30,00');
     expect(center()).toContain(formatPercent(5 + 2.5));
+  });
+
+  it('«Altri» conta le categorie davvero raggruppate, non quelle in ingresso meno sei', async () => {
+    // Due rimborsi netti non hanno una fetta: il raggruppamento resta di due voci.
+    await render([
+      ...many(),
+      category({ categoryId: 'ref-1', name: 'Rimborso 1', amount: -5 }),
+      category({ categoryId: 'ref-2', name: 'Rimborso 2', amount: -3 })
+    ]);
+    await overSlice(6);
+
+    expect(center()).toContain('Altre 2 categorie');
   });
 
   // jsdom non fa layout: l'altezza (25rem) si vede in pagina. Qui si prova ciò che la rende
@@ -229,6 +241,110 @@ describe('AnalyticsCategories', () => {
 
     await render([category({ amount: -50 })]);
     expect(host().querySelector('.body .message')).not.toBeNull();
+  });
+
+  describe('categorie filtrate', () => {
+    const three = (): CategoryDistribution[] => [
+      category({ categoryId: 'cat-1', name: 'Alimentari', color: '#3f8f4f', amount: 30 }),
+      category({ categoryId: 'cat-2', name: 'Casa', color: '#123456', amount: 20 }),
+      category({ categoryId: null, name: 'Da classificare', color: null, amount: 10 })
+    ];
+    const filter = async (ids: readonly string[], unclassified = false): Promise<void> => {
+      fixture.componentRef.setInput('activeCategoryIds', ids);
+      fixture.componentRef.setInput('unclassifiedActive', unclassified);
+      await fixture.whenStable();
+    };
+    const pressed = (): Array<string | null> =>
+      Array.from(host().querySelectorAll('ul .row')).map((row) => row.getAttribute('aria-pressed'));
+
+    it('nella Lista solo le righe filtrate sono premute, «Da classificare» compresa', async () => {
+      await render(three());
+      await choose('Lista');
+      expect(pressed()).toEqual(['false', 'false', 'false']);
+
+      await filter(['cat-2']);
+      expect(pressed()).toEqual(['false', 'true', 'false']);
+      expect(host().querySelector('ul .row.active')?.getAttribute('aria-label')).toBe(
+        'Filtra per Casa'
+      );
+
+      await filter([], true);
+      expect(pressed()).toEqual(['false', 'false', 'true']);
+    });
+
+    it('senza fetta attiva il centro somma solo la categoria filtrata e ne porta il nome', async () => {
+      await render(three());
+      await filter(['cat-2']);
+
+      expect(center()).toContain('Casa');
+      expect(center()).toContain('−20,00');
+      expect(center()).not.toContain('Totale spese');
+    });
+
+    it('con due categorie filtrate il centro dice «2 categorie filtrate» e ne somma gli importi', async () => {
+      await render(three());
+      await filter(['cat-1', 'cat-2']);
+
+      expect(center()).toContain('2 categorie filtrate');
+      expect(center()).toContain('−50,00');
+    });
+
+    it('«Da classificare» filtrata conta come categoria nel centro', async () => {
+      await render(three());
+      await filter([], true);
+      expect(center()).toContain('Da classificare');
+      expect(center()).toContain('−10,00');
+
+      await filter(['cat-1'], true);
+      expect(center()).toContain('2 categorie filtrate');
+      expect(center()).toContain('−40,00');
+    });
+
+    it('senza filtri il centro resta «Totale spese»', async () => {
+      await render(three());
+      await filter(['cat-2']);
+      await filter([]);
+
+      expect(center()).toContain('Totale spese');
+      expect(center()).toContain('−60,00');
+    });
+
+    it('con una fetta attiva il filtro non cambia il centro', async () => {
+      await render(three());
+      await filter(['cat-2']);
+      await overSlice(0);
+
+      expect(center()).toContain('Alimentari');
+      expect(center()).toContain('−30,00');
+    });
+
+    it('la riga attiva ha lo stesso rientro delle altre: il testo non si sposta', async () => {
+      await render(three());
+      await choose('Lista');
+      const indent = (): string[] =>
+        Array.from(host().querySelectorAll<HTMLElement>('ul .row')).map(
+          (row) => getComputedStyle(row).paddingLeft
+        );
+      const before = indent();
+
+      await filter(['cat-2']);
+
+      expect(indent()).toEqual(before);
+    });
+
+    it('la ciambella attenua le fette non filtrate', async () => {
+      await render(three());
+      const colors = (): string[] => chart().data.datasets[0].backgroundColor;
+      expect(colors().slice(0, 2)).toEqual(['#3f8f4f', '#123456']);
+
+      await filter(['cat-2']);
+      expect(colors()[1]).toBe('#123456');
+      expect(colors()[0]).not.toBe('#3f8f4f');
+
+      await filter([], true);
+      expect(colors()[0]).not.toBe('#3f8f4f');
+      expect(colors()[1]).not.toBe('#123456');
+    });
   });
 
   it("senza categorie non c'è il toggle e resta il messaggio", async () => {

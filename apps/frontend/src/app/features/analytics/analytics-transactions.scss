@@ -1,0 +1,30 @@
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+}
+
+/* Come i grafici di Analytics: i dati restano leggibili, ma non sono più quelli richiesti. */
+.content.stale {
+  opacity: 0.6;
+}
+
+.message {
+  margin: 0;
+}
+
+.footer {
+  @include typography.text('secondary');
+
+  margin: var(--space-5) 0 0;
+  text-align: right;
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}

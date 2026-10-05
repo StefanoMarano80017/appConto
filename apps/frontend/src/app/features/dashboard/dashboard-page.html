@@ -60,21 +60,5 @@
     />
 
     <app-month-comparison [comparison]="data.comparison" />
-
-    <app-panel>
-      <app-section-header title="Transazioni">
-        <p panelActions class="count">{{ data.transactions.length }} nel periodo selezionato</p>
-      </app-section-header>
-
-      @if (data.transactions.length === 0) {
-        <p class="message">Nessuna transazione corrisponde ai filtri.</p>
-      } @else {
-        <app-transactions-table
-          mode="readonly"
-          [transactions]="data.transactions"
-          [typeOptions]="transactionTypeOptions"
-        />
-      }
-    </app-panel>
   }
 </app-page-layout>

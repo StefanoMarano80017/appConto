@@ -52,12 +52,6 @@ app-stat-card-grid {
   margin: var(--space-9) 0 var(--space-4);
 }
 
-.count {
-  @include typography.text('caption');
-
-  margin: 0;
-}
-
 .message {
   color: var(--color-text-muted);
 }

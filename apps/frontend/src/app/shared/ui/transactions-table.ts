@@ -161,6 +161,15 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
    */
   readonly selectedIds = input<ReadonlySet<string>>(new Set<string>());
 
+  /**
+   * Mostra la riga di totale in fondo alla tabella.
+   *
+   * Chi mostra solo una parte delle righe (un'anteprima) la nasconde: il
+   * totale di un'anteprima sarebbe fuorviante, perché non è quello dei
+   * movimenti che esistono davvero.
+   */
+  readonly showTotal = input(true);
+
   /** La riga con un salvataggio in corso: i suoi controlli restano disabilitati. */
   readonly savingId = input<string | null>(null);
 

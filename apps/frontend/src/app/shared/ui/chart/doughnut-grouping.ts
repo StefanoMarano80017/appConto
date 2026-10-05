@@ -26,3 +26,8 @@ export function groupTopN<T>(
     { kind: 'others', items: others, value: others.reduce((sum, item) => sum + value(item), 0) },
   ];
 }
+
+/** Il nome della fetta «Altri», col singolare quando raccoglie una sola voce. */
+export function groupedSliceLabel(count: number): string {
+  return count === 1 ? '1 altra categoria' : `Altre ${count} categorie`;
+}

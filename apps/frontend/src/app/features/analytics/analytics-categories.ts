@@ -14,7 +14,7 @@ import { formatPercent } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Amount } from '../../shared/ui/amount';
-import { DoughnutCenter, DoughnutChart } from '../../shared/ui/chart/doughnut-chart';
+import { DoughnutCenter, DoughnutChart, groupedSliceLabel } from '../../shared/ui/chart/doughnut-chart';
 import type { DoughnutSlice, SliceColor } from '../../shared/ui/chart/doughnut-chart.model';
 import { ChoiceGroup, ChoiceOption } from '../../shared/ui/choice-group';
 import { CategoryDistribution } from './analytics.model';
@@ -48,6 +48,10 @@ interface CenterSummary {
 })
 export class AnalyticsCategories {
   readonly categories = input.required<CategoryDistribution[]>();
+  /** Le categorie già nei filtri: si vedono premute nella Lista e risaltano nella ciambella. */
+  readonly activeCategoryIds = input<readonly string[]>([]);
+  /** Il filtro «da classificare» è attivo: vale per la voce senza categoria. */
+  readonly unclassifiedActive = input(false);
 
   /** Richiesta di restringere l'analisi ad una categoria; `null` = senza categoria. */
   readonly categorySelected = output<string | null>();
@@ -59,8 +63,16 @@ export class AnalyticsCategories {
 
   protected readonly view = signal<CategoriesView>('chart');
   protected readonly views: readonly ChoiceOption<CategoriesView>[] = [
-    { id: 'chart', label: 'Grafico', icon: LucideChartPie.icon },
-    { id: 'list', label: 'Lista', icon: LucideList.icon },
+    {
+      id: 'chart',
+      label: 'Grafico',
+      icon: LucideChartPie.icon,
+    },
+    {
+      id: 'list',
+      label: 'Lista',
+      icon: LucideList.icon,
+    },
   ];
 
   // Campi e non metodi: il grafico li riceve come input, e un riferimento nuovo
@@ -69,6 +81,14 @@ export class AnalyticsCategories {
   protected readonly sliceLabel = (category: CategoryDistribution): string => category.name;
   protected readonly sliceColor = (category: CategoryDistribution): SliceColor =>
     category.color ? { custom: category.color } : 'chart-neutral';
+
+  // Calcolato e non metodo, per la stessa ragione: cambia solo coi filtri.
+  protected readonly isActive = computed(() => {
+    const ids = this.activeCategoryIds();
+    const unclassified = this.unclassifiedActive();
+    return (category: CategoryDistribution): boolean =>
+      category.categoryId === null ? unclassified : ids.includes(category.categoryId);
+  });
 
   private readonly maxAmountCategory = computed(() =>
     this.categories().reduce((max, category) => Math.max(max, category.amount), 0),
@@ -93,7 +113,13 @@ export class AnalyticsCategories {
    */
   protected center(slice: DoughnutSlice<CategoryDistribution> | null): CenterSummary {
     if (slice === null) {
-      return { label: 'Totale spese', amount: this.chartTotal(), percentage: null };
+      return (
+        this.filteredSummary() ?? {
+          label: 'Totale spese',
+          amount: this.chartTotal(),
+          percentage: null,
+        }
+      );
     }
 
     if (slice.kind === 'item') {
@@ -105,11 +131,30 @@ export class AnalyticsCategories {
     }
 
     return {
-      label: 'Altri',
+      label: groupedSliceLabel(slice.items.length),
       amount: slice.items.reduce((sum, category) => sum + category.amount, 0),
       percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0),
     };
   }
+
+  /**
+   * Con un filtro attivo il totale di tutte le categorie sarebbe fuorviante: il
+   * foro somma solo quelle filtrate (come il grafico, i rimborsi netti non contano).
+   * `null` senza filtri.
+   */
+  private readonly filteredSummary = computed<CenterSummary | null>(() => {
+    const isActive = this.isActive();
+    const filtered = this.categories().filter(isActive);
+    if (filtered.length === 0) {
+      return null;
+    }
+
+    return {
+      label: filtered.length === 1 ? filtered[0].name : `${filtered.length} categorie filtrate`,
+      amount: filtered.reduce((sum, category) => sum + Math.max(category.amount, 0), 0),
+      percentage: null,
+    };
+  });
 
   protected onSliceActivated(slice: DoughnutSlice<CategoryDistribution>): void {
     if (slice.kind === 'item') {

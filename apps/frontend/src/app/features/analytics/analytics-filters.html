@@ -15,9 +15,9 @@
       [preset]="store.preset()"
       [from]="store.dateRange().from"
       [to]="store.dateRange().to"
-      (presetSelected)="store.selectPreset($event)"
-      (fromChange)="store.setCustomRange($event, store.dateRange().to)"
-      (toChange)="store.setCustomRange(store.dateRange().from, $event)"
+      (presetSelected)="selectPreset($event)"
+      (fromChange)="setCustomRange($event, store.dateRange().to)"
+      (toChange)="setCustomRange(store.dateRange().from, $event)"
     />
   </app-filter-group>
 

@@ -2,7 +2,7 @@ import { Component, signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { ThemeStore } from '../../../core/theme';
-import { CHART_CONSTRUCTOR, DoughnutCenter, DoughnutChart } from './doughnut-chart';
+import { CHART_CONSTRUCTOR, DoughnutCenter, DoughnutChart, groupedSliceLabel } from './doughnut-chart';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
 
 const chartMocks = (() => {
@@ -47,7 +47,7 @@ interface Entry {
   readonly color: SliceColor;
 }
 
-// Sette voci con topN 5: le ultime due finiscono in «Altri».
+// Sette voci con topN 5: le ultime due finiscono in «Altre 2 categorie».
 const ENTRIES: readonly Entry[] = [
   { name: 'Casa', amount: 70, color: { custom: 'rgb(9, 9, 9)' } },
   { name: 'Spesa', amount: 60, color: 'chart-1' },
@@ -71,6 +71,7 @@ const ENTRIES: readonly Entry[] = [
       [label]="label"
       [color]="color"
       [topN]="5"
+      [highlighted]="highlighted()"
       ariaLabel="Ciambella di prova"
       (sliceActivated)="activated.push($event)"
     >
@@ -85,6 +86,7 @@ const ENTRIES: readonly Entry[] = [
 class HostComponent {
   readonly items = signal<readonly Entry[]>(ENTRIES);
   readonly activated: DoughnutSlice<Entry>[] = [];
+  readonly highlighted = signal<((entry: Entry) => boolean) | undefined>(undefined);
   readonly value = (entry: Entry): number => entry.amount;
   readonly label = (entry: Entry): string => entry.name;
   readonly color = (entry: Entry): SliceColor => entry.color;
@@ -155,11 +157,11 @@ describe('DoughnutChart', () => {
     }).compileComponents();
   });
 
-  it('disegna le prime 5 voci più «Altri», con un solo punto di tabulazione accessibile', async () => {
+  it('disegna le prime 5 voci più «Altre 2 categorie», con un solo punto di tabulazione accessibile', async () => {
     await render();
 
     expect(chart().config.type).toBe('doughnut');
-    expect(chart().data.labels).toEqual(['Casa', 'Spesa', 'Auto', 'Svago', 'Salute', 'Altri']);
+    expect(chart().data.labels).toEqual(['Casa', 'Spesa', 'Auto', 'Svago', 'Salute', 'Altre 2 categorie']);
     expect(chart().data.datasets[0].data).toEqual([70, 60, 50, 40, 30, 30]);
     expect(chart().plugins).toEqual([]);
 
@@ -395,5 +397,77 @@ describe('DoughnutChart', () => {
     expect(activated()).toEqual([]);
     expect(center()).toBe('nessuna');
     expect(chart().activeElements).toEqual([]);
+  });
+
+  describe('voci evidenziate', () => {
+    // I token stanno sull'host (la fixture non è nel documento) e il cambio di
+    // tema li fa rileggere, come nel test del tema.
+    const paint = async (): Promise<void> => {
+      fixture = TestBed.createComponent(HostComponent);
+      fixture.detectChanges();
+      for (let index = 1; index <= 5; index++) {
+        host().style.setProperty(`--color-chart-${index}`, `rgb(${index}, ${index}, ${index})`);
+      }
+      host().style.setProperty('--color-chart-neutral', 'rgb(8, 8, 8)');
+      appTheme.set('dark');
+      await fixture.whenStable();
+    };
+    const colors = (): string[] => chart().data.datasets[0].backgroundColor;
+    const highlight = async (predicate: ((entry: Entry) => boolean) | undefined): Promise<void> => {
+      fixture.componentInstance.highlighted.set(predicate);
+      await fixture.whenStable();
+    };
+    const BASE = [
+      'rgb(9, 9, 9)',
+      'rgb(1, 1, 1)',
+      'rgb(2, 2, 2)',
+      'rgb(3, 3, 3)',
+      'rgb(4, 4, 4)',
+      'rgb(8, 8, 8)'
+    ];
+
+    it('senza l’input i colori restano quelli di sempre', async () => {
+      await paint();
+      expect(colors()).toEqual(BASE);
+    });
+
+    it('con una voce evidenziata le altre fette si attenuano, lei no', async () => {
+      await paint();
+      await highlight((entry) => entry.name === 'Auto');
+
+      expect(colors()[2]).toBe(BASE[2]);
+      [0, 1, 3, 4, 5].forEach((index) => expect(colors()[index]).not.toBe(BASE[index]));
+      // Come per l'hover: cambiano i dati, il grafico resta lo stesso.
+      expect(chartMocks.instances).toHaveLength(1);
+    });
+
+    it('«Altri» è evidenziata se lo è una delle voci raggruppate', async () => {
+      await paint();
+      await highlight((entry) => entry.name === 'Varie');
+
+      expect(colors()[5]).toBe(BASE[5]);
+      [0, 1, 2, 3, 4].forEach((index) => expect(colors()[index]).not.toBe(BASE[index]));
+    });
+
+    it('se nessuna fetta visibile è evidenziata i colori non cambiano', async () => {
+      await paint();
+      await highlight(() => false);
+      expect(colors()).toEqual(BASE);
+
+      await highlight((entry) => entry.name === 'Auto');
+      await highlight(undefined);
+      expect(colors()).toEqual(BASE);
+    });
+  });
+});
+
+describe('groupedSliceLabel', () => {
+  it('al singolare dice «1 altra categoria»', () => {
+    expect(groupedSliceLabel(1)).toBe('1 altra categoria');
+  });
+
+  it('al plurale dice «Altre {n} categorie»', () => {
+    expect(groupedSliceLabel(2)).toBe('Altre 2 categorie');
+    expect(groupedSliceLabel(5)).toBe('Altre 5 categorie');
   });
 });

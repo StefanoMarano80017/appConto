@@ -38,6 +38,32 @@ describe('AnalyticsMerchants', () => {
     expect(amount?.classList.contains('amount-positive')).toBe(false);
   });
 
+  it('solo la riga del merchant filtrato è premuta', async () => {
+    await render([merchant(), merchant({ merchantId: 'm-2', name: 'COOP' })]);
+    const pressed = (): Array<string | null> =>
+      Array.from(host().querySelectorAll('.link')).map((link) => link.getAttribute('aria-pressed'));
+    expect(pressed()).toEqual(['false', 'false']);
+
+    fixture.componentRef.setInput('activeMerchantIds', ['m-2']);
+    await fixture.whenStable();
+    expect(pressed()).toEqual(['false', 'true']);
+    expect(host().querySelector('.link.active')?.textContent).toBe('COOP');
+  });
+
+  it('la riga attiva ha lo stesso rientro delle altre: il testo non si sposta', async () => {
+    await render([merchant(), merchant({ merchantId: 'm-2', name: 'COOP' })]);
+    const indent = (): string[] =>
+      Array.from(host().querySelectorAll<HTMLElement>('ol li')).map(
+        (row) => getComputedStyle(row).paddingLeft
+      );
+    const before = indent();
+
+    fixture.componentRef.setInput('activeMerchantIds', ['m-2']);
+    await fixture.whenStable();
+
+    expect(indent()).toEqual(before);
+  });
+
   it('un rimborso netto mostra il segno più e il tono di entrata', async () => {
     await render([merchant({ amount: -50 })]);
 

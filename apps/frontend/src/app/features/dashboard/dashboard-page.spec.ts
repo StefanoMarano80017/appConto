@@ -179,36 +179,14 @@ describe('DashboardPage', () => {
     expect(store.activeCount()).toBe(2);
   });
 
-  it('mostra le transazioni ricevute, coerenti con i filtri', async () => {
-    await fixture.whenStable();
-    await flush(
-      dashboard({ transactions: [transaction('1', 'SOLO QUESTA', -300)] }),
-      `${API_BASE_URL}/dashboard?month=2026-07`
-    );
-
-    const rows = (fixture.nativeElement as HTMLElement).querySelectorAll(
-      'app-transactions-table tbody tr'
-    );
-
-    expect(rows.length).toBe(1);
-    expect(text()).toContain('SOLO QUESTA');
-  });
-
-  // Qui i movimenti sono un riepilogo: si correggono nella pagina dei
-  // movimenti. Tipo e categoria si vedono, ma non si toccano.
-  it('la tabella dei movimenti è in sola lettura: niente select né caselle', async () => {
+  // La dashboard è un riepilogo: i movimenti si vedono nel dettaglio di
+  // Analytics e nella pagina dei movimenti, non qui.
+  it('la dashboard è un riepilogo: non mostra la tabella dei movimenti', async () => {
     await fixture.whenStable();
     await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
 
-    const tabella = (fixture.nativeElement as HTMLElement).querySelector(
-      'app-transactions-table'
-    );
-
-    expect(tabella).not.toBeNull();
-    expect(tabella!.querySelector('select')).toBeNull();
-    expect(tabella!.querySelector('input[type="checkbox"]')).toBeNull();
-    expect(tabella!.querySelectorAll('app-visual-select .picker.readonly').length).toBe(4);
-    expect(tabella!.querySelector('tbody td.category')?.textContent).toContain('Alimentari');
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-transactions-table')).toBeNull();
+    expect(text()).not.toContain('nel periodo selezionato');
   });
 
   it('mostra drill down, top merchant e confronto', async () => {

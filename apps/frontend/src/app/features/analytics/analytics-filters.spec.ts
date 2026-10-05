@@ -151,4 +151,60 @@ describe('AnalyticsFilters', () => {
     expect(reset()).toBeNull();
     expect(host().querySelector('app-section-header h2')?.textContent?.trim()).toBe('Filtri');
   });
+
+  describe('granularità automatica col periodo', () => {
+    const preset = async (title: string): Promise<void> => {
+      host().querySelector<HTMLButtonElement>(`app-period-filter button[title="${title}"]`)!.click();
+      await fixture.whenStable();
+    };
+    const dateInput = async (index: number, value: string): Promise<void> => {
+      const input = host().querySelectorAll<HTMLInputElement>('app-period-filter input[type="date"]')[index];
+      input.value = value;
+      input.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+    };
+
+    beforeEach(async () => {
+      await fixture.whenStable();
+    });
+
+
+    it('1M passa ai giorni', async () => {
+      store.setGranularity('month');
+      await preset('Questo mese');
+      expect(store.granularity()).toBe('day');
+    });
+
+    it('3M passa alle settimane', async () => {
+      store.setGranularity('month');
+      await preset('Ultimi 3 mesi');
+      expect(store.granularity()).toBe('week');
+    });
+
+    it('6M passa alle settimane', async () => {
+      store.setGranularity('month');
+      await preset('Ultimi 6 mesi');
+      expect(store.granularity()).toBe('week');
+    });
+
+    it('12M passa ai mesi', async () => {
+      await preset('Questo mese');
+      await preset("Quest'anno");
+      expect(store.granularity()).toBe('month');
+    });
+
+    it('Tutto passa ai mesi', async () => {
+      store.setGranularity('day');
+      await preset('Tutto');
+      expect(store.granularity()).toBe('month');
+    });
+
+    it('modificare Dal e Al su 10 giorni passa ai giorni', async () => {
+      store.setGranularity('month');
+      await dateInput(0, '2026-03-01');
+      await dateInput(1, '2026-03-10');
+      expect(store.dateRange()).toEqual({ from: '2026-03-01', to: '2026-03-10' });
+      expect(store.granularity()).toBe('day');
+    });
+  });
 });

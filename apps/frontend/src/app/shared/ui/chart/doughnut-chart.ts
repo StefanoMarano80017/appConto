@@ -12,7 +12,7 @@ import {
   input,
   output,
   signal,
-  TemplateRef
+  TemplateRef,
 } from '@angular/core';
 import type { Plugin } from 'chart.js';
 import { ThemeStore } from '../../../core/theme';
@@ -20,11 +20,12 @@ import { AppChart, type ChartDataPoint } from './chart';
 import { doughnutChartData, doughnutChartOptions } from './doughnut-chart-config';
 import { resolveDoughnutChartTheme, type DoughnutChartTheme } from './doughnut-chart-theme';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
-import { groupTopN } from './doughnut-grouping';
+import { groupedSliceLabel, groupTopN } from './doughnut-grouping';
 
 // Le feature non importano `chart.ts`: il token passa da qui, il punto
 // d'ingresso pubblico, così le loro spec possono sostituire Chart.js.
 export { CHART_CONSTRUCTOR } from './chart';
+export { groupedSliceLabel } from './doughnut-grouping';
 
 /** Contesto del centro: la fetta attiva, oppure `null` se non ce n'è una. */
 export interface DoughnutCenterContext<T> {
@@ -42,7 +43,7 @@ export class DoughnutCenter<T> {
 
   static ngTemplateContextGuard<T>(
     _directive: DoughnutCenter<T>,
-    context: unknown
+    context: unknown,
   ): context is DoughnutCenterContext<T> {
     return true;
   }
@@ -74,17 +75,21 @@ const DOUGHNUT_CHART_PLUGINS: readonly Plugin<'doughnut'>[] = [];
     // Chart.js non notifica l'uscita dal canvas: senza questo l'ultima fetta
     // resterebbe attiva. Sta sull'host perché il centro sovrapposto è dentro
     // l'host: passarci sopra non è uscire dal grafico.
-    '(pointerleave)': 'hover.set(null)'
-  }
+    '(pointerleave)': 'hover.set(null)',
+  },
 })
 export class DoughnutChart<T> {
   readonly items = input.required<readonly T[]>();
   readonly value = input.required<(item: T) => number>();
   readonly label = input.required<(item: T) => string>();
   readonly color = input.required<(item: T) => SliceColor>();
-  readonly topN = input(5);
-  readonly othersLabel = input('Altri');
+  readonly topN = input(6);
   readonly ariaLabel = input.required<string>();
+  /**
+   * Le voci da far risaltare (es. quelle filtrate): se almeno una fetta lo è,
+   * le altre si attenuano. «Altri» risalta se una delle sue voci risalta.
+   */
+  readonly highlighted = input<(item: T) => boolean>();
 
   readonly sliceActivated = output<DoughnutSlice<T>>();
 
@@ -102,6 +107,12 @@ export class DoughnutChart<T> {
   private readonly focusIndex = signal<number | null>(null);
 
   protected readonly slices = computed(() => groupTopN(this.items(), this.value(), this.topN()));
+
+  /** Conta le voci davvero raggruppate nella fetta «Altri», non items meno topN. */
+  readonly othersLabel = computed(() => {
+    const others = this.slices().find((slice) => slice.kind === 'others');
+    return groupedSliceLabel(others?.kind === 'others' ? others.items.length : 0);
+  });
 
   /**
    * Il puntatore vince sulla tastiera: si mostra ciò che si sta guardando.
@@ -128,7 +139,14 @@ export class DoughnutChart<T> {
     const theme = this.theme();
     return theme === null
       ? null
-      : doughnutChartData(this.slices(), this.label(), this.color(), this.othersLabel(), theme);
+      : doughnutChartData(
+          this.slices(),
+          this.label(),
+          this.color(),
+          this.othersLabel(),
+          theme,
+          this.highlighted(),
+        );
   });
 
   constructor() {
@@ -141,7 +159,7 @@ export class DoughnutChart<T> {
       read: () => {
         this.themeStore.theme();
         this.theme.set(resolveDoughnutChartTheme(getComputedStyle(this.host.nativeElement)));
-      }
+      },
     });
 
     // Filtrare in `activeIndex` non basta: un indice rimasto in sospeso
@@ -209,7 +227,7 @@ export class DoughnutChart<T> {
       ArrowRight: following,
       ArrowDown: following,
       Home: 0,
-      End: count - 1
+      End: count - 1,
     }[event.key];
 
     if (next === undefined) {

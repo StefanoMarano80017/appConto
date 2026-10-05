@@ -120,6 +120,21 @@ describe('TransactionsTable', () => {
     expect(host().querySelector('tfoot .total-label')?.textContent).toContain('periodo mostrato');
   });
 
+  // Un'anteprima mostra solo una parte delle righe: il suo totale sarebbe
+  // fuorviante, e chi ospita la tabella può chiedere di non mostrarlo.
+  it('con showTotal a false non rende la riga di totale', async () => {
+    fixture.componentRef.setInput('showTotal', false);
+    await render([transaction('1', -300), transaction('2', 500)]);
+
+    expect(host().querySelector('tfoot')).toBeNull();
+  });
+
+  it('di norma la riga di totale c’è', async () => {
+    await render([transaction('1', -300), transaction('2', 500)]);
+
+    expect(host().querySelector('tfoot')).not.toBeNull();
+  });
+
   /*
    * I due test che seguono (Task 6, Step 1) non descrivono un comportamento
    * nuovo: fissano quello di oggi, prima di decidere se la tabella debba

@@ -2,6 +2,60 @@
 
 Data: 2026-10-01 · Stato: approvato in brainstorming, da pianificare
 
+## Revisione 2 (2026-10-05): i grafici modificano i filtri
+
+Approvata dopo la revisione del 2026-10-01; dove contraddice il resto del
+documento (revisione precedente inclusa), vale questa sezione. Regola:
+**tabella e grafici dipendono solo dai filtri di `AnalyticsStore`, e i filtri
+cambiano solo per un gesto di chi usa la pagina.**
+
+- **Niente più selezione**: `AnalyticsSelection` (servizio, `selectionCriteria`,
+  `isSelectionAvailable`, `selectionLabel`) è eliminato, insieme all'effetto
+  che la chiudeva da sé quando l'elemento spariva dai dati.
+- **I click diventano filtri**: il pulsante del tooltip, ora «Filtra su questo
+  periodo» (output `periodSelected`), chiama `setCustomRange` col range del
+  bucket; una categoria chiama `toggleCategory`, «Da classificare» alterna
+  `classification` fra `unclassified` e `all`; un merchant chiama
+  `toggleMerchant` e non naviga più. Nessun filtro di tipo aggiunto.
+- **La tabella**: solo l'input `query` (periodo + filtri dello store), titolo
+  fisso «Transazioni del periodo», niente «Mostra tutto» né `cleared`; le
+  righe di prima restano attenuate a ogni ricarica. Restano caricamento,
+  errore con riprova, stato vuoto («Nessuna transazione per i filtri attivi.»)
+  e il collegamento a Movimenti.
+- **Il passo** non tocca né filtri né periodo, e non ricarica la tabella.
+- **Cross-filter**: categorie e merchant ignorano il filtro della propria dimensione (categorie: `categoryIds` e `classification`; merchant: `merchantIds`) con una richiesta in più (`crossFilterQuery` in `cross-filter.ts`), fatta solo quando quel filtro è attivo; KPI, andamento, prestiti e tabella restano sulla query completa; se fallisce, la sezione torna alla risposta principale.
+
+## Revisione 2026-10-01: la tabella è sempre visibile
+
+Approvata dopo la prima implementazione; dove contraddice il resto del
+documento, vale questa sezione.
+
+- **Sempre presente**: con dati non vuoti, `AnalyticsTransactions` sta
+  **subito dopo `app-analytics-timeline` e prima di `.columns`**, non più fra
+  le colonne e i prestiti, e non aspetta un click.
+- **Senza selezione** mostra le prime 25 transazioni del periodo con i filtri
+  attivi di Analytics (`{ ...EMPTY_QUERY, from, to, types, categoryIds,
+  merchantIds, classification }`), titolo «Transazioni del periodo». Con una
+  selezione la query aggiunge `selectionCriteria(sel)` come prima, titolo
+  «Transazioni · {etichetta}». L'input `selection` diventa
+  `AnalyticsSelectionValue | null`; le righe attenuate restano finché la
+  "selezione" non cambia, e `null` → `null` conta come la stessa.
+- **Il merchant torna a navigare** verso `/transactions` con
+  `explorerParams({ merchantIds: [id] })`. La variante `merchant` esce da
+  `AnalyticsSelectionValue`, `selectionCriteria`, `isSelectionAvailable` e
+  `selectionLabel`.
+- **«Mostra tutto» al posto della ×**: un pulsante testuale, solo con una
+  selezione attiva, che chiama `clear()` e riporta la tabella al periodo. L'output
+  `closed` diventa `cleared`. Un elemento sparito dai nuovi dati fa lo stesso:
+  la selezione cade, la tabella resta e torna al periodo.
+- **Niente scroll né focus automatici**: via l'effetto con `scrollIntoView` e
+  il focus sul titolo, `revealOnInit`, `initialSelection`, il focus dopo la
+  chiusura e il `tabindex="-1"` sul titolo. L'intestazione torna un
+  `SectionHeader`.
+- Invariati: la selezione persiste fra le visite (servizio root), il
+  caricamento e l'errore del pannello, `aria-busy`, il link in fondo «Vedi le N
+  transazioni del periodo →».
+
 ## Obiettivo
 
 In Analytics, cliccando un elemento di un grafico si vedono **subito, senza

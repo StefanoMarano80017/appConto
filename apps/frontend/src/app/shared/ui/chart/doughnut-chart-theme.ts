@@ -26,6 +26,13 @@ export const DOUGHNUT_CHART_GEOMETRY = {
 } as const;
 
 /**
+ * Quando alcune voci sono evidenziate, le altre fette restano al loro posto
+ * ma col colore attenuato: opacità e non un altro colore, così ciascuna resta
+ * riconoscibile. Come la geometria, non cambia col tema.
+ */
+export const DOUGHNUT_CHART_DIMMED_ALPHA = 0.3;
+
+/**
  * Valori risolti. Un colore mancante resta la stringa vuota, che Chart.js
  * tratta come «usa il default»: nessun ripiego esadecimale.
  */
