@@ -113,7 +113,13 @@ export class AnalyticsCategories {
    */
   protected center(slice: DoughnutSlice<CategoryDistribution> | null): CenterSummary {
     if (slice === null) {
-      return { label: 'Totale spese', amount: this.chartTotal(), percentage: null };
+      return (
+        this.filteredSummary() ?? {
+          label: 'Totale spese',
+          amount: this.chartTotal(),
+          percentage: null,
+        }
+      );
     }
 
     if (slice.kind === 'item') {
@@ -130,6 +136,25 @@ export class AnalyticsCategories {
       percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0),
     };
   }
+
+  /**
+   * Con un filtro attivo il totale di tutte le categorie sarebbe fuorviante: il
+   * foro somma solo quelle filtrate (come il grafico, i rimborsi netti non contano).
+   * `null` senza filtri.
+   */
+  private readonly filteredSummary = computed<CenterSummary | null>(() => {
+    const isActive = this.isActive();
+    const filtered = this.categories().filter(isActive);
+    if (filtered.length === 0) {
+      return null;
+    }
+
+    return {
+      label: filtered.length === 1 ? filtered[0].name : `${filtered.length} categorie filtrate`,
+      amount: filtered.reduce((sum, category) => sum + Math.max(category.amount, 0), 0),
+      percentage: null,
+    };
+  });
 
   protected onSliceActivated(slice: DoughnutSlice<CategoryDistribution>): void {
     if (slice.kind === 'item') {

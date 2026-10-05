@@ -260,6 +260,52 @@ describe('AnalyticsCategories', () => {
       expect(pressed()).toEqual(['false', 'false', 'true']);
     });
 
+    it('senza fetta attiva il centro somma solo la categoria filtrata e ne porta il nome', async () => {
+      await render(three());
+      await filter(['cat-2']);
+
+      expect(center()).toContain('Casa');
+      expect(center()).toContain('−20,00');
+      expect(center()).not.toContain('Totale spese');
+    });
+
+    it('con due categorie filtrate il centro dice «2 categorie filtrate» e ne somma gli importi', async () => {
+      await render(three());
+      await filter(['cat-1', 'cat-2']);
+
+      expect(center()).toContain('2 categorie filtrate');
+      expect(center()).toContain('−50,00');
+    });
+
+    it('«Da classificare» filtrata conta come categoria nel centro', async () => {
+      await render(three());
+      await filter([], true);
+      expect(center()).toContain('Da classificare');
+      expect(center()).toContain('−10,00');
+
+      await filter(['cat-1'], true);
+      expect(center()).toContain('2 categorie filtrate');
+      expect(center()).toContain('−40,00');
+    });
+
+    it('senza filtri il centro resta «Totale spese»', async () => {
+      await render(three());
+      await filter(['cat-2']);
+      await filter([]);
+
+      expect(center()).toContain('Totale spese');
+      expect(center()).toContain('−60,00');
+    });
+
+    it('con una fetta attiva il filtro non cambia il centro', async () => {
+      await render(three());
+      await filter(['cat-2']);
+      await overSlice(0);
+
+      expect(center()).toContain('Alimentari');
+      expect(center()).toContain('−30,00');
+    });
+
     it('la ciambella attenua le fette non filtrate', async () => {
       await render(three());
       const colors = (): string[] => chart().data.datasets[0].backgroundColor;
