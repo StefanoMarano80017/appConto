@@ -614,7 +614,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect(store.filters().types).toEqual(['EXPENSE']);
     expect(router.url).toBe(startUrl);
 
-    await load(analytics(), `from=2026-07-06&to=2026-07-12&types=EXPENSE&${STEP}`);
+    await load(analytics(), 'from=2026-07-06&to=2026-07-12&types=EXPENSE&granularity=day');
     const params = await panelRequest();
     expect(params.get('from')).toBe('2026-07-06');
     expect(params.get('to')).toBe('2026-07-12');
@@ -710,6 +710,38 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect((await panelRequest()).has('merchantIds')).toBe(false);
   });
 
+  it('filtrare su una settimana porta il passo ai giorni', async () => {
+    await load();
+    await panelRequest();
+
+    await requestBucket();
+
+    expect(store.granularity()).toBe('day');
+    // La richiesta successiva dell'analisi chiede già i giorni.
+    await load(analytics(), 'from=2026-07-06&to=2026-07-12&granularity=day');
+    await panelRequest();
+  });
+
+  it('filtrare su un mese porta il passo ai giorni', async () => {
+    await load();
+    await panelRequest();
+
+    const timeline = fixture.debugElement.query(By.directive(AnalyticsTimeline))
+      .componentInstance as AnalyticsTimeline;
+    timeline.periodSelected.emit({
+      granularity: 'month',
+      period: '2026-02',
+      range: { from: '2026-02-01', to: '2026-02-28' },
+      label: 'febbraio 2026'
+    });
+    await settle();
+    await settle();
+
+    expect(store.granularity()).toBe('day');
+    await load(analytics(), 'from=2026-02-01&to=2026-02-28&granularity=day');
+    await panelRequest();
+  });
+
   it('cambiare il passo non tocca né i filtri né il periodo', async () => {
     store.toggleCategory('cat-1');
     await load(analytics(), `${RANGE}&categoryIds=cat-1&${STEP}`);
@@ -762,7 +794,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     await load(analytics(), `${RANGE}&categoryIds=cat-1&${STEP}`);
     await panelRequest();
     await requestBucket();
-    await load(analytics(), `from=2026-07-06&to=2026-07-12&categoryIds=cat-1&${STEP}`);
+    await load(analytics(), 'from=2026-07-06&to=2026-07-12&categoryIds=cat-1&granularity=day');
     await panelRequest();
 
     expect(scroll).not.toHaveBeenCalled();

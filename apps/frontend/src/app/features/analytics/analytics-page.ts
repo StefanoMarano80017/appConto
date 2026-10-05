@@ -22,6 +22,7 @@ import { AnalyticsMerchants } from './analytics-merchants';
 import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { AnalyticsTransactions } from './analytics-transactions';
 import { AnalyticsFilters } from './analytics-filters';
+import { comfortableGranularity } from './period-granularity';
 import { AnalyticsStore } from './analytics.store';
 
 /**
@@ -183,9 +184,10 @@ export class AnalyticsPage implements OnInit {
    * senza un gesto (revisione 2 della specifica, 2026-10-05).
    */
 
-  /** «Filtra su questo periodo»: l'analisi passa all'intervallo del bucket, come scelto a mano. */
+  /** «Filtra su questo periodo»: l'analisi passa all'intervallo del bucket, con il passo più comodo per leggerlo. */
   protected onPeriodSelected(selection: TimelineSelection): void {
     this.store.setCustomRange(selection.range.from, selection.range.to);
+    this.store.setGranularity(comfortableGranularity(selection.range));
   }
 
   /**
