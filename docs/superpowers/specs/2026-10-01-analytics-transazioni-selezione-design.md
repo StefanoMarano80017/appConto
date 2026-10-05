@@ -2,6 +2,28 @@
 
 Data: 2026-10-01 · Stato: approvato in brainstorming, da pianificare
 
+## Revisione 2 (2026-10-05): i grafici modificano i filtri
+
+Approvata dopo la revisione del 2026-10-01; dove contraddice il resto del
+documento (revisione precedente inclusa), vale questa sezione. Regola:
+**tabella e grafici dipendono solo dai filtri di `AnalyticsStore`, e i filtri
+cambiano solo per un gesto di chi usa la pagina.**
+
+- **Niente più selezione**: `AnalyticsSelection` (servizio, `selectionCriteria`,
+  `isSelectionAvailable`, `selectionLabel`) è eliminato, insieme all'effetto
+  che la chiudeva da sé quando l'elemento spariva dai dati.
+- **I click diventano filtri**: il pulsante del tooltip, ora «Filtra su questo
+  periodo» (output `periodSelected`), chiama `setCustomRange` col range del
+  bucket; una categoria chiama `toggleCategory`, «Da classificare» alterna
+  `classification` fra `unclassified` e `all`; un merchant chiama
+  `toggleMerchant` e non naviga più. Nessun filtro di tipo aggiunto.
+- **La tabella**: solo l'input `query` (periodo + filtri dello store), titolo
+  fisso «Transazioni del periodo», niente «Mostra tutto» né `cleared`; le
+  righe di prima restano attenuate a ogni ricarica. Restano caricamento,
+  errore con riprova, stato vuoto («Nessuna transazione per i filtri attivi.»)
+  e il collegamento a Movimenti.
+- **Il passo** non tocca né filtri né periodo, e non ricarica la tabella.
+
 ## Revisione 2026-10-01: la tabella è sempre visibile
 
 Approvata dopo la prima implementazione; dove contraddice il resto del

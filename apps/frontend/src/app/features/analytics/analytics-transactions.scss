@@ -4,27 +4,6 @@
   display: block;
 }
 
-/* Un pulsante che si legge come un collegamento, come «Azzera» nei filtri. */
-.show-all {
-  @include typography.text('secondary');
-
-  flex: none;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-primary);
-  cursor: pointer;
-}
-
-.show-all:hover {
-  text-decoration: underline;
-}
-
-.show-all:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
 /* Come i grafici di Analytics: i dati restano leggibili, ma non sono più quelli richiesti. */
 .content.stale {
   opacity: 0.6;

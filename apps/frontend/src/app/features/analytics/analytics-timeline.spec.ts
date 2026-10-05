@@ -392,10 +392,21 @@ describe('AnalyticsTimeline', () => {
     expect(tooltip()?.classList.contains('left-side')).toBe(true);
   });
 
-  it('chiede le transazioni del periodo completo della settimana selezionata', async () => {
+  it('il pulsante del riquadro dice che filtra l’analisi su quel periodo', async () => {
+    await render();
+    await select(1);
+
+    // Non apre più una vista a parte: cambia il periodo dei filtri.
+    expect(host().querySelector('.tooltip-action')?.textContent?.trim()).toBe(
+      'Filtra su questo periodo'
+    );
+    expect(tooltip()?.textContent).not.toContain('Apri movimenti');
+  });
+
+  it('chiede di filtrare sul periodo completo della settimana selezionata', async () => {
     await render();
     const requested: TimelineSelection[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
+    fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
     await select(1);
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
@@ -410,7 +421,7 @@ describe('AnalyticsTimeline', () => {
     ]);
   });
 
-  it('chiede le transazioni dal primo all’ultimo giorno del mese selezionato', async () => {
+  it('chiede di filtrare dal primo all’ultimo giorno del mese selezionato', async () => {
     await render(
       {
         granularity: 'month',
@@ -419,7 +430,7 @@ describe('AnalyticsTimeline', () => {
       'month'
     );
     const requested: TimelineSelection[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
+    fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
     await select(0);
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
@@ -453,7 +464,7 @@ describe('AnalyticsTimeline', () => {
     expect(rowLabels).toEqual(['giugno 2026', 'luglio 2026']);
 
     const requested: TimelineSelection[] = [];
-    fixture.componentInstance.transactionsRequested.subscribe((selection) => requested.push(selection));
+    fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
     await select(1);
     expect(host().querySelector('.when')?.textContent).toContain('luglio 2026');
 

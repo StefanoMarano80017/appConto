@@ -176,7 +176,8 @@ export class AnalyticsTimeline {
   readonly granularity = input.required<TimelineGranularity>();
 
   readonly granularitySelected = output<TimelineGranularity>();
-  readonly transactionsRequested = output<TimelineSelection>();
+  /** «Filtra su questo periodo»: chi usa il grafico porta il periodo dell'analisi sul bucket. */
+  readonly periodSelected = output<TimelineSelection>();
 
   protected readonly granularities = GRANULARITIES;
   protected readonly partialMarker = partialMarker;
@@ -275,10 +276,10 @@ export class AnalyticsTimeline {
     this.selectedIndex.set(null);
   }
 
-  protected openBucketTransactions(bucket: TimelineBucket): void {
+  protected selectBucketPeriod(bucket: TimelineBucket): void {
     const granularity = this.timeline().granularity;
     const step = this.step();
-    this.transactionsRequested.emit({
+    this.periodSelected.emit({
       granularity,
       period: bucket.period,
       range: step.range(bucket.period),

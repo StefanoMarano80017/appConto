@@ -1,10 +1,6 @@
 <app-panel>
-  <app-section-header [title]="title()">
-    <!-- Solo con una selezione: senza, si sta già guardando tutto. -->
-    @if (selection() !== null) {
-      <button panelActions type="button" class="show-all" (click)="cleared.emit()">Mostra tutto</button>
-    }
-  </app-section-header>
+  <!-- Nessun comando qui: i criteri si cambiano dai filtri, o con un click sui grafici. -->
+  <app-section-header title="Transazioni del periodo" />
 
   @if (error(); as message) {
     <app-error-retry [message]="message" (retry)="transactions.reload()" />
@@ -16,7 +12,7 @@
       [attr.aria-busy]="transactions.isLoading()"
     >
       @if (data.items.length === 0) {
-        <app-empty-state message="Nessuna transazione per questa selezione." />
+        <app-empty-state message="Nessuna transazione per i filtri attivi." />
       } @else {
         <!-- Con un'anteprima parziale il totale sommerebbe solo le righe mostrate. -->
         <app-transactions-table

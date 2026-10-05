@@ -22,15 +22,11 @@
         [timeline]="data.timeline"
         [granularity]="store.granularity()"
         (granularitySelected)="store.setGranularity($event)"
-        (transactionsRequested)="onTimelineTransactionsRequested($event)"
+        (periodSelected)="onPeriodSelected($event)"
       />
 
-      <!-- Sempre presente, subito sotto l'andamento: il periodo intero, o l'elemento selezionato. -->
-      <app-analytics-transactions
-        [selection]="selection.selection()"
-        [query]="panelQuery()"
-        (cleared)="onSelectionCleared()"
-      />
+      <!-- Sempre presente, subito sotto l'andamento: le transazioni dei filtri correnti. -->
+      <app-analytics-transactions [query]="panelQuery()" />
 
       <div class="columns">
         <app-analytics-categories

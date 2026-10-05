@@ -1,6 +1,6 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnInit, computed, effect, inject, linkedSignal, signal } from '@angular/core';
-import { Params, Router, RouterLink } from '@angular/router';
+import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Params, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
@@ -19,7 +19,6 @@ import { analyticsRequest } from './analytics.api';
 import { AnalyticsCategories } from './analytics-categories';
 import { AnalyticsLoans } from './analytics-loans';
 import { AnalyticsMerchants } from './analytics-merchants';
-import { AnalyticsSelection, isSelectionAvailable, selectionCriteria } from './analytics-selection';
 import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { AnalyticsTransactions } from './analytics-transactions';
 import { AnalyticsFilters } from './analytics-filters';
@@ -32,6 +31,11 @@ import { AnalyticsStore } from './analytics.store';
  * porzione della stessa risposta, quindi rappresentano tutte lo stesso dataset
  * filtrato. La richiesta è derivata dai criteri: `httpResource` la rifà da sé
  * quando cambiano e annulla quella precedente.
+ *
+ * L'unica fonte è `AnalyticsStore`: grafici e tabella dipendono solo dai suoi
+ * filtri, e i filtri cambiano solo per un gesto — nella barra o con un click
+ * su un grafico. Nessuno stato di vista a parte, nessun effetto che li tocchi
+ * da sé.
  */
 @Component({
   selector: 'app-analytics-page',
@@ -53,9 +57,7 @@ import { AnalyticsStore } from './analytics.store';
 export class AnalyticsPage implements OnInit {
   private readonly categoriesApi = inject(CategoriesApi);
   private readonly merchantsApi = inject(MerchantsApi);
-  private readonly router = inject(Router);
   protected readonly store = inject(AnalyticsStore);
-  protected readonly selection = inject(AnalyticsSelection);
 
   protected readonly analytics = httpResource<Analytics>(() =>
     analyticsRequest(this.store.query())
@@ -146,48 +148,17 @@ export class AnalyticsPage implements OnInit {
   });
 
   /**
-   * I criteri del pannello: quelli dell'analisi, con sopra quelli dell'elemento
-   * selezionato, se ce n'è uno; senza, il periodo intero con i suoi filtri.
+   * I criteri della tabella: il periodo e i filtri dell'analisi, e nient'altro.
    * Pagina, dimensione e ordinamento restano i predefiniti di `EMPTY_QUERY`:
-   * la prima pagina, per data decrescente.
+   * la prima pagina, per data decrescente. Il passo non c'entra: raggruppa i
+   * movimenti del grafico, non decide quali sono.
    */
   protected readonly panelQuery = computed<TransactionQueryState>(() => {
-    const selection = this.selection.selection();
     const { from, to } = this.store.dateRange();
     const { types, categoryIds, merchantIds, classification } = this.store.filters();
 
-    return {
-      ...EMPTY_QUERY,
-      from,
-      to,
-      types,
-      categoryIds,
-      merchantIds,
-      classification,
-      ...(selection === null ? {} : selectionCriteria(selection))
-    };
+    return { ...EMPTY_QUERY, from, to, types, categoryIds, merchantIds, classification };
   });
-
-  constructor() {
-    /*
-     * Un cambio di filtri, periodo o passo può togliere dai dati l'elemento
-     * selezionato: allora la selezione cade e il pannello torna al periodo
-     * intero. Si guarda solo ai dati arrivati: durante un caricamento quelli a
-     * schermo sono i precedenti, e rientrando nella pagina non ce ne sono ancora. La selezione resta finché
-     * una risposta non dice che l'elemento non c'è più.
-     */
-    effect(() => {
-      const data = this.data();
-      const selection = this.selection.selection();
-      if (data === undefined || selection === null) {
-        return;
-      }
-
-      if (this.isEmpty() || !isSelectionAvailable(selection, data)) {
-        this.selection.clear();
-      }
-    });
-  }
 
   ngOnInit(): void {
     this.categoriesApi.list().subscribe({ next: (categories) => this.categories.set(categories) });
@@ -202,46 +173,38 @@ export class AnalyticsPage implements OnInit {
    * stato nascosto fra le due pagine.
    */
   protected explorerParams(extra: Partial<TransactionQueryState> = {}): Params {
-    const { from, to } = this.store.dateRange();
-    const { types, categoryIds, merchantIds, classification } = this.store.filters();
-
-    return toQueryParams({
-      ...EMPTY_QUERY,
-      from,
-      to,
-      types,
-      categoryIds,
-      merchantIds,
-      classification,
-      ...extra
-    });
+    return toQueryParams({ ...this.panelQuery(), ...extra });
   }
 
-  protected onTimelineTransactionsRequested(selection: TimelineSelection): void {
-    this.selection.select({ kind: 'period', ...selection });
-  }
+  /*
+   * I click sui grafici cambiano i filtri dell'analisi, come farebbe chi li
+   * tocca nella barra: da lì si aggiornano insieme grafici, tabella e la barra
+   * stessa. Sono l'unico modo in cui i grafici agiscono, e nessun filtro cambia
+   * senza un gesto (revisione 2 della specifica, 2026-10-05).
+   */
 
-  /** Senza categoria significa "da classificare": il titolo lo dice da sé. */
-  protected onCategorySelected(categoryId: string | null): void {
-    const entry = this.data()?.byCategory.find((category) => category.categoryId === categoryId);
-
-    this.selection.select({ kind: 'category', categoryId, name: entry?.name ?? '' });
-  }
-
-  /** Un merchant non restringe la tabella: porta ai suoi movimenti, con periodo e filtri. */
-  protected onMerchantSelected(merchantId: string): void {
-    void this.router.navigate(['/transactions'], {
-      queryParams: this.explorerParams({ merchantIds: [merchantId] })
-    });
+  /** «Filtra su questo periodo»: l'analisi passa all'intervallo del bucket, come scelto a mano. */
+  protected onPeriodSelected(selection: TimelineSelection): void {
+    this.store.setCustomRange(selection.range.from, selection.range.to);
   }
 
   /**
-   * «Mostra tutto»: la tabella torna al periodo intero, e il pannello resta
-   * dov'è. Il pulsante sparisce col click, ma di proposito il focus non viene
-   * spostato da programma: la pagina non muove più né scroll né focus da sé
-   * (revisione del 2026-10-01 della specifica).
+   * Una categoria entra o esce dai filtri. Senza categoria significa "da
+   * classificare": allora si alterna il filtro di classificazione. Nessun
+   * filtro di tipo aggiunto: la distribuzione conta le spese, ma restringere
+   * ai tipi resta una scelta di chi usa i filtri.
    */
-  protected onSelectionCleared(): void {
-    this.selection.clear();
+  protected onCategorySelected(categoryId: string | null): void {
+    if (categoryId === null) {
+      const unclassified = this.store.filters().classification === 'unclassified';
+      this.store.setClassification(unclassified ? 'all' : 'unclassified');
+    } else {
+      this.store.toggleCategory(categoryId);
+    }
+  }
+
+  /** Un merchant entra o esce dai filtri, senza lasciare la pagina. */
+  protected onMerchantSelected(merchantId: string): void {
+    this.store.toggleMerchant(merchantId);
   }
 }

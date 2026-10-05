@@ -1,5 +1,5 @@
 import { httpResource } from '@angular/common/http';
-import { Component, computed, input, linkedSignal, output } from '@angular/core';
+import { Component, computed, input, linkedSignal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
@@ -11,28 +11,21 @@ import { TransactionQueryState, toQueryParams } from '../transactions/transactio
 import { TransactionPage } from '../transactions/transaction.model';
 import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
 import { transactionsRequest } from '../transactions/transactions.api';
-import { AnalyticsSelectionValue, selectionLabel } from './analytics-selection';
-
-/** Una pagina caricata, con la selezione a cui appartiene (`null`: il periodo intero). */
-interface LoadedPage {
-  selection: AnalyticsSelectionValue | null;
-  page: TransactionPage;
-}
 
 /**
- * Le transazioni dietro l'analisi: quelle del periodo, o quelle dell'elemento
- * del grafico selezionato.
+ * Le transazioni dietro l'analisi: quelle dei filtri correnti, nient'altro.
  *
  * Un'anteprima, non l'esplorazione: la prima pagina, in sola lettura, e un
  * collegamento che apre gli stessi criteri in Movimenti. I criteri arrivano
- * già pronti dalla pagina, che li compone da quelli dell'analisi e, se c'è,
- * da quelli dell'elemento.
+ * già pronti dalla pagina, che li compone dai filtri dell'analisi: il pannello
+ * non ne aggiunge di suoi e non ha comandi per cambiarli. Un click su un
+ * grafico cambia i filtri, e da lì questa tabella si aggiorna come ogni altra
+ * sezione (revisione 2 della specifica, 2026-10-05).
  *
- * Il pannello sta sempre sotto l'andamento, quindi una selezione non lo porta
- * in vista né gli dà il focus: chi ha cliccato lo vede già cambiare dov'è.
- * Per questo l'intestazione è di nuovo un `SectionHeader` qualunque — il
- * titolo non deve più ricevere il focus (§16.1 della proposta sui componenti
- * condivisi).
+ * Il pannello sta sempre sotto l'andamento, quindi un cambio di filtri non lo
+ * porta in vista né gli dà il focus: chi ha cliccato lo vede già cambiare
+ * dov'è. Per questo l'intestazione è un `SectionHeader` qualunque — il titolo
+ * non riceve il focus (§16.1 della proposta sui componenti condivisi).
  */
 @Component({
   selector: 'app-analytics-transactions',
@@ -41,23 +34,10 @@ interface LoadedPage {
   styleUrl: './analytics-transactions.scss',
 })
 export class AnalyticsTransactions {
-  /** L'elemento selezionato; `null` quando si guarda il periodo intero. */
-  readonly selection = input.required<AnalyticsSelectionValue | null>();
   readonly query = input.required<TransactionQueryState>();
-
-  /** «Mostra tutto»: chi usa il pannello toglie la selezione e torna al periodo. */
-  readonly cleared = output<void>();
 
   protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
   protected readonly toQueryParams = toQueryParams;
-
-  protected readonly title = computed(() => {
-    const selection = this.selection();
-
-    return selection === null
-      ? 'Transazioni del periodo'
-      : `Transazioni · ${selectionLabel(selection)}`;
-  });
 
   protected readonly transactions = httpResource<TransactionPage>(() =>
     transactionsRequest(this.query()),
@@ -68,29 +48,13 @@ export class AnalyticsTransactions {
    *
    * Come in `AnalyticsPage`: `httpResource` azzera il valore quando la
    * richiesta cambia, e un filtro nuovo farebbe sparire e ricomparire la
-   * tabella. Vale però solo per la stessa selezione: cambiata quella, le righe
-   * di prima non le appartengono più e si torna al caricamento. «Nessuna
-   * selezione» conta come una selezione a sé: `null === null`, quindi un
-   * filtro cambiato sul periodo intero tiene le righe attenuate, mentre
-   * passare dal periodo a un elemento (o tornare indietro) no.
+   * tabella. Le righe di prima appartengono sempre a ciò che si sta guardando
+   * — le transazioni dei filtri — quindi restano, attenuate, a ogni ricarica.
    */
-  private readonly loaded = linkedSignal<
-    { selection: AnalyticsSelectionValue | null; page: TransactionPage | undefined },
-    LoadedPage | undefined
-  >({
-    source: () => ({
-      selection: this.selection(),
-      page: this.transactions.hasValue() ? this.transactions.value() : undefined,
-    }),
-    computation: ({ selection, page }, precedente) =>
-      page !== undefined
-        ? { selection, page }
-        : precedente?.value !== undefined && precedente.value.selection === selection
-          ? precedente.value
-          : undefined,
+  protected readonly page = linkedSignal<TransactionPage | undefined, TransactionPage | undefined>({
+    source: () => (this.transactions.hasValue() ? this.transactions.value() : undefined),
+    computation: (caricata, precedente) => caricata ?? precedente?.value,
   });
-
-  protected readonly page = computed(() => this.loaded()?.page);
 
   protected readonly error = computed(() => {
     const error = this.transactions.error();
