@@ -20,11 +20,12 @@ import { AppChart, type ChartDataPoint } from './chart';
 import { doughnutChartData, doughnutChartOptions } from './doughnut-chart-config';
 import { resolveDoughnutChartTheme, type DoughnutChartTheme } from './doughnut-chart-theme';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
-import { groupTopN } from './doughnut-grouping';
+import { groupedSliceLabel, groupTopN } from './doughnut-grouping';
 
 // Le feature non importano `chart.ts`: il token passa da qui, il punto
 // d'ingresso pubblico, così le loro spec possono sostituire Chart.js.
 export { CHART_CONSTRUCTOR } from './chart';
+export { groupedSliceLabel } from './doughnut-grouping';
 
 /** Contesto del centro: la fetta attiva, oppure `null` se non ce n'è una. */
 export interface DoughnutCenterContext<T> {
@@ -83,9 +84,6 @@ export class DoughnutChart<T> {
   readonly label = input.required<(item: T) => string>();
   readonly color = input.required<(item: T) => SliceColor>();
   readonly topN = input(6);
-  readonly othersLabel = computed(
-    () => `Altre ${Math.max(0, this.items().length - this.topN())} categorie`,
-  );
   readonly ariaLabel = input.required<string>();
   /**
    * Le voci da far risaltare (es. quelle filtrate): se almeno una fetta lo è,
@@ -109,6 +107,12 @@ export class DoughnutChart<T> {
   private readonly focusIndex = signal<number | null>(null);
 
   protected readonly slices = computed(() => groupTopN(this.items(), this.value(), this.topN()));
+
+  /** Conta le voci davvero raggruppate nella fetta «Altri», non items meno topN. */
+  readonly othersLabel = computed(() => {
+    const others = this.slices().find((slice) => slice.kind === 'others');
+    return groupedSliceLabel(others?.kind === 'others' ? others.items.length : 0);
+  });
 
   /**
    * Il puntatore vince sulla tastiera: si mostra ciò che si sta guardando.

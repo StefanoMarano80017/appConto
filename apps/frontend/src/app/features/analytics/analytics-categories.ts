@@ -14,7 +14,7 @@ import { formatPercent } from '../../core/format';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Amount } from '../../shared/ui/amount';
-import { DoughnutCenter, DoughnutChart } from '../../shared/ui/chart/doughnut-chart';
+import { DoughnutCenter, DoughnutChart, groupedSliceLabel } from '../../shared/ui/chart/doughnut-chart';
 import type { DoughnutSlice, SliceColor } from '../../shared/ui/chart/doughnut-chart.model';
 import { ChoiceGroup, ChoiceOption } from '../../shared/ui/choice-group';
 import { CategoryDistribution } from './analytics.model';
@@ -131,7 +131,7 @@ export class AnalyticsCategories {
     }
 
     return {
-      label: `Altre ${Math.max(0, this.categories().length - 6)} categorie`,
+      label: groupedSliceLabel(slice.items.length),
       amount: slice.items.reduce((sum, category) => sum + category.amount, 0),
       percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0),
     };

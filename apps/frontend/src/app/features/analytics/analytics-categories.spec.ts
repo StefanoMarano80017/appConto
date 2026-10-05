@@ -212,6 +212,18 @@ describe('AnalyticsCategories', () => {
     expect(center()).toContain(formatPercent(5 + 2.5));
   });
 
+  it('«Altri» conta le categorie davvero raggruppate, non quelle in ingresso meno sei', async () => {
+    // Due rimborsi netti non hanno una fetta: il raggruppamento resta di due voci.
+    await render([
+      ...many(),
+      category({ categoryId: 'ref-1', name: 'Rimborso 1', amount: -5 }),
+      category({ categoryId: 'ref-2', name: 'Rimborso 2', amount: -3 })
+    ]);
+    await overSlice(6);
+
+    expect(center()).toContain('Altre 2 categorie');
+  });
+
   // jsdom non fa layout: l'altezza (25rem) si vede in pagina. Qui si prova ciò che la rende
   // uguale fra le viste, cioè che ogni stato viva nello stesso corpo, e che la Lista scorra
   // dentro un contenitore proprio invece di allungare la scheda.

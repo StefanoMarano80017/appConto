@@ -2,7 +2,7 @@ import { Component, signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { ThemeStore } from '../../../core/theme';
-import { CHART_CONSTRUCTOR, DoughnutCenter, DoughnutChart } from './doughnut-chart';
+import { CHART_CONSTRUCTOR, DoughnutCenter, DoughnutChart, groupedSliceLabel } from './doughnut-chart';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
 
 const chartMocks = (() => {
@@ -458,5 +458,16 @@ describe('DoughnutChart', () => {
       await highlight(undefined);
       expect(colors()).toEqual(BASE);
     });
+  });
+});
+
+describe('groupedSliceLabel', () => {
+  it('al singolare dice «1 altra categoria»', () => {
+    expect(groupedSliceLabel(1)).toBe('1 altra categoria');
+  });
+
+  it('al plurale dice «Altre {n} categorie»', () => {
+    expect(groupedSliceLabel(2)).toBe('Altre 2 categorie');
+    expect(groupedSliceLabel(5)).toBe('Altre 5 categorie');
   });
 });
