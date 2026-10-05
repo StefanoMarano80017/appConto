@@ -41,6 +41,7 @@
           [class.stale]="merchantSection.stale()"
           [merchants]="merchantSection.data()?.byMerchant ?? data.byMerchant"
           [activeMerchantIds]="store.filters().merchantIds"
+          [categories]="categories()"
           (merchantSelected)="onMerchantSelected($event)"
         />
       </div>

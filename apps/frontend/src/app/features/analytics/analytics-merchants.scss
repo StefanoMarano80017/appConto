@@ -86,3 +86,44 @@ ol {
   cursor: pointer;
   text-decoration: underline;
 }
+
+.message {
+  margin: var(--space-7) 0 0;
+}
+
+/*
+ * La stessa altezza del corpo di analytics-categories (v. il commento là): le
+ * due schede stanno affiancate, e cambiare vista non fa saltare la pagina.
+ */
+.body {
+  height: 25rem;
+}
+
+/* La frase sta sopra, la treemap prende tutto lo spazio che resta. */
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.concentration {
+  @include typography.text('secondary');
+  margin: 0;
+}
+
+.treemap {
+  flex: 1;
+  min-height: 0;
+}
+
+/*
+ * Come in analytics-categories: la Lista scorre dentro il corpo invece di
+ * allungare la scheda; il respiro in alto e in basso tiene intero l'anello di
+ * focus della prima e dell'ultima riga.
+ */
+.list {
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-4) var(--space-2) 0;
+}

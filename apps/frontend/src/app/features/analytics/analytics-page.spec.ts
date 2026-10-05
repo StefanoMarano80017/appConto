@@ -536,14 +536,15 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     host().querySelector(selector)?.getAttribute('aria-pressed');
 
   // La scheda apre sul grafico: le righe cliccabili stanno nella Lista.
-  const showCategoryList = async (): Promise<void> => {
-    Array.from(
-      host().querySelectorAll<HTMLButtonElement>('app-analytics-categories app-choice-group button')
-    )
+  const showList = async (section: string): Promise<void> => {
+    Array.from(host().querySelectorAll<HTMLButtonElement>(`${section} app-choice-group button`))
       .find((button) => button.getAttribute('aria-label') === 'Lista')
       ?.click();
     await settle();
   };
+  const showCategoryList = (): Promise<void> => showList('app-analytics-categories');
+  // Anche i merchant aprono sul grafico (la treemap).
+  const showMerchantList = (): Promise<void> => showList('app-analytics-merchants');
 
   /** Il tooltip della timeline chiede di filtrare su un bucket settimanale. */
   const requestBucket = async (): Promise<void> => {
@@ -749,9 +750,29 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect((await panelRequest()).has('classification')).toBe(false);
   });
 
+  it('una tessera della treemap dei merchant fa lo stesso della riga', async () => {
+    await load();
+    await panelRequest();
+
+    await click('app-analytics-merchants app-treemap .tile');
+
+    expect(store.filters().merchantIds).toEqual(['m-1']);
+    expect(router.url).toBe(startUrl);
+    await load(analytics(), `${RANGE}&merchantIds=m-1&${STEP}`);
+    expect((await panelRequest()).get('merchantIds')).toBe('m-1');
+    expect(host().querySelector('app-analytics-merchants .tile.dimmed')).not.toBeNull();
+
+    await click('app-analytics-merchants app-treemap .tile');
+
+    expect(store.filters().merchantIds).toEqual([]);
+    await load();
+    await panelRequest();
+  });
+
   it('un merchant attiva e disattiva il proprio filtro, senza lasciare la pagina', async () => {
     await load();
     await panelRequest();
+    await showMerchantList();
 
     await click('app-analytics-merchants .link');
 
@@ -955,14 +976,15 @@ describe('AnalyticsPage: categorie e merchant ignorano il proprio filtro', () =>
     await settle();
   };
 
-  const showCategoryList = async (): Promise<void> => {
-    Array.from(
-      host().querySelectorAll<HTMLButtonElement>('app-analytics-categories app-choice-group button')
-    )
+  const showList = async (section: string): Promise<void> => {
+    Array.from(host().querySelectorAll<HTMLButtonElement>(`${section} app-choice-group button`))
       .find((button) => button.getAttribute('aria-label') === 'Lista')
       ?.click();
     await settle();
   };
+  const showCategoryList = (): Promise<void> => showList('app-analytics-categories');
+  // Anche i merchant aprono sul grafico (la treemap).
+  const showMerchantList = (): Promise<void> => showList('app-analytics-merchants');
 
   const rows = (selector: string): { name: string; pressed: string | null }[] =>
     Array.from(host().querySelectorAll(selector)).map((row) => ({
@@ -1019,6 +1041,7 @@ describe('AnalyticsPage: categorie e merchant ignorano il proprio filtro', () =>
 
   it('senza filtri parte una sola richiesta dell’analisi, e le sezioni leggono quella', async () => {
     await load();
+    await showMerchantList();
 
     expect(analyticsRequests()).toEqual([]);
     expect(rows('app-analytics-merchants .link').map((row) => row.name)).toEqual([
@@ -1065,6 +1088,7 @@ describe('AnalyticsPage: categorie e merchant ignorano il proprio filtro', () =>
 
   it('filtrato un merchant, i merchant arrivano dalla richiesta senza il loro filtro', async () => {
     await load();
+    await showMerchantList();
 
     await click('app-analytics-merchants .link');
     const params = await answer(`${RANGE}&merchantIds=m-1&${STEP}`, withTwoCategories());
