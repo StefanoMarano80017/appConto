@@ -1,0 +1,28 @@
+<!-- L'ordine nel DOM è quello di valore decrescente: è anche l'ordine del tab. -->
+<div class="treemap" role="group" [attr.aria-label]="ariaLabel()">
+  @for (tile of tiles(); track $index) {
+    <button
+      type="button"
+      class="tile"
+      [class.others]="tile.activation.kind === 'others'"
+      [class.dimmed]="tile.dimmed"
+      [attr.data-size]="tile.size"
+      [style.left.%]="tile.rect.x"
+      [style.top.%]="tile.rect.y"
+      [style.width.%]="tile.rect.w"
+      [style.height.%]="tile.rect.h"
+      [style.--tile-color]="tile.color"
+      [attr.aria-label]="tile.description"
+      [title]="tile.description"
+      (click)="tileActivated.emit(tile.activation)"
+    >
+      @if (tile.size !== 'none') {
+        <span class="name">{{ tile.name }}</span>
+      }
+      @if (tile.size === 'full') {
+        <span class="amount">{{ tile.amount }}</span>
+        <span class="share">{{ tile.share }}</span>
+      }
+    </button>
+  }
+</div>
