@@ -72,6 +72,7 @@ const SERIES_B: LineSeries<Row> = { key: 'b', label: 'Serie B', color: 'chart-5'
       [marker]="marker"
       valueAxis="amount"
       ariaLabel="Andamento di prova"
+      [zeroLine]="zeroLine()"
       [(selectedIndex)]="selected"
     >
       <p class="projected">Tooltip della feature</p>
@@ -82,6 +83,7 @@ class HostComponent {
   readonly points = signal<readonly Row[]>(ROWS);
   readonly series = signal<readonly LineSeries<Row>[]>([SERIES_A, SERIES_B]);
   readonly selected = signal<number | null>(null);
+  readonly zeroLine = signal(false);
   readonly xLabel = (row: Row): string => `g${row.day}`;
   readonly marker = (row: Row): LinePointMarker => (row.partial ? 'hollow' : 'auto');
 }
@@ -315,6 +317,17 @@ describe('LineChart', () => {
     fixture.componentInstance.series.set([{ ...SERIES_A, value: (row) => row.a * 100 }]);
     await fixture.whenStable();
     expect(yRange().max).toBeGreaterThan(initial.max);
+  });
+
+  it('la linea dello zero è spenta di partenza; `zeroLine` la passa al plugin delle guide', async () => {
+    await render();
+    expect(guides().zero).toBeUndefined();
+
+    fixture.componentInstance.zeroLine.set(true);
+    await fixture.whenStable();
+
+    expect(guides().zero).toMatchObject({ width: 1, dash: [] });
+    expect(chartMocks.instances).toHaveLength(1);
   });
 
   it('usa i plugin condivisi e non ricrea il grafico tra un hover e l’altro', async () => {

@@ -12,7 +12,8 @@ import { API_BASE_URL } from '../../core/api';
 import { AnalyticsTimeline } from './analytics-timeline';
 import { AnalyticsPage } from './analytics-page';
 import { AnalyticsCategories } from './analytics-categories';
-import { Analytics } from './analytics.model';
+import { Analytics, TimelineBucket } from './analytics.model';
+import { LineChart } from '../../shared/ui/chart/line-chart';
 import { AnalyticsStore } from './analytics.store';
 
 /** Sta al posto dell'esplorazione: qui interessa solo dove porta il collegamento. */
@@ -275,6 +276,40 @@ describe('AnalyticsPage', () => {
     // trattino ASCII: le card KPI passano ora da `Amount`, che normalizza
     // il segno come fa altrove (v. `amount.spec.ts`).
     expect(sectionText('app-stat-card-grid')).toContain('−300,00');
+  });
+
+  // La vista cumulata racconta come si arriva al KPI «Saldo netto»: il suo
+  // ultimo punto deve coincidere al centesimo, anche con decimali che in
+  // virgola mobile non tornano (1000,10 + 999,90, 200,20 + 299,60 + 0,20).
+  it('l’ultimo punto del cumulato è il KPI «Saldo netto»', async () => {
+    await settle();
+    const bucket = analytics().timeline.buckets[0]!;
+    await flush(
+      analytics({
+        timeline: {
+          granularity: 'week',
+          buckets: [
+            { ...bucket, period: '2026-07-06', income: 1000.1, expenses: 200.2 },
+            { ...bucket, period: '2026-07-13', income: 0, expenses: 299.6 },
+            { ...bucket, period: '2026-07-20', income: 999.9, expenses: 0.2 }
+          ]
+        }
+      })
+    );
+
+    const host = fixture.nativeElement as HTMLElement;
+    [...host.querySelectorAll<HTMLButtonElement>('app-analytics-timeline app-choice-group button')]
+      .find((button) => button.textContent?.trim() === 'Cumulato')
+      ?.click();
+    await settle();
+
+    const chart = fixture.debugElement.query(By.directive(LineChart))
+      .componentInstance as LineChart<TimelineBucket>;
+    const [series] = chart.series();
+    const last = series!.value(chart.points().at(-1)!);
+
+    expect(last).toBe(analytics().overview.balance);
+    expect(sectionText('app-stat-card-grid')).toContain('+1500,00');
   });
 
   it('chiede al backend il periodo selezionato', async () => {

@@ -1,47 +1,58 @@
 <app-panel>
   <app-section-header title="Andamento nel tempo" [subtitle]="subtitle()">
-    <app-choice-group
-      panelActions
-      [options]="granularities"
-      [value]="granularity()"
-      ariaLabel="Passo dell'andamento"
-      (selected)="granularitySelected.emit($event)"
-    />
+    <div panelActions class="controls">
+      <app-choice-group
+        [options]="views"
+        [value]="view()"
+        ariaLabel="Vista dell'andamento"
+        (selected)="view.set($event)"
+      />
+      <app-choice-group
+        [options]="granularities"
+        [value]="granularity()"
+        ariaLabel="Passo dell'andamento"
+        (selected)="granularitySelected.emit($event)"
+      />
+    </div>
   </app-section-header>
 
   @if (buckets().length === 0) {
     <p class="message">Nessun movimento nel periodo selezionato.</p>
   } @else {
-    <ul class="legend">
-      @for (item of series(); track item.key) {
-        <li>
-          <button
-            type="button"
-            [class.off]="!item.visible"
-            [attr.aria-pressed]="item.visible"
-            (click)="toggleSeries(item.key)"
-          >
-            <span
-              class="key"
-              [attr.data-series]="item.key"
-              [style.background]="chartColor(item.color)"
-              aria-hidden="true"
-            ></span>
-            {{ item.label }}
-          </button>
-        </li>
-      }
-    </ul>
+    <!-- Nella vista cumulata la serie è una sola: la legenda non distinguerebbe nulla, la nomina il riquadro. -->
+    @if (view() === 'flows') {
+      <ul class="legend">
+        @for (item of series(); track item.key) {
+          <li>
+            <button
+              type="button"
+              [class.off]="!item.visible"
+              [attr.aria-pressed]="item.visible"
+              (click)="toggleSeries(item.key)"
+            >
+              <span
+                class="key"
+                [attr.data-series]="item.key"
+                [style.background]="chartColor(item.color)"
+                aria-hidden="true"
+              ></span>
+              {{ item.label }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
 
     <div class="chart">
       <div class="plot">
         <!-- Il riquadro è proiettato dentro il grafico: si posiziona rispetto all'host di `<app-line-chart>`. -->
         <app-line-chart
           [points]="buckets()"
-          [series]="drawnSeries()"
+          [series]="chartSeries()"
           [xLabel]="xAxisLabel()"
           [marker]="partialMarker"
           [ariaLabel]="ariaLabel()"
+          [zeroLine]="view() === 'cumulative'"
           [(selectedIndex)]="selectedIndex"
         >
           @if (selectedRow(); as row) {
@@ -59,17 +70,30 @@
                 (click)="closeTooltip()"
               >×</button>
               <p class="when">{{ row.label }}</p>
-              <ul>
-                @for (item of series(); track item.key; let i = $index) {
-                  @if (item.visible) {
+              @if (view() === 'cumulative') {
+                @if (selectedCumulative(); as point) {
+                  <ul>
                     <li>
-                      <!-- `rows` corregge già il segno di 'expenses': nessun tono forzato qui. -->
-                      <app-amount class="amount" [value]="row.values[i]" />
-                      <span class="name">{{ item.label }}</span>
+                      <app-amount class="amount" [value]="point.cumulative" />
+                      <span class="name">{{ cumulativeLabel }}</span>
                     </li>
-                  }
+                  </ul>
+                  <!-- Il segno lo scrive `<app-amount>`: una variazione nulla resta senza segno. -->
+                  <p class="change"><app-amount [value]="point.change" /> {{ within() }}</p>
                 }
-              </ul>
+              } @else {
+                <ul>
+                  @for (item of series(); track item.key; let i = $index) {
+                    @if (item.visible) {
+                      <li>
+                        <!-- `rows` corregge già il segno di 'expenses': nessun tono forzato qui. -->
+                        <app-amount class="amount" [value]="row.values[i]" />
+                        <span class="name">{{ item.label }}</span>
+                      </li>
+                    }
+                  }
+                </ul>
+              }
               @if (row.bucket.partial) {
                 <p class="note">Intervallo incompleto</p>
               }
@@ -96,7 +120,35 @@
       </button>
     </div>
 
-    @if (showTable()) {
+    @if (showTable() && view() === 'cumulative') {
+      <div class="scroller">
+        <table class="values">
+          <caption>Valori del saldo netto del periodo</caption>
+          <thead>
+            <tr>
+              <th scope="col">Periodo</th>
+              <th scope="col" class="numeric">Variazione</th>
+              <th scope="col" class="numeric">Cumulato</th>
+            </tr>
+          </thead>
+          <!-- Nessun totale: è l'ultima cella del cumulato, cioè il KPI «Saldo netto». -->
+          <tbody>
+            @for (row of cumulativeRows(); track row.bucket.period) {
+              <tr>
+                <th scope="row">
+                  {{ row.label }}
+                  @if (row.bucket.partial) {
+                    <span class="incomplete">incompleto</span>
+                  }
+                </th>
+                <td class="numeric"><app-amount [value]="row.change" /></td>
+                <td class="numeric"><app-amount [value]="row.cumulative" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (showTable()) {
       <div class="scroller">
         <table class="values">
           <caption>Valori dell'andamento nel tempo</caption>

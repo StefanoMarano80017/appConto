@@ -18,6 +18,7 @@ const THEME: LineChartTheme = {
   hollowFill: 'surface',
   guideSelected: 'primary',
   guideHover: 'hover',
+  zeroLine: 'strong',
   labelFont: { family: 'Inter', size: 11, weight: 400 },
   valueFont: { family: 'Mono', size: 12, weight: 600 },
   series: {
@@ -164,6 +165,17 @@ describe('lineChartOptions', () => {
         selected: { color: 'primary', width: 2, dash: [] },
         hover: { color: 'hover', width: 1, dash: [3, 3] },
       },
+    });
+  });
+
+  it('la linea dello zero è facoltativa: assente di partenza, col token forte se chiesta', () => {
+    expect(build().plugins?.lineGuides).not.toHaveProperty('zero');
+
+    const options = lineChartOptions(THEME, 'amount', lineChartValueRange('amount', [10, 40]), guides, true);
+
+    expect(options.plugins?.lineGuides?.zero).toEqual({
+      color: 'strong',
+      ...LINE_CHART_GEOMETRY.zeroLine,
     });
   });
 

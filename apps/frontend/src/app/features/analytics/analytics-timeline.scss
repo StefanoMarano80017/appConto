@@ -263,3 +263,19 @@
   border-radius: var(--radius-pill);
   @include typography.text('caption');
 }
+
+/* Vista e passo affiancati nell'intestazione; su schermi stretti vanno a capo, allineati a destra. */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+}
+
+/* La variazione dell'intervallo, sotto il cumulato: un dato di contorno, non una seconda serie. */
+.tooltip .change {
+  @include typography.text('caption');
+
+  color: var(--color-text-muted);
+  margin: var(--space-2) 0 0;
+}

@@ -92,6 +92,24 @@ describe('AnalyticsTimeline', () => {
     await fixture.whenStable();
   };
 
+  const viewButton = (label: string): HTMLButtonElement | undefined =>
+    [...host().querySelectorAll<HTMLButtonElement>('app-choice-group button')].find(
+      (button) => button.textContent?.trim() === label
+    );
+
+  const chooseView = async (label: 'Flussi' | 'Cumulato'): Promise<void> => {
+    viewButton(label)?.click();
+    await fixture.whenStable();
+  };
+
+  const subtitle = (): string =>
+    host().querySelector('app-section-header')?.textContent?.replace(/\s+/g, ' ') ?? '';
+
+  const openTable = async (): Promise<void> => {
+    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
+    await fixture.whenStable();
+  };
+
   beforeEach(async () => {
     chartMocks.instances.length = 0;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
@@ -129,21 +147,21 @@ describe('AnalyticsTimeline', () => {
     expect(drawnKeys()).toEqual(['income']);
   });
 
-  it('il saldo netto non è acceso di partenza, ma si può accendere', async () => {
+  it('il movimento netto non è acceso di partenza, ma si può accendere', async () => {
     await render();
     expect(drawnKeys()).toEqual(['income', 'expenses']);
 
-    await toggleLegend('Saldo netto');
+    await toggleLegend('Movimento netto');
 
     expect(drawnKeys()).toEqual(['income', 'expenses', 'net']);
   });
 
   it('mantiene ordine, valori e colori dichiarati per ogni serie', async () => {
     await render();
-    await toggleLegend('Saldo netto');
+    await toggleLegend('Movimento netto');
 
     const series = lineChart().series();
-    expect(series.map((item) => item.label)).toEqual(['Entrate', 'Uscite', 'Saldo netto']);
+    expect(series.map((item) => item.label)).toEqual(['Entrate', 'Uscite', 'Movimento netto']);
     expect(series.map((item) => item.color)).toEqual(['chart-1', 'chart-5', 'chart-3']);
     expect(series.map((item) => weekly().buckets.map((point) => item.value(point)))).toEqual([
       [0, 1725, 0, 0],
@@ -164,7 +182,10 @@ describe('AnalyticsTimeline', () => {
       button.textContent?.trim()
     );
 
-    expect(labels).toEqual(['Entrate', 'Uscite', 'Saldo netto']);
+    // «Movimento netto», non «Saldo netto»: è `netMovement`, che conta anche
+    // prelievi, trasferimenti e prestiti. «Saldo netto» resta il nome del KPI
+    // (entrate meno uscite) e della vista cumulata, che ne è la storia.
+    expect(labels).toEqual(['Entrate', 'Uscite', 'Movimento netto']);
   });
 
   it('non si può nascondere l\'ultima serie visibile', async () => {
@@ -488,7 +509,7 @@ describe('AnalyticsTimeline', () => {
     const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
       th.textContent?.trim()
     );
-    expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Saldo netto']);
+    expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Movimento netto']);
 
     const footer = [...host().querySelectorAll('table.values tfoot td')].map((td) =>
       (td.textContent ?? '').replace(/\./g, '').trim()
@@ -496,5 +517,150 @@ describe('AnalyticsTimeline', () => {
     expect(footer[0]).toContain('+1725,00');
     expect(footer[1]).toContain('−1886,57');
     expect(footer[2]).toBe('');
+  });
+
+  describe('vista cumulata', () => {
+    // weekly(): variazioni −120,50, +1385,00, −880,07, −546,00.
+    const CUMULATIVE = [-120.5, 1264.5, 384.43, -161.57];
+
+    it('di partenza la vista è «Flussi», con il sottotitolo di sempre', async () => {
+      await render();
+
+      expect(viewButton('Flussi')?.getAttribute('aria-pressed')).toBe('true');
+      expect(viewButton('Cumulato')?.getAttribute('aria-pressed')).toBe('false');
+      expect(host().querySelector('[aria-label="Vista dell\'andamento"]')).not.toBeNull();
+      expect(subtitle()).toContain('Stessi movimenti del resto della pagina');
+      expect(lineChart().zeroLine()).toBe(false);
+    });
+
+    it('«Cumulato» disegna una sola serie, il saldo netto sommato dall’inizio del periodo', async () => {
+      await render();
+      await chooseView('Cumulato');
+
+      const series = lineChart().series();
+      expect(series.map((item) => item.label)).toEqual(['Saldo netto del periodo']);
+      expect(series.map((item) => item.color)).toEqual(['chart-3']);
+      expect(lineChart().points().map((point) => series[0]!.value(point))).toEqual(CUMULATIVE);
+      // Sopra o sotto lo zero è la prima cosa che il cumulato racconta.
+      expect(lineChart().zeroLine()).toBe(true);
+    });
+
+    it('nasconde la legenda, che con una serie sola non distingue nulla', async () => {
+      await render();
+      await chooseView('Cumulato');
+
+      expect(host().querySelector('.legend')).toBeNull();
+    });
+
+    it('cambia il sottotitolo: non è il saldo del conto', async () => {
+      await render();
+      await chooseView('Cumulato');
+
+      expect(subtitle()).toContain(
+        "Entrate meno uscite, sommate dall'inizio del periodo. Non è il saldo del conto: prelievi, trasferimenti e la quota dei prestiti che resta credito non lo muovono."
+      );
+      expect(subtitle()).not.toContain('Stessi movimenti');
+    });
+
+    it('si torna ai flussi con le serie di prima', async () => {
+      await render();
+      await chooseView('Cumulato');
+      await chooseView('Flussi');
+
+      expect(drawnKeys()).toEqual(['income', 'expenses']);
+      expect(host().querySelector('.legend')).not.toBeNull();
+      expect(lineChart().zeroLine()).toBe(false);
+    });
+
+    it('i punti vuoti degli intervalli incompleti restano', async () => {
+      await render();
+      await chooseView('Cumulato');
+
+      const marker = lineChart().marker();
+      expect(lineChart().points().map((point) => marker(point))).toEqual([
+        'hollow',
+        'auto',
+        'auto',
+        'hollow'
+      ]);
+    });
+
+    it('il riquadro mostra il cumulato e la variazione dell’intervallo', async () => {
+      await render();
+      await chooseView('Cumulato');
+      await select(1);
+
+      const shown = (tooltip()?.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ');
+      expect(shown).toContain('settimana del 6 luglio');
+      expect(shown).toContain('+1264,50');
+      expect(shown).toContain('Saldo netto del periodo');
+      expect(shown).toContain('+1385,00 € in questa settimana');
+      expect(shown).not.toContain('Entrate');
+    });
+
+    it('la variazione dice il proprio segno e l’unità del passo dei dati', async () => {
+      await render(
+        { granularity: 'month', buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)] },
+        'month'
+      );
+      await chooseView('Cumulato');
+      await select(1);
+
+      const shown = (tooltip()?.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ');
+      expect(shown).toContain('−400,00');
+      expect(shown).toContain('−900,00 € in questo mese');
+    });
+
+    it('«Filtra su questo periodo» resta e chiede lo stesso periodo', async () => {
+      await render();
+      await chooseView('Cumulato');
+      const requested: TimelineSelection[] = [];
+      fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
+      await select(1);
+
+      host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
+
+      expect(requested).toEqual([
+        {
+          granularity: 'week',
+          period: '2026-07-06',
+          range: { from: '2026-07-06', to: '2026-07-12' },
+          label: 'settimana del 6 luglio'
+        }
+      ]);
+    });
+
+    it('la tabella ha Periodo, Variazione e Cumulato', async () => {
+      await render();
+      await chooseView('Cumulato');
+      await openTable();
+
+      const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
+        th.textContent?.trim()
+      );
+      expect(headers).toEqual(['Periodo', 'Variazione', 'Cumulato']);
+
+      const cells = [...host().querySelectorAll('table.values tbody tr')].map((row) =>
+        [...row.querySelectorAll('td.numeric')].map((td) =>
+          (td.textContent ?? '').replace(/\./g, '').trim()
+        )
+      );
+      expect(cells[1]?.[0]).toContain('+1385,00');
+      expect(cells[1]?.[1]).toContain('+1264,50');
+      expect(cells[3]?.[0]).toContain('−546,00');
+      expect(cells[3]?.[1]).toContain('−161,57');
+      expect(text()).toContain('incompleto');
+    });
+
+    it('la vista resta nel componente: nessun cambio di passo né di periodo', async () => {
+      await render();
+      const emitted: unknown[] = [];
+      fixture.componentInstance.granularitySelected.subscribe((step) => emitted.push(step));
+      fixture.componentInstance.periodSelected.subscribe((selection) => emitted.push(selection));
+
+      await chooseView('Cumulato');
+
+      expect(emitted).toEqual([]);
+    });
   });
 });

@@ -78,13 +78,15 @@ export function lineChartValueRange(
 /**
  * `range` è l'intervallo già calcolato con `lineChartValueRange`: si calcola
  * a parte perché non dipende dall'hover e le opzioni si rifanno a ogni
- * movimento del puntatore.
+ * movimento del puntatore. `zeroLine` aggiunge alle guide la linea dello
+ * zero; spenta, la chiave non c'è proprio e il plugin non la disegna.
  */
 export function lineChartOptions(
   theme: LineChartTheme,
   axis: LineChartValueAxis,
   range: { min: number; max: number },
   guides: LineGuidesState,
+  zeroLine = false,
 ): ChartOptionsWithoutInteractionCallbacks {
   const geometry = LINE_CHART_GEOMETRY;
   const { format } = VALUE_AXES[axis];
@@ -105,6 +107,7 @@ export function lineChartOptions(
           selected: { color: theme.guideSelected, ...geometry.guideSelected },
           hover: { color: theme.guideHover, ...geometry.guideHover },
         },
+        ...(zeroLine ? { zero: { color: theme.zeroLine, ...geometry.zeroLine } } : {}),
       },
     },
     scales: {

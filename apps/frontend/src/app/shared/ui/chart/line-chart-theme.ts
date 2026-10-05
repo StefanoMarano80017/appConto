@@ -18,6 +18,8 @@ export const LINE_CHART_TOKENS = {
   hollowFill: '--color-surface',
   guideSelected: '--color-primary',
   guideHover: '--color-text-muted',
+  // Più marcato della griglia: la linea dello zero dev'essere riconoscibile fra le altre.
+  zeroLine: '--color-border-strong',
 } as const satisfies Record<string, `--color-${string}`>;
 
 /**
@@ -51,6 +53,7 @@ export const LINE_CHART_GEOMETRY = {
   layoutPadding: { top: 8, right: 8, bottom: 0, left: 0 },
   guideSelected: { width: 2, dash: [] },
   guideHover: { width: 1, dash: [3, 3] },
+  zeroLine: { width: 1, dash: [] },
 } as const;
 
 /**
@@ -76,6 +79,7 @@ export interface LineChartTheme {
   readonly hollowFill: string;
   readonly guideSelected: string;
   readonly guideHover: string;
+  readonly zeroLine: string;
   readonly labelFont: LineChartFont;
   readonly valueFont: LineChartFont;
   readonly series: Readonly<Record<ChartSeriesColor, string>>;
@@ -103,6 +107,7 @@ export function resolveLineChartTheme(
     hollowFill: read(LINE_CHART_TOKENS.hollowFill),
     guideSelected: read(LINE_CHART_TOKENS.guideSelected),
     guideHover: read(LINE_CHART_TOKENS.guideHover),
+    zeroLine: read(LINE_CHART_TOKENS.zeroLine),
     labelFont: font(LINE_CHART_FONT_PREFIXES.label),
     valueFont: font(LINE_CHART_FONT_PREFIXES.value),
     series: resolveSeriesColors(style),

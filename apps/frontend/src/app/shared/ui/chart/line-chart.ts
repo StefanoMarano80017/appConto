@@ -52,6 +52,8 @@ export class LineChart<T> {
   readonly marker = input<(point: T) => LinePointMarker>(() => 'auto');
   readonly valueAxis = input<LineChartValueAxis>('amount');
   readonly ariaLabel = input.required<string>();
+  /** Una linea marcata sullo zero, per le serie in cui «sopra o sotto» è la lettura principale. */
+  readonly zeroLine = input(false);
   readonly selectedIndex = model<number | null>(null);
 
   protected readonly plugins = LINE_CHART_PLUGINS;
@@ -94,10 +96,13 @@ export class LineChart<T> {
       return null;
     }
 
-    return lineChartOptions(theme, this.valueAxis(), this.valueRange(), {
-      selected: this.selectedIndex(),
-      hover: this.hover()
-    });
+    return lineChartOptions(
+      theme,
+      this.valueAxis(),
+      this.valueRange(),
+      { selected: this.selectedIndex(), hover: this.hover() },
+      this.zeroLine()
+    );
   });
 
   constructor() {
