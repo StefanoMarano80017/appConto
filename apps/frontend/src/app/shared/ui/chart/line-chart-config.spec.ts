@@ -129,11 +129,31 @@ describe('lineChartOptions', () => {
     expect(callback?.call({} as never, 1234.5, 0, [])).toBe(formatAmount(1234.5));
   });
 
-  it('non impone passo né tick alla scala Y', () => {
-    const y = build().scales?.['y'];
+  it('l’asse Y non scende molto sotto i dati: niente -5000 per un minimo di -69', () => {
+    const y = build(THEME, [-69, 9830]).scales?.['y'];
 
-    expect(y).not.toHaveProperty('ticks.stepSize');
-    expect(y).not.toHaveProperty('afterBuildTicks');
+    expect(y?.min).toBeGreaterThanOrEqual(-600);
+    expect(y?.max).toBeGreaterThanOrEqual(9830);
+  });
+
+  it('con valori non negativi (flussi) l’asse Y parte da zero', () => {
+    expect(build(THEME, [0, 120, 480]).scales?.['y']?.min).toBe(0);
+  });
+
+  it('con zeroLine acceso lo zero resta visibile', () => {
+    const range = lineChartValueRange('amount', [-69, 9830]);
+    const y = lineChartOptions(THEME, 'amount', range, guides, true).scales?.['y'];
+
+    expect(y?.min).toBeLessThanOrEqual(0);
+    expect(y?.max).toBeGreaterThanOrEqual(0);
+  });
+
+  it('le linee guida Y sono quelle tonde calcolate dalla scala', () => {
+    const y = build(THEME, [-69, 9830]).scales?.['y'];
+    const scale = { ticks: [] as { value: number }[] };
+    (y as { afterBuildTicks?: (s: typeof scale) => void }).afterBuildTicks?.(scale);
+
+    expect(scale.ticks.map((t) => t.value)).toEqual([0, 2500, 5000, 7500, 10000]);
   });
 
   it('asse X con il font etichetta, asse Y con il font valori', () => {

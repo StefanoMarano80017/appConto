@@ -14,7 +14,7 @@ const VALUE_AXES = {
   amount: { format: (value: number) => formatAmount(value), scale: niceScale },
 } satisfies Record<
   LineChartValueAxis,
-  { format: (value: number) => string; scale: (values: readonly number[]) => { min: number; max: number } }
+  { format: (value: number) => string; scale: (values: readonly number[]) => { min: number; max: number; ticks: readonly number[] } }
 >;
 
 /** Un solo punto di verità per famiglia, dimensione e peso: i valori assenti si omettono. */
@@ -84,13 +84,13 @@ export function lineChartValueRange(
 export function lineChartOptions(
   theme: LineChartTheme,
   axis: LineChartValueAxis,
-  range: { min: number; max: number },
+  range: { min: number; max: number; ticks?: readonly number[] },
   guides: LineGuidesState,
   zeroLine = false,
 ): ChartOptionsWithoutInteractionCallbacks {
   const geometry = LINE_CHART_GEOMETRY;
   const { format } = VALUE_AXES[axis];
-  const { min, max } = range;
+  const { min, max, ticks } = range;
 
   return {
     responsive: true,
@@ -125,6 +125,14 @@ export function lineChartOptions(
       y: {
         min,
         max,
+        // L'asse segue i dati: le linee guida tonde le decide la scala, non Chart.js.
+        ...(ticks === undefined
+          ? {}
+          : {
+              afterBuildTicks: (scale: { ticks: { value: number }[] }) => {
+                scale.ticks = ticks.map((value) => ({ value }));
+              },
+            }),
         border: { display: false },
         grid: { color: theme.grid, drawTicks: false },
         ticks: {

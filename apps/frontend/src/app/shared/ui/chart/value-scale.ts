@@ -35,11 +35,19 @@ function niceStep(rough: number): number {
   return 10 * power;
 }
 
+/** Quota massima di asse che l'arrotondamento a un tick tondo può aggiungere oltre i dati. */
+const MAX_OVERSHOOT = 0.1;
+/** Margine lasciato sopra/sotto i dati quando non si arrotonda, in quota dell'intervallo. */
+const PADDING = 0.04;
+
 /**
  * La scala che contiene i valori indicati.
  *
  * Lo zero è sempre compreso: su una serie di importi nel tempo una base che non
- * parte da zero esagera le variazioni.
+ * parte da zero esagera le variazioni. Gli estremi si arrotondano al tick
+ * tondo solo se lo spreco è contenuto; altrimenti (es. minimo -69 con passo
+ * 5.000) l'asse segue i dati con un piccolo margine e le linee guida restano
+ * quelle tonde che cadono dentro.
  */
 export function niceScale(values: readonly number[], targetTicks = 4): ValueScale {
   const min = Math.min(0, ...values);
@@ -53,11 +61,19 @@ export function niceScale(values: readonly number[], targetTicks = 4): ValueScal
   const niceMin = Math.floor(min / step) * step;
   const niceMax = Math.ceil(max / step) * step;
 
+  const niceSpan = niceMax - niceMin;
+  const padding = (max - min) * PADDING;
+  const tightMin = min < 0 && min - niceMin > niceSpan * MAX_OVERSHOOT ? min - padding : niceMin;
+  const tightMax = max > 0 && niceMax - max > niceSpan * MAX_OVERSHOOT ? max + padding : niceMax;
+
   const ticks: number[] = [];
   // Il confronto con mezzo passo di margine tiene fuori gli errori di virgola mobile.
   for (let tick = niceMin; tick <= niceMax + step / 2; tick += step) {
-    ticks.push(Math.round(tick * 100) / 100);
+    const rounded = Math.round(tick * 100) / 100;
+    if (rounded >= tightMin && rounded <= tightMax) {
+      ticks.push(rounded);
+    }
   }
 
-  return { min: niceMin, max: niceMax, ticks };
+  return { min: tightMin, max: tightMax, ticks };
 }
