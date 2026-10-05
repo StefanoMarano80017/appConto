@@ -16,7 +16,9 @@
       <svg class="icon" aria-hidden="true" [lucideIcon]="option.icon!"></svg>
     }
     @if (!iconOnly) {
-      {{ option.label }}
+      <span class="label">
+            {{ option.label }}  
+      </span>
     }
   </button>
 }

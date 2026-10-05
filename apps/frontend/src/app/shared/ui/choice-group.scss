@@ -114,20 +114,6 @@ button.active {
     opacity 200ms ease-out;
 }
 
-.indicator::after {
-  position: absolute;
-  right: 0;
-  bottom: var(--space-1);
-  left: 0;
-  /* Quanto il contenuto, fino a 2rem (il 100% è la larghezza animata della pillola): sul solo-icona il trattino non sporge dall'icona. */
-  width: min(2rem, calc(100% - 2 * var(--pad)));
-  height: 2px;
-  margin-inline: auto;
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  content: '';
-}
-
 @media (prefers-reduced-motion: reduce) {
   .indicator.ready {
     transition: none;
@@ -137,4 +123,32 @@ button.active {
 button:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+button .label {
+  position: relative;
+}
+
+button .label::after {
+  position: absolute;
+  right: 0;
+  bottom: calc(-1 * var(--space-1));
+  left: 0;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  content: '';
+
+  transform: scaleX(0);
+  transform-origin: center;
+  opacity: 0;
+
+  transition:
+    transform 180ms ease-out,
+    opacity 120ms ease-out;
+}
+
+button.active .label::after {
+  transform: scaleX(1);
+  opacity: 1;
 }
