@@ -56,7 +56,11 @@
     </details>
 
     <details class="dropdown">
-      <summary>Merchant @if (query().merchantIds.length > 0) { <span class="badge">{{ query().merchantIds.length }}</span> }</summary>
+      <summary>
+        Merchant @if (query().merchantIds.length > 0) { 
+          <span class="badge">{{ query().merchantIds.length }}</span> 
+        }
+      </summary>
       <div class="panel-body">
         <app-search-input
           class="filter"
