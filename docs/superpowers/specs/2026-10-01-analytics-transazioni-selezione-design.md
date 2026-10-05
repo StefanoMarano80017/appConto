@@ -23,6 +23,7 @@ cambiano solo per un gesto di chi usa la pagina.**
   errore con riprova, stato vuoto («Nessuna transazione per i filtri attivi.»)
   e il collegamento a Movimenti.
 - **Il passo** non tocca né filtri né periodo, e non ricarica la tabella.
+- **Cross-filter**: categorie e merchant ignorano il filtro della propria dimensione (categorie: `categoryIds` e `classification`; merchant: `merchantIds`) con una richiesta in più (`crossFilterQuery` in `cross-filter.ts`), fatta solo quando quel filtro è attivo; KPI, andamento, prestiti e tabella restano sulla query completa; se fallisce, la sezione torna alla risposta principale.
 
 ## Revisione 2026-10-01: la tabella è sempre visibile
 

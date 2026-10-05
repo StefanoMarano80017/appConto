@@ -134,6 +134,25 @@ const flushPanel = (): void => {
   }
 };
 
+/**
+ * Risponde alla richiesta principale dell'analisi, che deve essere una sola, e
+ * con gli stessi dati a quelle del cross-filter eventualmente in volo
+ * (categorie o merchant senza il proprio filtro). Qui conta la richiesta
+ * principale: il cross-filter ha la sua describe in fondo al file.
+ */
+const flushAnalytics = (data: Analytics, query: string): void => {
+  const http = TestBed.inject(HttpTestingController);
+  const url = query === '' ? `${API_BASE_URL}/analytics` : `${API_BASE_URL}/analytics?${query}`;
+  const pending = http
+    .match((candidate) => candidate.url === `${API_BASE_URL}/analytics`)
+    .filter((request) => !request.cancelled);
+
+  expect(pending.filter((request) => request.request.urlWithParams === url).length).toBe(1);
+  for (const request of pending) {
+    request.flush(data);
+  }
+};
+
 const RANGE = 'from=2026-01-01&to=2026-12-31';
 /** Il passo chiude sempre la query string: viene aggiunto per ultimo. */
 const STEP = 'granularity=week';
@@ -179,8 +198,7 @@ describe('AnalyticsPage', () => {
   };
 
   const flush = async (data: Analytics, query: string = PERIOD): Promise<void> => {
-    const url = query === '' ? `${API_BASE_URL}/analytics` : `${API_BASE_URL}/analytics?${query}`;
-    http.expectOne(url).flush(data);
+    flushAnalytics(data, query);
     await settle();
     await flushLookups();
   };
@@ -448,7 +466,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
 
   const load = async (data: Analytics = analytics(), query: string = PERIOD): Promise<void> => {
     await settle();
-    http.expectOne(`${API_BASE_URL}/analytics?${query}`).flush(data);
+    flushAnalytics(data, query);
     await settle();
     await flushLookups();
   };
@@ -811,5 +829,251 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect([before, host().querySelector('app-analytics-categories .row')]).toContain(
       document.activeElement
     );
+  });
+});
+
+/*
+ * Cross-filter: ogni ripartizione ignora il filtro della propria dimensione e
+ * rispetta tutti gli altri. Filtrata una categoria, la ciambella deve ancora
+ * mostrare le altre — attenuate — per avere qualcosa con cui confrontarla;
+ * lo stesso per i merchant. KPI, andamento, prestiti e tabella restano sulla
+ * query completa. La richiesta in più parte solo quando serve: senza filtri
+ * della dimensione, la sezione legge la risposta principale.
+ */
+describe('AnalyticsPage: categorie e merchant ignorano il proprio filtro', () => {
+  let fixture: ComponentFixture<AnalyticsPage>;
+  let http: HttpTestingController;
+  let store: AnalyticsStore;
+
+  const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const sectionText = (selector: string): string =>
+    (host().querySelector(selector)?.textContent ?? '').replace(/\./g, '');
+
+  const settle = async (): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve));
+    TestBed.tick();
+  };
+
+  const ANALYTICS = `${API_BASE_URL}/analytics`;
+
+  /** Le richieste dell'analisi ancora attese, tolte dalla coda: il test deve risponderle tutte. */
+  const analyticsRequests = (): TestRequest[] =>
+    http.match((request) => request.url === ANALYTICS).filter((request) => !request.cancelled);
+
+  const byQuery = (requests: TestRequest[], query: string): TestRequest => {
+    const found = requests.filter(
+      (request) => request.request.urlWithParams === `${ANALYTICS}?${query}`
+    );
+    expect(found.length).toBe(1);
+
+    return found[0]!;
+  };
+
+  const flushLookups = async (): Promise<void> => {
+    for (const request of http.match(`${API_BASE_URL}/categories`)) {
+      request.flush([{ id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' }]);
+    }
+    for (const request of http.match(`${API_BASE_URL}/merchants/summary`)) {
+      request.flush([]);
+    }
+    await settle();
+    // La richiesta della tabella parte al giro dopo la nascita del pannello.
+    await settle();
+    flushPanel();
+    await settle();
+  };
+
+  /** Il primo caricamento, senza filtri: una sola richiesta dell'analisi. */
+  const load = async (): Promise<void> => {
+    await settle();
+    const requests = analyticsRequests();
+    expect(requests.length).toBe(1);
+    byQuery(requests, PERIOD).flush(withTwoCategories());
+    await settle();
+    await flushLookups();
+  };
+
+  /** Risponde alla richiesta principale e a quella senza il filtro della dimensione. */
+  const answer = async (main: string, cross: Analytics | 'error'): Promise<HttpParams> => {
+    const requests = analyticsRequests();
+    expect(requests.length).toBe(2);
+    byQuery(requests, main).flush(narrowed());
+    const crossRequest = byQuery(requests, PERIOD);
+    if (cross === 'error') {
+      crossRequest.flush(
+        { error: 'Errore interno' },
+        { status: 500, statusText: 'Internal Server Error' }
+      );
+    } else {
+      crossRequest.flush(cross);
+    }
+    await settle();
+    flushPanel();
+    await settle();
+
+    return crossRequest.request.params;
+  };
+
+  const click = async (selector: string): Promise<void> => {
+    host().querySelector<HTMLElement>(selector)?.click();
+    await settle();
+    await settle();
+  };
+
+  const showCategoryList = async (): Promise<void> => {
+    Array.from(
+      host().querySelectorAll<HTMLButtonElement>('app-analytics-categories app-choice-group button')
+    )
+      .find((button) => button.getAttribute('aria-label') === 'Lista')
+      ?.click();
+    await settle();
+  };
+
+  const rows = (selector: string): { name: string; pressed: string | null }[] =>
+    Array.from(host().querySelectorAll(selector)).map((row) => ({
+      name: (row.getAttribute('aria-label') ?? '').replace('Filtra per ', ''),
+      pressed: row.getAttribute('aria-pressed')
+    }));
+
+  /** Il periodo intero: due categorie di spesa. */
+  const withTwoCategories = (): Analytics =>
+    analytics({
+      byCategory: [
+        { ...analytics().byCategory[0]!, amount: 300, percentage: 60 },
+        {
+          categoryId: 'cat-2',
+          name: 'Trasporti',
+          color: '#1f5fa8',
+          amount: 200,
+          transactionCount: 1,
+          percentage: 40
+        }
+      ]
+    });
+
+  /** La risposta principale dopo aver filtrato «Alimentari» o ESSELUNGA: resta solo quella. */
+  const narrowed = (): Analytics =>
+    analytics({
+      overview: { ...analytics().overview, expenses: 300 },
+      counts: { transactions: 1, merchants: 1, categories: 1 },
+      byCategory: [{ ...analytics().byCategory[0]!, amount: 300, percentage: 100 }],
+      byMerchant: [{ ...analytics().byMerchant[0]!, percentage: 100 }]
+    });
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AnalyticsPage],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'transactions', component: StubTransactionsPage }])
+      ],
+      // Una richiesta fallita è uno scenario da verificare, non un errore del test.
+      rethrowApplicationErrors: false
+    }).compileComponents();
+
+    http = TestBed.inject(HttpTestingController);
+    store = TestBed.inject(AnalyticsStore);
+    store.resetFilters();
+    store.setCustomRange('2026-01-01', '2026-12-31');
+
+    fixture = TestBed.createComponent(AnalyticsPage);
+  });
+
+  afterEach(() => http.verify());
+
+  it('senza filtri parte una sola richiesta dell’analisi, e le sezioni leggono quella', async () => {
+    await load();
+
+    expect(analyticsRequests()).toEqual([]);
+    expect(rows('app-analytics-merchants .link').map((row) => row.name)).toEqual([
+      'ESSELUNGA',
+      'CARREFOUR'
+    ]);
+    expect(sectionText('app-analytics-categories')).toContain('Spese per categoria');
+  });
+
+  it('filtrata una categoria, le categorie arrivano dalla richiesta senza il loro filtro', async () => {
+    await load();
+    await showCategoryList();
+
+    await click('app-analytics-categories .row');
+    const params = await answer(`${RANGE}&categoryIds=cat-1&${STEP}`, withTwoCategories());
+
+    expect(params.has('categoryIds')).toBe(false);
+    expect(params.has('classification')).toBe(false);
+    // Entrambe le categorie restano a schermo, quella filtrata è premuta.
+    expect(rows('app-analytics-categories .row')).toEqual([
+      { name: 'Alimentari', pressed: 'true' },
+      { name: 'Trasporti', pressed: 'false' }
+    ]);
+    // KPI e merchant seguono la query completa.
+    expect(sectionText('app-stat-card-grid')).toContain('300,00');
+    expect(sectionText('app-analytics-merchants')).not.toContain('CARREFOUR');
+  });
+
+  it('il filtro «da classificare» non entra nella richiesta delle categorie', async () => {
+    await load();
+    await showCategoryList();
+
+    store.setClassification('unclassified');
+    await settle();
+    await settle();
+    const params = await answer(`${RANGE}&classification=unclassified&${STEP}`, withTwoCategories());
+
+    expect(params.has('classification')).toBe(false);
+    expect(rows('app-analytics-categories .row').map((row) => row.name)).toEqual([
+      'Alimentari',
+      'Trasporti'
+    ]);
+  });
+
+  it('filtrato un merchant, i merchant arrivano dalla richiesta senza il loro filtro', async () => {
+    await load();
+
+    await click('app-analytics-merchants .link');
+    const params = await answer(`${RANGE}&merchantIds=m-1&${STEP}`, withTwoCategories());
+
+    expect(params.has('merchantIds')).toBe(false);
+    expect(rows('app-analytics-merchants .link')).toEqual([
+      { name: 'ESSELUNGA', pressed: 'true' },
+      { name: 'CARREFOUR', pressed: 'false' }
+    ]);
+    // KPI e categorie seguono la query completa.
+    expect(sectionText('app-stat-card-grid')).toContain('300,00');
+  });
+
+  it('la tabella resta sulla query completa', async () => {
+    await load();
+    await showCategoryList();
+
+    await click('app-analytics-categories .row');
+    const requests = analyticsRequests();
+    byQuery(requests, `${RANGE}&categoryIds=cat-1&${STEP}`).flush(narrowed());
+    byQuery(requests, PERIOD).flush(withTwoCategories());
+    await settle();
+    await settle();
+
+    const panel = http
+      .match((request) => request.url === `${API_BASE_URL}/transactions`)
+      .filter((request) => !request.cancelled);
+    expect(panel.length).toBe(1);
+    expect(panel[0]!.request.params.get('categoryIds')).toBe('cat-1');
+    panel[0]!.flush({ items: [], pagination: { page: 1, pageSize: 25, total: 0, totalPages: 1 } });
+    await settle();
+  });
+
+  it('se la richiesta delle categorie fallisce, la sezione usa la risposta principale', async () => {
+    await load();
+    await showCategoryList();
+
+    await click('app-analytics-categories .row');
+    await answer(`${RANGE}&categoryIds=cat-1&${STEP}`, 'error');
+
+    expect(rows('app-analytics-categories .row')).toEqual([
+      { name: 'Alimentari', pressed: 'true' }
+    ]);
+    // Nessun errore di pagina: la richiesta principale è andata a buon fine.
+    expect(host().querySelector('.message--error')).toBeNull();
   });
 });

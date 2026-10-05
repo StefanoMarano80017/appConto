@@ -1,5 +1,5 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnInit, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Component, OnInit, Signal, computed, inject, linkedSignal, signal } from '@angular/core';
 import { Params, RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { CategoriesApi } from '../categories/categories.api';
@@ -23,15 +23,68 @@ import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { AnalyticsTransactions } from './analytics-transactions';
 import { AnalyticsFilters } from './analytics-filters';
 import { comfortableGranularity } from './period-granularity';
-import { AnalyticsStore } from './analytics.store';
+import { AnalyticsQueryState, AnalyticsStore } from './analytics.store';
+import { CrossFilterDimension, crossFilterQuery, needsCrossFilter } from './cross-filter';
+
+/** I dati di una ripartizione e se quelli a schermo sono da aggiornare. */
+interface CrossFilteredSection {
+  readonly data: Signal<Analytics | undefined>;
+  readonly stale: Signal<boolean>;
+}
+
+/**
+ * La risposta da cui legge una ripartizione col cross-filter: quella di una
+ * richiesta senza il filtro della sua dimensione (v. cross-filter.ts).
+ *
+ * La richiesta in più parte solo quando serve: senza filtri della dimensione
+ * la funzione di `httpResource` restituisce `undefined`, la risorsa resta
+ * ferma e la sezione legge la risposta principale, che in quel caso coincide.
+ *
+ * Stessa latch dei dati principali: mentre arriva la risposta nuova resta a
+ * schermo la precedente, attenuata. Al primo filtro, senza ancora una risposta
+ * propria, resta quella principale — che fino a un attimo prima era proprio
+ * senza quel filtro.
+ *
+ * Se la richiesta in più fallisce, la sezione torna alla risposta principale,
+ * attenuata: mostra solo ciò che è filtrato, ma un confronto mancato non vale
+ * una sezione vuota o un errore di pagina. L'errore di pagina resta quello
+ * della richiesta principale.
+ *
+ * Va chiamata in un contesto di iniezione: crea una `httpResource`.
+ */
+function crossFilteredSection(
+  dimension: CrossFilterDimension,
+  query: () => AnalyticsQueryState,
+  main: () => Analytics | undefined,
+  mainStale: () => boolean
+): CrossFilteredSection {
+  const needed = computed(() => needsCrossFilter(query(), dimension));
+  const resource = httpResource<Analytics>(() =>
+    needed() ? analyticsRequest(crossFilterQuery(query(), dimension)) : undefined
+  );
+  const latched = linkedSignal<Analytics | undefined, Analytics | undefined>({
+    source: () => (resource.hasValue() ? resource.value() : undefined),
+    computation: (caricata, precedente) => caricata ?? precedente?.value
+  });
+  const failed = computed(() => resource.error() !== undefined);
+
+  return {
+    data: computed(() => (needed() && !failed() ? (latched() ?? main()) : main())),
+    stale: computed(() => (needed() ? resource.isLoading() || failed() : mainStale()))
+  };
+}
 
 /**
  * Pagina Analytics.
  *
  * È l'unico componente che carica l'analisi: ogni sezione riceve in input una
- * porzione della stessa risposta, quindi rappresentano tutte lo stesso dataset
- * filtrato. La richiesta è derivata dai criteri: `httpResource` la rifà da sé
- * quando cambiano e annulla quella precedente.
+ * porzione della risposta dei filtri correnti. Fanno eccezione le ripartizioni
+ * per categoria e per merchant, col cross-filter: ciascuna ignora il filtro
+ * della propria dimensione e rispetta tutti gli altri, così la categoria o il
+ * merchant filtrato si vede fra gli altri invece di restare solo. KPI,
+ * andamento, prestiti e tabella seguono la query completa. Le richieste sono
+ * derivate dai criteri: `httpResource` le rifà da sé quando cambiano e
+ * annulla quelle precedenti.
  *
  * L'unica fonte è `AnalyticsStore`: grafici e tabella dipendono solo dai suoi
  * filtri, e i filtri cambiano solo per un gesto — nella barra o con un click
@@ -94,6 +147,22 @@ export class AnalyticsPage implements OnInit {
    * arrivando altri, o la richiesta è fallita e questi sono i precedenti.
    */
   protected readonly isStale = computed(() => this.analytics.isLoading() || this.error() !== null);
+
+  /** Categorie col cross-filter: la richiesta lascia fuori categorie e classificazione. */
+  protected readonly categorySection = crossFilteredSection(
+    'category',
+    this.store.query,
+    this.data,
+    this.isStale
+  );
+
+  /** Merchant col cross-filter: la richiesta lascia fuori i merchant. */
+  protected readonly merchantSection = crossFilteredSection(
+    'merchant',
+    this.store.query,
+    this.data,
+    this.isStale
+  );
 
   protected readonly isEmpty = computed(() => this.data()?.counts.transactions === 0);
 
