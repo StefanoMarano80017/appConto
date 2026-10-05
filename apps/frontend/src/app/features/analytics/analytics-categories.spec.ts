@@ -306,6 +306,20 @@ describe('AnalyticsCategories', () => {
       expect(center()).toContain('−30,00');
     });
 
+    it('la riga attiva ha lo stesso rientro delle altre: il testo non si sposta', async () => {
+      await render(three());
+      await choose('Lista');
+      const indent = (): string[] =>
+        Array.from(host().querySelectorAll<HTMLElement>('ul .row')).map(
+          (row) => getComputedStyle(row).paddingLeft
+        );
+      const before = indent();
+
+      await filter(['cat-2']);
+
+      expect(indent()).toEqual(before);
+    });
+
     it('la ciambella attenua le fette non filtrate', async () => {
       await render(three());
       const colors = (): string[] => chart().data.datasets[0].backgroundColor;
