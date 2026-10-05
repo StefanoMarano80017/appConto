@@ -24,6 +24,10 @@ import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { SearchInput } from '../../shared/ui/search-input';
 import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
+import {
+  LucideArrowUp,
+  LucideArrowDown,
+} from '@lucide/angular';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
@@ -57,7 +61,9 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
     Panel,
     RouterLink,
     SearchInput,
-    StatCardGrid
+    StatCardGrid,
+    LucideArrowUp,
+    LucideArrowDown
   ],
   templateUrl: './loans-page.html',
   styleUrl: './loans-page.scss'
