@@ -13,6 +13,9 @@ function lengthInDays(from: string, to: string): number {
  * punti del grafico, non filtra nulla: si sceglie in modo che il periodo
  * abbia un numero leggibile di punti (al più circa 31 giorni, 27 settimane
  * o pochi mesi). Con un estremo aperto la lunghezza non è nota: mesi.
+ *
+ * La soglia delle settimane è 186 giorni e non 183: il preset 6M dura da 181 a
+ * 184 giorni a seconda dei mesi e deve restare sempre per settimane.
  */
 export function comfortableGranularity(range: DateRange): TimelineGranularity {
   if (range.from === null || range.to === null) {
@@ -24,5 +27,5 @@ export function comfortableGranularity(range: DateRange): TimelineGranularity {
     return 'day';
   }
 
-  return days <= 183 ? 'week' : 'month';
+  return days <= 186 ? 'week' : 'month';
 }

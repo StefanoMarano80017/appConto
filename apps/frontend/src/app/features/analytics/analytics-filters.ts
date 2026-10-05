@@ -13,7 +13,9 @@ import {
   TRANSACTION_TYPES,
   TRANSACTION_TYPE_PLURAL_LABELS
 } from '../transactions/transaction-type';
+import { PeriodPreset } from '../../core/period';
 import { ClassificationFilter } from './analytics.model';
+import { comfortableGranularity } from './period-granularity';
 import { Panel } from '../../shared/layout/panel';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Badge } from '../../shared/ui/badge';
@@ -122,6 +124,21 @@ export class AnalyticsFilters {
           ])
     ];
   });
+
+  /** Cambiare periodo adegua anche la granularità: i punti del grafico restano leggibili. */
+  protected selectPreset(preset: PeriodPreset): void {
+    this.store.selectPreset(preset);
+    this.adaptGranularity();
+  }
+
+  protected setCustomRange(from: string | null, to: string | null): void {
+    this.store.setCustomRange(from, to);
+    this.adaptGranularity();
+  }
+
+  private adaptGranularity(): void {
+    this.store.setGranularity(comfortableGranularity(this.store.dateRange()));
+  }
 
   protected removeFilter(key: string): void {
     this.activeFilters().find((filter) => filter.key === key)?.remove();

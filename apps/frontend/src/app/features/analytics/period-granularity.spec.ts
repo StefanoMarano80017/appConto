@@ -17,12 +17,12 @@ describe('comfortableGranularity', () => {
     expect(comfortableGranularity({ from: '2026-01-01', to: '2026-02-01' })).toBe('week');
   });
 
-  it('183 giorni sono ancora per settimane', () => {
-    expect(comfortableGranularity({ from: '2026-01-01', to: '2026-07-02' })).toBe('week');
+  it('186 giorni sono ancora per settimane', () => {
+    expect(comfortableGranularity({ from: '2026-01-01', to: '2026-07-05' })).toBe('week');
   });
 
-  it('184 giorni passano ai mesi', () => {
-    expect(comfortableGranularity({ from: '2026-01-01', to: '2026-07-03' })).toBe('month');
+  it('187 giorni passano ai mesi', () => {
+    expect(comfortableGranularity({ from: '2026-01-01', to: '2026-07-06' })).toBe('month');
   });
 
   it('un anno intero si legge per mesi', () => {
