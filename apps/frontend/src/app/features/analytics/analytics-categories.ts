@@ -59,8 +59,16 @@ export class AnalyticsCategories {
 
   protected readonly view = signal<CategoriesView>('chart');
   protected readonly views: readonly ChoiceOption<CategoriesView>[] = [
-    { id: 'chart', label: 'Grafico', icon: LucideChartPie.icon },
-    { id: 'list', label: 'Lista', icon: LucideList.icon },
+    {
+      id: 'chart',
+      label: 'Grafico',
+      icon: LucideChartPie.icon,
+    },
+    {
+      id: 'list',
+      label: 'Lista',
+      icon: LucideList.icon,
+    },
   ];
 
   // Campi e non metodi: il grafico li riceve come input, e un riferimento nuovo
@@ -105,7 +113,7 @@ export class AnalyticsCategories {
     }
 
     return {
-      label: 'Altri',
+      label: `Altre ${Math.max(0, this.categories().length - 6)} categorie`,
       amount: slice.items.reduce((sum, category) => sum + category.amount, 0),
       percentage: slice.items.reduce((sum, category) => sum + category.percentage, 0),
     };

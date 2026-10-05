@@ -47,7 +47,7 @@ interface Entry {
   readonly color: SliceColor;
 }
 
-// Sette voci con topN 5: le ultime due finiscono in «Altri».
+// Sette voci con topN 5: le ultime due finiscono in «Altre 2 categorie».
 const ENTRIES: readonly Entry[] = [
   { name: 'Casa', amount: 70, color: { custom: 'rgb(9, 9, 9)' } },
   { name: 'Spesa', amount: 60, color: 'chart-1' },
@@ -155,11 +155,11 @@ describe('DoughnutChart', () => {
     }).compileComponents();
   });
 
-  it('disegna le prime 5 voci più «Altri», con un solo punto di tabulazione accessibile', async () => {
+  it('disegna le prime 5 voci più «Altre 2 categorie», con un solo punto di tabulazione accessibile', async () => {
     await render();
 
     expect(chart().config.type).toBe('doughnut');
-    expect(chart().data.labels).toEqual(['Casa', 'Spesa', 'Auto', 'Svago', 'Salute', 'Altri']);
+    expect(chart().data.labels).toEqual(['Casa', 'Spesa', 'Auto', 'Svago', 'Salute', 'Altre 2 categorie']);
     expect(chart().data.datasets[0].data).toEqual([70, 60, 50, 40, 30, 30]);
     expect(chart().plugins).toEqual([]);
 

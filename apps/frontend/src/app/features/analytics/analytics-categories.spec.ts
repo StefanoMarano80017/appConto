@@ -69,10 +69,10 @@ describe('AnalyticsCategories', () => {
     chart().options.onClick({}, [{ datasetIndex: 0, index }]);
     await fixture.whenStable();
   };
-  // Sette voci con topN 5: le ultime due (20 e 10) finiscono in «Altri». Le
+  // Otto voci con topN 6: le ultime due (20 e 10) finiscono in «Altre 2 categorie». Le
   // percentuali sono diverse dagli importi, così l'una non si scambia per l'altro.
   const many = (): CategoryDistribution[] =>
-    [70, 60, 50, 40, 30, 20, 10].map((amount, index) =>
+    [80, 70, 60, 50, 40, 30, 20, 10].map((amount, index) =>
       category({
         categoryId: `cat-${index}`,
         name: `Categoria ${index}`,
@@ -148,10 +148,10 @@ describe('AnalyticsCategories', () => {
     await clickSlice(0);
     expect(emitted).toEqual(['cat-0']);
 
-    await clickSlice(5);
+    await clickSlice(6);
     expect(emitted).toEqual(['cat-0']);
     expect(host().querySelector('app-doughnut-chart')).toBeNull();
-    expect(host().querySelectorAll('ul .row')).toHaveLength(7);
+    expect(host().querySelectorAll('ul .row')).toHaveLength(8);
   });
 
   it('attivare «Altri» da tastiera porta il focus sulla prima categoria raggruppata', async () => {
@@ -165,8 +165,8 @@ describe('AnalyticsCategories', () => {
     await fixture.whenStable();
 
     // Il canvas non c'è più: senza spostarlo, il focus cadrebbe su <body>.
-    const row = host().querySelectorAll<HTMLButtonElement>('ul .row')[5];
-    expect(row.getAttribute('aria-label')).toBe('Filtra per Categoria 5');
+    const row = host().querySelectorAll<HTMLButtonElement>('ul .row')[6];
+    expect(row.getAttribute('aria-label')).toBe('Filtra per Categoria 6');
     expect(document.activeElement).toBe(row);
   });
 
@@ -205,9 +205,9 @@ describe('AnalyticsCategories', () => {
 
   it('con «Altri» attiva il centro somma importi e percentuali delle voci raggruppate', async () => {
     await render(many());
-    await overSlice(5);
+    await overSlice(6);
 
-    expect(center()).toContain('Altri');
+    expect(center()).toContain('Altre 2 categorie');
     expect(center()).toContain('−30,00');
     expect(center()).toContain(formatPercent(5 + 2.5));
   });

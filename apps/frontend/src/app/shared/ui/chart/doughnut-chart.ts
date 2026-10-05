@@ -12,7 +12,7 @@ import {
   input,
   output,
   signal,
-  TemplateRef
+  TemplateRef,
 } from '@angular/core';
 import type { Plugin } from 'chart.js';
 import { ThemeStore } from '../../../core/theme';
@@ -42,7 +42,7 @@ export class DoughnutCenter<T> {
 
   static ngTemplateContextGuard<T>(
     _directive: DoughnutCenter<T>,
-    context: unknown
+    context: unknown,
   ): context is DoughnutCenterContext<T> {
     return true;
   }
@@ -74,16 +74,18 @@ const DOUGHNUT_CHART_PLUGINS: readonly Plugin<'doughnut'>[] = [];
     // Chart.js non notifica l'uscita dal canvas: senza questo l'ultima fetta
     // resterebbe attiva. Sta sull'host perché il centro sovrapposto è dentro
     // l'host: passarci sopra non è uscire dal grafico.
-    '(pointerleave)': 'hover.set(null)'
-  }
+    '(pointerleave)': 'hover.set(null)',
+  },
 })
 export class DoughnutChart<T> {
   readonly items = input.required<readonly T[]>();
   readonly value = input.required<(item: T) => number>();
   readonly label = input.required<(item: T) => string>();
   readonly color = input.required<(item: T) => SliceColor>();
-  readonly topN = input(5);
-  readonly othersLabel = input('Altri');
+  readonly topN = input(6);
+  readonly othersLabel = computed(
+    () => `Altre ${Math.max(0, this.items().length - this.topN())} categorie`,
+  );
   readonly ariaLabel = input.required<string>();
 
   readonly sliceActivated = output<DoughnutSlice<T>>();
@@ -141,7 +143,7 @@ export class DoughnutChart<T> {
       read: () => {
         this.themeStore.theme();
         this.theme.set(resolveDoughnutChartTheme(getComputedStyle(this.host.nativeElement)));
-      }
+      },
     });
 
     // Filtrare in `activeIndex` non basta: un indice rimasto in sospeso
@@ -209,7 +211,7 @@ export class DoughnutChart<T> {
       ArrowRight: following,
       ArrowDown: following,
       Home: 0,
-      End: count - 1
+      End: count - 1,
     }[event.key];
 
     if (next === undefined) {
