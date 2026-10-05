@@ -38,6 +38,18 @@ describe('AnalyticsMerchants', () => {
     expect(amount?.classList.contains('amount-positive')).toBe(false);
   });
 
+  it('solo la riga del merchant filtrato è premuta', async () => {
+    await render([merchant(), merchant({ merchantId: 'm-2', name: 'COOP' })]);
+    const pressed = (): Array<string | null> =>
+      Array.from(host().querySelectorAll('.link')).map((link) => link.getAttribute('aria-pressed'));
+    expect(pressed()).toEqual(['false', 'false']);
+
+    fixture.componentRef.setInput('activeMerchantIds', ['m-2']);
+    await fixture.whenStable();
+    expect(pressed()).toEqual(['false', 'true']);
+    expect(host().querySelector('.link.active')?.textContent).toBe('COOP');
+  });
+
   it('un rimborso netto mostra il segno più e il tono di entrata', async () => {
     await render([merchant({ amount: -50 })]);
 

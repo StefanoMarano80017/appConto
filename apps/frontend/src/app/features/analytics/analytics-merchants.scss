@@ -25,6 +25,20 @@ ol {
   li:last-child {
     border-bottom: 0;
   }
+
+  /*
+   * Il merchant già nei filtri: come la riga selezionata delle tabelle, sfondo
+   * e barra a sinistra su tutta la riga, non solo sul nome.
+   */
+  li:has(> .link.active) {
+    padding-left: var(--space-3);
+    background: var(--color-primary-subtle);
+    box-shadow: inset 2px 0 0 var(--color-primary);
+  }
+}
+
+.link.active {
+  font-weight: 600;
 }
 
 /* `min-width: 0` permette ai nomi lunghi di restringersi invece di sfondare la riga. */

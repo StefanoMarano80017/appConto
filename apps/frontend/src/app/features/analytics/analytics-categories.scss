@@ -57,6 +57,22 @@ li + li {
   }
 }
 
+/*
+ * La categoria già nei filtri: come la riga selezionata delle tabelle, sfondo
+ * e barra a sinistra (il solo sfondo non basta a chi distingue male i colori).
+ * Il rientro tiene il conteggio lontano dalla barra.
+ */
+.row.active,
+.row.active:active {
+  padding-left: var(--space-3);
+  background: var(--color-primary-subtle);
+  box-shadow: inset 2px 0 0 var(--color-primary);
+
+  .name {
+    font-weight: 600;
+  }
+}
+
 .row:hover .name {
   text-decoration: underline;
 }

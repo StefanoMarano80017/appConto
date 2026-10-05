@@ -479,6 +479,9 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     await settle();
   };
 
+  const rowPressed = (selector: string): string | null | undefined =>
+    host().querySelector(selector)?.getAttribute('aria-pressed');
+
   // La scheda apre sul grafico: le righe cliccabili stanno nella Lista.
   const showCategoryList = async (): Promise<void> => {
     Array.from(
@@ -638,6 +641,8 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect(params.has('types')).toBe(false);
     expect(params.get('from')).toBe('2026-01-01');
     expect(panelTitle()).toBe('Transazioni del periodo');
+    // La riga dice che quella categoria è fra i filtri.
+    expect(rowPressed('app-analytics-categories .row')).toBe('true');
 
     // Un secondo click sulla stessa categoria la toglie.
     await click('app-analytics-categories .row');
@@ -646,6 +651,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     await load();
     params = await panelRequest();
     expect(params.has('categoryIds')).toBe(false);
+    expect(rowPressed('app-analytics-categories .row')).toBe('false');
   });
 
   it('una fetta della ciambella fa lo stesso della riga', async () => {
@@ -681,6 +687,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     expect(params.get('classification')).toBe('unclassified');
     expect(params.has('categoryIds')).toBe(false);
     expect(params.has('types')).toBe(false);
+    expect(rowPressed('app-analytics-categories .row')).toBe('true');
 
     await click('app-analytics-categories .row');
 
@@ -701,6 +708,7 @@ describe('AnalyticsPage: i grafici modificano i filtri', () => {
     const params = await panelRequest();
     expect(params.get('merchantIds')).toBe('m-1');
     expect(params.get('from')).toBe('2026-01-01');
+    expect(rowPressed('app-analytics-merchants .link')).toBe('true');
 
     await click('app-analytics-merchants .link');
 

@@ -32,11 +32,14 @@
         <app-analytics-categories
           [class.stale]="isStale()"
           [categories]="data.byCategory"
+          [activeCategoryIds]="store.filters().categoryIds"
+          [unclassifiedActive]="store.filters().classification === 'unclassified'"
           (categorySelected)="onCategorySelected($event)"
         />
         <app-analytics-merchants
           [class.stale]="isStale()"
           [merchants]="data.byMerchant"
+          [activeMerchantIds]="store.filters().merchantIds"
           (merchantSelected)="onMerchantSelected($event)"
         />
       </div>

@@ -25,6 +25,7 @@
           [value]="sliceValue"
           [label]="sliceLabel"
           [color]="sliceColor"
+          [highlighted]="isActive()"
           ariaLabel="Distribuzione delle spese per categoria"
           (sliceActivated)="onSliceActivated($event)"
         >
@@ -44,10 +45,13 @@
       <div class="list">
         <ul>
           @for (category of categories(); track category.categoryId ?? 'none') {
+            @let active = isActive()(category);
             <li>
               <button
                 type="button"
                 class="row"
+                [class.active]="active"
+                [attr.aria-pressed]="active"
                 (click)="categorySelected.emit(category.categoryId)"
                 [attr.aria-label]="'Filtra per ' + category.name"
               >

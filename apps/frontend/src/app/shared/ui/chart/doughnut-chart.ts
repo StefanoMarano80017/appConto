@@ -87,6 +87,11 @@ export class DoughnutChart<T> {
     () => `Altre ${Math.max(0, this.items().length - this.topN())} categorie`,
   );
   readonly ariaLabel = input.required<string>();
+  /**
+   * Le voci da far risaltare (es. quelle filtrate): se almeno una fetta lo è,
+   * le altre si attenuano. «Altri» risalta se una delle sue voci risalta.
+   */
+  readonly highlighted = input<(item: T) => boolean>();
 
   readonly sliceActivated = output<DoughnutSlice<T>>();
 
@@ -130,7 +135,14 @@ export class DoughnutChart<T> {
     const theme = this.theme();
     return theme === null
       ? null
-      : doughnutChartData(this.slices(), this.label(), this.color(), this.othersLabel(), theme);
+      : doughnutChartData(
+          this.slices(),
+          this.label(),
+          this.color(),
+          this.othersLabel(),
+          theme,
+          this.highlighted(),
+        );
   });
 
   constructor() {

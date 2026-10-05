@@ -48,6 +48,10 @@ interface CenterSummary {
 })
 export class AnalyticsCategories {
   readonly categories = input.required<CategoryDistribution[]>();
+  /** Le categorie già nei filtri: si vedono premute nella Lista e risaltano nella ciambella. */
+  readonly activeCategoryIds = input<readonly string[]>([]);
+  /** Il filtro «da classificare» è attivo: vale per la voce senza categoria. */
+  readonly unclassifiedActive = input(false);
 
   /** Richiesta di restringere l'analisi ad una categoria; `null` = senza categoria. */
   readonly categorySelected = output<string | null>();
@@ -77,6 +81,14 @@ export class AnalyticsCategories {
   protected readonly sliceLabel = (category: CategoryDistribution): string => category.name;
   protected readonly sliceColor = (category: CategoryDistribution): SliceColor =>
     category.color ? { custom: category.color } : 'chart-neutral';
+
+  // Calcolato e non metodo, per la stessa ragione: cambia solo coi filtri.
+  protected readonly isActive = computed(() => {
+    const ids = this.activeCategoryIds();
+    const unclassified = this.unclassifiedActive();
+    return (category: CategoryDistribution): boolean =>
+      category.categoryId === null ? unclassified : ids.includes(category.categoryId);
+  });
 
   private readonly maxAmountCategory = computed(() =>
     this.categories().reduce((max, category) => Math.max(max, category.amount), 0),

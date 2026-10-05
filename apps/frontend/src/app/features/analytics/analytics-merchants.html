@@ -8,9 +8,12 @@
       @for (merchant of visible(); track merchant.merchantId ?? 'none') {
         <li>
           @if (merchant.merchantId; as merchantId) {
+            @let active = activeMerchantIds().includes(merchantId);
             <button
               type="button"
               class="link"
+              [class.active]="active"
+              [attr.aria-pressed]="active"
               (click)="merchantSelected.emit(merchantId)"
               [attr.aria-label]="'Filtra per ' + merchant.name"
             >{{ merchant.name }}</button>

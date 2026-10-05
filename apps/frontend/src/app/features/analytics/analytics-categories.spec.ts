@@ -231,6 +231,50 @@ describe('AnalyticsCategories', () => {
     expect(host().querySelector('.body .message')).not.toBeNull();
   });
 
+  describe('categorie filtrate', () => {
+    const three = (): CategoryDistribution[] => [
+      category({ categoryId: 'cat-1', name: 'Alimentari', color: '#3f8f4f', amount: 30 }),
+      category({ categoryId: 'cat-2', name: 'Casa', color: '#123456', amount: 20 }),
+      category({ categoryId: null, name: 'Da classificare', color: null, amount: 10 })
+    ];
+    const filter = async (ids: readonly string[], unclassified = false): Promise<void> => {
+      fixture.componentRef.setInput('activeCategoryIds', ids);
+      fixture.componentRef.setInput('unclassifiedActive', unclassified);
+      await fixture.whenStable();
+    };
+    const pressed = (): Array<string | null> =>
+      Array.from(host().querySelectorAll('ul .row')).map((row) => row.getAttribute('aria-pressed'));
+
+    it('nella Lista solo le righe filtrate sono premute, «Da classificare» compresa', async () => {
+      await render(three());
+      await choose('Lista');
+      expect(pressed()).toEqual(['false', 'false', 'false']);
+
+      await filter(['cat-2']);
+      expect(pressed()).toEqual(['false', 'true', 'false']);
+      expect(host().querySelector('ul .row.active')?.getAttribute('aria-label')).toBe(
+        'Filtra per Casa'
+      );
+
+      await filter([], true);
+      expect(pressed()).toEqual(['false', 'false', 'true']);
+    });
+
+    it('la ciambella attenua le fette non filtrate', async () => {
+      await render(three());
+      const colors = (): string[] => chart().data.datasets[0].backgroundColor;
+      expect(colors().slice(0, 2)).toEqual(['#3f8f4f', '#123456']);
+
+      await filter(['cat-2']);
+      expect(colors()[1]).toBe('#123456');
+      expect(colors()[0]).not.toBe('#3f8f4f');
+
+      await filter([], true);
+      expect(colors()[0]).not.toBe('#3f8f4f');
+      expect(colors()[1]).not.toBe('#123456');
+    });
+  });
+
   it("senza categorie non c'è il toggle e resta il messaggio", async () => {
     await render([]);
 
