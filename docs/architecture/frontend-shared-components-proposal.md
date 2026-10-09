@@ -127,6 +127,7 @@ apps/frontend/src/app/
 │   ├── layout/
 │   │   ├── panel/                 # Panel.ts/html/scss (+ .spec.ts) — solo box
 │   │   ├── section-header/        # SectionHeader.ts/html/scss — titolo/sottotitolo/azioni
+│   │   ├── panel-footer/          # PanelFooter.ts/html/scss — contenuti a sinistra/destra
 │   │   └── stat-card-grid/        # StatCardGrid.ts/html/scss
 │   │
 │   ├── ui/
@@ -192,6 +193,7 @@ Legenda riuso: numero di punti che oggi duplicano il pattern (verificato).
 |---|---|---|---|---|---|
 | **Panel** *(revisionato, §16.1)* | Solo il box visivo: sfondo/bordo/raggio/padding, un'unica area di contenuto proiettato | nessun `input()`; un solo slot di contenuto | nessuna | ~20 usi (compresi i casi senza alcuna intestazione, es. `transactions-page`, `transactions-toolbar`) | **Necessario** |
 | **SectionHeader** *(nuovo, separato da Panel, §16.1)* | Riga di intestazione: titolo, sottotitolo opzionale, area azioni/contenuto a destra | `title: string`, `subtitle?: string`; slot proiettato `[panelActions]` | nessuna | 9 usi con contenuto a destra (link, pulsante, badge, KPI); usabile anche per i casi "solo titolo" (§16.1) | **Necessario** |
+| **PanelFooter** *(nuovo, separato da Panel)* | Riga finale del pannello con contenuti opzionali ancorati ai due lati | slot proiettati `[panelFooterLeft]` e `[panelFooterRight]` | contenuti indipendenti a sinistra e a destra | andamento nel tempo di Analytics | **Necessario** |
 | **StatCardGrid** | Riga di indicatori KPI (etichetta + valore, tono opzionale) | `items: { label: string; value: string; tone?: 'positive' \| 'negative' \| 'neutral' }[]` | tono per singolo item | 4 usi identici | **Necessario** |
 | **SegmentedControl** *(revisionato: solo selezione singola, §16.2)* | Gruppo di pulsanti a scelta singola, sempre un'opzione attiva (radio-like) | `options: { id: T; label: string; badge?: number }[]`, `value: T`; `output valueChange: T` | nessuna | 6 usi (preset periodo, passo del grafico, classificazione ×2, stato prestito, filtro merchant) | **Necessario** |
 | **ToggleButtonGroup** *(nuovo, separato da SegmentedControl, §16.2)* | Gruppo di pulsanti a scelta multipla, zero o più opzioni attive (checkbox-like) | `options: { id: T; label: string }[]`, `value: readonly T[]`; `output valueChange: T[]` (il componente calcola internamente l'array aggiornato) | nessuna | 5 usi (tipo movimento ×2, categoria ×2, merchant) | **Necessario** |
@@ -216,9 +218,16 @@ Legenda riuso: numero di punti che oggi duplicano il pattern (verificato).
 ### Panel *(revisionato: separato da SectionHeader, motivazione in §16.1)*
 - **Responsabilità**: unico contenitore visivo per una sezione di contenuto (bordo, sfondo, padding, spaziatura fra sezioni). Sostituisce `<section class="panel">` scritto a mano. Non sa nulla di titoli, sottotitoli o azioni.
 - **Struttura**: host = `<section class="panel">` con un solo `<ng-content>`. Nessuna condizione nel template.
+- **Altezza vincolata**: la classe host `fixed-height` rende il pannello una colonna flex alta `--panel-height` (default `44rem`); il chiamante assegna la custom property quando serve una misura diversa e gestisce il contenuto che deve scorrere.
 - **Pagine che lo usano**: tutte (ogni `<section class="panel">` esistente diventa `<app-panel>`), inclusi i casi che oggi non hanno alcuna intestazione (`transactions-page`, `transactions-toolbar`), che restano semplicissimi da esprimere.
 - **Punti di personalizzazione**: proiezione libera del corpo; una classe host opzionale per le rare eccezioni dimensionali (es. `cash-flow-card`/`settings-page` con `max-width` locale) — override CSS sul selettore host, non una nuova variante del componente.
 - **Rapporto con shared/ui**: è il contenitore più esterno; `SectionHeader`, `StatCardGrid`, `SegmentedControl`/`ToggleButtonGroup`, tabelle, form vivono quasi sempre come primo/successivo contenuto proiettato dentro un `Panel`.
+
+### PanelFooter *(nuovo)*
+- **Responsabilità**: disporre i contenuti finali del pannello ai due lati, senza che `Panel` conosca il loro significato o debba implementare il layout.
+- **Struttura**: `<footer>` con due slot proiettati, `[panelFooterLeft]` e `[panelFooterRight]`; gli slot vuoti non occupano spazio e, su larghezze ridotte, i contenuti possono andare a capo.
+- **Pagine che lo usano**: `analytics-timeline`, con una nota a sinistra e il comando per mostrare/nascondere la tabella a destra.
+- **Rapporto con Panel**: è un componente fratello di `SectionHeader`, composto liberamente nel contenuto di `<app-panel>`; non cambia il contratto del box né richiede al pannello di gestire il footer.
 
 ### SectionHeader *(nuovo, §16.1)*
 - **Responsabilità**: riga di intestazione con titolo, sottotitolo opzionale e area a destra per contenuto variabile (pulsante, link, badge, cifre). Normalizza i quattro nomi di classe oggi usati per lo stesso concetto (`.header`/`.head`/`.toolbar`/`.panel-header`) e, dichiarando il proprio `<h2>` nel proprio template, risolve anche la tipografia del titolo oggi ripetuta quasi identica in ~10 file (es. `h2 { margin: 0 0 1.25rem; font-size: 1.125rem }`).
@@ -501,14 +510,15 @@ Revisione critica di round 2 completata (§16): decisioni confermate o corrette 
 Il grafico dell'andamento nel tempo non è più un SVG della feature: vive in `src/app/shared/ui/chart/`, a strati, e Chart.js non ne esce.
 
 ```text
-Feature (AnalyticsTimeline)      dominio: serie, bucket, significato della selezione, tooltip, legenda, tabella
+Feature (AnalyticsTimeline)      dominio: serie, bucket, significato della selezione, contenuto del tooltip, legenda, tabella
   └─ <app-line-chart>            line-chart.ts: tema reattivo, guide, hover/click/tastiera/focus come un solo indice
+       └─ <app-chart-tooltip>    chart-tooltip.ts: frame comune con Panel, SectionHeader e PanelFooter; la feature proietta contenuto e azione
        ├─ builder puri           line-chart-config.ts (dati e opzioni), line-guides-plugin.ts, value-scale.ts
        ├─ tema                   line-chart-theme.ts (nomi dei token, geometria, risoluzione)
        └─ <app-chart>            chart.ts: ciclo di vita dell'istanza Chart.js
 ```
 
-**API pubblica** (le feature importano solo `line-chart` e `line-chart.model`): `LineChart<T>` riceve le righe di dominio `points: T[]`, le serie da disegnare `LineSeries<T>[]` (`key`, `label`, `color: ChartSeriesColor`, `value(point)`), `xLabel(point)`, `marker(point)` (`'auto' | 'hollow'`), `valueAxis` (`'amount'`), `ariaLabel` e `zeroLine` (facoltativo, spento di partenza: una linea marcata sullo zero, col token `--color-border-strong`, disegnata dal plugin delle guide per le serie in cui «sopra o sotto» è la lettura principale, come il cumulato dell'andamento); la selezione è un `model` `selectedIndex`, e il tooltip della feature si proietta dentro l'host. Le serie sono funzioni sulle stesse righe delle etichette: lunghezze incoerenti non sono rappresentabili, e le feature non vedono mai tipi Chart.js né indici di dataset. `chartColorVar(color)` dà lo stesso colore alle legende HTML.
+**API pubblica** (le feature importano solo `line-chart`, `line-chart.model` e, quando serve, `chart-tooltip`): `LineChart<T>` riceve le righe di dominio `points: T[]`, le serie da disegnare `LineSeries<T>[]` (`key`, `label`, `color: ChartSeriesColor`, `value(point)`), `xLabel(point)`, `marker(point)` (`'auto' | 'hollow'`), `valueAxis` (`'amount'`), `ariaLabel` e `zeroLine` (facoltativo, spento di partenza: una linea marcata sullo zero, col token `--color-border-strong`, disegnata dal plugin delle guide per le serie in cui «sopra o sotto» è la lettura principale, come il cumulato dell'andamento); la selezione è un `model` `selectedIndex`. `ChartTooltip` fornisce il posizionamento, il contenitore `Panel`, l'intestazione, il footer, il pulsante di chiusura e il dismiss con Escape; la feature proietta il contenuto del corpo e l'azione contestuale. Le serie sono funzioni sulle stesse righe delle etichette: lunghezze incoerenti non sono rappresentabili, e le feature non vedono mai tipi Chart.js né indici di dataset. `chartColorVar(color)` dà lo stesso colore alle legende HTML.
 
 **Tema**: il canvas non legge `var()`. In TS stanno solo i *nomi* dei token (`--color-text-muted`, `--color-border`, `--color-surface`, `--color-primary`, `--color-chart-*`); i valori si leggono con `getComputedStyle` sull'host in un `afterRenderEffect` che dipende da `ThemeStore.theme()`, quindi si risolvono di nuovo a ogni cambio di tema. La tipografia passa dal mixin `role-properties` di `_typography.scss`: `caption` per le etichette dell'asse X, `financial-row` per i valori dell'asse Y (§4). La geometria (tratti, raggi dei punti, tratteggi, soglia di densità dei marcatori) non cambia col tema e sta in `LINE_CHART_GEOMETRY`. Nessun esadecimale di ripiego.
 

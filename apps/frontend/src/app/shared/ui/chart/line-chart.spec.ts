@@ -302,6 +302,19 @@ describe('LineChart', () => {
     expect(chart().activeElements).toEqual(at(2));
   });
 
+  it('non riusa l’hover posizionale quando cambia l’array dei punti', async () => {
+    await render();
+    await click(1);
+    await hover(2);
+    expect(chart().activeElements).toEqual(at(2));
+
+    fixture.componentInstance.points.set([ROWS[2]!, ROWS[0]!, ROWS[1]!, ROWS[3]!]);
+    await fixture.whenStable();
+
+    expect(guides()).toMatchObject({ selected: 1, hover: null });
+    expect(chart().activeElements).toEqual(at(1));
+  });
+
   it('la scala Y non cambia con l’hover, ma segue i dati', async () => {
     await render();
     const yRange = () => {

@@ -1,17 +1,18 @@
-<app-panel>
-  <app-section-header title="Andamento nel tempo" [subtitle]="subtitle()">
+<app-panel class="fixed-height">
+  <app-section-header [title]="lineChartTitle()">
     <div panelActions class="controls">
       <app-choice-group
         [options]="views"
         [value]="view()"
         ariaLabel="Vista dell'andamento"
-        (selected)="view.set($event)"
+        display="icon"
+        (selected)="onViewSelected($event)"
       />
       <app-choice-group
         [options]="granularities"
         [value]="granularity()"
         ariaLabel="Passo dell'andamento"
-        (selected)="granularitySelected.emit($event)"
+        (selected)="onGranularitySelected($event)"
       />
     </div>
   </app-section-header>
@@ -19,32 +20,8 @@
   @if (buckets().length === 0) {
     <p class="message">Nessun movimento nel periodo selezionato.</p>
   } @else {
-    <!-- Nella vista cumulata la serie è una sola: la legenda non distinguerebbe nulla, la nomina il riquadro. -->
-    @if (view() === 'flows') {
-      <ul class="legend">
-        @for (item of series(); track item.key) {
-          <li>
-            <button
-              type="button"
-              [class.off]="!item.visible"
-              [attr.aria-pressed]="item.visible"
-              (click)="toggleSeries(item.key)"
-            >
-              <span
-                class="key"
-                [attr.data-series]="item.key"
-                [style.background]="chartColor(item.color)"
-                aria-hidden="true"
-              ></span>
-              {{ item.label }}
-            </button>
-          </li>
-        }
-      </ul>
-    }
-
     <div class="chart">
-      <div class="plot">
+      <div class="plot" [class.chart-transitioning]="chartTransitioning()">
         <!-- Il riquadro è proiettato dentro il grafico: si posiziona rispetto all'host di `<app-line-chart>`. -->
         <app-line-chart
           [points]="buckets()"
@@ -53,143 +30,89 @@
           [marker]="partialMarker"
           [ariaLabel]="ariaLabel()"
           [zeroLine]="view() === 'cumulative'"
-          [(selectedIndex)]="selectedIndex"
+          [selectedIndex]="selectedIndex()"
+          (selectedIndexChange)="onSelectedIndexChange($event)"
         >
           @if (selectedRow(); as row) {
-            <div
-              class="tooltip"
-              [class.left-side]="tooltipPosition().side === 'left'"
-              role="status"
-              [style.left.%]="tooltipPosition().left"
-              (keydown.escape)="closeTooltip()"
+            <app-chart-tooltip
+              [title]="row.label"
+              [left]="tooltipPosition().left"
+              [side]="tooltipPosition().side"
+              (dismiss)="closeTooltip()"
             >
-              <button
-                type="button"
-                class="tooltip-close"
-                aria-label="Chiudi tooltip"
-                (click)="closeTooltip()"
-              >×</button>
-              <p class="when">{{ row.label }}</p>
-              @if (view() === 'cumulative') {
-                @if (selectedCumulative(); as point) {
-                  <ul>
-                    <li>
-                      <app-amount class="amount" [value]="point.cumulative" />
-                      <span class="name">{{ cumulativeLabel }}</span>
-                    </li>
-                  </ul>
-                  <!-- Il segno lo scrive `<app-amount>`: una variazione nulla resta senza segno. -->
-                  <p class="change"><app-amount [value]="point.change" /> {{ within() }}</p>
-                }
-              } @else {
-                <ul>
-                  @for (item of series(); track item.key; let i = $index) {
-                    @if (item.visible) {
+              <div chartTooltipContent class="tooltip-body">
+                @if (view() === 'cumulative') {
+                  @if (selectedCumulative(); as point) {
+                    <ul>
                       <li>
-                        <!-- `rows` corregge già il segno di 'expenses': nessun tono forzato qui. -->
-                        <app-amount class="amount" [value]="row.values[i]" />
-                        <span class="name">{{ item.label }}</span>
+                        <app-amount class="amount" [value]="point.cumulative" />
+                        <span class="name">{{ cumulativeLabel }}</span>
                       </li>
-                    }
+                    </ul>
+                    <!-- Il segno lo scrive `<app-amount>`: una variazione nulla resta senza segno. -->
+                    <p class="change"><app-amount [value]="point.change" /> {{ within() }}</p>
                   }
-                </ul>
-              }
-              @if (row.bucket.partial) {
-                <p class="note">Intervallo incompleto</p>
-              }
+                } @else {
+                  <ul>
+                    @for (item of series(); track item.key) {
+                      @if (item.visible) {
+                        <li>
+                          <!-- `rows` corregge già il segno di 'expenses': nessun tono forzato qui. -->
+                          <app-amount class="amount" [value]="row.values[item.key]" />
+                          <span class="name">{{ item.label }}</span>
+                        </li>
+                      }
+                    }
+                  </ul>
+                }
+                @if (row.bucket.partial) {
+                  <p class="note">Intervallo incompleto</p>
+                }
+              </div>
               <button
+                chartTooltipFooter
                 type="button"
                 class="tooltip-action"
                 (click)="selectBucketPeriod(row.bucket)"
-              >Filtra su questo periodo</button>
-            </div>
+              >
+                Filtra su questo periodo
+              </button>
+            </app-chart-tooltip>
           }
         </app-line-chart>
       </div>
     </div>
 
-    <div class="footer">
+    <app-panel-footer class="stable-layout">
       @if (hasPartial()) {
-        <p class="note">
-          I punti vuoti sono intervalli coperti solo in parte dai movimenti: il primo e
-          l'ultimo di solito lo sono.
+        <p panelFooterLeft class="note footer-note">
+          I punti vuoti sono intervalli coperti solo in parte dai movimenti: il primo e l'ultimo di
+          solito lo sono.
         </p>
       }
-      <button type="button" class="table-toggle" (click)="showTable.set(!showTable())">
-        {{ showTable() ? 'Nascondi la tabella' : 'Mostra i valori in tabella' }}
-      </button>
-    </div>
-
-    @if (showTable() && view() === 'cumulative') {
-      <div class="scroller">
-        <table class="values">
-          <caption>Valori del saldo netto del periodo</caption>
-          <thead>
-            <tr>
-              <th scope="col">Periodo</th>
-              <th scope="col" class="numeric">Variazione</th>
-              <th scope="col" class="numeric">Cumulato</th>
-            </tr>
-          </thead>
-          <!-- Nessun totale: è l'ultima cella del cumulato, cioè il KPI «Saldo netto». -->
-          <tbody>
-            @for (row of cumulativeRows(); track row.bucket.period) {
-              <tr>
-                <th scope="row">
-                  {{ row.label }}
-                  @if (row.bucket.partial) {
-                    <span class="incomplete">incompleto</span>
-                  }
-                </th>
-                <td class="numeric"><app-amount [value]="row.change" /></td>
-                <td class="numeric"><app-amount [value]="row.cumulative" /></td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    } @else if (showTable()) {
-      <div class="scroller">
-        <table class="values">
-          <caption>Valori dell'andamento nel tempo</caption>
-          <thead>
-            <tr>
-              <th scope="col">Intervallo</th>
-              @for (item of series(); track item.key) {
-                <th scope="col" class="numeric">{{ item.label }}</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of rows(); track row.bucket.period) {
-              <tr>
-                <th scope="row">
-                  {{ row.label }}
-                  @if (row.bucket.partial) {
-                    <span class="incomplete">incompleto</span>
-                  }
-                </th>
-                <!-- `rows`: stessa correzione di segno del riquadro al passaggio del mouse, un solo punto. -->
-                @for (value of row.values; track $index) {
-                  <td class="numeric"><app-amount [value]="value" /></td>
-                }
-              </tr>
-            }
-          </tbody>
-          <tfoot>
-            <tr>
-              <th scope="row">Totale</th>
-              @for (total of totals(); track $index) {
-                <td class="numeric">
-                  @if (total !== null) {
-                    <app-amount [value]="total" />
-                  }
-                </td>
-              }
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    }
+      <!-- Nella vista cumulata la serie è una sola: la legenda non distinguerebbe nulla, la nomina il riquadro. -->
+      @if (view() === 'flows') {
+        <ul class="legend" panelFooterRight>
+          @for (item of series(); track item.key) {
+            <li>
+              <button
+                type="button"
+                [class.off]="!item.visible"
+                [attr.aria-pressed]="item.visible"
+                (click)="toggleSeries(item.key)"
+              >
+                <span
+                  class="key"
+                  [attr.data-series]="item.key"
+                  [style.background]="chartColor(item.color)"
+                  aria-hidden="true"
+                ></span>
+                {{ item.label }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </app-panel-footer>
   }
 </app-panel>

@@ -1,5 +1,5 @@
 import { httpResource } from '@angular/common/http';
-import { Component, computed, input, linkedSignal } from '@angular/core';
+import { Component, computed, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
@@ -7,6 +7,10 @@ import { SectionHeader } from '../../shared/layout/section-header';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { TransactionsTable } from '../../shared/ui/transactions-table';
+import type {
+  TransactionsTableSortDirection,
+  TransactionsTableSortField,
+} from '../../shared/ui/transactions-table.model';
 import { TransactionQueryState, toQueryParams } from '../transactions/transaction-query';
 import { TransactionPage } from '../transactions/transaction.model';
 import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
@@ -38,9 +42,15 @@ export class AnalyticsTransactions {
 
   protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
   protected readonly toQueryParams = toQueryParams;
+  protected readonly sortBy = signal<TransactionsTableSortField>('bookingDate');
+  protected readonly sortDirection = signal<TransactionsTableSortDirection>('desc');
 
   protected readonly transactions = httpResource<TransactionPage>(() =>
-    transactionsRequest(this.query()),
+    transactionsRequest({
+      ...this.query(),
+      sortBy: this.sortBy(),
+      sortDirection: this.sortDirection(),
+    }),
   );
 
   /**
@@ -68,4 +78,14 @@ export class AnalyticsTransactions {
 
     return page !== undefined && page.items.length === page.pagination.total;
   });
+
+  protected onSortSelected(field: TransactionsTableSortField): void {
+    if (this.sortBy() === field) {
+      this.sortDirection.update((direction) => (direction === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    this.sortBy.set(field);
+    this.sortDirection.set('desc');
+  }
 }

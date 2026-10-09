@@ -1,5 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+  TestRequest,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
@@ -11,19 +15,19 @@ import { AnalyticsTransactions } from './analytics-transactions';
 const periodQuery: TransactionQueryState = {
   ...EMPTY_QUERY,
   from: '2026-01-01',
-  to: '2026-12-31'
+  to: '2026-12-31',
 };
 
 /** Il periodo con una categoria fra i filtri. */
 const categoryQuery: TransactionQueryState = {
   ...periodQuery,
-  categoryIds: ['cat-1']
+  categoryIds: ['cat-1'],
 };
 
 /** Altri filtri, per i cambi di criteri. */
 const otherQuery: TransactionQueryState = {
   ...periodQuery,
-  categoryIds: ['cat-2']
+  categoryIds: ['cat-2'],
 };
 
 const transaction = (id: string, description = 'ESSELUNGA'): Transaction => ({
@@ -32,12 +36,12 @@ const transaction = (id: string, description = 'ESSELUNGA'): Transaction => ({
   description,
   amount: -30,
   type: 'EXPENSE',
-  merchant: null
+  merchant: null,
 });
 
 const page = (count: number, total: number, description = 'ESSELUNGA'): TransactionPage => ({
   items: Array.from({ length: count }, (_, i) => transaction(`t-${i}`, description)),
-  pagination: { page: 1, pageSize: 25, total, totalPages: Math.max(1, Math.ceil(total / 25)) }
+  pagination: { page: 1, pageSize: 25, total, totalPages: Math.max(1, Math.ceil(total / 25)) },
 });
 
 describe('AnalyticsTransactions', () => {
@@ -47,6 +51,17 @@ describe('AnalyticsTransactions', () => {
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => host().textContent ?? '';
   const title = (): HTMLElement | null => host().querySelector('h2');
+  const sortableHeader = (label: string): HTMLTableCellElement => {
+    const header = [
+      ...host().querySelectorAll<HTMLTableCellElement>('app-transactions-table th[aria-sort]'),
+    ].find((candidate) => candidate.textContent?.trim().startsWith(label));
+
+    if (!header) {
+      throw new Error(`Intestazione ordinabile "${label}" non trovata`);
+    }
+
+    return header;
+  };
 
   // Non `whenStable()`: aspetterebbe la risposta, che qui la dà il test.
   const settle = async (): Promise<void> => {
@@ -84,7 +99,7 @@ describe('AnalyticsTransactions', () => {
 
     await TestBed.configureTestingModule({
       imports: [AnalyticsTransactions],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
@@ -168,6 +183,39 @@ describe('AnalyticsTransactions', () => {
     expect(table!.querySelector('input[type=checkbox]')).toBeNull();
   });
 
+  it('mostra l’ordinamento predefinito per data decrescente', async () => {
+    await render();
+    await respond(page(3, 3));
+
+    expect(sortableHeader('Data').getAttribute('aria-sort')).toBe('descending');
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('none');
+  });
+
+  it('ordina per una colonna e inverte il verso al clic successivo', async () => {
+    await render();
+    await respond(page(3, 3));
+
+    sortableHeader('Importo').querySelector<HTMLButtonElement>('button')!.click();
+    await settle();
+
+    const descendingRequest = pending()[0];
+    expect(descendingRequest?.request.params.get('sortBy')).toBe('amount');
+    expect(descendingRequest?.request.params.get('sortDirection') ?? 'desc').toBe('desc');
+    descendingRequest!.flush(page(3, 3));
+    await settle();
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('descending');
+
+    sortableHeader('Importo').querySelector<HTMLButtonElement>('button')!.click();
+    await settle();
+
+    const ascendingRequest = pending()[0];
+    expect(ascendingRequest?.request.params.get('sortBy')).toBe('amount');
+    expect(ascendingRequest?.request.params.get('sortDirection')).toBe('asc');
+    ascendingRequest!.flush(page(3, 3));
+    await settle();
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('ascending');
+  });
+
   it('il link apre gli stessi criteri in Movimenti', async () => {
     await render();
     await respond(page(25, 312));
@@ -236,7 +284,7 @@ describe('AnalyticsTransactions', () => {
       { ...categoryQuery, search: 'bio' },
       otherQuery,
       periodQuery,
-      { ...periodQuery, from: '2026-07-06', to: '2026-07-12' }
+      { ...periodQuery, from: '2026-07-06', to: '2026-07-12' },
     ];
 
     await render();

@@ -1,0 +1,53 @@
+:host {
+  position: absolute;
+  z-index: 1;
+  top: var(--space-3);
+  display: block;
+  width: min(15rem, calc(100% - var(--space-6)));
+  pointer-events: auto;
+  transform: translateX(var(--space-3));
+}
+
+:host(.left-side) {
+  transform: translateX(calc(-100% - var(--space-3)));
+}
+
+.tooltip-panel {
+  padding: var(--space-3) var(--space-4);
+}
+
+.tooltip-header {
+  margin-bottom: var(--space-3);
+}
+
+.tooltip-content {
+  overflow-wrap: anywhere;
+}
+
+.tooltip-footer {
+  margin-top: var(--space-3);
+}
+
+.tooltip-close {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-badge);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+}

@@ -20,15 +20,22 @@
           [transactions]="data.items"
           [typeOptions]="typeOptions"
           [showTotal]="complete()"
+          [sortBy]="sortBy()"
+          [sortDirection]="sortDirection()"
+          (sortSelected)="onSortSelected($event)"
         />
 
         <p class="footer">
           @if (complete()) {
-            {{ data.pagination.total }} {{ data.pagination.total === 1 ? 'transazione' : 'transazioni' }}
+            {{ data.pagination.total }}
+            {{ data.pagination.total === 1 ? 'transazione' : 'transazioni' }}
           } @else {
             Mostrate {{ data.items.length }} di {{ data.pagination.total }}
           }
-          · <a routerLink="/transactions" [queryParams]="toQueryParams(query())">Apri in Movimenti →</a>
+          ·
+          <a routerLink="/transactions" [queryParams]="toQueryParams(query())"
+            >Apri in Movimenti →</a
+          >
         </p>
       }
     </div>

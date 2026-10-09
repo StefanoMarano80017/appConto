@@ -9,14 +9,17 @@ import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model
 // line-chart.spec.ts: qui basta un Chart.js finto che accetti di essere creato
 // e che esponga `onClick`, per provare il collegamento dal click al riquadro.
 const chartMocks = (() => {
-  const instances: Array<{ data: any; options: any }> = [];
+  const instances: Array<{ data: any; options: any; activeElements: any[] }> = [];
 
   class MockChart {
     data: any;
     options: any;
+    activeElements: any[] = [];
     update(): void {}
     destroy(): void {}
-    setActiveElements(): void {}
+    setActiveElements(elements: any[]): void {
+      this.activeElements = elements;
+    }
 
     constructor(_canvas: unknown, config: any) {
       this.data = config.data;
@@ -32,7 +35,7 @@ const bucket = (
   period: string,
   income: number,
   expenses: number,
-  partial = false
+  partial = false,
 ): TimelineBucket => ({
   period,
   partial,
@@ -41,7 +44,7 @@ const bucket = (
   withdrawals: 0,
   loans: 0,
   transfers: 0,
-  netMovement: income - expenses
+  netMovement: income - expenses,
 });
 
 const weekly = (): Timeline => ({
@@ -50,8 +53,8 @@ const weekly = (): Timeline => ({
     bucket('2026-06-29', 0, 120.5, true),
     bucket('2026-07-06', 1725, 340, false),
     bucket('2026-07-13', 0, 880.07, false),
-    bucket('2026-07-20', 0, 546, true)
-  ]
+    bucket('2026-07-20', 0, 546, true),
+  ],
 });
 
 describe('AnalyticsTimeline', () => {
@@ -63,15 +66,20 @@ describe('AnalyticsTimeline', () => {
 
   const lineChart = (): LineChart<TimelineBucket> =>
     fixture.debugElement.query(By.directive(LineChart)).componentInstance;
-  const drawnKeys = (): string[] => lineChart().series().map((series) => series.key);
+  const drawnKeys = (): string[] =>
+    lineChart()
+      .series()
+      .map((series) => series.key);
   const xLabels = (): string[] => {
     const label = lineChart().xLabel();
-    return lineChart().points().map((point) => label(point));
+    return lineChart()
+      .points()
+      .map((point) => label(point));
   };
 
   const render = async (
     timeline: Timeline = weekly(),
-    granularity: TimelineGranularity = 'week'
+    granularity: TimelineGranularity = 'week',
   ): Promise<void> => {
     fixture = TestBed.createComponent(AnalyticsTimeline);
     fixture.componentRef.setInput('timeline', timeline);
@@ -79,9 +87,25 @@ describe('AnalyticsTimeline', () => {
     await fixture.whenStable();
   };
 
-  /** Seleziona come farebbe il grafico: il model a due vie torna alla feature. */
+  const updateTimeline = async (
+    timeline: Timeline,
+    granularity: TimelineGranularity = timeline.granularity,
+  ): Promise<void> => {
+    fixture.componentRef.setInput('timeline', timeline);
+    fixture.componentRef.setInput('granularity', granularity);
+    await fixture.whenStable();
+  };
+
+  /** Seleziona come farebbe il grafico: il model emette la modifica alla feature. */
   const select = async (index: number | null): Promise<void> => {
     lineChart().selectedIndex.set(index);
+    await fixture.whenStable();
+  };
+
+  const clickPoint = async (index: number | null): Promise<void> => {
+    chartMocks.instances
+      .at(-1)!
+      .options.onClick({}, index === null ? [] : [{ datasetIndex: 0, index }]);
     await fixture.whenStable();
   };
 
@@ -92,13 +116,49 @@ describe('AnalyticsTimeline', () => {
     await fixture.whenStable();
   };
 
-  const viewButton = (label: string): HTMLButtonElement | undefined =>
-    [...host().querySelectorAll<HTMLButtonElement>('app-choice-group button')].find(
-      (button) => button.textContent?.trim() === label
+  const viewButton = (label: 'Flussi' | 'Cumulato'): HTMLButtonElement => {
+    const group = host().querySelector<HTMLElement>(
+      '[role="group"][aria-label="Vista dell\'andamento"]',
+    );
+    const button = [...(group?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find(
+      (candidate) => candidate.getAttribute('aria-label') === label,
     );
 
+    if (!button) {
+      throw new Error(`Pulsante della vista "${label}" non trovato`);
+    }
+
+    return button;
+  };
+
+  const granularityButton = (label: 'Giorno' | 'Settimana' | 'Mese'): HTMLButtonElement => {
+    const group = host().querySelector<HTMLElement>(
+      '[role="group"][aria-label="Passo dell\'andamento"]',
+    );
+    const button = [...(group?.querySelectorAll<HTMLButtonElement>('button') ?? [])].find(
+      (candidate) => candidate.textContent?.trim() === label,
+    );
+
+    if (!button) {
+      throw new Error(`Pulsante della granularità "${label}" non trovato`);
+    }
+
+    return button;
+  };
+
   const chooseView = async (label: 'Flussi' | 'Cumulato'): Promise<void> => {
-    viewButton(label)?.click();
+    const button = viewButton(label);
+    button.click();
+    await fixture.whenStable();
+
+    if (button.getAttribute('aria-pressed') !== 'true') {
+      throw new Error(`La selezione della vista "${label}" non è avvenuta`);
+    }
+  };
+
+  const chooseGranularity = async (label: 'Giorno' | 'Settimana' | 'Mese'): Promise<void> => {
+    const button = granularityButton(label);
+    button.click();
     await fixture.whenStable();
   };
 
@@ -113,11 +173,11 @@ describe('AnalyticsTimeline', () => {
   beforeEach(async () => {
     chartMocks.instances.length = 0;
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(
-      {} as CanvasRenderingContext2D
+      {} as CanvasRenderingContext2D,
     );
     await TestBed.configureTestingModule({
       imports: [AnalyticsTimeline],
-      providers: [{ provide: CHART_CONSTRUCTOR, useValue: chartMocks.MockChart }]
+      providers: [{ provide: CHART_CONSTRUCTOR, useValue: chartMocks.MockChart }],
     }).compileComponents();
   });
 
@@ -125,14 +185,18 @@ describe('AnalyticsTimeline', () => {
     await render();
 
     expect(lineChart().points()).toEqual(weekly().buckets);
-    expect(lineChart().series().map((series) => series.label)).toEqual(['Entrate', 'Uscite']);
+    expect(
+      lineChart()
+        .series()
+        .map((series) => series.label),
+    ).toEqual(['Entrate', 'Uscite']);
     expect(lineChart().valueAxis()).toBe('amount');
   });
 
   it('non disegna una serie senza valori di entrata', async () => {
     await render({
       granularity: 'week',
-      buckets: [bucket('2026-07-06', 0, 125), bucket('2026-07-13', 0, 80)]
+      buckets: [bucket('2026-07-06', 0, 125), bucket('2026-07-13', 0, 80)],
     });
 
     expect(drawnKeys()).toEqual(['expenses']);
@@ -141,7 +205,7 @@ describe('AnalyticsTimeline', () => {
   it('non disegna una serie senza valori di uscita', async () => {
     await render({
       granularity: 'week',
-      buckets: [bucket('2026-07-06', 125, 0), bucket('2026-07-13', 80, 0)]
+      buckets: [bucket('2026-07-06', 125, 0), bucket('2026-07-13', 80, 0)],
     });
 
     expect(drawnKeys()).toEqual(['income']);
@@ -166,20 +230,20 @@ describe('AnalyticsTimeline', () => {
     expect(series.map((item) => weekly().buckets.map((point) => item.value(point)))).toEqual([
       [0, 1725, 0, 0],
       [120.5, 340, 880.07, 546],
-      [-120.5, 1385, -880.07, -546]
+      [-120.5, 1385, -880.07, -546],
     ]);
     expect(
       [...host().querySelectorAll<HTMLElement>('.legend .key')].map(
-        (swatch) => swatch.style.background
-      )
+        (swatch) => swatch.style.background,
+      ),
     ).toEqual(['var(--color-chart-1)', 'var(--color-chart-5)', 'var(--color-chart-3)']);
   });
 
-  it('la legenda è sempre presente: l\'identità non è solo il colore', async () => {
+  it("la legenda è sempre presente: l'identità non è solo il colore", async () => {
     await render();
 
     const labels = [...host().querySelectorAll('.legend button')].map((button) =>
-      button.textContent?.trim()
+      button.textContent?.trim(),
     );
 
     // «Movimento netto», non «Saldo netto»: è `netMovement`, che conta anche
@@ -188,7 +252,7 @@ describe('AnalyticsTimeline', () => {
     expect(labels).toEqual(['Entrate', 'Uscite', 'Movimento netto']);
   });
 
-  it('non si può nascondere l\'ultima serie visibile', async () => {
+  it("non si può nascondere l'ultima serie visibile", async () => {
     await render();
 
     await toggleLegend('Entrate');
@@ -201,12 +265,11 @@ describe('AnalyticsTimeline', () => {
     await render();
 
     const marker = lineChart().marker();
-    expect(lineChart().points().map((point) => marker(point))).toEqual([
-      'hollow',
-      'auto',
-      'auto',
-      'hollow'
-    ]);
+    expect(
+      lineChart()
+        .points()
+        .map((point) => marker(point)),
+    ).toEqual(['hollow', 'auto', 'auto', 'hollow']);
     expect(text()).toContain('intervalli coperti solo in parte');
   });
 
@@ -214,7 +277,7 @@ describe('AnalyticsTimeline', () => {
     await render();
 
     expect(lineChart().ariaLabel()).toBe(
-      'Andamento nel tempo su 4 intervalli. I valori sono disponibili anche nella tabella.'
+      'Andamento nel tempo su 4 intervalli. I valori sono disponibili anche nella tabella.',
     );
     expect(host().querySelectorAll('[tabindex="0"]').length).toBe(1);
   });
@@ -238,13 +301,125 @@ describe('AnalyticsTimeline', () => {
   it('il click sul grafico arriva alla feature come selezione', async () => {
     await render();
 
-    chartMocks.instances.at(-1)!.options.onClick({}, [
+    await clickPoint(2);
+
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 13 luglio',
+    );
+  });
+
+  it('la selezione segue il periodo riordinato e l’indice evidenziato coincide col riquadro', async () => {
+    await render();
+    await select(1);
+
+    await updateTimeline({
+      granularity: 'week',
+      buckets: [
+        bucket('2026-07-13', 0, 200),
+        bucket('2026-07-20', 0, 300),
+        bucket('2026-07-06', 2222, 400),
+      ],
+    });
+
+    expect(lineChart().selectedIndex()).toBe(2);
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 6 luglio',
+    );
+    expect(tooltip()?.style.left).toBe('100%');
+    expect(tooltip()?.classList.contains('left-side')).toBe(true);
+    expect(chartMocks.instances.at(-1)?.activeElements).toEqual([
       { datasetIndex: 0, index: 2 },
-      { datasetIndex: 1, index: 2 }
+      { datasetIndex: 1, index: 2 },
     ]);
+  });
+
+  it('mantiene il periodo selezionato e aggiorna i valori del riquadro', async () => {
+    await render();
+    await select(1);
+
+    await updateTimeline({
+      granularity: 'week',
+      buckets: [
+        bucket('2026-06-29', 0, 120.5, true),
+        bucket('2026-07-06', 2200, 410),
+        bucket('2026-07-13', 0, 880.07, false),
+        bucket('2026-07-20', 0, 546, true),
+      ],
+    });
+
+    const shown = (tooltip()?.textContent ?? '').replace(/\./g, '');
+    expect(lineChart().selectedIndex()).toBe(1);
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 6 luglio',
+    );
+    expect(shown).toContain('+2200,00');
+    expect(shown).toContain('−410,00');
+  });
+
+  it('chiude il riquadro quando il periodo scompare e non lo ripristina se ricompare', async () => {
+    await render();
+    await select(1);
+
+    const withoutSelectedPeriod: Timeline = {
+      granularity: 'week',
+      buckets: [
+        bucket('2026-06-29', 0, 120.5, true),
+        bucket('2026-07-13', 0, 880.07, false),
+        bucket('2026-07-20', 0, 546, true),
+      ],
+    };
+    await updateTimeline(withoutSelectedPeriod);
+
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
+
+    await updateTimeline(weekly());
+
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
+  });
+
+  it('non associa la selezione a un periodo uguale con granularità diversa', async () => {
+    await render();
+    await select(1);
+
+    await updateTimeline({
+      granularity: 'day',
+      buckets: [bucket('2026-07-06', 100, 50), bucket('2026-07-07', 80, 20)],
+    });
+
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
+  });
+
+  it('ignora in sicurezza un indice non valido senza selezionare un altro bucket', async () => {
+    await render();
+
+    await clickPoint(100);
+
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
+  });
+
+  it('il secondo click sul punto selezionato e Escape deselezionano', async () => {
+    await render();
+    await clickPoint(1);
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 6 luglio',
+    );
+
+    await clickPoint(1);
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
+
+    await clickPoint(2);
+    host()
+      .querySelector('canvas')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await fixture.whenStable();
 
-    expect(host().querySelector('.when')?.textContent).toContain('settimana del 13 luglio');
+    expect(lineChart().selectedIndex()).toBeNull();
+    expect(tooltip()).toBeNull();
   });
 
   // Il caso del round precedente: un bucket a rimborso netto (`expenses`
@@ -256,7 +431,7 @@ describe('AnalyticsTimeline', () => {
   it('il riquadro e la tabella concordano sul segno di un rimborso netto', async () => {
     await render({
       granularity: 'week',
-      buckets: [bucket('2026-07-06', 1000, 300, false), bucket('2026-07-13', 200, -50, false)]
+      buckets: [bucket('2026-07-06', 1000, 300, false), bucket('2026-07-13', 200, -50, false)],
     });
 
     await select(1);
@@ -297,13 +472,17 @@ describe('AnalyticsTimeline', () => {
     expect(lineChart().selectedIndex()).toBeNull();
   });
 
-  it('un\'altra selezione sposta il riquadro, Escape sul riquadro lo chiude', async () => {
+  it("un'altra selezione sposta il riquadro, Escape sul riquadro lo chiude", async () => {
     await render();
     await select(1);
-    expect(host().querySelector('.when')?.textContent).toContain('settimana del 6 luglio');
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 6 luglio',
+    );
 
     await select(2);
-    expect(host().querySelector('.when')?.textContent).toContain('settimana del 13 luglio');
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+      'settimana del 13 luglio',
+    );
 
     tooltip()?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await fixture.whenStable();
@@ -332,6 +511,27 @@ describe('AnalyticsTimeline', () => {
     expect(expensesCell?.textContent?.replace(/\./g, '')).toContain('−880,07');
   });
 
+  it('associa valori e totali alle chiavi delle serie mantenendo ordine e segni', async () => {
+    await render();
+    await openTable();
+
+    const headers = [...host().querySelectorAll('table.values thead th')].map((header) =>
+      header.textContent?.trim(),
+    );
+    expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Movimento netto']);
+
+    const rows = host().querySelectorAll('table.values tbody tr');
+    const middleRow = [...(rows[1]?.querySelectorAll('td.numeric') ?? [])].map((cell) =>
+      (cell.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(middleRow).toEqual(['+1725,00 €', '−340,00 €', '+1385,00 €']);
+
+    const totals = [...host().querySelectorAll('table.values tfoot td.numeric')];
+    expect(totals[0]?.textContent?.replace(/\./g, '')).toContain('+1725,00');
+    expect(totals[1]?.textContent?.replace(/\./g, '')).toContain('−1886,57');
+    expect(totals[2]?.querySelector('app-amount')).toBeNull();
+  });
+
   it('chiede il passo scelto senza cambiarlo da sé', async () => {
     await render();
 
@@ -352,14 +552,14 @@ describe('AnalyticsTimeline', () => {
 
     await render(
       { granularity: 'day', buckets: [bucket('2026-07-06', 10, 5), bucket('2026-07-07', 0, 9)] },
-      'day'
+      'day',
     );
     expect(text()).toContain('giorno');
     expect(xLabels()).toEqual(['06/07', '07/07']);
 
     await render(
       { granularity: 'month', buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)] },
-      'month'
+      'month',
     );
     expect(text()).toContain('mese');
     expect(xLabels()).toEqual(['giu 26', 'lug 26']);
@@ -371,7 +571,7 @@ describe('AnalyticsTimeline', () => {
 
     fixture.componentRef.setInput('timeline', {
       granularity: 'month',
-      buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)]
+      buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)],
     });
     fixture.componentRef.setInput('granularity', 'month');
     await fixture.whenStable();
@@ -419,7 +619,7 @@ describe('AnalyticsTimeline', () => {
 
     // Non apre più una vista a parte: cambia il periodo dei filtri.
     expect(host().querySelector('.tooltip-action')?.textContent?.trim()).toBe(
-      'Filtra su questo periodo'
+      'Filtra su questo periodo',
     );
     expect(tooltip()?.textContent).not.toContain('Apri movimenti');
   });
@@ -446,9 +646,9 @@ describe('AnalyticsTimeline', () => {
     await render(
       {
         granularity: 'month',
-        buckets: [bucket('2026-02', 300, 100)]
+        buckets: [bucket('2026-02', 300, 100)],
       },
-      'month'
+      'month',
     );
     const requested: TimelineSelection[] = [];
     fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
@@ -472,7 +672,7 @@ describe('AnalyticsTimeline', () => {
   it('legge i bucket col passo dei dati, anche se il passo scelto è già un altro', async () => {
     await render(
       { granularity: 'month', buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)] },
-      'day'
+      'day',
     );
 
     expect(xLabels()).toEqual(['giu 26', 'lug 26']);
@@ -480,14 +680,14 @@ describe('AnalyticsTimeline', () => {
     host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
     await fixture.whenStable();
     const rowLabels = [...host().querySelectorAll('table.values tbody th')].map((th) =>
-      th.textContent?.trim()
+      th.textContent?.trim(),
     );
     expect(rowLabels).toEqual(['giugno 2026', 'luglio 2026']);
 
     const requested: TimelineSelection[] = [];
     fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
     await select(1);
-    expect(host().querySelector('.when')?.textContent).toContain('luglio 2026');
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain('luglio 2026');
 
     host().querySelector<HTMLButtonElement>('.tooltip-action')?.click();
 
@@ -507,12 +707,12 @@ describe('AnalyticsTimeline', () => {
     await fixture.whenStable();
 
     const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
-      th.textContent?.trim()
+      th.textContent?.trim(),
     );
     expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Movimento netto']);
 
     const footer = [...host().querySelectorAll('table.values tfoot td')].map((td) =>
-      (td.textContent ?? '').replace(/\./g, '').trim()
+      (td.textContent ?? '').replace(/\./g, '').trim(),
     );
     expect(footer[0]).toContain('+1725,00');
     expect(footer[1]).toContain('−1886,57');
@@ -540,7 +740,11 @@ describe('AnalyticsTimeline', () => {
       const series = lineChart().series();
       expect(series.map((item) => item.label)).toEqual(['Saldo netto del periodo']);
       expect(series.map((item) => item.color)).toEqual(['chart-3']);
-      expect(lineChart().points().map((point) => series[0]!.value(point))).toEqual(CUMULATIVE);
+      expect(
+        lineChart()
+          .points()
+          .map((point) => series[0]!.value(point)),
+      ).toEqual(CUMULATIVE);
       // Sopra o sotto lo zero è la prima cosa che il cumulato racconta.
       expect(lineChart().zeroLine()).toBe(true);
     });
@@ -557,7 +761,7 @@ describe('AnalyticsTimeline', () => {
       await chooseView('Cumulato');
 
       expect(subtitle()).toContain(
-        "Entrate meno uscite, sommate dall'inizio del periodo. Non è il saldo del conto: prelievi, trasferimenti e la quota dei prestiti che resta credito non lo muovono."
+        "Entrate meno uscite, sommate dall'inizio del periodo. Non è il saldo del conto: prelievi, trasferimenti e la quota dei prestiti che resta credito non lo muovono.",
       );
       expect(subtitle()).not.toContain('Stessi movimenti');
     });
@@ -569,6 +773,32 @@ describe('AnalyticsTimeline', () => {
 
       expect(drawnKeys()).toEqual(['income', 'expenses']);
       expect(host().querySelector('.legend')).not.toBeNull();
+    });
+
+    it('anima il grafico quando si cambia vista', async () => {
+      await render();
+
+      expect(host().querySelector('.plot')?.classList.contains('chart-transitioning')).toBe(false);
+
+      await chooseView('Cumulato');
+      expect(host().querySelector('.plot')?.classList.contains('chart-transitioning')).toBe(true);
+
+      await chooseView('Flussi');
+      expect(host().querySelector('.plot')?.classList.contains('chart-transitioning')).toBe(true);
+    });
+
+    it('anima il grafico quando si cambia granularità', async () => {
+      await render();
+
+      const selectedGranularities: TimelineGranularity[] = [];
+      fixture.componentInstance.granularitySelected.subscribe((granularity) =>
+        selectedGranularities.push(granularity),
+      );
+
+      await chooseGranularity('Mese');
+
+      expect(host().querySelector('.plot')?.classList.contains('chart-transitioning')).toBe(true);
+      expect(selectedGranularities).toEqual(['month']);
       expect(lineChart().zeroLine()).toBe(false);
     });
 
@@ -577,12 +807,11 @@ describe('AnalyticsTimeline', () => {
       await chooseView('Cumulato');
 
       const marker = lineChart().marker();
-      expect(lineChart().points().map((point) => marker(point))).toEqual([
-        'hollow',
-        'auto',
-        'auto',
-        'hollow'
-      ]);
+      expect(
+        lineChart()
+          .points()
+          .map((point) => marker(point)),
+      ).toEqual(['hollow', 'auto', 'auto', 'hollow']);
     });
 
     it('il riquadro mostra il cumulato e la variazione dell’intervallo', async () => {
@@ -598,10 +827,32 @@ describe('AnalyticsTimeline', () => {
       expect(shown).not.toContain('Entrate');
     });
 
+    it('mantiene selezionato lo stesso periodo passando tra flussi e cumulato', async () => {
+      await render();
+      await select(1);
+
+      await chooseView('Cumulato');
+      expect(lineChart().selectedIndex()).toBe(1);
+      expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+        'settimana del 6 luglio',
+      );
+      expect(tooltip()?.textContent).toContain('+1264,50');
+
+      await chooseView('Flussi');
+      expect(lineChart().selectedIndex()).toBe(1);
+      expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain(
+        'settimana del 6 luglio',
+      );
+      expect(tooltip()?.textContent).toContain('+1725,00');
+    });
+
     it('la variazione dice il proprio segno e l’unità del passo dei dati', async () => {
       await render(
-        { granularity: 'month', buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)] },
-        'month'
+        {
+          granularity: 'month',
+          buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)],
+        },
+        'month',
       );
       await chooseView('Cumulato');
       await select(1);
@@ -625,8 +876,8 @@ describe('AnalyticsTimeline', () => {
           granularity: 'week',
           period: '2026-07-06',
           range: { from: '2026-07-06', to: '2026-07-12' },
-          label: 'settimana del 6 luglio'
-        }
+          label: 'settimana del 6 luglio',
+        },
       ]);
     });
 
@@ -636,14 +887,14 @@ describe('AnalyticsTimeline', () => {
       await openTable();
 
       const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
-        th.textContent?.trim()
+        th.textContent?.trim(),
       );
       expect(headers).toEqual(['Periodo', 'Variazione', 'Cumulato']);
 
       const cells = [...host().querySelectorAll('table.values tbody tr')].map((row) =>
         [...row.querySelectorAll('td.numeric')].map((td) =>
-          (td.textContent ?? '').replace(/\./g, '').trim()
-        )
+          (td.textContent ?? '').replace(/\./g, '').trim(),
+        ),
       );
       expect(cells[1]?.[0]).toContain('+1385,00');
       expect(cells[1]?.[1]).toContain('+1264,50');

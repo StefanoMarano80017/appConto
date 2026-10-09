@@ -11,11 +11,31 @@ import { niceScale } from './value-scale';
  * abbinare male. Un asse `percent` si aggiunge qui, con il proprio formato e la propria scala.
  */
 const VALUE_AXES = {
-  amount: { format: (value: number) => formatAmount(value), scale: niceScale },
+  amount: { format: formatCompactAmount, scale: niceScale },
 } satisfies Record<
   LineChartValueAxis,
   { format: (value: number) => string; scale: (values: readonly number[]) => { min: number; max: number; ticks: readonly number[] } }
 >;
+
+const compactNumber = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+
+function formatCompactAmount(value: number): string {
+  const magnitude = Math.abs(value);
+
+  if (magnitude >= 1_000_000_000) {
+    return `${compactNumber.format(value / 1_000_000_000)}B €`;
+  }
+
+  if (magnitude >= 1_000_000) {
+    return `${compactNumber.format(value / 1_000_000)}M €`;
+  }
+
+  if (magnitude >= 1_000) {
+    return `${compactNumber.format(value / 1_000)}k €`;
+  }
+
+  return formatAmount(value);
+}
 
 /** Un solo punto di verità per famiglia, dimensione e peso: i valori assenti si omettono. */
 function chartFont(font: LineChartFont): { family?: string; size?: number; weight?: number } {

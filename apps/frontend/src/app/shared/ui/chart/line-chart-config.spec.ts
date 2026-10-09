@@ -122,11 +122,15 @@ describe('lineChartOptions', () => {
     expect(min).toBeLessThanOrEqual(0);
   });
 
-  it('la callback dei tick Y usa formatAmount', () => {
+  it('compatta le etichette dell’asse Y senza cambiare il formatter degli importi', () => {
     const ticks = build().scales?.['y']?.ticks;
     const callback = ticks?.callback;
 
-    expect(callback?.call({} as never, 1234.5, 0, [])).toBe(formatAmount(1234.5));
+    expect(callback?.call({} as never, 999, 0, [])).toBe(formatAmount(999));
+    expect(callback?.call({} as never, 1234.5, 0, [])).toBe('1,2 mila €');
+    expect(callback?.call({} as never, 1_234_567, 0, [])).toBe('1,2 mln €');
+    expect(callback?.call({} as never, 1_234_567_890, 0, [])).toBe('1,2 mld €');
+    expect(callback?.call({} as never, -1234.5, 0, [])).toBe('-1,2 mila €');
   });
 
   it('l’asse Y non scende molto sotto i dati: niente -5000 per un minimo di -69', () => {

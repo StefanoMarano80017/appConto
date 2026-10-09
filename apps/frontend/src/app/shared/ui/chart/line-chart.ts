@@ -62,10 +62,16 @@ export class LineChart<T> {
   private readonly themeStore = inject(ThemeStore);
 
   private readonly theme = signal<LineChartTheme | null>(null);
-  protected readonly hover = signal<number | null>(null);
+  protected readonly hover = signal<{ readonly points: readonly T[]; readonly index: number } | null>(
+    null
+  );
+  private readonly hoverIndex = computed(() => {
+    const hover = this.hover();
+    return hover?.points === this.points() ? hover.index : null;
+  });
 
   /** Il puntatore vince sulla selezione: si evidenzia ciò che si sta guardando. */
-  private readonly activeIndex = computed(() => this.hover() ?? this.selectedIndex());
+  private readonly activeIndex = computed(() => this.hoverIndex() ?? this.selectedIndex());
 
   protected readonly activeElements = computed<readonly ChartDataPoint[]>(() => {
     const index = this.activeIndex();
@@ -100,7 +106,7 @@ export class LineChart<T> {
       theme,
       this.valueAxis(),
       this.valueRange(),
-      { selected: this.selectedIndex(), hover: this.hover() },
+      { selected: this.selectedIndex(), hover: this.hoverIndex() },
       this.zeroLine()
     );
   });
@@ -120,12 +126,21 @@ export class LineChart<T> {
   }
 
   protected onHover(elements: readonly ChartDataPoint[]): void {
-    this.hover.set(elements[0]?.index ?? null);
+    const index = elements[0]?.index;
+    this.hover.set(index === undefined ? null : { points: this.points(), index });
   }
 
   /** Un secondo click sullo stesso punto lo deseleziona. */
   protected onClick(elements: readonly ChartDataPoint[]): void {
     const index = elements[0]?.index;
+    if (
+      index !== undefined &&
+      (!Number.isInteger(index) || index < 0 || index >= this.points().length)
+    ) {
+      this.selectedIndex.set(null);
+      return;
+    }
+
     this.selectedIndex.set(index === undefined || this.selectedIndex() === index ? null : index);
   }
 
@@ -137,7 +152,7 @@ export class LineChart<T> {
     }
 
     const last = this.points().length - 1;
-    const current = this.hover() ?? 0;
+    const current = this.hoverIndex() ?? 0;
     const next = {
       ArrowLeft: current - 1,
       ArrowRight: current + 1,
@@ -152,7 +167,7 @@ export class LineChart<T> {
 
     event.preventDefault();
     const index = Math.min(Math.max(next, 0), last);
-    this.hover.set(index);
+    this.hover.set({ points: this.points(), index });
     this.selectedIndex.set(index);
   }
 

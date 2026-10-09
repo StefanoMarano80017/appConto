@@ -15,11 +15,13 @@
  */
 .legend {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: var(--space-2) var(--space-6);
   list-style: none;
-  margin: var(--space-7) 0 var(--space-4);
+  margin: 0;
   padding: 0;
+  white-space: nowrap;
 
   button {
     display: flex;
@@ -54,76 +56,67 @@
   display: block;
 }
 
+app-panel {
+  --panel-height: 44rem;
+}
+
+app-section-header,
+.chart,
+app-panel-footer {
+  flex: none;
+}
+
+app-panel-footer {
+  margin-top: auto;
+}
+
 /*
  * Su schermi stretti il grafico scorre invece di rimpicciolirsi: schiacciato in
  * 270 pixel le etichette degli assi diventerebbero illeggibili.
  */
 .chart {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 16.25rem;
   overflow-x: auto;
   padding-bottom: var(--space-2);
 }
 
 /*
- * Solo le dimensioni: il riquadro è proiettato in `<app-line-chart>`, che è
- * già il suo riferimento di posizione (`top`/`left` in percentuale).
+ * Il grafico prende l'altezza assegnata da `.chart`; la misura minima
+ * mantiene gli assi leggibili quando la tabella è aperta.
  */
 .plot {
+  flex: 1 0 auto;
   min-width: 30rem;
   width: 100%;
-  height: 16.25rem;
+  height: 100%;
+  min-height: 16.25rem;
 }
 
-.tooltip {
-  position: absolute;
-  z-index: 1;
-  top: var(--space-3);
-  transform: translateX(var(--space-3));
-  min-width: 0;
-  max-width: 15rem;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-tooltip);
-  pointer-events: auto;
-  padding-right: var(--space-8);
+.plot.chart-transitioning {
+  animation: chart-view-transition 220ms ease-out both;
+}
 
-  &.left-side {
-    transform: translateX(calc(-100% - var(--space-3)));
+@keyframes chart-view-transition {
+  from {
+    opacity: 0.35;
+    transform: translateY(var(--space-2));
   }
 
-  .tooltip-close {
-    position: absolute;
-    top: var(--space-2);
-    right: var(--space-2);
-    display: grid;
-    width: 1.5rem;
-    height: 1.5rem;
-    place-items: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-badge);
-    background: transparent;
-    color: var(--color-text-muted);
-    font: inherit;
-    cursor: pointer;
-
-    &:hover {
-      background: var(--color-surface-hover);
-      color: var(--color-text-primary);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 1px;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
 
-  .when {
-    margin: 0 0 var(--space-2);
-    @include typography.text('caption');
+@media (prefers-reduced-motion: reduce) {
+  .plot.chart-transitioning {
+    animation: none;
   }
+}
 
+.tooltip-body {
   ul {
     list-style: none;
     margin: 0;
@@ -150,36 +143,29 @@
     margin: var(--space-3) 0 0;
     @include typography.text('caption');
   }
-
-  .tooltip-action {
-    margin-top: var(--space-3);
-    padding: var(--space-2) 0 0;
-    border: 0;
-    background: none;
-    color: var(--color-primary);
-    font: inherit;
-    @include typography.text('caption');
-    cursor: pointer;
-    text-align: left;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
 }
 
-.footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-4) var(--space-8);
-  margin-top: var(--space-6);
+.tooltip-action {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  @include typography.text('caption');
+  cursor: pointer;
+  text-align: left;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .note {
   margin: 0;
   @include typography.text('caption');
+}
+
+.footer-note {
+  white-space: nowrap;
 }
 
 .table-toggle {
@@ -198,7 +184,9 @@
 }
 
 .scroller {
-  overflow-x: auto;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
   margin-top: var(--space-6);
 }
 
@@ -273,7 +261,7 @@
 }
 
 /* La variazione dell'intervallo, sotto il cumulato: un dato di contorno, non una seconda serie. */
-.tooltip .change {
+.tooltip-body .change {
   @include typography.text('caption');
 
   color: var(--color-text-muted);
