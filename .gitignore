@@ -21,3 +21,5 @@ apps/backend/data/
 .env.*
 # Package portatile prodotto da "npm run package"
 /dist-package/
+
+.superpowers/
