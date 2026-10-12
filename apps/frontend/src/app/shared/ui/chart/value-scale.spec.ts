@@ -45,4 +45,28 @@ describe('niceScale', () => {
       expect(ticks.length).toBeLessThanOrEqual(8);
     }
   });
+
+  it('non allunga l’asse fino al tick tondo se i dati ne restano lontani', () => {
+    const scale = niceScale([-69, 4000, 9830]);
+
+    // Prima il minimo diventava -5000: un terzo dell'altezza sprecato.
+    expect(scale.min).toBeGreaterThanOrEqual(-600);
+    expect(scale.min).toBeLessThan(-69);
+    expect(scale.max).toBeGreaterThanOrEqual(9830);
+    expect(scale.ticks).toEqual([0, 2500, 5000, 7500, 10000]);
+  });
+
+  it('con soli valori non negativi il minimo resta zero', () => {
+    expect(niceScale([0, 120, 480]).min).toBe(0);
+    expect(niceScale([300, 900]).min).toBe(0);
+  });
+
+  it('le linee guida cadono dentro l’intervallo dell’asse', () => {
+    const { min, max, ticks } = niceScale([-69, 9830]);
+
+    for (const tick of ticks) {
+      expect(tick).toBeGreaterThanOrEqual(min);
+      expect(tick).toBeLessThanOrEqual(max);
+    }
+  });
 });

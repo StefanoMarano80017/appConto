@@ -11,11 +11,31 @@ import { niceScale } from './value-scale';
  * abbinare male. Un asse `percent` si aggiunge qui, con il proprio formato e la propria scala.
  */
 const VALUE_AXES = {
-  amount: { format: (value: number) => formatAmount(value), scale: niceScale },
+  amount: { format: formatCompactAmount, scale: niceScale },
 } satisfies Record<
   LineChartValueAxis,
-  { format: (value: number) => string; scale: (values: readonly number[]) => { min: number; max: number } }
+  { format: (value: number) => string; scale: (values: readonly number[]) => { min: number; max: number; ticks: readonly number[] } }
 >;
+
+const compactNumber = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+
+function formatCompactAmount(value: number): string {
+  const magnitude = Math.abs(value);
+
+  if (magnitude >= 1_000_000_000) {
+    return `${compactNumber.format(value / 1_000_000_000)}B €`;
+  }
+
+  if (magnitude >= 1_000_000) {
+    return `${compactNumber.format(value / 1_000_000)}M €`;
+  }
+
+  if (magnitude >= 1_000) {
+    return `${compactNumber.format(value / 1_000)}k €`;
+  }
+
+  return formatAmount(value);
+}
 
 /** Un solo punto di verità per famiglia, dimensione e peso: i valori assenti si omettono. */
 function chartFont(font: LineChartFont): { family?: string; size?: number; weight?: number } {
@@ -78,17 +98,19 @@ export function lineChartValueRange(
 /**
  * `range` è l'intervallo già calcolato con `lineChartValueRange`: si calcola
  * a parte perché non dipende dall'hover e le opzioni si rifanno a ogni
- * movimento del puntatore.
+ * movimento del puntatore. `zeroLine` aggiunge alle guide la linea dello
+ * zero; spenta, la chiave non c'è proprio e il plugin non la disegna.
  */
 export function lineChartOptions(
   theme: LineChartTheme,
   axis: LineChartValueAxis,
-  range: { min: number; max: number },
+  range: { min: number; max: number; ticks?: readonly number[] },
   guides: LineGuidesState,
+  zeroLine = false,
 ): ChartOptionsWithoutInteractionCallbacks {
   const geometry = LINE_CHART_GEOMETRY;
   const { format } = VALUE_AXES[axis];
-  const { min, max } = range;
+  const { min, max, ticks } = range;
 
   return {
     responsive: true,
@@ -105,6 +127,7 @@ export function lineChartOptions(
           selected: { color: theme.guideSelected, ...geometry.guideSelected },
           hover: { color: theme.guideHover, ...geometry.guideHover },
         },
+        ...(zeroLine ? { zero: { color: theme.zeroLine, ...geometry.zeroLine } } : {}),
       },
     },
     scales: {
@@ -122,6 +145,14 @@ export function lineChartOptions(
       y: {
         min,
         max,
+        // L'asse segue i dati: le linee guida tonde le decide la scala, non Chart.js.
+        ...(ticks === undefined
+          ? {}
+          : {
+              afterBuildTicks: (scale: { ticks: { value: number }[] }) => {
+                scale.ticks = ticks.map((value) => ({ value }));
+              },
+            }),
         border: { display: false },
         grid: { color: theme.grid, drawTicks: false },
         ticks: {

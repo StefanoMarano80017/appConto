@@ -1,7 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+  TestRequest,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
 import { EMPTY_QUERY, TransactionQueryState } from '../transactions/transaction-query';
 import { Transaction, TransactionPage } from '../transactions/transaction.model';
@@ -11,19 +14,19 @@ import { AnalyticsTransactions } from './analytics-transactions';
 const periodQuery: TransactionQueryState = {
   ...EMPTY_QUERY,
   from: '2026-01-01',
-  to: '2026-12-31'
+  to: '2026-12-31',
 };
 
 /** Il periodo con una categoria fra i filtri. */
 const categoryQuery: TransactionQueryState = {
   ...periodQuery,
-  categoryIds: ['cat-1']
+  categoryIds: ['cat-1'],
 };
 
 /** Altri filtri, per i cambi di criteri. */
 const otherQuery: TransactionQueryState = {
   ...periodQuery,
-  categoryIds: ['cat-2']
+  categoryIds: ['cat-2'],
 };
 
 const transaction = (id: string, description = 'ESSELUNGA'): Transaction => ({
@@ -32,12 +35,22 @@ const transaction = (id: string, description = 'ESSELUNGA'): Transaction => ({
   description,
   amount: -30,
   type: 'EXPENSE',
-  merchant: null
+  merchant: null,
 });
 
-const page = (count: number, total: number, description = 'ESSELUNGA'): TransactionPage => ({
-  items: Array.from({ length: count }, (_, i) => transaction(`t-${i}`, description)),
-  pagination: { page: 1, pageSize: 25, total, totalPages: Math.max(1, Math.ceil(total / 25)) }
+const page = (
+  count: number,
+  total: number,
+  description = 'ESSELUNGA',
+  current = 1,
+): TransactionPage => ({
+  items: Array.from({ length: count }, (_, i) => transaction(`t-${current}-${i}`, description)),
+  pagination: {
+    page: current,
+    pageSize: 25,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / 25)),
+  },
 });
 
 describe('AnalyticsTransactions', () => {
@@ -47,6 +60,17 @@ describe('AnalyticsTransactions', () => {
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => host().textContent ?? '';
   const title = (): HTMLElement | null => host().querySelector('h2');
+  const sortableHeader = (label: string): HTMLTableCellElement => {
+    const header = [
+      ...host().querySelectorAll<HTMLTableCellElement>('app-transactions-table th[aria-sort]'),
+    ].find((candidate) => candidate.textContent?.trim().startsWith(label));
+
+    if (!header) {
+      throw new Error(`Intestazione ordinabile "${label}" non trovata`);
+    }
+
+    return header;
+  };
 
   // Non `whenStable()`: aspetterebbe la risposta, che qui la dà il test.
   const settle = async (): Promise<void> => {
@@ -84,7 +108,7 @@ describe('AnalyticsTransactions', () => {
 
     await TestBed.configureTestingModule({
       imports: [AnalyticsTransactions],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
@@ -133,29 +157,101 @@ describe('AnalyticsTransactions', () => {
     expect(host().querySelector('button[aria-label="Chiudi dettaglio"]')).toBeNull();
   });
 
-  it('un’anteprima parziale lo dichiara e nasconde il totale', async () => {
+  it('su più pagine dichiara quali righe mostra e nasconde il totale', async () => {
     await render();
     await respond(page(25, 312));
 
-    expect(text()).toContain('Mostrate 25 di 312');
+    expect(text()).toContain('1–25 di 312 transazioni');
     expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(25);
+    // Il totale di una sola pagina sembrerebbe quello del periodo.
     expect(host().querySelector('app-transactions-table tfoot')).toBeNull();
   });
 
-  it('quando ci sono tutte, conta e mostra il totale', async () => {
+  it('quando ci sono tutte, mostra il totale', async () => {
     await render();
     await respond(page(3, 3));
 
-    expect(text()).toContain('3 transazioni');
-    expect(text()).not.toContain('Mostrate');
+    expect(text()).toContain('1–3 di 3 transazioni');
     expect(host().querySelector('app-transactions-table tfoot')).not.toBeNull();
+  });
 
-    fixture.destroy();
+  it('la paginazione sta sopra e sotto la tabella, nello stesso pannello', async () => {
     await render();
-    await respond(page(1, 1));
+    await respond(page(25, 60));
 
-    expect(text()).toContain('1 transazione');
-    expect(text()).not.toContain('1 transazioni');
+    expect(host().querySelectorAll('app-panel app-transactions-pagination')).toHaveLength(2);
+    expect(host().querySelector('app-panel app-transactions-table')).not.toBeNull();
+  });
+
+  it('chiede la pagina scelta nella paginazione', async () => {
+    await render();
+    await respond(page(25, 60));
+
+    const second = [
+      ...host().querySelectorAll<HTMLButtonElement>('app-transactions-pagination .page'),
+    ].find((button) => button.textContent?.trim() === '2');
+    second!.click();
+    await settle();
+
+    const [request] = pending();
+    expect(request.request.params.get('page')).toBe('2');
+    // La pagina non cambia i criteri: restano quelli ricevuti.
+    expect(request.request.params.get('categoryIds')).toBe('cat-1');
+    request.flush(page(25, 60, 'SECONDA', 2));
+    await settle();
+
+    expect(text()).toContain('26–50 di 60 transazioni');
+  });
+
+  it('chiede la dimensione di pagina scelta, ripartendo dalla prima', async () => {
+    await render();
+    await respond(page(25, 60));
+
+    const size = host().querySelector<HTMLSelectElement>('app-transactions-pagination select')!;
+    size.value = '50';
+    size.dispatchEvent(new Event('change'));
+    await settle();
+
+    const [request] = pending();
+    expect(request.request.params.get('pageSize')).toBe('50');
+    expect(request.request.params.has('page')).toBe(false);
+    await finish();
+  });
+
+  it('cambiando criteri o ordinamento torna alla prima pagina', async () => {
+    await render();
+    await respond(page(25, 60));
+
+    const goToSecond = async (): Promise<void> => {
+      [...host().querySelectorAll<HTMLButtonElement>('app-transactions-pagination .page')]
+        .find((button) => button.textContent?.trim() === '2')!
+        .click();
+      await settle();
+      const [request] = pending();
+      expect(request.request.params.get('page')).toBe('2');
+      request.flush(page(25, 60, 'SECONDA', 2));
+      await settle();
+    };
+
+    await goToSecond();
+    fixture.componentRef.setInput('query', otherQuery);
+    await settle();
+
+    const [afterQuery] = pending();
+    expect(afterQuery.request.params.get('categoryIds')).toBe('cat-2');
+    // Prima pagina: il parametro predefinito non compare.
+    expect(afterQuery.request.params.has('page')).toBe(false);
+    afterQuery.flush(page(25, 60));
+    await settle();
+
+    await goToSecond();
+    sortableHeader('Importo').querySelector<HTMLButtonElement>('button')!.click();
+    await settle();
+
+    const [afterSort] = pending();
+    expect(afterSort.request.params.get('sortBy')).toBe('amount');
+    expect(afterSort.request.params.has('page')).toBe(false);
+    await finish();
   });
 
   it('la tabella è in sola lettura', async () => {
@@ -168,15 +264,37 @@ describe('AnalyticsTransactions', () => {
     expect(table!.querySelector('input[type=checkbox]')).toBeNull();
   });
 
-  it('il link apre gli stessi criteri in Movimenti', async () => {
+  it('mostra l’ordinamento predefinito per data decrescente', async () => {
     await render();
-    await respond(page(25, 312));
+    await respond(page(3, 3));
 
-    const link = host().querySelector<HTMLAnchorElement>('a[href*="/transactions"]');
-    expect(link).not.toBeNull();
-    expect(link!.textContent).toContain('Apri in Movimenti →');
-    expect(link!.getAttribute('href')).toContain('categoryIds=cat-1');
-    expect(link!.getAttribute('href')).toContain('from=2026-01-01');
+    expect(sortableHeader('Data').getAttribute('aria-sort')).toBe('descending');
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('none');
+  });
+
+  it('ordina per una colonna e inverte il verso al clic successivo', async () => {
+    await render();
+    await respond(page(3, 3));
+
+    sortableHeader('Importo').querySelector<HTMLButtonElement>('button')!.click();
+    await settle();
+
+    const descendingRequest = pending()[0];
+    expect(descendingRequest?.request.params.get('sortBy')).toBe('amount');
+    expect(descendingRequest?.request.params.get('sortDirection') ?? 'desc').toBe('desc');
+    descendingRequest!.flush(page(3, 3));
+    await settle();
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('descending');
+
+    sortableHeader('Importo').querySelector<HTMLButtonElement>('button')!.click();
+    await settle();
+
+    const ascendingRequest = pending()[0];
+    expect(ascendingRequest?.request.params.get('sortBy')).toBe('amount');
+    expect(ascendingRequest?.request.params.get('sortDirection')).toBe('asc');
+    ascendingRequest!.flush(page(3, 3));
+    await settle();
+    expect(sortableHeader('Importo').getAttribute('aria-sort')).toBe('ascending');
   });
 
   it('mostra il caricamento, poi l’errore con riprova', async () => {
@@ -236,7 +354,7 @@ describe('AnalyticsTransactions', () => {
       { ...categoryQuery, search: 'bio' },
       otherQuery,
       periodQuery,
-      { ...periodQuery, from: '2026-07-06', to: '2026-07-12' }
+      { ...periodQuery, from: '2026-07-06', to: '2026-07-12' },
     ];
 
     await render();
@@ -246,16 +364,15 @@ describe('AnalyticsTransactions', () => {
       fixture.componentRef.setInput('query', query);
       await settle();
 
-      const content = host().querySelector('.content');
-      expect(content?.classList.contains('stale')).toBe(true);
-      expect(content?.getAttribute('aria-busy')).toBe('true');
+      expect(host().querySelector('app-panel')?.classList.contains('stale')).toBe(true);
+      expect(host().querySelector('app-panel')?.getAttribute('aria-busy')).toBe('true');
       expect(text()).not.toContain('Caricamento in corso…');
       expect(host().querySelectorAll('app-transactions-table tbody tr')).toHaveLength(2);
 
       await respond(page(2, 2, `NUOVE-${index}`));
 
-      expect(host().querySelector('.content.stale')).toBeNull();
-      expect(host().querySelector('.content')?.getAttribute('aria-busy')).toBe('false');
+      expect(host().querySelector('app-panel.stale')).toBeNull();
+      expect(host().querySelector('app-panel[aria-busy]')).toBeNull();
       const rows = host().querySelectorAll('app-transactions-table tbody tr');
       expect(rows).toHaveLength(2);
       expect(rows[0].textContent).toContain(`NUOVE-${index}`);

@@ -13,6 +13,13 @@
   padding: var(--space-7);
 }
 
+:host(.fixed-height) > .panel {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: var(--panel-height, 44rem);
+}
+
 /*
  * L'ultimo pannello non porta la distanza dal successivo, perché non c'è un
  * successivo. Serve dove un pannello deve arrivare a filo del contenitore:

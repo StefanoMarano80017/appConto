@@ -1,3 +1,6 @@
+import type { TemplateRef } from '@angular/core';
+import type { TransactionsPagination } from './transactions-pagination.model';
+
 /**
  * Il contratto della tabella dei movimenti condivisa.
  *
@@ -96,4 +99,37 @@ export interface TransactionsTableExtraColumnContext<
   R extends TransactionsTableRow = TransactionsTableRow,
 > {
   readonly $implicit: R;
+}
+
+/**
+ * La colonna aggiuntiva, in coda alle altre: intestazione e template di cella.
+ *
+ * È un template e non contenuto proiettato perché va reso una volta per riga,
+ * con la riga come contesto. Serve a ciò che la tabella non deve sapere: la
+ * colonna dei prestiti, con i suoi link e le sue regole, è della feature che
+ * la ospita.
+ *
+ * Arriva come input e non come direttiva figlia: la tabella non è più scritta
+ * direttamente nella pagina ma dentro `TransactionsTablePanel`, e un template
+ * proiettato non può attraversare un componente intermedio senza che quello
+ * lo riproietti. Un oggetto si passa e basta, a qualunque profondità.
+ *
+ * La colonna c'è finché c'è l'oggetto: `null` la toglie, così chi ospita la
+ * tabella decide quando mostrarla senza un input apposta.
+ */
+export interface TransactionsTableExtraColumnDef<
+  R extends TransactionsTableRow = TransactionsTableRow,
+> {
+  /** L'intestazione della colonna. Non è ordinabile: è un'aggiunta, non un dato del movimento. */
+  readonly label: string;
+  readonly template: TemplateRef<TransactionsTableExtraColumnContext<R>>;
+}
+
+/**
+ * Una pagina di righe con la sua paginazione: la forma che la risposta del
+ * backend ha già (`TransactionPage` della feature la soddisfa così com'è).
+ */
+export interface TransactionsTablePage<R extends TransactionsTableRow = TransactionsTableRow> {
+  readonly items: readonly R[];
+  readonly pagination: TransactionsPagination;
 }

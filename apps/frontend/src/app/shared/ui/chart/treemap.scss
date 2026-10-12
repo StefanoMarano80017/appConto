@@ -1,0 +1,114 @@
+@use '../../styles/typography';
+
+/* L'host riempie il contenitore: le tessere si posizionano in % su di lui. */
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+
+.treemap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * Leggibilità sopra colori che non scegliamo noi (quelli delle categorie li
+ * sceglie l'utente): il riempimento non è il colore pieno ma il colore
+ * mescolato alla superficie, così il testo nel colore primario del tema ha
+ * sempre il contrasto di un testo sulla superficie, chiaro o scuro che sia il
+ * colore. Il colore pieno resta riconoscibile nella fascia in alto.
+ *
+ * Il bordo nel colore della superficie fa da fuga fra le tessere senza
+ * spostarle: le % del layout restano esatte.
+ */
+.tile {
+  /* Il colore della tessera arriva dallo stile in linea; questo è il ripiego neutro. */
+  --tile-color: var(--color-chart-neutral);
+
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  overflow: hidden;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-badge);
+  background: color-mix(in srgb, var(--tile-color) 30%, var(--color-surface));
+  box-shadow: inset 0 3px 0 var(--tile-color);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    left 200ms ease,
+    top 200ms ease,
+    width 200ms ease,
+    height 200ms ease,
+    opacity 150ms ease,
+    background-color 150ms ease;
+
+  &:hover {
+    background: color-mix(in srgb, var(--tile-color) 42%, var(--color-surface));
+  }
+
+  &:hover .name {
+    text-decoration: underline;
+  }
+
+  /* Sopra le vicine, altrimenti il loro bordo coprirebbe l'anello. */
+  &:focus-visible {
+    z-index: 1;
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+}
+
+/* Come la ciambella: chi non è in risalto si ritira, senza sparire. */
+.tile.dimmed {
+  opacity: 0.35;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 0.7;
+  }
+}
+
+/* Il testo non va mai a capo oltre la tessera: si tronca, l'intero è nel title. */
+.name,
+.amount,
+.share {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name {
+  @include typography.text('secondary');
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.amount {
+  @include typography.text('caption');
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.share {
+  @include typography.text('caption');
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile {
+    transition: none;
+  }
+}

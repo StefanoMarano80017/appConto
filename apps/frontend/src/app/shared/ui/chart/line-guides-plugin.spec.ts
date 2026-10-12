@@ -87,6 +87,76 @@ describe('lineGuidesPlugin', () => {
     expect(draw({ ...OPTIONS, selected: 0, hover: 1 }, [])).toEqual([]);
   });
 
+  describe('linea dello zero', () => {
+    interface Segment {
+      from: [number, number];
+      to: [number, number];
+      color: string;
+      width: number;
+      dash: number[];
+    }
+
+    /** Come `draw`, ma registra i segmenti interi e ha anche l'asse Y. */
+    function segments(options: LineGuidesOptions, range = { min: -100, max: 100 }): Segment[] {
+      const drawn: Segment[] = [];
+      let from: [number, number] = [0, 0];
+      let to: [number, number] = [0, 0];
+      let color = '';
+      let width = 0;
+      let dash: number[] = [];
+      const ctx = {
+        save: () => undefined,
+        beginPath: () => undefined,
+        moveTo: (x: number, y: number) => (from = [x, y]),
+        lineTo: (x: number, y: number) => (to = [x, y]),
+        setLineDash: (nextDash: number[]) => (dash = nextDash),
+        stroke: () => drawn.push({ from, to, color, width, dash }),
+        restore: () => undefined,
+        set strokeStyle(value: string) {
+          color = value;
+        },
+        set lineWidth(value: number) {
+          width = value;
+        },
+      };
+      const chart = {
+        ctx,
+        chartArea: { top: 0, bottom: 200, left: 10, right: 310 },
+        scales: {
+          x: { getPixelForValue: (index: number) => (index + 1) * 10 },
+          // Valori alti in alto, come in un canvas: 100 → 0, −100 → 200.
+          y: { min: range.min, max: range.max, getPixelForValue: (value: number) => 100 - value },
+        },
+        data: { labels: ['a', 'b', 'c', 'd'] },
+      };
+
+      lineGuidesPlugin.beforeDatasetsDraw?.(chart as unknown as Chart<'line'>, { cancelable: true }, options);
+      return drawn;
+    }
+
+    const ZERO = { color: 'strong', width: 1, dash: [] };
+
+    it('senza `zero` non c’è nessuna linea orizzontale', () => {
+      expect(segments(OPTIONS)).toEqual([]);
+    });
+
+    it('con `zero` traccia lo zero da un bordo all’altro dell’area dati', () => {
+      expect(segments({ ...OPTIONS, zero: ZERO })).toEqual([
+        { from: [10, 100], to: [310, 100], color: 'strong', width: 1, dash: [] },
+      ]);
+    });
+
+    it('lo zero sta sotto le guide verticali: si disegna per primo', () => {
+      const drawn = segments({ ...OPTIONS, zero: ZERO, selected: 1 });
+
+      expect(drawn.map((segment) => segment.color)).toEqual(['strong', 'blue']);
+    });
+
+    it('se lo zero è fuori scala non lo disegna sul bordo', () => {
+      expect(segments({ ...OPTIONS, zero: ZERO }, { min: 10, max: 100 })).toEqual([]);
+    });
+  });
+
   it('senza stili non disegna nulla', () => {
     const partial: Partial<LineGuidesOptions> = { selected: 1, hover: 2 };
     expect(draw(partial as LineGuidesOptions)).toEqual([]);

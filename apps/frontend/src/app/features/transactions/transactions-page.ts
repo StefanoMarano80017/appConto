@@ -1,5 +1,14 @@
 import { httpResource } from '@angular/common/http';
-import { Component, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { API_BASE_URL } from '../../core/api';
@@ -9,13 +18,11 @@ import { LoanLink, LoanLinks, indexLinksByTransaction } from '../loans/loan.mode
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
 import { PageLayout } from '../../shared/layout/page-layout';
-import { Panel } from '../../shared/layout/panel';
-import { EmptyState } from '../../shared/ui/empty-state';
-import { ErrorRetry } from '../../shared/ui/error-retry';
-import {
-  TransactionsTable,
-  TransactionsTableExtraColumn,
-} from '../../shared/ui/transactions-table';
+import { TransactionsTablePanel } from '../../shared/ui/transactions-table-panel';
+import type {
+  TransactionsTableExtraColumnContext,
+  TransactionsTableExtraColumnDef,
+} from '../../shared/ui/transactions-table.model';
 import {
   TransactionQueryState,
   hasFilters,
@@ -23,9 +30,8 @@ import {
   toQueryParams,
   TransactionSortField,
 } from './transaction-query';
-import { TransactionPage } from './transaction.model';
+import { Transaction, TransactionPage } from './transaction.model';
 import { TransactionsApi, transactionsRequest } from './transactions.api';
-import { TransactionsPagination } from './transactions-pagination';
 import { TransactionsToolbar } from './transactions-toolbar';
 import { createDeleteState } from './transaction-delete';
 import { createSelectionState } from './transaction-selection';
@@ -35,9 +41,6 @@ import { TRANSACTION_TYPE_OPTIONS } from './transaction-type-options';
 
 /** Quanto attendere prima di cercare: digitare non deve significare una richiesta per tasto. */
 const SEARCH_DEBOUNCE_MS = 300;
-
-/** Righe finte mostrate durante il primo caricamento. */
-const SKELETON_ROWS = 8;
 
 /** Un solo elenco vuoto per tutte le righe senza legami: niente array nuovi a ogni giro. */
 const NO_LINKS: readonly LoanLink[] = [];
@@ -52,18 +55,12 @@ const NO_LINKS: readonly LoanLink[] = [];
 @Component({
   selector: 'app-transactions-page',
   imports: [
-    EmptyState,
-    ErrorRetry,
     PageLayout,
-    Panel,
     TransactionLoanCell,
-    TransactionsPagination,
-    TransactionsTable,
-    TransactionsTableExtraColumn,
+    TransactionsTablePanel,
     TransactionsToolbar,
   ],
   templateUrl: './transactions-page.html',
-  styleUrl: './transactions-page.scss',
 })
 export class TransactionsPage implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
@@ -95,6 +92,19 @@ export class TransactionsPage implements OnDestroy {
     this.loanLinks.hasValue() ? this.loanLinks.value().links : null,
   );
 
+  private readonly loanColumn =
+    viewChild.required<TemplateRef<TransactionsTableExtraColumnContext<Transaction>>>('loanColumn');
+
+  /**
+   * La colonna dei prestiti.
+   *
+   * Resta nascosta finché i legami non sono arrivati. Un elenco, anche vuoto,
+   * la mostra: «crea prestito» ha senso anche se nessun prestito esiste ancora.
+   */
+  protected readonly extraColumn = computed<TransactionsTableExtraColumnDef<Transaction> | null>(
+    () => (this.links() === null ? null : { label: 'Prestito', template: this.loanColumn() }),
+  );
+
   /** I legami indicizzati per movimento: una volta per risposta, non una per cella. */
   private readonly linksByTransaction = computed(() => indexLinksByTransaction(this.links() ?? []));
 
@@ -120,8 +130,6 @@ export class TransactionsPage implements OnDestroy {
   protected readonly merchantItems = computed(() =>
     this.merchants.hasValue() ? this.merchants.value() : [],
   );
-
-  protected readonly skeletonRows = Array.from({ length: SKELETON_ROWS });
 
   protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
 

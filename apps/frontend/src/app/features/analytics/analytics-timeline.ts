@@ -1,22 +1,38 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { DateRange } from '../../core/period';
 import { Panel } from '../../shared/layout/panel';
+import { PanelFooter } from '../../shared/layout/panel-footer';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { Amount } from '../../shared/ui/amount';
+import { ChartTooltip } from '../../shared/ui/chart/chart-tooltip';
 import { LineChart } from '../../shared/ui/chart/line-chart';
 import {
   chartColorVar,
   type LinePointMarker,
   type LineSeries,
 } from '../../shared/ui/chart/line-chart.model';
-import { ChoiceGroup } from '../../shared/ui/choice-group';
+import { ChoiceGroup, type ChoiceOption } from '../../shared/ui/choice-group';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
+import { cumulativeNet, type CumulativePoint } from './timeline-cumulative';
+
+import { LucideChartNoAxesCombined, LucideChartScatter } from '@lucide/angular';
 
 const shortMonth = new Intl.DateTimeFormat('it-IT', { month: 'short', year: '2-digit' });
 const shortDay = new Intl.DateTimeFormat('it-IT', { day: '2-digit', month: '2-digit' });
 const longDay = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long' });
 const longMonth = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' });
+const CHART_TRANSITION_MS = 220;
 
 /** L'ordine è anche l'ordine della legenda, del grafico e delle colonne in tabella. */
 const SERIES_KEYS = ['income', 'expenses', 'net'] as const;
@@ -38,15 +54,21 @@ type SeriesSpec = Omit<LineSeries<TimelineBucket, SeriesKey>, 'key'> & {
    * `rows`, così un rimborso netto mantiene lo stesso segno in entrambi.
    */
   readonly sign: 1 | -1;
-  /** La colonna ha il totale in fondo alla tabella; il saldo netto no, come prima. */
+  /** La colonna ha il totale in fondo alla tabella; il movimento netto no, come prima. */
   readonly total: boolean;
 };
 
 /**
- * Le serie disponibili.
+ * Le serie disponibili nella vista dei flussi.
  *
- * Entrate e uscite sono attive di partenza; il saldo netto si aggiunge su
+ * Entrate e uscite sono attive di partenza; il movimento netto si aggiunge su
  * richiesta. L'ordine di legenda e grafico lo dà `SERIES_KEYS`.
+ *
+ * Il movimento netto è `netMovement`: oltre a entrate e uscite conta prelievi,
+ * trasferimenti e prestiti, quindi non è il «Saldo netto» del KPI (entrate
+ * meno uscite). Si chiamava così, e i due nomi uguali per due grandezze
+ * diverse sono il motivo del cambio: il saldo netto ora ha la sua vista, la
+ * cumulata.
  */
 const SERIES = {
   income: {
@@ -64,7 +86,7 @@ const SERIES = {
     total: true,
   },
   net: {
-    label: 'Saldo netto',
+    label: 'Netto',
     color: 'chart-3',
     value: (bucket) => bucket.netMovement,
     sign: 1,
@@ -83,6 +105,8 @@ interface GranularitySpec {
   readonly label: string;
   /** Il nome dell'intervallo nel sottotitolo. */
   readonly unit: string;
+  /** L'intervallo come complemento, col genere giusto: «+120,00 € in questa settimana». */
+  readonly within: string;
   readonly short: (period: string) => string;
   readonly long: (period: string) => string;
   readonly range: (period: string) => DateRange;
@@ -92,6 +116,7 @@ const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   day: {
     label: 'Giorno',
     unit: 'giorno',
+    within: 'in questo giorno',
     short: (period) => shortDay.format(new Date(`${period}T00:00:00`)),
     long: (period) => formatBookingDate(period),
     range: (period) => ({ from: period, to: period }),
@@ -99,6 +124,7 @@ const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   week: {
     label: 'Settimana',
     unit: 'settimana',
+    within: 'in questa settimana',
     short: (period) => shortDay.format(new Date(`${period}T00:00:00`)),
     long: (period) => `settimana del ${longDay.format(new Date(`${period}T00:00:00`))}`,
     range: (period) => ({ from: period, to: addUtcDays(period, 6) }),
@@ -106,6 +132,7 @@ const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   month: {
     label: 'Mese',
     unit: 'mese',
+    within: 'in questo mese',
     short: (period) => shortMonth.format(new Date(`${period}-01T00:00:00`)),
     long: (period) => longMonth.format(new Date(`${period}-01T00:00:00`)),
     range: (period) => {
@@ -123,6 +150,31 @@ const GRANULARITIES: readonly { id: TimelineGranularity; label: string }[] = (
   ['day', 'week', 'month'] as const
 ).map((id) => ({ id, label: GRANULARITY[id].label }));
 
+/**
+ * Che cosa racconta il grafico: i flussi di ogni intervallo, o il saldo netto
+ * sommato dall'inizio del periodo. È una lettura degli stessi bucket, non un
+ * filtro: non passa dallo store e non tocca né la pagina né la tabella delle
+ * transazioni.
+ */
+export type TimelineView = 'flows' | 'cumulative';
+const VIEWS: readonly ChoiceOption<TimelineView>[] = [
+  {
+    id: 'flows',
+    label: 'Flussi',
+    icon: LucideChartScatter.icon,
+  },
+  {
+    id: 'cumulative',
+    label: 'Cumulato',
+    icon: LucideChartNoAxesCombined.icon,
+  },
+];
+
+const CUMULATIVE_LABEL = 'Saldo periodo';
+
+const CUMULATIVE_TITLE = 'Andamento cumulato';
+const FLOW_TITLE = 'Flusso nel tempo';
+
 /** Un intervallo coperto solo in parte ha sempre il punto vuoto, qualunque sia la densità. */
 function partialMarker(bucket: TimelineBucket): LinePointMarker {
   return bucket.partial ? 'hollow' : 'auto';
@@ -132,8 +184,13 @@ function partialMarker(bucket: TimelineBucket): LinePointMarker {
 interface TimelineRow {
   readonly bucket: TimelineBucket;
   readonly label: string;
-  /** Allineati a `SERIES_KEYS`. */
-  readonly values: readonly number[];
+  readonly values: Readonly<Record<SeriesKey, number>>;
+}
+
+/** Una riga della vista cumulata: stessa etichetta, variazione e somma fin lì. */
+interface CumulativeRow extends CumulativePoint {
+  readonly bucket: TimelineBucket;
+  readonly label: string;
 }
 
 /**
@@ -145,6 +202,11 @@ export interface TimelineSelection {
   readonly period: string;
   readonly range: DateRange;
   readonly label: string;
+}
+
+interface TimelinePointSelection {
+  readonly granularity: TimelineGranularity;
+  readonly period: string;
 }
 
 /**
@@ -166,7 +228,7 @@ export interface TimelineSelection {
  */
 @Component({
   selector: 'app-analytics-timeline',
-  imports: [Panel, SectionHeader, ChoiceGroup, Amount, LineChart],
+  imports: [Panel, PanelFooter, SectionHeader, ChoiceGroup, Amount, ChartTooltip, LineChart],
   templateUrl: './analytics-timeline.html',
   styleUrl: './analytics-timeline.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -183,16 +245,52 @@ export class AnalyticsTimeline {
   protected readonly partialMarker = partialMarker;
   protected readonly chartColor = chartColorVar;
 
-  protected readonly subtitle = computed(
-    () =>
-      `Stessi movimenti del resto della pagina, raggruppati per ${GRANULARITY[this.granularity()].unit}.`,
+  protected readonly views = VIEWS;
+  /** Locale e non persistita: è come si guarda il pannello, non che cosa si analizza. */
+  protected readonly view = signal<TimelineView>('flows');
+  protected readonly chartTransitioning = signal(false);
+  private readonly destroyRef = inject(DestroyRef);
+  private viewTransitionTimer: ReturnType<typeof setTimeout> | undefined;
+
+  protected readonly lineChartTitle = computed(() =>
+    this.view() === 'cumulative' ? CUMULATIVE_TITLE : FLOW_TITLE,
   );
 
-  protected readonly hidden = signal<ReadonlySet<SeriesKey>>(new Set(['net']));
-  protected readonly selectedIndex = signal<number | null>(null);
+  protected readonly hidden = signal<ReadonlySet<SeriesKey>>(new Set([]));
   protected readonly showTable = signal(false);
 
   protected readonly buckets = computed(() => this.timeline().buckets);
+  private readonly bucketIndexes = computed(
+    () => new Map(this.buckets().map((bucket, index) => [bucket.period, index])),
+  );
+  private readonly pointSelection = linkedSignal<
+    {
+      readonly granularity: TimelineGranularity;
+      readonly indexes: ReadonlyMap<string, number>;
+    },
+    TimelinePointSelection | null
+  >({
+    source: () => ({
+      granularity: this.timeline().granularity,
+      indexes: this.bucketIndexes(),
+    }),
+    computation: (available, previous) => {
+      const selection = previous?.value ?? null;
+
+      return selection !== null &&
+        selection.granularity === available.granularity &&
+        available.indexes.has(selection.period)
+        ? selection
+        : null;
+    },
+  });
+  protected readonly selectedIndex = computed(() => {
+    const selection = this.pointSelection();
+
+    return selection?.granularity === this.timeline().granularity
+      ? (this.bucketIndexes().get(selection.period) ?? null)
+      : null;
+  });
 
   /** Il passo con cui sono stati calcolati i bucket. */
   private readonly step = computed(() => GRANULARITY[this.timeline().granularity]);
@@ -220,6 +318,52 @@ export class AnalyticsTimeline {
     this.series().filter((series) => series.visible && this.nonEmptyKeys().has(series.key)),
   );
 
+  /** Un punto per bucket, nello stesso ordine: la tabella e il riquadro li leggono per indice. */
+  private readonly cumulative = computed(() => cumulativeNet(this.buckets()));
+
+  /**
+   * L'unica serie della vista cumulata. Il grafico chiede il valore per
+   * bucket, quindi il cumulato si ritrova dal bucket stesso: una mappa per
+   * identità, rifatta insieme ai bucket.
+   */
+  private readonly cumulativeSeries = computed<readonly LineSeries<TimelineBucket>[]>(() => {
+    const points = this.cumulative();
+    const byBucket = new Map(this.buckets().map((bucket, index) => [bucket, points[index]!]));
+    return [
+      {
+        key: 'cumulative',
+        label: CUMULATIVE_LABEL,
+        color: 'chart-3',
+        value: (bucket) => byBucket.get(bucket)?.cumulative ?? 0,
+      },
+    ];
+  });
+
+  /** Ciò che arriva al grafico, secondo la vista. */
+  protected readonly chartSeries = computed<readonly LineSeries<TimelineBucket>[]>(() =>
+    this.view() === 'cumulative' ? this.cumulativeSeries() : this.drawnSeries(),
+  );
+
+  protected readonly cumulativeRows = computed<readonly CumulativeRow[]>(() => {
+    const long = this.step().long;
+    const points = this.cumulative();
+    return this.buckets().map((bucket, index) => ({
+      bucket,
+      label: long(bucket.period),
+      ...points[index]!,
+    }));
+  });
+
+  protected readonly cumulativeLabel = CUMULATIVE_LABEL;
+
+  /** «in questa settimana»: col passo dei dati, come le etichette. */
+  protected readonly within = computed(() => this.step().within);
+
+  protected readonly selectedCumulative = computed(() => {
+    const index = this.selectedIndex();
+    return index === null ? null : (this.cumulativeRows()[index] ?? null);
+  });
+
   /** Una funzione nuova a ogni cambio di passo: così il grafico rilegge le etichette. */
   protected readonly xAxisLabel = computed(() => {
     const short = this.step().short;
@@ -237,18 +381,25 @@ export class AnalyticsTimeline {
     return this.buckets().map((bucket) => ({
       bucket,
       label: long(bucket.period),
-      values: SERIES_KEYS.map((key) => SERIES[key].sign * SERIES[key].value(bucket)),
+      values: {
+        income: SERIES.income.sign * SERIES.income.value(bucket),
+        expenses: SERIES.expenses.sign * SERIES.expenses.value(bucket),
+        net: SERIES.net.sign * SERIES.net.value(bucket),
+      },
     }));
   });
 
-  /** Allineati a `SERIES_KEYS`, già col segno; `null` dove la colonna non ha totale. */
-  protected readonly totals = computed<readonly (number | null)[]>(() =>
-    SERIES_KEYS.map((key, index) =>
-      SERIES[key].total
-        ? this.rows().reduce((sum, row) => sum + (row.values[index] ?? 0), 0)
+  /** Per chiave e già col segno; `null` dove la colonna non ha totale. */
+  protected readonly totals = computed<Readonly<Record<SeriesKey, number | null>>>(() => {
+    const rows = this.rows();
+    return {
+      income: SERIES.income.total ? rows.reduce((sum, row) => sum + row.values.income, 0) : null,
+      expenses: SERIES.expenses.total
+        ? rows.reduce((sum, row) => sum + row.values.expenses, 0)
         : null,
-    ),
-  );
+      net: SERIES.net.total ? rows.reduce((sum, row) => sum + row.values.net, 0) : null,
+    };
+  });
 
   protected readonly hasPartial = computed(() => this.buckets().some((bucket) => bucket.partial));
 
@@ -272,8 +423,49 @@ export class AnalyticsTimeline {
     };
   });
 
+  protected onViewSelected(view: TimelineView): void {
+    if (view === this.view()) {
+      return;
+    }
+
+    this.view.set(view);
+    this.startChartTransition();
+  }
+
+  protected onGranularitySelected(granularity: TimelineGranularity): void {
+    this.startChartTransition();
+    this.granularitySelected.emit(granularity);
+  }
+
+  private startChartTransition(): void {
+    this.chartTransitioning.set(true);
+    clearTimeout(this.viewTransitionTimer);
+    this.viewTransitionTimer = setTimeout(() => {
+      this.chartTransitioning.set(false);
+      this.viewTransitionTimer = undefined;
+    }, CHART_TRANSITION_MS);
+  }
+
+  protected onSelectedIndexChange(index: number | null): void {
+    if (index === null) {
+      this.pointSelection.set(null);
+      return;
+    }
+
+    const bucket = Number.isInteger(index) ? this.buckets()[index] : undefined;
+    if (!bucket) {
+      this.pointSelection.set(null);
+      return;
+    }
+
+    this.pointSelection.set({
+      granularity: this.timeline().granularity,
+      period: bucket.period,
+    });
+  }
+
   protected closeTooltip(): void {
-    this.selectedIndex.set(null);
+    this.pointSelection.set(null);
   }
 
   protected selectBucketPeriod(bucket: TimelineBucket): void {
@@ -297,5 +489,9 @@ export class AnalyticsTimeline {
     }
 
     this.hidden.set(hidden);
+  }
+
+  constructor() {
+    this.destroyRef.onDestroy(() => clearTimeout(this.viewTransitionTimer));
   }
 }

@@ -18,6 +18,7 @@ const THEME: LineChartTheme = {
   hollowFill: 'surface',
   guideSelected: 'primary',
   guideHover: 'hover',
+  zeroLine: 'strong',
   labelFont: { family: 'Inter', size: 11, weight: 400 },
   valueFont: { family: 'Mono', size: 12, weight: 600 },
   series: {
@@ -121,18 +122,42 @@ describe('lineChartOptions', () => {
     expect(min).toBeLessThanOrEqual(0);
   });
 
-  it('la callback dei tick Y usa formatAmount', () => {
+  it('compatta le etichette dell’asse Y senza cambiare il formatter degli importi', () => {
     const ticks = build().scales?.['y']?.ticks;
     const callback = ticks?.callback;
 
-    expect(callback?.call({} as never, 1234.5, 0, [])).toBe(formatAmount(1234.5));
+    expect(callback?.call({} as never, 999, 0, [])).toBe(formatAmount(999));
+    expect(callback?.call({} as never, 1234.5, 0, [])).toBe('1,2 mila €');
+    expect(callback?.call({} as never, 1_234_567, 0, [])).toBe('1,2 mln €');
+    expect(callback?.call({} as never, 1_234_567_890, 0, [])).toBe('1,2 mld €');
+    expect(callback?.call({} as never, -1234.5, 0, [])).toBe('-1,2 mila €');
   });
 
-  it('non impone passo né tick alla scala Y', () => {
-    const y = build().scales?.['y'];
+  it('l’asse Y non scende molto sotto i dati: niente -5000 per un minimo di -69', () => {
+    const y = build(THEME, [-69, 9830]).scales?.['y'];
 
-    expect(y).not.toHaveProperty('ticks.stepSize');
-    expect(y).not.toHaveProperty('afterBuildTicks');
+    expect(y?.min).toBeGreaterThanOrEqual(-600);
+    expect(y?.max).toBeGreaterThanOrEqual(9830);
+  });
+
+  it('con valori non negativi (flussi) l’asse Y parte da zero', () => {
+    expect(build(THEME, [0, 120, 480]).scales?.['y']?.min).toBe(0);
+  });
+
+  it('con zeroLine acceso lo zero resta visibile', () => {
+    const range = lineChartValueRange('amount', [-69, 9830]);
+    const y = lineChartOptions(THEME, 'amount', range, guides, true).scales?.['y'];
+
+    expect(y?.min).toBeLessThanOrEqual(0);
+    expect(y?.max).toBeGreaterThanOrEqual(0);
+  });
+
+  it('le linee guida Y sono quelle tonde calcolate dalla scala', () => {
+    const y = build(THEME, [-69, 9830]).scales?.['y'];
+    const scale = { ticks: [] as { value: number }[] };
+    (y as { afterBuildTicks?: (s: typeof scale) => void }).afterBuildTicks?.(scale);
+
+    expect(scale.ticks.map((t) => t.value)).toEqual([0, 2500, 5000, 7500, 10000]);
   });
 
   it('asse X con il font etichetta, asse Y con il font valori', () => {
@@ -164,6 +189,17 @@ describe('lineChartOptions', () => {
         selected: { color: 'primary', width: 2, dash: [] },
         hover: { color: 'hover', width: 1, dash: [3, 3] },
       },
+    });
+  });
+
+  it('la linea dello zero è facoltativa: assente di partenza, col token forte se chiesta', () => {
+    expect(build().plugins?.lineGuides).not.toHaveProperty('zero');
+
+    const options = lineChartOptions(THEME, 'amount', lineChartValueRange('amount', [10, 40]), guides, true);
+
+    expect(options.plugins?.lineGuides?.zero).toEqual({
+      color: 'strong',
+      ...LINE_CHART_GEOMETRY.zeroLine,
     });
   });
 

@@ -9,7 +9,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  max-width: 12rem;
+  /* Mai più largo della cella che lo ospita: in una colonna fissa il nome si tronca. */
+  max-width: min(12rem, 100%);
   min-height: 2rem;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-control);

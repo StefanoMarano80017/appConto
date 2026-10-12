@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
-import { PAGE_SIZES } from './transaction-query';
-import { TransactionPage } from './transaction.model';
+import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
+import { TRANSACTIONS_PAGE_SIZES } from './transactions-pagination.model';
+import type { TransactionsPagination as TransactionsPaginationData } from './transactions-pagination.model';
 
 /** Quante pagine mostrare attorno a quella corrente prima di troncare con i puntini. */
 const WINDOW = 1;
@@ -16,16 +17,17 @@ type PageSlot = { kind: 'page'; page: number } | { kind: 'gap' };
  */
 @Component({
   selector: 'app-transactions-pagination',
+  imports: [LucideChevronLeft, LucideChevronRight],
   templateUrl: './transactions-pagination.html',
-  styleUrl: './transactions-pagination.scss'
+  styleUrl: './transactions-pagination.scss',
 })
 export class TransactionsPagination {
-  readonly pagination = input.required<TransactionPage['pagination']>();
+  readonly pagination = input.required<TransactionsPaginationData>();
 
   readonly pageSelected = output<number>();
   readonly pageSizeSelected = output<number>();
 
-  protected readonly pageSizes = PAGE_SIZES;
+  protected readonly pageSizes = TRANSACTIONS_PAGE_SIZES;
 
   /** `41–60 di 279 transazioni`. */
   protected readonly range = computed(() => {

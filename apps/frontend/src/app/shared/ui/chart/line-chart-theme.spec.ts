@@ -21,6 +21,7 @@ describe('resolveLineChartTheme', () => {
     '--color-border': 'rgb(4, 5, 6)',
     '--color-surface': 'rgb(7, 8, 9)',
     '--color-primary': 'rgb(10, 11, 12)',
+    '--color-border-strong': 'rgb(13, 14, 15)',
     '--chart-label-font-family': ' Geist, sans-serif ',
     '--chart-label-font-size': '13px',
     '--chart-label-font-weight': '400',
@@ -39,6 +40,7 @@ describe('resolveLineChartTheme', () => {
     expect(tema.grid).toBe('rgb(4, 5, 6)');
     expect(tema.hollowFill).toBe('rgb(7, 8, 9)');
     expect(tema.guideSelected).toBe('rgb(10, 11, 12)');
+    expect(tema.zeroLine).toBe('rgb(13, 14, 15)');
   });
 
   it('risolve tutti i colori-serie', () => {

@@ -1,0 +1,25 @@
+<app-panel [noPadding]="true">
+  <div class="tooltip-panel">
+    <app-section-header class="tooltip-header" [title]="title()">
+      <button
+        panelActions
+        type="button"
+        class="tooltip-close"
+        aria-label="Chiudi tooltip"
+        (click)="dismiss.emit()"
+      >
+        ×
+      </button>
+    </app-section-header>
+
+    <div class="tooltip-content">
+      <ng-content select="[chartTooltipContent]" />
+    </div>
+
+    <app-panel-footer class="tooltip-footer">
+      <div panelFooterRight>
+        <ng-content select="[chartTooltipFooter]" />
+      </div>
+    </app-panel-footer>
+  </div>
+</app-panel>

@@ -1,0 +1,113 @@
+<!--
+  Il titolo si ripete in ogni ramo invece di stare fuori dall'`@if`: deve
+  stare dentro il pannello, e i rami sono pannelli diversi (con attributi
+  diversi: `stale`, `aria-busy`).
+-->
+@if (error(); as message) {
+  <app-panel [noPadding]="true">
+    @if (title(); as heading) {
+      <app-section-header [title]="heading" />
+    }
+    <app-error-retry [message]="message" (retry)="retry.emit()" />
+  </app-panel>
+} @else if (page(); as data) {
+  @if (data.items.length === 0) {
+    <app-panel [noPadding]="true" [class.stale]="loading()" [attr.aria-busy]="loading() || null">
+      @if (title(); as heading) {
+        <app-section-header [title]="heading" />
+      }
+      <div class="empty">
+        <app-empty-state
+          [message]="emptyMessage()"
+          [hint]="emptyHint()"
+          [actionLabel]="emptyActionLabel()"
+          (action)="emptyAction.emit()"
+        />
+      </div>
+    </app-panel>
+  } @else {
+    <!-- Durante il ricaricamento le righe di prima restano, attenuate e segnalate come occupate. -->
+    <app-panel [noPadding]="true" [class.stale]="loading()" [attr.aria-busy]="loading() || null">
+      @if (title(); as heading) {
+        <app-section-header [title]="heading" />
+      }
+
+      <app-transactions-pagination
+        [pagination]="data.pagination"
+        (pageSelected)="pageSelected.emit($event)"
+        (pageSizeSelected)="pageSizeSelected.emit($event)"
+      />
+
+      @if (showSelectionBar()) {
+        <div class="selection" role="group" aria-label="Azioni sulla selezione">
+          @if (selectedCount() > 0) {
+            <span class="count">
+              {{ selectedCount() }}
+              {{ selectedCount() === 1 ? 'movimento selezionato' : 'movimenti selezionati' }}
+            </span>
+
+            @if (confirmingDelete()) {
+              <span class="ask">Eliminare definitivamente?</span>
+              <button type="button" class="danger" [disabled]="deleting()" (click)="deleteConfirmed.emit()">
+                {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+              </button>
+              <button type="button" class="ghost" [disabled]="deleting()" (click)="deleteCancelled.emit()">
+                Annulla
+              </button>
+            } @else {
+              <button type="button" class="danger" (click)="deleteRequested.emit()">Elimina</button>
+              <button type="button" class="ghost" (click)="selectionCleared.emit()">
+                Deseleziona
+              </button>
+            }
+          }
+
+          @if (deleteError(); as message) {
+            <p class="message error">{{ message }}</p>
+          }
+          @if (deleteDone(); as message) {
+            <p class="message done">{{ message }}</p>
+          }
+        </div>
+      }
+
+      <app-transactions-table
+        [mode]="mode()"
+        [transactions]="data.items"
+        [typeOptions]="typeOptions()"
+        [categoryOptions]="categoryOptions()"
+        [sortBy]="sortBy()"
+        [sortDirection]="sortDirection()"
+        [showTotal]="showTotal()"
+        [selectable]="selectable()"
+        [selectedIds]="selectedIds()"
+        [savingId]="savingId()"
+        [error]="editError()"
+        [extraColumn]="extraColumn()"
+        (sortSelected)="sortSelected.emit($event)"
+        (selectionToggled)="selectionToggled.emit($event)"
+        (allToggled)="allToggled.emit($event)"
+        (typeChange)="typeChange.emit($event)"
+        (categoryChange)="categoryChange.emit($event)"
+      />
+
+      <app-transactions-pagination
+        [pagination]="data.pagination"
+        (pageSelected)="pageSelected.emit($event)"
+        (pageSizeSelected)="pageSizeSelected.emit($event)"
+      />
+    </app-panel>
+  }
+} @else if (loading()) {
+  <app-panel [noPadding]="true" aria-busy="true">
+    @if (title(); as heading) {
+      <app-section-header [title]="heading" />
+    }
+    <p class="message">Caricamento in corso…</p>
+    <div class="skeleton">
+      @for (row of skeletonRows; track $index) {
+        <span class="line"></span>
+      }
+    </div>
+  </app-panel>
+}

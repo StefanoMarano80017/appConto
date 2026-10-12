@@ -108,11 +108,13 @@ verifica 'shared non conosce le feature' \
 # Chart.js è parte della presentazione di un grafico e deve restare confinato
 # nel modulo shared/ui/chart. Le feature possono usare i componenti pubblici
 # (line-chart, line-chart.model, doughnut-chart, doughnut-chart.model,
-# chart.model) ma non le implementazioni interne (chart, chart-theme,
-# line-chart-config, line-chart-theme, line-guides-plugin,
-# doughnut-chart-config, doughnut-chart-theme, doughnut-grouping).
+# treemap, treemap.model, chart.model) ma non le implementazioni interne
+# (chart, chart-theme, line-chart-config, line-chart-theme, line-guides-plugin,
+# doughnut-chart-config, doughnut-chart-theme, doughnut-grouping,
+# treemap-layout). La treemap non usa Chart.js, ma il suo algoritmo è un
+# dettaglio interno quanto le configurazioni dei grafici.
 verifica 'Chart.js resta dentro shared/ui/chart' \
-  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|chart-theme\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\|doughnut-chart-config\\|doughnut-chart-theme\\|doughnut-grouping\\)['\\\"']\" src/app/features"
+  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|chart-theme\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\|doughnut-chart-config\\|doughnut-chart-theme\\|doughnut-grouping\\|treemap-layout\\)['\\\"']\" src/app/features"
 
 # Il nome dell'alias legacy deve essere seguito subito da ) o da , per evitare
 # di catturare i nomi nuovi verso cui stiamo migrando: --border catturerebbe

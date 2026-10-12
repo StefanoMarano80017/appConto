@@ -12,9 +12,10 @@
       <button
         type="button"
         class="step"
+        aria-label="Precedente"
         [disabled]="pagination().page === 1"
         (click)="pageSelected.emit(pagination().page - 1)"
-      >← Precedente</button>
+      ><svg lucideChevronLeft aria-hidden="true"></svg></button>
 
       @for (slot of slots(); track $index) {
         @if (slot.kind === 'page') {
@@ -33,9 +34,10 @@
       <button
         type="button"
         class="step"
+        aria-label="Successiva"
         [disabled]="pagination().page === pagination().totalPages"
         (click)="pageSelected.emit(pagination().page + 1)"
-      >Successiva →</button>
+      ><svg lucideChevronRight aria-hidden="true"></svg></button>
     </nav>
   }
 

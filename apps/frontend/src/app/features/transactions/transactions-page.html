@@ -9,110 +9,47 @@
     (cleared)="resetFilters()"
   />
 
-  @if (error(); as message) {
-    <app-panel [noPadding]="true">
-      <app-error-retry [message]="message" (retry)="transactions.reload()" />
-    </app-panel>
-  }
+  <app-transactions-table-panel
+    mode="edit"
+    [page]="page()"
+    [loading]="transactions.isLoading()"
+    [error]="error()"
+    emptyHint="Prova a modificare o rimuovere uno dei filtri."
+    [emptyActionLabel]="hasFilters() ? 'Reset filtri' : undefined"
+    [typeOptions]="typeOptions"
+    [categoryOptions]="categoryItems()"
+    [sortBy]="query().sortBy"
+    [sortDirection]="query().sortDirection"
+    [savingId]="edits.savingId()"
+    [editError]="edits.error()"
+    [extraColumn]="extraColumn()"
+    [selectable]="true"
+    [selectedIds]="selected()"
+    [confirmingDelete]="confirmingDelete()"
+    [deleting]="deleting()"
+    [deleteError]="deleteError()"
+    [deleteDone]="deleteDone()"
+    (retry)="transactions.reload()"
+    (emptyAction)="resetFilters()"
+    (pageSelected)="goToPage($event)"
+    (pageSizeSelected)="apply({ pageSize: $event })"
+    (sortSelected)="sortBy($event)"
+    (selectionToggled)="toggleSelection($event)"
+    (allToggled)="toggleAll($event)"
+    (typeChange)="edits.changeType($event.row, $event.type)"
+    (categoryChange)="edits.changeCategory($event.row, $event.categoryId)"
+    (deleteRequested)="askDelete()"
+    (deleteConfirmed)="deleteSelected()"
+    (deleteCancelled)="cancelDelete()"
+    (selectionCleared)="clearSelection()"
+  />
 
-  @if (page(); as data) {
-    <app-panel [noPadding]="true" [class.stale]="transactions.isLoading()">
-      @if (data.items.length === 0) {
-        <div class="empty">
-          <app-empty-state
-            message="Nessuna transazione trovata."
-            hint="Prova a modificare o rimuovere uno dei filtri."
-            [actionLabel]="hasFilters() ? 'Reset filtri' : undefined"
-            (action)="resetFilters()"
-          />
-        </div>
-      } @else {
-        <app-transactions-pagination
-          [pagination]="data.pagination"
-          (pageSelected)="goToPage($event)"
-          (pageSizeSelected)="apply({ pageSize: $event })"
-        />
-
-        @if (selectedCount() > 0 || deleteError() || deleteDone()) {
-          <div class="selection" role="group" aria-label="Azioni sulla selezione">
-            @if (selectedCount() > 0) {
-              <span class="count">
-                {{ selectedCount() }}
-                {{ selectedCount() === 1 ? 'movimento selezionato' : 'movimenti selezionati' }}
-              </span>
-
-              @if (confirmingDelete()) {
-                <span class="ask">Eliminare definitivamente?</span>
-                <button type="button" class="danger" [disabled]="deleting()" (click)="deleteSelected()">
-                  {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
-                </button>
-                <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
-                  Annulla
-                </button>
-              } @else {
-                <button type="button" class="danger" (click)="askDelete()">Elimina</button>
-                <button type="button" class="ghost" (click)="clearSelection()">
-                  Deseleziona
-                </button>
-              }
-            }
-
-            @if (deleteError(); as message) {
-              <p class="message error">{{ message }}</p>
-            }
-            @if (deleteDone(); as message) {
-              <p class="message done">{{ message }}</p>
-            }
-          </div>
-        }
-
-        <app-transactions-table
-          mode="edit"
-          [transactions]="data.items"
-          [typeOptions]="typeOptions"
-          [categoryOptions]="categoryItems()"
-          [sortBy]="query().sortBy"
-          [sortDirection]="query().sortDirection"
-          [selectable]="true"
-          [selectedIds]="selected()"
-          [savingId]="edits.savingId()"
-          [error]="edits.error()"
-          (sortSelected)="sortBy($event)"
-          (selectionToggled)="toggleSelection($event)"
-          (allToggled)="toggleAll($event)"
-          (typeChange)="edits.changeType($event.row, $event.type)"
-          (categoryChange)="edits.changeCategory($event.row, $event.categoryId)"
-        >
-          <!--
-            La colonna dei prestiti resta nascosta finché i legami non sono
-            arrivati. Un elenco, anche vuoto, la mostra: «crea prestito» ha
-            senso anche se nessun prestito esiste ancora.
-          -->
-          @if (links() !== null) {
-            <ng-template appTransactionsTableExtraColumn="Prestito" let-transaction>
-              <app-transaction-loan-cell
-                [transaction]="transaction"
-                [links]="linksOf(transaction.id)"
-              />
-            </ng-template>
-          }
-        </app-transactions-table>
-
-        <app-transactions-pagination
-          [pagination]="data.pagination"
-          (pageSelected)="goToPage($event)"
-          (pageSizeSelected)="apply({ pageSize: $event })"
-        />
-      }
-    </app-panel>
-  } @else if (transactions.isLoading()) {
-    <app-panel [noPadding]="true" aria-busy="true">
-      <p class="message">Caricamento in corso…</p>
-      <div class="skeleton">
-        @for (row of skeletonRows; track $index) {
-          <span class="line"></span>
-        }
-      </div>
-    </app-panel>
-  }
+  <!--
+    La cella della colonna dei prestiti. Il template vive qui perché la cella
+    è dominio della feature; quando mostrarla lo decide `extraColumn` nel
+    componente.
+  -->
+  <ng-template #loanColumn let-transaction>
+    <app-transaction-loan-cell [transaction]="transaction" [links]="linksOf(transaction.id)" />
+  </ng-template>
 </app-page-layout>
