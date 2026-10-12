@@ -69,6 +69,22 @@ class Host {
 }
 
 @Component({
+  selector: 'app-select-label-host',
+  imports: [Select],
+  template: `
+    <label class="campo">
+      <span>Campo</span>
+      <app-select appearance="field" [options]="options()" [(value)]="value" [placeholder]="placeholder()" />
+    </label>
+  `,
+})
+class LabelHost {
+  readonly options = signal<readonly SelectOption[]>(OPTIONS);
+  readonly value = signal<string | null>('food');
+  readonly placeholder = signal<string | null>(null);
+}
+
+@Component({
   selector: 'app-select-ng-model-host',
   imports: [Select, FormsModule],
   template: `<div class="modulo"><app-select [options]="options" [(ngModel)]="model" ariaLabel="Categoria" /></div>`,
@@ -389,6 +405,52 @@ describe('Select', () => {
       expect(options()).toHaveLength(MANY.length);
     });
 
+    it('la ricerca è annunciata col nome del campo e non sta in un label annidato', async () => {
+      await open();
+
+      expect(search()?.id).toMatch(/^app-select-\d+-search$/);
+      expect(search()?.getAttribute('aria-labelledby')).toBe(`${trigger().id} ${search()?.id}`);
+      expect(search()?.getAttribute('aria-label')).toBe('Cerca…');
+      expect(search()?.closest('label')).toBeNull();
+    });
+
+    it('senza risultati lo annuncia in una regione live', async () => {
+      await open();
+      const live = (): string | undefined =>
+        root().querySelector('.primo [aria-live="polite"]')?.textContent?.trim();
+      expect(live()).toBe('');
+
+      await type('zzz');
+      expect(live()).toBe('Nessun risultato');
+    });
+
+    it('click fuori con il fuoco nella ricerca riporta il fuoco al trigger', async () => {
+      await open();
+      expect(document.activeElement).toBe(search());
+
+      document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(panel()).toBeNull();
+      expect(document.activeElement).toBe(trigger());
+    });
+
+    it('click fuori su un altro controllo gli lascia il fuoco', async () => {
+      const other = document.createElement('input');
+      document.body.append(other);
+      await open();
+
+      other.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+      other.focus();
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(panel()).toBeNull();
+      expect(document.activeElement).toBe(other);
+      other.remove();
+    });
+
     it('searchable false toglie la ricerca anche con molte opzioni', async () => {
       fixture.componentInstance.searchable.set(false);
       await fixture.whenStable();
@@ -445,30 +507,202 @@ describe('Select', () => {
     expect(trigger().id).toBe('colonna-data');
   });
 
-  it('riposiziona il pannello allo scroll', async () => {
-    let rect = { top: 100, bottom: 130, left: 20, right: 220, width: 200, height: 30 };
-    trigger().getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, toJSON: () => rect }) as DOMRect;
+  describe('posizione', () => {
+    type Rect = { top: number; bottom: number; left: number; right: number; width: number; height: number };
+    let rect: Rect;
+    /** Misure del pannello: jsdom non fa layout, quindi offsetHeight/offsetWidth varrebbero 0. */
+    let panelSize: { height: number; width: number };
 
-    await open();
-    expect(panel()?.style.top).toBe('134px');
-    expect(panel()?.style.left).toBe('20px');
-    expect(panel()?.style.minWidth).toBe('200px');
+    beforeEach(() => {
+      rect = { top: 100, bottom: 130, left: 20, right: 220, width: 200, height: 30 };
+      panelSize = { height: 0, width: 0 };
+      trigger().getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, toJSON: () => rect }) as DOMRect;
+      const isPanel = (element: HTMLElement): boolean => element.classList.contains('select-panel');
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        return isPanel(this) ? panelSize.height : 0;
+      });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+        return isPanel(this) ? panelSize.width : 0;
+      });
+    });
 
-    rect = { ...rect, top: 50, bottom: 80 };
-    window.dispatchEvent(new Event('scroll'));
+    afterEach(() => vi.restoreAllMocks());
 
-    expect(panel()?.style.top).toBe('84px');
+    it('riposiziona il pannello allo scroll', async () => {
+      await open();
+      expect(panel()?.style.top).toBe('134px');
+      expect(panel()?.style.left).toBe('20px');
+      expect(panel()?.style.minWidth).toBe('200px');
+
+      rect = { ...rect, top: 50, bottom: 80 };
+      window.dispatchEvent(new Event('scroll'));
+
+      expect(panel()?.style.top).toBe('84px');
+    });
+
+    it('lo scroll della lista dentro il pannello non lo riposiziona', async () => {
+      await open();
+      rect = { ...rect, top: 50, bottom: 80 };
+
+      root().querySelector('.primo .select-list')!.dispatchEvent(new Event('scroll'));
+      expect(panel()?.style.top).toBe('134px');
+
+      window.dispatchEvent(new Event('scroll'));
+      expect(panel()?.style.top).toBe('84px');
+    });
+
+    it('si apre sopra se il pannello non ci sta sotto e sopra c\'è più spazio', async () => {
+      panelSize.height = 200;
+      rect = { ...rect, top: window.innerHeight - 180, bottom: window.innerHeight - 150 };
+
+      await open();
+
+      expect(panel()?.classList.contains('above')).toBe(true);
+      expect(panel()?.style.bottom).toBe(`${window.innerHeight - rect.top + 4}px`);
+      expect(panel()?.style.top).toBe('');
+    });
+
+    it('resta sotto se il pannello ci sta, anche con meno di 240px liberi', async () => {
+      panelSize.height = 100;
+      rect = { ...rect, top: window.innerHeight - 180, bottom: window.innerHeight - 150 };
+
+      await open();
+
+      expect(panel()?.classList.contains('above')).toBe(false);
+      expect(panel()?.style.top).toBe(`${rect.bottom + 4}px`);
+    });
+
+    it('la larghezza si fissa all\'apertura e non cambia filtrando', async () => {
+      fixture.componentInstance.options.set(MANY);
+      await fixture.whenStable();
+      panelSize.width = 250;
+
+      await open();
+      expect(panel()?.style.width).toBe('250px');
+
+      panelSize.width = 120;
+      await type('cin');
+      window.dispatchEvent(new Event('scroll'));
+      expect(panel()?.style.width).toBe('250px');
+    });
+
+    it('la larghezza è almeno quella del trigger', async () => {
+      panelSize.width = 150;
+
+      await open();
+
+      expect(panel()?.style.width).toBe('200px');
+    });
   });
 
-  it('si apre sopra se sotto non c\'è spazio', async () => {
-    const bottom = window.innerHeight - 20;
-    const rect = { top: bottom - 30, bottom, left: 20, right: 220, width: 200, height: 30 };
-    trigger().getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, toJSON: () => rect }) as DOMRect;
-
+  it('il trigger ha sempre un id e senza aria-label la listbox prende il nome dal trigger', async () => {
+    fixture.componentInstance.ariaLabel.set(null);
+    await fixture.whenStable();
     await open();
 
-    expect(panel()?.classList.contains('above')).toBe(true);
-    expect(panel()?.style.bottom).toBe(`${window.innerHeight - rect.top + 4}px`);
+    const listbox = root().querySelector('.primo [role="listbox"]')!;
+    expect(trigger().id).toMatch(/^app-select-\d+-trigger$/);
+    expect(listbox.getAttribute('aria-labelledby')).toBe(trigger().id);
+    expect(listbox.hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('con aria-label la listbox usa quello', async () => {
+    await open();
+
+    const listbox = root().querySelector('.primo [role="listbox"]')!;
+    expect(listbox.getAttribute('aria-label')).toBe('Categoria');
+    expect(listbox.hasAttribute('aria-labelledby')).toBe(false);
+  });
+});
+
+/**
+ * Nei form il select sta dentro un `<label>`: un click nel pannello attiverebbe
+ * il label, che rimanda un click sintetico al trigger e riaprirebbe il pannello.
+ */
+describe('Select dentro un <label>', () => {
+  let fixture: ComponentFixture<LabelHost>;
+
+  const root = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const trigger = (): HTMLButtonElement => selectTrigger(root(), '.campo');
+  const panel = (): HTMLElement | null => root().querySelector('.campo .select-panel');
+  const option = (name: string): HTMLElement | undefined =>
+    [...root().querySelectorAll<HTMLElement>('.campo [role="option"]')].find(
+      (candidate) => candidate.textContent?.trim() === name,
+    );
+  const search = (): HTMLInputElement | null => root().querySelector('.campo .select-search');
+  const select = (): Select => fixture.debugElement.query(By.directive(Select)).componentInstance as Select;
+  const open = async (): Promise<void> => {
+    trigger().click();
+    await fixture.whenStable();
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [LabelHost] }).compileComponents();
+    fixture = TestBed.createComponent(LabelHost);
+    await fixture.whenStable();
+  });
+
+  it('click su una voce sceglie una volta e chiude senza riaprire', async () => {
+    const changes = vi.fn();
+    select().value.subscribe(changes);
+    await open();
+
+    option('Entrata')!.click();
+    await fixture.whenStable();
+
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(changes).toHaveBeenCalledExactlyOnceWith('income');
+  });
+
+  it('anche con la ricerca', async () => {
+    fixture.componentInstance.options.set(MANY);
+    fixture.componentInstance.value.set('affitto');
+    await fixture.whenStable();
+    const changes = vi.fn();
+    select().value.subscribe(changes);
+    await open();
+    expect(search()).not.toBeNull();
+
+    option('Cinema')!.click();
+    await fixture.whenStable();
+
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    expect(changes).toHaveBeenCalledExactlyOnceWith('cinema');
+  });
+
+  it('click sul divisore o su un\'area vuota non chiude né riapre', async () => {
+    fixture.componentInstance.placeholder.set('Tutti');
+    await fixture.whenStable();
+    await open();
+
+    root().querySelector<HTMLElement>('.campo .select-divider')!.click();
+    await fixture.whenStable();
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+
+    panel()!.click();
+    await fixture.whenStable();
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+    expect(panel()).not.toBeNull();
+  });
+
+  it('la ricerca resta utilizzabile', async () => {
+    fixture.componentInstance.options.set(MANY);
+    await fixture.whenStable();
+    await open();
+
+    search()!.click();
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+    expect(document.activeElement).toBe(search());
+
+    search()!.value = 'cin';
+    search()!.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    expect(root().querySelectorAll('.campo [role="option"]')).toHaveLength(1);
   });
 });
 

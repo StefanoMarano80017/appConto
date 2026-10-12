@@ -28,12 +28,12 @@ let nextId = 0;
 
 /** Oltre questo numero di opzioni `searchable: 'auto'` mostra la ricerca. */
 const SEARCH_THRESHOLD = 8;
-/** Sotto il trigger servono almeno tanti pixel, altrimenti il pannello si apre sopra (se lì c'è più spazio). */
-const MIN_SPACE_BELOW = 240;
 /** Distanza in pixel fra trigger e pannello. */
 const PANEL_GAP = 4;
 /** Margine in pixel dal bordo del viewport quando il pannello va spostato a sinistra. */
 const VIEWPORT_MARGIN = 4;
+/** I controlli che prendono il fuoco da soli al click: un click fuori su di loro non riporta il fuoco al trigger. */
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex], [contenteditable]';
 
 /** Una voce del pannello: un'opzione oppure la voce vuota (`placeholder`), che vale `null`. */
 interface SelectItem<T extends string> {
@@ -110,6 +110,9 @@ export class Select<T extends string = string> implements ControlValueAccessor {
 
   private readonly baseId = `app-select-${nextId++}`;
   protected readonly listboxId = `${this.baseId}-listbox`;
+  protected readonly searchId = `${this.baseId}-search`;
+  /** Il trigger ha sempre un id: listbox e ricerca ne prendono il nome con `aria-labelledby`. */
+  protected readonly buttonId = computed(() => this.triggerId() ?? `${this.baseId}-trigger`);
 
   protected readonly selected = computed(
     () => this.options().find((option) => option.id === this.selectedId()) ?? null,
@@ -166,13 +169,35 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   private onChange: (value: T | null) => void = () => undefined;
   private onTouched: () => void = () => undefined;
 
-  /** Un `pointerdown` fuori dall'host (anche sul trigger di un altro select) chiude il pannello. */
+  /**
+   * Un `pointerdown` fuori dall'host (anche sul trigger di un altro select)
+   * chiude il pannello. Se il fuoco era nella ricerca, sparirebbe con il
+   * pannello e finirebbe su `<body>`: torna al trigger, a meno che il click
+   * non cada su un controllo che il fuoco lo prende da sé.
+   */
   private readonly closeOnOutside = (event: Event): void => {
-    if (!this.host.contains(event.target as Node)) {
-      this.close();
+    const target = event.target as Node;
+    if (this.host.contains(target)) {
+      return;
+    }
+    const focusInPanel = this.panel()?.nativeElement.contains(document.activeElement) ?? false;
+    this.close();
+    if (focusInPanel && !(target instanceof Element && target.closest(FOCUSABLE))) {
+      // Dopo il `mousedown`, che altrimenti sposterebbe di nuovo il fuoco su `<body>`.
+      setTimeout(() => {
+        if (!document.activeElement || document.activeElement === document.body) {
+          this.focusTrigger();
+        }
+      });
     }
   };
-  private readonly reposition = (): void => this.position();
+  /** Lo scroll della lista dentro il pannello non lo sposta: conta solo quello della pagina. */
+  private readonly reposition = (event: Event): void => {
+    if (event.target instanceof Node && this.panel()?.nativeElement.contains(event.target)) {
+      return;
+    }
+    this.position();
+  };
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.unlisten());
@@ -272,6 +297,20 @@ export class Select<T extends string = string> implements ControlValueAccessor {
     this.activeIndex.set(this.matches().length > 0 ? this.matchOffset() : 0);
   }
 
+  /**
+   * Nei form il select sta dentro un `<label>`: un click nel pannello ne
+   * attiverebbe il comportamento, cioè un click sintetico sul trigger che
+   * riaprirebbe (o chiuderebbe) il pannello. Annullare il click salta
+   * l'attivazione, `stopPropagation` no. La ricerca è esclusa: è un controllo
+   * interattivo, che il label ignora già, e il suo pulsante "cancella" vive
+   * del click.
+   */
+  protected cancelLabelActivation(event: MouseEvent): void {
+    if (event.target !== this.searchInput()?.nativeElement) {
+      event.preventDefault();
+    }
+  }
+
   /** Il pannello non prende il fuoco al click: resta sul trigger o sulla ricerca. */
   protected keepFocus(event: MouseEvent): void {
     if (event.target !== this.searchInput()?.nativeElement) {
@@ -319,6 +358,7 @@ export class Select<T extends string = string> implements ControlValueAccessor {
 
     afterNextRender(
       () => {
+        this.fixWidth();
         this.position();
         if (this.searchEnabled()) {
           this.searchInput()?.nativeElement.focus();
@@ -385,6 +425,23 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   }
 
   /**
+   * Fissa la larghezza del pannello all'apertura (almeno quella del trigger):
+   * filtrando non si restringe e `left`, calcolato sulla larghezza, resta
+   * valido. Il tetto resta il `max-width` del CSS.
+   */
+  private fixWidth(): void {
+    const panel = this.panel()?.nativeElement;
+    const trigger = this.trigger()?.nativeElement;
+    if (!panel || !trigger) {
+      return;
+    }
+    // Misurato a `left: 0`, dove la larghezza naturale non è stretta dal bordo destro.
+    panel.style.left = '0px';
+    panel.style.width = '';
+    panel.style.width = `${Math.max(panel.offsetWidth, trigger.getBoundingClientRect().width)}px`;
+  }
+
+  /**
    * Calcola `top`/`bottom`/`left`/`min-width` del pannello dal trigger. Scrive
    * direttamente sullo stile, senza passare dai signal: così scroll e resize
    * non richiedono un giro di change detection.
@@ -396,8 +453,10 @@ export class Select<T extends string = string> implements ControlValueAccessor {
       return;
     }
     const rect = trigger.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const above = spaceBelow < MIN_SPACE_BELOW && rect.top > spaceBelow;
+    // Sopra solo se il pannello, alla sua altezza reale, sotto non ci sta e sopra c'è più spazio.
+    const spaceBelow = window.innerHeight - rect.bottom - PANEL_GAP - VIEWPORT_MARGIN;
+    const spaceAbove = rect.top - PANEL_GAP - VIEWPORT_MARGIN;
+    const above = panel.offsetHeight > spaceBelow && spaceAbove > spaceBelow;
 
     panel.classList.toggle('above', above);
     panel.style.top = above ? '' : `${rect.bottom + PANEL_GAP}px`;

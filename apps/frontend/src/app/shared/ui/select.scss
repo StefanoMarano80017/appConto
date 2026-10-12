@@ -114,7 +114,9 @@
   }
 
   /* Nel mixin l'hover vince sul bordo d'errore: qui un campo non valido resta rosso anche sotto il puntatore. */
-  &[aria-invalid='true']:hover:not(:disabled) {
+  /* Lo stesso vale a pannello aperto, dove il bordo del focus coprirebbe l'errore. */
+  &[aria-invalid='true']:hover:not(:disabled),
+  &[aria-invalid='true'].open {
     border-color: var(--color-error);
   }
 
@@ -131,6 +133,11 @@
     border-color: var(--color-border);
     background: var(--color-surface);
     box-shadow: none;
+  }
+
+  /* Anche dopo una scelta un campo non valido resta rosso. */
+  &.field[aria-invalid='true'] {
+    border-color: var(--color-error);
   }
 }
 

@@ -28,7 +28,7 @@
     [class.field]="appearance() === 'field'"
     [class.open]="open()"
     [class.selection-made]="selectionMade()"
-    [attr.id]="triggerId()"
+    [attr.id]="buttonId()"
     [attr.aria-expanded]="open()"
     [attr.aria-controls]="listboxId"
     [attr.aria-activedescendant]="searchEnabled() ? null : activeId()"
@@ -48,9 +48,9 @@
   </button>
 
   @if (open()) {
-    <div #panel class="select-panel" (mousedown)="keepFocus($event)">
+    <div #panel class="select-panel" (mousedown)="keepFocus($event)" (click)="cancelLabelActivation($event)">
       @if (searchEnabled()) {
-        <label class="select-search-row">
+        <div class="select-search-row">
           <svg class="select-search-icon" aria-hidden="true" lucideSearch></svg>
           <input
             #search
@@ -62,16 +62,24 @@
             autocomplete="off"
             [attr.aria-controls]="listboxId"
             [attr.aria-activedescendant]="activeId()"
+            [id]="searchId"
+            [attr.aria-labelledby]="buttonId() + ' ' + searchId"
             [attr.aria-label]="searchPlaceholder()"
             [placeholder]="searchPlaceholder()"
             [value]="query()"
             (input)="onSearch($event)"
             (keydown)="onPanelKeydown($event)"
           />
-        </label>
+        </div>
       }
 
-      <ul class="select-list" role="listbox" [id]="listboxId" [attr.aria-label]="ariaLabel()">
+      <ul
+        class="select-list"
+        role="listbox"
+        [id]="listboxId"
+        [attr.aria-label]="ariaLabel()"
+        [attr.aria-labelledby]="ariaLabel() ? null : buttonId()"
+      >
         @let empty = placeholderItem();
         @if (empty && placeholderPosition() === 'start') {
           <ng-container *ngTemplateOutlet="row; context: { $implicit: empty, index: 0 }" />
@@ -88,6 +96,8 @@
           <ng-container *ngTemplateOutlet="row; context: { $implicit: empty, index: matches().length }" />
         }
       </ul>
+      <!-- La voce "nessun risultato" non viene letta da sola: la si annuncia qui. -->
+      <div class="sr-only" aria-live="polite">@if (matches().length === 0) {{{ emptyText() }}}</div>
     </div>
   }
 }
