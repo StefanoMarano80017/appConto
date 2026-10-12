@@ -87,7 +87,7 @@
             }
           </td>
           <td class="type">
-            <app-visual-select
+            <app-select
               [options]="typeOptions()"
               [value]="transaction.type"
               [readonly]="!editable()"
@@ -98,8 +98,10 @@
           </td>
           <td class="category">
             @if (transaction.merchant; as merchant) {
-              <app-visual-select
+              <app-select
                 [options]="categories()"
+                placeholder="— Nessuna categoria"
+                placeholderPosition="end"
                 [value]="merchant.category?.id ?? null"
                 [readonly]="!editable()"
                 [disabled]="isSaving(transaction)"

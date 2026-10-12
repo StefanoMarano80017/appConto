@@ -1,5 +1,6 @@
 import { Component, TemplateRef, computed, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { LucideTrendingDown, LucideTrendingUp } from '@lucide/angular';
 import { TransactionsTablePanel } from './transactions-table-panel';
 import type {
   TransactionsTableExtraColumnContext,
@@ -8,16 +9,16 @@ import type {
   TransactionsTablePage,
   TransactionsTableRow,
 } from './transactions-table.model';
-import type { VisualSelectOption } from './visual-select';
+import type { SelectOption } from './select.model';
 
 /*
  * Come per la tabella: righe e tipi finti e locali, nessun provider. Il
  * pannello non carica nulla, quindi i test non hanno bisogno di HTTP.
  */
 
-const TYPE_OPTIONS: readonly VisualSelectOption[] = [
-  { id: 'EXPENSE', name: 'Spesa', icon: 'trending-down' },
-  { id: 'INCOME', name: 'Entrata', icon: 'trending-up' },
+const TYPE_OPTIONS: readonly SelectOption[] = [
+  { id: 'EXPENSE', name: 'Spesa', icon: LucideTrendingDown.icon },
+  { id: 'INCOME', name: 'Entrata', icon: LucideTrendingUp.icon },
 ];
 
 const row = (id: string): TransactionsTableRow => ({

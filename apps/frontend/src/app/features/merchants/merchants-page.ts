@@ -6,7 +6,7 @@ import { PanelContentComponent } from '../../shared/layout/panel-content';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { SectionHeader } from '../../shared/layout/section-header';
 import { SearchInput } from '../../shared/ui/search-input';
-import { VisualSelect } from '../../shared/ui/visual-select';
+import { Select } from '../../shared/ui/select';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { MerchantFilter, filterMerchants } from './merchant-filter';
@@ -21,7 +21,7 @@ import { MerchantsApi } from './merchants.api';
     PanelContentComponent,
     SearchInput,
     SectionHeader,
-    VisualSelect,
+    Select,
   ],
   templateUrl: './merchants-page.html',
   styleUrl: './merchants-page.scss',

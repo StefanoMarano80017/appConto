@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
+import { chooseOption, selectTrigger } from '../../shared/ui/select.testing';
 import { TransactionPage } from './transaction.model';
 import { TransactionsPage } from './transactions-page';
 
@@ -261,11 +262,7 @@ describe('TransactionsPage', () => {
     await open('/transactions?types=EXPENSE&page=2');
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
 
-    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-table .type app-visual-select select'
-    );
-    select!.value = 'WITHDRAWAL';
-    select!.dispatchEvent(new Event('change'));
+    await chooseOption(harness.fixture, harness.routeNativeElement!, 'app-transactions-table .type', 'Prelievo');
     await settle();
 
     http.expectOne(`${API_BASE_URL}/transactions/1/type`).flush({ id: '1', type: 'WITHDRAWAL' });
@@ -384,24 +381,27 @@ describe('TransactionsPage', () => {
 
     await flushLookups();
 
-    const opzioni = [
-      ...(harness.routeNativeElement?.querySelectorAll<HTMLOptionElement>(
-        'app-transactions-table tbody tr:first-child td.category select option'
-      ) ?? [])
-    ].map((option) => option.textContent?.trim());
+    const root = harness.routeNativeElement!;
+    const scope = 'app-transactions-table tbody tr:first-child td.category';
+    selectTrigger(root, scope).click();
+    await harness.fixture.whenStable();
+    const opzioni = [...root.querySelectorAll(`${scope} [role="option"]`)].map((option) =>
+      option.textContent?.trim(),
+    );
 
-    expect(opzioni).toEqual(['—', 'Alimentari']);
+    expect(opzioni).toEqual(['Alimentari', '— Nessuna categoria']);
   });
 
   it('cambiare la categoria del merchant ricarica la stessa pagina', async () => {
     await open('/transactions?page=2');
     await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
 
-    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-table .category app-visual-select select'
+    await chooseOption(
+      harness.fixture,
+      harness.routeNativeElement!,
+      'app-transactions-table .category',
+      '— Nessuna categoria',
     );
-    select!.value = '';
-    select!.dispatchEvent(new Event('change'));
     await settle();
 
     http.expectOne(`${API_BASE_URL}/merchants/m-1/category`).flush({ id: 'm-1' });

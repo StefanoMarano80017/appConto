@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
+import { chooseOption } from '../../shared/ui/select.testing';
 import { TransactionPage } from './transaction.model';
 import { TransactionsPage } from './transactions-page';
 
@@ -268,11 +269,7 @@ describe('TransactionsPage — selezione ed eliminazione', () => {
 
     // È ciò che accade correggendo il tipo di un movimento: la tabella viene
     // ricostruita, e una selezione che vivesse dentro di essa sparirebbe.
-    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-table .type app-visual-select select'
-    );
-    select!.value = 'WITHDRAWAL';
-    select!.dispatchEvent(new Event('change'));
+    await chooseOption(harness.fixture, harness.routeNativeElement!, 'app-transactions-table .type', 'Prelievo');
     await settle();
     http.expectOne(`${API_BASE_URL}/transactions/1/type`).flush({ id: '1', type: 'WITHDRAWAL' });
     await settle();

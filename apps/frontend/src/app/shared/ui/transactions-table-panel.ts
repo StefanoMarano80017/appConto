@@ -15,7 +15,7 @@ import type {
   TransactionsTableSortField,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
-import type { VisualSelectOption } from './visual-select';
+import type { SelectOption } from './select.model';
 
 /** Righe finte mostrate durante il primo caricamento. */
 const SKELETON_ROWS = 8;
@@ -71,8 +71,8 @@ export class TransactionsTablePanel<R extends TransactionsTableRow = Transaction
 
   // Inoltrati alla tabella così come sono: il significato è documentato lì.
   readonly mode = input<TransactionsTableMode>('readonly');
-  readonly typeOptions = input.required<readonly VisualSelectOption<R['type']>[]>();
-  readonly categoryOptions = input<readonly VisualSelectOption[]>([]);
+  readonly typeOptions = input.required<readonly SelectOption<R['type']>[]>();
+  readonly categoryOptions = input<readonly SelectOption[]>([]);
   readonly sortBy = input<TransactionsTableSortField | null>(null);
   readonly sortDirection = input<TransactionsTableSortDirection>('desc');
   readonly showTotal = input(true);
