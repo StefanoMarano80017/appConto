@@ -1,0 +1,112 @@
+<!-- Icona, oppure pallino colore, oppure niente: usato da trigger, testo readonly e voci. -->
+<ng-template #leading let-icon="icon" let-color="color">
+  @if (icon) {
+    <svg class="select-icon" aria-hidden="true" [lucideIcon]="icon"></svg>
+  } @else if (color) {
+    <app-color-marker [color]="color" />
+  }
+</ng-template>
+
+@let current = selected();
+@let triggerText = current?.name ?? placeholder() ?? '—';
+@let showsPlaceholder = !current && placeholder() !== null;
+
+@if (readonly()) {
+  <!-- Solo lettura è testo, non un controllo: niente button, chevron né pannello. -->
+  <span class="select-trigger select-readonly inline readonly">
+    <ng-container *ngTemplateOutlet="leading; context: { icon: current?.icon, color: current?.color }" />
+    <span class="select-name" [class.muted]="showsPlaceholder" [title]="triggerText">{{ triggerText }}</span>
+  </span>
+} @else {
+  <button
+    #trigger
+    type="button"
+    role="combobox"
+    class="select-trigger"
+    aria-haspopup="listbox"
+    [class.inline]="appearance() === 'inline'"
+    [class.field]="appearance() === 'field'"
+    [class.open]="open()"
+    [class.selection-made]="selectionMade()"
+    [attr.id]="triggerId()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="listboxId"
+    [attr.aria-activedescendant]="searchEnabled() ? null : activeId()"
+    [attr.aria-label]="ariaLabel()"
+    [attr.aria-invalid]="ariaInvalid() ? 'true' : null"
+    [attr.aria-describedby]="ariaDescribedBy()"
+    [disabled]="isDisabled()"
+    (click)="toggle()"
+    (keydown)="onTriggerKeydown($event)"
+    (blur)="onTriggerBlur()"
+  >
+    <span class="select-value">
+      <ng-container *ngTemplateOutlet="leading; context: { icon: current?.icon, color: current?.color }" />
+      <span class="select-name" [class.muted]="showsPlaceholder" [title]="triggerText">{{ triggerText }}</span>
+    </span>
+    <svg class="select-chevron" aria-hidden="true" lucideChevronDown></svg>
+  </button>
+
+  @if (open()) {
+    <div #panel class="select-panel" (mousedown)="keepFocus($event)">
+      @if (searchEnabled()) {
+        <label class="select-search-row">
+          <svg class="select-search-icon" aria-hidden="true" lucideSearch></svg>
+          <input
+            #search
+            type="search"
+            class="select-search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="true"
+            autocomplete="off"
+            [attr.aria-controls]="listboxId"
+            [attr.aria-activedescendant]="activeId()"
+            [attr.aria-label]="searchPlaceholder()"
+            [placeholder]="searchPlaceholder()"
+            [value]="query()"
+            (input)="onSearch($event)"
+            (keydown)="onPanelKeydown($event)"
+          />
+        </label>
+      }
+
+      <ul class="select-list" role="listbox" [id]="listboxId" [attr.aria-label]="ariaLabel()">
+        @let empty = placeholderItem();
+        @if (empty && placeholderPosition() === 'start') {
+          <ng-container *ngTemplateOutlet="row; context: { $implicit: empty, index: 0 }" />
+          <li class="select-divider" role="none"></li>
+        }
+        @for (item of matches(); track item.id; let i = $index) {
+          <ng-container *ngTemplateOutlet="row; context: { $implicit: item, index: matchOffset() + i }" />
+        }
+        @if (matches().length === 0) {
+          <li class="select-empty" role="none">{{ emptyText() }}</li>
+        }
+        @if (empty && placeholderPosition() === 'end') {
+          <li class="select-divider" role="none"></li>
+          <ng-container *ngTemplateOutlet="row; context: { $implicit: empty, index: matches().length }" />
+        }
+      </ul>
+    </div>
+  }
+}
+
+<ng-template #row let-item let-index="index">
+  <li
+    role="option"
+    class="select-option"
+    [id]="optionId(index)"
+    [class.active]="index === activeIndex()"
+    [class.placeholder]="item.placeholder"
+    [attr.aria-selected]="item.id === selectedId()"
+    (pointermove)="activeIndex.set(index)"
+    (click)="choose(item)"
+  >
+    <ng-container *ngTemplateOutlet="leading; context: { icon: item.icon, color: item.color }" />
+    <span class="select-option-name">@for (segment of item.segments; track $index) {@if (segment.match) {<mark>{{ segment.text }}</mark>} @else {<ng-container>{{ segment.text }}</ng-container>}}</span>
+    @if (item.id === selectedId()) {
+      <svg class="select-check" aria-hidden="true" lucideCheck></svg>
+    }
+  </li>
+</ng-template>
