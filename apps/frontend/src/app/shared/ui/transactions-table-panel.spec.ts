@@ -10,6 +10,7 @@ import type {
   TransactionsTableRow,
 } from './transactions-table.model';
 import type { SelectOption } from './select.model';
+import { chooseOption } from './select.testing';
 
 /*
  * Come per la tabella: righe e tipi finti e locali, nessun provider. Il
@@ -232,15 +233,13 @@ describe('TransactionsTablePanel', () => {
     expect(panel.getAttribute('aria-busy')).toBe('true');
   });
 
-  it('propaga la pagina richiesta e la dimensione selezionata', () => {
+  it('propaga la pagina richiesta e la dimensione selezionata', async () => {
     const pages = el.querySelectorAll(
       'app-transactions-pagination .page:not(.current)',
     ) as NodeListOf<HTMLButtonElement>;
-    const pageSize = el.querySelector('app-transactions-pagination select') as HTMLSelectElement;
 
     pages[0].click();
-    pageSize.value = '50';
-    pageSize.dispatchEvent(new Event('change'));
+    await chooseOption(fixture, el, 'app-transactions-pagination', '50');
 
     expect(host.selectedPage).toBe(1);
     expect(host.selectedPageSize).toBe(50);

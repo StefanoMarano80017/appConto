@@ -43,13 +43,11 @@
 
   <label class="size">
     <span>Per pagina</span>
-    <select
-      [value]="pagination().pageSize"
-      (change)="pageSizeSelected.emit(+$any($event.target).value)"
-    >
-      @for (size of pageSizes; track size) {
-        <option [value]="size">{{ size }}</option>
-      }
-    </select>
+    <app-select
+      appearance="field"
+      [options]="pageSizeOptions"
+      [value]="pageSizeValue()"
+      (valueChange)="pageSizeSelected.emit(+$event!)"
+    />
   </label>
 </div>

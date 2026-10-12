@@ -171,11 +171,13 @@ describe('TransactionsPage', () => {
     await open('/transactions?page=4');
     await flush(page({ pagination: { page: 4, pageSize: 25, total: 279, totalPages: 12 } }));
 
-    const select = harness.routeNativeElement?.querySelector<HTMLSelectElement>(
-      'app-transactions-pagination select'
-    );
-    select!.value = '50';
-    select!.dispatchEvent(new Event('change'));
+    // Non `chooseOption`: la scelta avvia una richiesta e `whenStable` aspetterebbe la risposta.
+    const root = harness.routeNativeElement!;
+    selectTrigger(root, 'app-transactions-pagination').click();
+    await settle();
+    Array.from(root.querySelectorAll<HTMLElement>('app-transactions-pagination [role="option"]'))
+      .find((option) => option.textContent?.trim() === '50')!
+      .click();
     await settle();
     await settle();
 

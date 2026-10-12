@@ -14,12 +14,13 @@
 
         <label class="control">
           <span>Tipo</span>
-          <select [value]="filters.filters().type ?? ''" (change)="onTypeChange($any($event.target).value)">
-            <option value="">Tutti</option>
-            @for (type of transactionTypes; track type) {
-              <option [value]="type">{{ typeLabels[type] }}</option>
-            }
-          </select>
+          <app-select
+            appearance="field"
+            placeholder="Tutti"
+            [options]="typeOptions"
+            [value]="filters.filters().type"
+            (valueChange)="onTypeChange($event)"
+          />
         </label>
       </div>
     </div>

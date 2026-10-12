@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../core/api';
 import { EMPTY_LOAN_QUERY } from './loan-query';
 import { LoanList, LoanSummary } from './loan.model';
 import { LoansPage } from './loans-page';
+import { selectTrigger } from '../../shared/ui/select.testing';
 
 const loan = (overrides: Partial<LoanSummary> = {}): LoanSummary => ({
   id: 'l-1',
@@ -175,6 +176,23 @@ describe('LoansPage', () => {
     expect(url).toContain('search=lego');
     expect(url).toContain('sortBy=lentAt');
     expect(url).toContain('sortDirection=asc');
+  });
+
+  it('filtra per persona scegliendo dal select', async () => {
+    await open('/loans');
+    await flush();
+
+    // Non `chooseOption`: la scelta avvia una richiesta e `whenStable` aspetterebbe la risposta.
+    const root = harness.routeNativeElement as HTMLElement;
+    selectTrigger(root, '.borrower').click();
+    await settle();
+    Array.from(root.querySelectorAll<HTMLElement>('.borrower [role="option"]'))
+      .find((option) => option.textContent?.trim() === 'Anna')!
+      .click();
+    await settle();
+
+    expect(router.url).toContain('borrower=Anna');
+    await flush();
   });
 
   it('scegliere uno stato lo scrive nell\'URL', async () => {

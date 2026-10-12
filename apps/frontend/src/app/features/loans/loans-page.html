@@ -36,15 +36,13 @@
         @if (data.borrowers.length > 0) {
           <label class="borrower">
             <span class="sr-only">Persona</span>
-            <select
-              [value]="query().borrower"
-              (change)="apply({ borrower: $any($event.target).value })"
-            >
-              <option value="">Tutte le persone</option>
-              @for (borrower of data.borrowers; track borrower) {
-                <option [value]="borrower">{{ borrower }}</option>
-              }
-            </select>
+            <app-select
+              appearance="field"
+              placeholder="Tutte le persone"
+              [options]="borrowerOptions()"
+              [value]="query().borrower || null"
+              (valueChange)="apply({ borrower: $event ?? '' })"
+            />
           </label>
         }
       }

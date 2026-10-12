@@ -4,10 +4,11 @@ import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '../../shared/layout/panel';
 import { PageLayout } from '../../shared/layout/page-layout';
 import { FilterChips } from '../../shared/ui/filter-chips';
+import { Select } from '../../shared/ui/select';
 import { StatCardDelta, StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
+import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
 import {
-  TRANSACTION_TYPES,
   TRANSACTION_TYPE_LABELS,
   TransactionType
 } from '../transactions/transaction-type';
@@ -34,6 +35,7 @@ import { TopMerchantsSection } from './top-merchants';
     MonthComparisonSection,
     Panel,
     PageLayout,
+    Select,
     StatCardGrid,
     TopMerchantsSection
   ],
@@ -48,8 +50,7 @@ export class DashboardPage {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly transactionTypes = TRANSACTION_TYPES;
-  protected readonly typeLabels = TRANSACTION_TYPE_LABELS;
+  protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
   protected readonly formatMonth = formatMonth;
 
   /** Etichette dei filtri attivi, risolte sui dati appena caricati. */
@@ -166,8 +167,9 @@ export class DashboardPage {
     }
   }
 
-  protected onTypeChange(value: string): void {
-    this.filters.setType(value === '' ? null : (value as TransactionType));
+  /** `null` è la voce "Tutti": nessun filtro sul tipo. */
+  protected onTypeChange(value: TransactionType | null): void {
+    this.filters.setType(value);
   }
 
   protected removeFilter(key: 'type' | 'category' | 'merchant'): void {

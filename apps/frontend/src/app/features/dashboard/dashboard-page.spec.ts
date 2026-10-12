@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../../core/api';
 import { DashboardFilterStore } from './dashboard-filter.store';
 import { DashboardPage } from './dashboard-page';
 import { Dashboard } from './dashboard.model';
+import { chooseOption } from '../../shared/ui/select.testing';
 
 const transaction = (id: string, description: string, amount: number) => ({
   id,
@@ -177,6 +178,16 @@ describe('DashboardPage', () => {
     );
 
     expect(store.activeCount()).toBe(2);
+  });
+
+  it('filtra per tipo scegliendo dal select', async () => {
+    await fixture.whenStable();
+    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+
+    await chooseOption(fixture, fixture.nativeElement, '.control', 'Prelievo');
+    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07&type=WITHDRAWAL`);
+
+    expect(store.filters().type).toBe('WITHDRAWAL');
   });
 
   // La dashboard è un riepilogo: i movimenti si vedono nel dettaglio di
