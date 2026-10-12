@@ -55,7 +55,9 @@ interface SelectItem<T extends string> {
  * card senza Angular CDK. Scelto al posto di `popover="manual"` (top layer)
  * perché jsdom non lo supporta e `fixed` + `z-index` basta finché il
  * pannello non sta dentro un antenato con `transform`: un antenato
- * trasformato sposterebbe il pannello (vedi `route-content-enter`).
+ * trasformato (o con una animation su `transform` ancora in effetto)
+ * sposterebbe il pannello. Per questo `route-content-enter` usa fill-mode
+ * `backwards`: con `both`/`forwards` la pagina resterebbe containing block.
  *
  * Funziona con `[(value)]` e, tramite `ControlValueAccessor`, con `ngModel`.
  */

@@ -46,7 +46,11 @@ body {
 
 .content > router-outlet + * {
   display: block;
-  animation: route-content-enter 250ms ease-out both;
+  // Fill-mode `backwards` e NON `both`/`forwards`: finita l'animazione non
+  // deve restare in effetto. Una animation su `transform` ancora in effetto
+  // (anche se tiene `none`) rende la pagina il containing block dei
+  // `position: fixed` discendenti: il pannello di app-select finirebbe spostato.
+  animation: route-content-enter 250ms ease-out backwards;
 }
 
 @keyframes route-content-enter {
@@ -55,9 +59,8 @@ body {
     transform: translateY(12px);
   }
 
-  // `none` e non `translateY(0)`: con fill-mode `both` il fotogramma finale
-  // resta applicato, e qualsiasi transform renderebbe la pagina il containing
-  // block dei `position: fixed` (il pannello di app-select finirebbe spostato).
+  // `none` è innocuo (e coerente con l'assenza di transform a fine animazione);
+  // ciò che conta è il fill-mode `backwards` sopra, non il valore finale.
   to {
     opacity: 1;
     transform: none;

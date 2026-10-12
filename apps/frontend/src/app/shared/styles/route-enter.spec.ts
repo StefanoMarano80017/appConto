@@ -4,10 +4,11 @@ import { fileURLToPath } from 'node:url';
 import { compile } from 'sass';
 
 /**
- * L'animazione d'ingresso delle pagine ha fill-mode `both`: il fotogramma
- * finale resta applicato. Se lascia un `transform` (anche `translateY(0)`)
- * la pagina diventa il containing block dei `position: fixed` al suo
- * interno, e il pannello di `app-select` finisce lontano dal trigger.
+ * L'animazione d'ingresso delle pagine non deve restare in effetto dopo la
+ * fine: con fill-mode `both`/`forwards` l'animation su `transform` resta
+ * attiva (anche con valore `none`) e la pagina diventa il containing block
+ * dei `position: fixed` al suo interno, quindi il pannello di `app-select`
+ * finisce lontano dal trigger. Serve fill-mode `backwards`.
  * Controllo testuale sul CSS compilato, come in `form-fields.spec.ts`:
  * jsdom non esegue le animazioni.
  */
@@ -15,11 +16,12 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const css = compile(join(SRC, 'styles.scss'), { loadPaths: [SRC] }).css.replace(/\/\*[\s\S]*?\*\//g, '');
 
 describe('animazione d\'ingresso delle pagine', () => {
-  it('termina con transform: none', () => {
-    const keyframes = /@keyframes route-content-enter\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
-    const finale = /\bto\s*\{([^}]*)\}/.exec(keyframes)?.[1] ?? '';
+  it('non usa fill-mode both/forwards, così non resta in effetto dopo la fine', () => {
+    const regola = /\.content > router-outlet \+ \*\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    const animation = /animation:\s*([^;]*);/.exec(regola)?.[1] ?? '';
 
-    expect(keyframes).not.toBe('');
-    expect(finale).toMatch(/transform:\s*none/);
+    expect(animation).toContain('route-content-enter');
+    expect(animation).toMatch(/\bbackwards\b/);
+    expect(animation).not.toMatch(/\b(both|forwards)\b/);
   });
 });
