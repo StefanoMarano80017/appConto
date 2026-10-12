@@ -50,7 +50,7 @@
   color: var(--color-text-muted);
 }
 
-/* Trigger `inline`: l'aspetto di `visual-select`, per le celle di tabella. */
+/* Trigger `inline`: l'aspetto dell'ex `visual-select` (rimosso), per le celle di tabella. */
 .select-trigger.inline {
   position: relative;
   display: inline-flex;
@@ -96,7 +96,7 @@
   }
 }
 
-/* Trigger `field`: lo stesso mixin della regola globale di input e select. */
+/* Trigger `field`: lo stesso mixin della regola globale di input e textarea. */
 .select-trigger.field {
   @include mixins.form-control;
 

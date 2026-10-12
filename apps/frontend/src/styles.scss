@@ -260,7 +260,6 @@ button:active:not(:disabled) {
  * consumatori — erano la regola mancante, dichiarata e non scritta.
  */
 input:not([type='checkbox']):not([type='radio']):not([type='file']),
-select,
 textarea {
   @include mixins.form-control($focus: false);
 }
@@ -352,7 +351,6 @@ input[type='radio'] {
  * controllo (requisito di accessibilita', non estetica).
  */
 input:focus-visible,
-select:focus-visible,
 textarea:focus-visible {
   @include mixins.form-control-focus;
 }
@@ -369,7 +367,6 @@ input:disabled {
 
 /* Lo stato non valido non si affida al solo colore: porta anche il bordo piu' marcato. */
 input:not([type='checkbox']):not([type='radio']):not([type='file']):user-invalid,
-select:user-invalid,
 textarea:user-invalid {
   border-color: var(--color-error);
   border-width: 2px;
