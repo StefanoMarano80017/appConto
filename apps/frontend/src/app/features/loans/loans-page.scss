@@ -54,7 +54,7 @@ app-search-input {
   }
 }
 
-/* Il campo è a tutta larghezza: la persona ha un tetto, i nomi lunghi vanno a capo del pannello. */
+/* Il campo è a tutta larghezza: la persona ha un tetto, i nomi lunghi nel pannello si troncano con i puntini. */
 .borrower app-select {
   max-width: 12rem;
 }
