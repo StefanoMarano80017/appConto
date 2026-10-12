@@ -102,3 +102,60 @@
     white-space: nowrap;
   }
 }
+
+/*
+ * Lo stato di focus da tastiera dei campi di modulo. Separato da
+ * `form-control` perché la regola globale di `styles.scss` lo applica anche
+ * ai campi file, che `form-control` non copre (vedi il commento lì).
+ */
+@mixin form-control-focus {
+  border-color: var(--color-primary);
+  background: var(--color-surface-elevated);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+  outline: none;
+}
+
+/*
+ * L'aspetto dei campi di modulo, condiviso fra le regole globali di
+ * `styles.scss` e i controlli che non sono un `<input>` (il trigger di
+ * `app-select` è un `<button>`). Le motivazioni e le esclusioni
+ * (checkbox, radio, file) sono nel commento sopra la regola globale.
+ *
+ * `$focus: false` omette il focus: la regola globale lo dichiara a parte,
+ * con specificità (0,1,1), perché i campi che disegnano un proprio anello
+ * (`.search input`, vedi `search-input.scss`) devono poterlo sovrascrivere.
+ *
+ * `:user-invalid` resta nella regola globale: un `<button>` non lo riceve,
+ * qui c'è `aria-invalid`, con lo stesso bordo più marcato.
+ */
+@mixin form-control($focus: true) {
+  @include typography.text('body');
+
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-elevated);
+  }
+
+  @if $focus {
+    &:focus-visible {
+      @include form-control-focus;
+    }
+  }
+
+  &:disabled {
+    background: var(--color-disabled-input);
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--color-error);
+    border-width: 2px;
+  }
+}
