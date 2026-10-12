@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, NgModel } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { LucideTrendingUp } from '@lucide/angular';
-import { vi } from 'vitest';
 import { Select } from './select';
 import { SelectOption } from './select.model';
 import { chooseOption, selectedName, selectTrigger } from './select.testing';
@@ -468,60 +467,8 @@ describe('Select', () => {
 
     await open();
 
-    // In jsdom offsetHeight vale 0: il pannello finisce appena sopra il trigger.
     expect(panel()?.classList.contains('above')).toBe(true);
-    expect(panel()?.style.top).toBe(`${rect.top - 4}px`);
-    expect(panel()?.style.bottom).toBe('');
-  });
-
-  describe('sotto un antenato trasformato', () => {
-    // Origine del containing block: dove finisce il pannello con top/left a 0 (pagina sotto header e sidebar).
-    const origin = { top: 64, left: 240 };
-    const panelHeight = 200;
-
-    beforeEach(() => {
-      const original = Element.prototype.getBoundingClientRect;
-      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-        if (!(this instanceof HTMLElement) || !this.classList.contains('select-panel')) {
-          return original.call(this);
-        }
-        // Come nel browser, l'animazione d'ingresso sposta il pannello di 4px finché non viene neutralizzata.
-        const enter = this.style.getPropertyValue('transform') === 'none' ? 0 : 4;
-        const top = origin.top + enter + parseFloat(this.style.top || '0');
-        const left = origin.left + parseFloat(this.style.left || '0');
-        const box = { top, left, bottom: top + panelHeight, right: left + 160, width: 160, height: panelHeight };
-        return { ...box, x: left, y: top, toJSON: () => box } as DOMRect;
-      });
-      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
-        return this.classList.contains('select-panel') ? panelHeight : 0;
-      });
-    });
-
-    afterEach(() => vi.restoreAllMocks());
-
-    it('posiziona il pannello correttamente sotto un antenato trasformato', async () => {
-      const rect = { top: 300, bottom: 332, left: 400, right: 560, width: 160, height: 32 };
-      trigger().getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, toJSON: () => rect }) as DOMRect;
-
-      await open();
-
-      expect(panel()?.classList.contains('above')).toBe(false);
-      expect(panel()?.style.top).toBe('272px');
-      expect(panel()?.style.left).toBe('160px');
-    });
-
-    it('aprendo sopra usa top compensato e non bottom', async () => {
-      const bottom = window.innerHeight - 36;
-      const rect = { top: bottom - 32, bottom, left: 400, right: 560, width: 160, height: 32 };
-      trigger().getBoundingClientRect = () => ({ ...rect, x: rect.left, y: rect.top, toJSON: () => rect }) as DOMRect;
-
-      await open();
-
-      expect(panel()?.classList.contains('above')).toBe(true);
-      expect(panel()?.style.bottom).toBe('');
-      expect(panel()?.style.top).toBe(`${rect.top - 4 - panelHeight - origin.top}px`);
-      expect(panel()?.style.left).toBe('160px');
-    });
+    expect(panel()?.style.bottom).toBe(`${window.innerHeight - rect.top + 4}px`);
   });
 });
 

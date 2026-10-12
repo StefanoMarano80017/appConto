@@ -53,11 +53,8 @@ interface SelectItem<T extends string> {
  * Il pannello è `position: fixed` e si posiziona dal `getBoundingClientRect()`
  * del trigger: così sfugge agli `overflow` delle celle di tabella e delle
  * card senza Angular CDK. Scelto al posto di `popover="manual"` (top layer)
- * perché jsdom non lo supporta. Un antenato con `transform` (o `filter`,
- * `contain`) diventa però il containing block del `fixed`: succede a ogni
- * pagina, a cui l'animazione d'ingresso della route lascia `translateY(0)`.
- * Per questo `position()` misura l'origine del containing block e la
- * sottrae alle coordinate del viewport.
+ * perché jsdom non lo supporta e `fixed` + `z-index` basta finché il
+ * pannello non sta dentro un antenato con `transform`.
  *
  * Funziona con `[(value)]` e, tramite `ControlValueAccessor`, con `ngModel`.
  */
@@ -387,7 +384,7 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   }
 
   /**
-   * Calcola `top`/`left`/`min-width` del pannello dal trigger. Scrive
+   * Calcola `top`/`bottom`/`left`/`min-width` del pannello dal trigger. Scrive
    * direttamente sullo stile, senza passare dai signal: così scroll e resize
    * non richiedono un giro di change detection.
    */
@@ -402,28 +399,13 @@ export class Select<T extends string = string> implements ControlValueAccessor {
     const above = spaceBelow < MIN_SPACE_BELOW && rect.top > spaceBelow;
 
     panel.classList.toggle('above', above);
+    panel.style.top = above ? '' : `${rect.bottom + PANEL_GAP}px`;
+    panel.style.bottom = above ? `${window.innerHeight - rect.top + PANEL_GAP}px` : '';
     panel.style.minWidth = `${rect.width}px`;
-    // Con top/left a 0 il pannello sta all'origine del suo containing block:
-    // (0, 0) nel viewport, oppure l'angolo di un antenato trasformato.
-    panel.style.top = '0px';
-    panel.style.left = '0px';
-    panel.style.bottom = '';
-    // L'animazione d'ingresso del pannello lo trasla di qualche pixel: la si
-    // neutralizza durante la misura (solo `!important` batte un'animazione).
-    panel.style.setProperty('transform', 'none', 'important');
-    const origin = panel.getBoundingClientRect();
-    panel.style.removeProperty('transform');
 
-    // Coordinate desiderate nel viewport. Sopra si usa `top` e non `bottom`:
-    // sotto un antenato trasformato `bottom` dipenderebbe dalla sua altezza.
-    const top = above ? rect.top - PANEL_GAP - panel.offsetHeight : rect.bottom + PANEL_GAP;
     // Allineato al trigger, ma spostato a sinistra se uscirebbe dal viewport.
     const maxLeft = window.innerWidth - panel.offsetWidth - VIEWPORT_MARGIN;
-    const left = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft));
-
-    // Esatto per le traslazioni; con uno `scale` sull'antenato resterebbe uno scarto (non usato nell'app).
-    panel.style.top = `${top - origin.top}px`;
-    panel.style.left = `${left - origin.left}px`;
+    panel.style.left = `${Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft))}px`;
   }
 
   private listen(): void {
