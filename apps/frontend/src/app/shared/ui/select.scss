@@ -74,7 +74,8 @@
     margin-top: var(--space-1);
   }
 
-  &:hover:not(:disabled),
+  /* Il readonly è testo, non un controllo: niente sfondo all'hover (come `.picker:not(.readonly)`). */
+  &:hover:not(:disabled):not(.readonly),
   &.open {
     background: var(--color-surface-hover);
   }

@@ -409,6 +409,18 @@ describe('Select', () => {
     expect(root().querySelector('.primo .select-chevron')).toBeNull();
   });
 
+  it('readonly porta la classe che esclude l\'hover interattivo', async () => {
+    fixture.componentInstance.readonly.set(true);
+    await fixture.whenStable();
+
+    // jsdom non valuta :hover: si verifica la precondizione del selettore `:not(.readonly)`.
+    const readonly = root().querySelector('.primo .select-readonly');
+    expect(readonly?.tagName.toLowerCase()).toBe('span');
+    expect(readonly?.classList.contains('readonly')).toBe(true);
+    expect(readonly?.hasAttribute('role')).toBe(false);
+    expect(readonly?.hasAttribute('tabindex')).toBe(false);
+  });
+
   it('disabled disabilita il trigger', async () => {
     fixture.componentInstance.disabled.set(true);
     await fixture.whenStable();
