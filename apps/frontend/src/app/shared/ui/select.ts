@@ -54,7 +54,8 @@ interface SelectItem<T extends string> {
  * del trigger: così sfugge agli `overflow` delle celle di tabella e delle
  * card senza Angular CDK. Scelto al posto di `popover="manual"` (top layer)
  * perché jsdom non lo supporta e `fixed` + `z-index` basta finché il
- * pannello non sta dentro un antenato con `transform`.
+ * pannello non sta dentro un antenato con `transform`: un antenato
+ * trasformato sposterebbe il pannello (vedi `route-content-enter`).
  *
  * Funziona con `[(value)]` e, tramite `ControlValueAccessor`, con `ngModel`.
  */
