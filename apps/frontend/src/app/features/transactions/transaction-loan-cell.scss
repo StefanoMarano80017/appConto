@@ -3,14 +3,13 @@
 /*
  * La colonna dei prestiti: un'azione, non un dato del movimento.
  *
- * Il tetto di larghezza stava sulla `td.loan` della vecchia tabella; ora la
- * cella è della tabella condivisa (`td.extra`), e il limite lo porta l'host,
- * che ne occupa tutto il contenuto. Un blocco con `max-width` è anche ciò che
- * serve ad `appTruncate` per sapere dove tagliare.
+ * La larghezza la decide la colonna della tabella condivisa (`col-extra`):
+ * l'host la occupa tutta e non oltre. Un blocco con `max-width` è anche ciò
+ * che serve ad `appTruncate` per sapere dove tagliare.
  */
 :host {
   display: block;
-  max-width: 16rem;
+  max-width: 100%;
   white-space: nowrap;
 }
 

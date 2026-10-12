@@ -3,7 +3,26 @@
 }
 
 <div class="scroller">
-  <table class="transactions">
+  <table class="transactions" [class.readonly]="!editable()">
+    <!--
+      Le larghezze stanno qui, una volta per colonna, e non nelle celle: con
+      `table-layout: fixed` le decide la prima riga di colonne, non il
+      contenuto, e ciò che non ci sta viene troncato.
+    -->
+    <colgroup>
+      @if (showSelection()) {
+        <col class="col-select" />
+      }
+      <col class="col-date" />
+      <col class="col-description" />
+      <col class="col-merchant" />
+      <col class="col-type" />
+      <col class="col-category" />
+      <col class="col-amount" />
+      @if (extraColumn()) {
+        <col class="col-extra" />
+      }
+    </colgroup>
     <thead>
       <tr>
         @if (showSelection()) {
@@ -33,7 +52,7 @@
           }
         }
         @if (extraColumn(); as extra) {
-          <th scope="col" class="extra">{{ extra.label() }}</th>
+          <th scope="col" class="extra">{{ extra.label }}</th>
         }
       </tr>
     </thead>

@@ -1,14 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  Component,
-  Directive,
-  TemplateRef,
-  computed,
-  contentChild,
-  inject,
-  input,
-  output,
-} from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { Truncate } from '../../core/truncate';
 import { Amount } from './amount';
@@ -18,47 +9,13 @@ import type { VisualSelectOption } from './visual-select';
 import type {
   TransactionsTableCategory,
   TransactionsTableCategoryChange,
-  TransactionsTableExtraColumnContext,
+  TransactionsTableExtraColumnDef,
   TransactionsTableMode,
   TransactionsTableRow,
   TransactionsTableSortDirection,
   TransactionsTableSortField,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
-
-/**
- * Segna il template della colonna aggiuntiva, in coda alle altre.
- *
- * Il valore della direttiva è l'intestazione della colonna:
- *
- * ```html
- * <ng-template appTransactionsTableExtraColumn="Prestito" let-transaction>
- *   …
- * </ng-template>
- * ```
- *
- * È un template e non contenuto proiettato perché va reso una volta per riga,
- * con la riga come contesto. Serve a ciò che la tabella non deve sapere: la
- * colonna dei prestiti, con i suoi link e le sue regole, è della feature che
- * la ospita (stesso schema di `appDoughnutCenter`, v. chart/doughnut-chart.ts).
- *
- * La colonna c'è finché c'è il template: avvolto in un `@if`, chi ospita la
- * tabella decide quando mostrarla senza un input apposta.
- */
-@Directive({ selector: 'ng-template[appTransactionsTableExtraColumn]' })
-export class TransactionsTableExtraColumn<R extends TransactionsTableRow = TransactionsTableRow> {
-  /** L'intestazione della colonna. Non è ordinabile: è un'aggiunta, non un dato del movimento. */
-  readonly label = input.required<string>({ alias: 'appTransactionsTableExtraColumn' });
-
-  readonly template = inject<TemplateRef<TransactionsTableExtraColumnContext<R>>>(TemplateRef);
-
-  static ngTemplateContextGuard<R extends TransactionsTableRow>(
-    _directive: TransactionsTableExtraColumn<R>,
-    context: unknown,
-  ): context is TransactionsTableExtraColumnContext<R> {
-    return true;
-  }
-}
 
 /** Le colonne della tabella; `field` è `null` dove non ha senso ordinare. */
 const COLUMNS: readonly {
@@ -176,6 +133,13 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
   /** L'ultimo errore di salvataggio, mostrato sopra la tabella. */
   readonly error = input<string | null>(null);
 
+  /**
+   * La colonna aggiuntiva in coda, o `null` per non mostrarla.
+   *
+   * Un input e non una direttiva proiettata: v. `TransactionsTableExtraColumnDef`.
+   */
+  readonly extraColumn = input<TransactionsTableExtraColumnDef<R> | null>(null);
+
   /** Richiesta di ordinare per una colonna. */
   readonly sortSelected = output<TransactionsTableSortField>();
   /** Richiesta di invertire la selezione di una riga. */
@@ -190,9 +154,6 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
    */
   readonly categoryChange = output<TransactionsTableCategoryChange<R>>();
 
-  protected readonly extraColumn = contentChild<TransactionsTableExtraColumn<R>>(
-    TransactionsTableExtraColumn,
-  );
 
   protected readonly editable = computed(() => this.mode() === 'edit');
 

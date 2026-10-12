@@ -8,7 +8,7 @@ import { LoanLink } from '../loans/loan.model';
  * Ciò che la cella legge del movimento.
  *
  * Una forma strutturale e non `Transaction`: la cella è resa dentro il
- * template proiettato nella tabella condivisa, il cui contesto è tipizzato
+ * template della colonna aggiuntiva della tabella condivisa, il cui contesto è tipizzato
  * sulla riga di `shared/` (con `type: string`), non sul modello di dominio.
  * Per confrontare il tipo con `'LOAN'` la stringa basta.
  */
@@ -45,8 +45,8 @@ interface LoanCell {
  *
  * Vive nella feature e non nella tabella condivisa: link al workspace dei
  * prestiti, regole su cosa sia creabile e quota di spesa propria sono dominio.
- * La pagina dei movimenti la proietta come colonna aggiuntiva
- * (`appTransactionsTableExtraColumn`), e le passa i legami già indicizzati per
+ * La pagina dei movimenti la passa come colonna aggiuntiva (l'input
+ * `extraColumn` della tabella condivisa), e le passa i legami già indicizzati per
  * movimento: l'indice si costruisce una volta per pagina, non una per cella.
  */
 @Component({

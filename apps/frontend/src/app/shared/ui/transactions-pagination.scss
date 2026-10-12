@@ -1,4 +1,4 @@
-@use '../../shared/styles/typography';
+@use '../styles/typography';
 
 .pagination {
   display: flex;
@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-5) var(--space-8);
-  padding: var(--space-6);
+  padding: var(--space-4) var(--space-6);
 }
 
 .range {
@@ -25,18 +25,37 @@
 
 .page,
 .step {
-  padding: var(--space-3) var(--space-5);
-  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-control);
-  background: var(--color-surface);
   font: inherit;
   @include typography.text('caption');
   cursor: pointer;
 }
 
+.page {
+  border: var(--border-width) solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+
+  svg {
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
 .page:hover:not(.current),
 .step:hover:not(:disabled) {
   color: var(--color-text-primary);
+}
+
+.step:hover:not(:disabled) {
+  background: var(--color-surface-hover);
 }
 
 .page.current {

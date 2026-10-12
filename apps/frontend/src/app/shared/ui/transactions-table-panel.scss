@@ -1,15 +1,18 @@
-app-transactions-table {
-  display: block;
-  margin: var(--space-6) 0;
+/*
+ * Il titolo, quando c'è. Il pannello è senza padding (la tabella deve
+ * arrivare ai bordi), quindi l'intestazione prende lo stesso respiro laterale
+ * della barra di paginazione e si allinea con il suo testo. Sotto niente
+ * margine: lo spazio fino alla paginazione è già il padding superiore di
+ * quella, e sommarli staccherebbe il titolo dalla sua tabella.
+ */
+app-section-header {
+  margin-bottom: 0;
+  padding: var(--space-6) var(--space-6) 0;
 }
 
 .message {
   margin: 0;
   color: var(--color-text-muted);
-}
-
-.message.error {
-  color: var(--color-error);
 }
 
 .empty {
@@ -45,6 +48,11 @@ app-transactions-table {
   .skeleton .line {
     animation: none;
   }
+}
+
+app-transactions-table {
+  display: block;
+  margin: var(--space-6) 0;
 }
 
 /*

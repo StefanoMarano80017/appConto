@@ -1,9 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, TemplateRef, computed, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TransactionsTable, TransactionsTableExtraColumn } from './transactions-table';
+import { TransactionsTable } from './transactions-table';
 import type {
   TransactionsTableCategory,
   TransactionsTableCategoryChange,
+  TransactionsTableExtraColumnContext,
+  TransactionsTableExtraColumnDef,
   TransactionsTableRow,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
@@ -82,6 +84,32 @@ describe('TransactionsTable', () => {
 
     fixture = TestBed.createComponent(TransactionsTable);
     fixture.componentRef.setInput('typeOptions', TYPE_OPTIONS);
+  });
+
+  // Con `table-layout: fixed` le larghezze arrivano dalle colonne: una `col`
+  // per ogni colonna mostrata, né una in più né una in meno.
+  it('dichiara una colonna fissa per ogni colonna mostrata', async () => {
+    await render([transaction('1', -300)]);
+
+    const cols = (): string[] =>
+      [...host().querySelectorAll('colgroup col')].map((col) => col.className);
+
+    expect(cols()).toEqual([
+      'col-date',
+      'col-description',
+      'col-merchant',
+      'col-type',
+      'col-category',
+      'col-amount',
+    ]);
+    expect(cols()).toHaveLength(host().querySelectorAll('thead th').length);
+
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.componentRef.setInput('selectable', true);
+    await fixture.whenStable();
+
+    expect(cols()[0]).toBe('col-select');
+    expect(cols()).toHaveLength(host().querySelectorAll('thead th').length);
   });
 
   it('la riga di totale somma gli importi delle transazioni mostrate', async () => {
@@ -407,26 +435,31 @@ describe('TransactionsTable', () => {
 });
 
 /**
- * Un ospite che proietta la colonna aggiuntiva, accesa o spenta da un segnale:
+ * Un ospite che passa la colonna aggiuntiva, accesa o spenta da un segnale:
  * è lo stesso schema della pagina dei movimenti, dove la colonna dei prestiti
- * resta nascosta finché i legami non sono arrivati.
+ * resta `null` finché i legami non sono arrivati.
  */
 @Component({
-  imports: [TransactionsTable, TransactionsTableExtraColumn],
+  imports: [TransactionsTable],
   template: `
-    <app-transactions-table [transactions]="rows" [typeOptions]="types">
-      @if (showExtra()) {
-        <ng-template appTransactionsTableExtraColumn="Extra" let-row>
-          <span class="probe">{{ row.id }} · {{ row.description }}</span>
-        </ng-template>
-      }
-    </app-transactions-table>
+    <ng-template #extra let-row>
+      <span class="probe">{{ row.id }} · {{ row.description }}</span>
+    </ng-template>
+
+    <app-transactions-table [transactions]="rows" [typeOptions]="types" [extraColumn]="column()" />
   `,
 })
 class ExtraColumnHost {
   readonly rows = [transaction('1', -300), transaction('2', 500)];
   readonly types = TYPE_OPTIONS;
   readonly showExtra = signal(true);
+
+  private readonly extra =
+    viewChild.required<TemplateRef<TransactionsTableExtraColumnContext>>('extra');
+
+  readonly column = computed<TransactionsTableExtraColumnDef | null>(() =>
+    this.showExtra() ? { label: 'Extra', template: this.extra() } : null,
+  );
 }
 
 describe('TransactionsTable — colonna aggiuntiva', () => {
@@ -467,9 +500,9 @@ describe('TransactionsTable — colonna aggiuntiva', () => {
     expect(celle.at(-1)?.textContent?.trim()).toBe('');
   });
 
-  // È ciò che fa la pagina dei movimenti: un `@if` intorno al template, e la
-  // colonna compare e scompare con lui.
-  it('segue l’`@if` che avvolge il template', async () => {
+  // È ciò che fa la pagina dei movimenti: `null` finché i legami non ci sono,
+  // e la colonna compare e scompare con l'input.
+  it('segue l’input: `null` la toglie, un valore la rimette', async () => {
     fixture.componentInstance.showExtra.set(false);
     await fixture.whenStable();
 
@@ -485,7 +518,7 @@ describe('TransactionsTable — colonna aggiuntiva', () => {
 });
 
 describe('TransactionsTable — senza colonna aggiuntiva', () => {
-  it('non aggiunge né intestazione né celle se nessun template è proiettato', async () => {
+  it('non aggiunge né intestazione né celle se la colonna non è passata', async () => {
     await TestBed.configureTestingModule({ imports: [TransactionsTable] }).compileComponents();
 
     const fixture = TestBed.createComponent(TransactionsTable);

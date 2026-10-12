@@ -25,9 +25,59 @@
 .scroller {
   @include mixins.data-table;
 
-  /* Sette colonne sotto le 44rem diventano illeggibili: meglio scorrere. */
+  /*
+   * Colonne a larghezza fissa: il contenuto non le allarga, si tronca.
+   *
+   * Sotto le 64rem la descrizione, che prende lo spazio che resta, si
+   * ridurrebbe a poche lettere: meglio scorrere.
+   */
   table {
-    min-width: 44rem;
+    min-width: 64rem;
+    table-layout: fixed;
+  }
+}
+
+/*
+ * Le larghezze delle colonne.
+ *
+ * La descrizione non ne ha una: è la sola colonna elastica, e assorbe lo
+ * spazio che le altre lasciano. Le altre sono pensate per il loro contenuto
+ * tipico — una data, un importo, il nome di una categoria — più il padding.
+ */
+.transactions {
+  .col-select {
+    width: 2.5rem;
+  }
+
+  .col-date {
+    width: 8rem;
+  }
+
+  .col-merchant {
+    width: 20rem;
+  }
+
+  .col-type {
+    width: 11rem;
+  }
+
+  .col-category {
+    width: 12rem;
+  }
+
+  .col-amount {
+    width: 9.5rem;
+  }
+
+  .col-extra {
+    width: 10rem;
+  }
+
+  /* Le intestazioni seguono la stessa regola delle celle: si troncano, non allargano. */
+  th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -41,19 +91,12 @@
   }
 
   /*
-   * Le colonne di testo libero: un tetto, poi l'ellissi.
-   *
-   * Senza un massimo è la descrizione più lunga a decidere la larghezza
-   * della tabella, e a trascinare nello scorrimento orizzontale anche gli
-   * schermi larghi. Il testo intero non si perde: `appTruncate` lo mette nel
-   * tooltip di ciò che ha tagliato.
+   * Le colonne di testo libero tagliano con l'ellissi dove finisce la loro
+   * colonna. Il testo intero non si perde: resta nel DOM, quindi gli screen
+   * reader lo leggono tutto, e `appTruncate` lo mette nel tooltip di ciò che
+   * ha tagliato.
    */
-  .description {
-    max-width: 26rem;
-  }
-
   .merchant {
-    max-width: 16rem;
     color: var(--color-text-muted);
   }
 
@@ -79,6 +122,24 @@
    * componente della feature, `transaction-loan-cell.scss`). Qui resta solo
    * l'involucro della cella, che il mixin `data-table` già disegna.
    */
+}
+
+/*
+ * In sola lettura il contenuto si stacca dai bordi del pannello.
+ *
+ * Il margine sta nelle celle estreme e non sulla riga: i divisori sono il
+ * `border-bottom` delle celle, quindi restano continui da un capo all'altro.
+ */
+.transactions.readonly {
+  th:first-child,
+  td:first-child {
+    padding-left: var(--space-6);
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: var(--space-6);
+  }
 }
 
 /* La colonna di selezione: presente solo dove selezionare ha un senso. */
