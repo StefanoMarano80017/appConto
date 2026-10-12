@@ -248,21 +248,16 @@
             label="Movimento collegato"
             hint="Se il denaro è arrivato con un bonifico, scegli il movimento: resta l'entrata che è, il collegamento aggiunge solo il significato. Se è stato restituito in contanti lascia «Contanti» — il conto non è stato toccato e non deve sembrare il contrario."
           >
-            <select
-              id="repaymentTransactionId"
+            <app-select
+              appearance="field"
+              triggerId="repaymentTransactionId"
               name="repaymentTransactionId"
-              [ngModel]="repaymentForm().transactionId"
+              placeholder="Contanti — nessun movimento bancario"
+              [options]="repaymentOptions()"
+              [ngModel]="repaymentForm().transactionId || null"
               (ngModelChange)="updateRepaymentField('transactionId', $event)"
-              [attr.aria-describedby]="repaymentTransactionIdDescribedBy()"
-            >
-              <option value="">Contanti — nessun movimento bancario</option>
-              @for (candidate of repaymentCandidates(); track candidate.id) {
-                <option [value]="candidate.id">
-                  {{ formatBookingDate(candidate.bookingDate) }} ·
-                  {{ formatAmount(candidate.amount) }} · {{ candidate.description }}
-                </option>
-              }
-            </select>
+              [ariaDescribedBy]="repaymentTransactionIdDescribedBy()"
+            />
           </app-form-field>
 
           <div class="actions">

@@ -1,5 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { FormField } from '../../shared/ui/form-field';
+import { Select } from '../../shared/ui/select';
+import type { SelectOption } from '../../shared/ui/select.model';
 import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 import {
   ColumnMappingErrors,
@@ -20,7 +22,7 @@ import {
  */
 @Component({
   selector: 'app-column-picker',
-  imports: [FormField],
+  imports: [FormField, Select],
   templateUrl: './column-picker.html',
   styleUrl: './column-picker.scss'
 })
@@ -29,6 +31,11 @@ export class ColumnPicker {
   readonly form = input.required<ColumnMappingFormValue>();
   readonly errors = input.required<ColumnMappingErrors>();
   readonly changed = output<ColumnMappingFormValue>();
+
+  /** Le intestazioni del file come voci del select: l'id è l'intestazione stessa. */
+  protected readonly headerOptions = computed<SelectOption<string>[]>(() =>
+    this.analysis().headers.map((header) => ({ id: header, name: header }))
+  );
 
   protected readonly bookingDateDescribedBy = computed(() =>
     formFieldDescribedBy('bookingDate', { error: this.errors().bookingDate != null, hint: false })
