@@ -76,7 +76,7 @@ La barra di paginazione resta visibile, così si può anche scegliere un'altra p
 
 ### Filtro e ricerca
 
-- `app-choice-group` con tre voci, il conteggio nell'etichetta: "Tutti (312)", "Classificati (280)", "Da classificare (32)" *(scelta di Claude)*. I conteggi arrivano dal backend e sono sull'intero archivio, non sulla ricerca.
+- `app-choice-group` con tre voci, etichette "Tutti", "Classificati", "Da classificare" con il conteggio a parte, in tono smorzato (312, 280, 32) *(scelta di Claude)*. I conteggi arrivano dal backend e sono sull'intero archivio, non sulla ricerca.
 - La ricerca si fa sul backend con le regole di oggi (`label` o `name`, senza distinzione maiuscole) e finisce nell'URL come `search`. Aggiorna l'URL con `replaceUrl` per non riempire la cronologia a ogni tasto *(scelta di Claude)*.
 
 ### Stati della pagina

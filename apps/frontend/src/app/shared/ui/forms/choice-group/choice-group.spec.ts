@@ -16,6 +16,7 @@ interface OpzioneTest {
       [value]="value()"
       [mode]="mode()"
       [display]="display()"
+      [size]="size()"
       ariaLabel="Periodo"
       (selected)="ultimoSelezionato = $event"
     />
@@ -30,6 +31,7 @@ class Ospite {
   readonly value = input<string | readonly string[]>('this-month');
   readonly mode = input<'single' | 'multiple'>('single');
   readonly display = input<'label' | 'icon' | 'both'>('label');
+  readonly size = input<'normal' | 'low'>('normal');
 
   ultimoSelezionato: string | null = null;
 }
@@ -257,6 +259,44 @@ describe('ChoiceGroup', () => {
 
         expect(indicatore()?.classList.contains('ready')).toBe(true);
       });
+    });
+  });
+
+  describe('misura e conteggio', () => {
+    const conConteggio: readonly ChoiceOption<string>[] = [
+      { id: 'all', label: 'Tutti', count: 5 },
+      { id: 'unclassified', label: 'Da classificare', count: 48 },
+      { id: 'none', label: 'Nessuno' }
+    ];
+
+    it('size low aggiunge la classe low all\'host, il default no', async () => {
+      const gruppo = host().querySelector('app-choice-group') as HTMLElement;
+      expect(gruppo.classList.contains('low')).toBe(false);
+
+      fixture.componentRef.setInput('size', 'low');
+      await fixture.whenStable();
+
+      expect(gruppo.classList.contains('low')).toBe(true);
+    });
+
+    it('un\'opzione con count mostra .count fuori da .label e lo legge dopo l\'etichetta', async () => {
+      fixture.componentRef.setInput('options', conConteggio);
+      await fixture.whenStable();
+
+      const bottoneConteggio = bottoni()[1];
+      expect(bottoneConteggio.querySelector('.count')?.textContent?.trim()).toBe('48');
+      expect(bottoneConteggio.querySelector('.label .count')).toBeNull();
+      expect(bottoneConteggio.querySelector('.label')?.textContent?.trim()).toBe('Da classificare');
+      expect(bottoneConteggio.getAttribute('aria-label')).toBe('Da classificare, 48');
+    });
+
+    it('le opzioni senza count restano invariate', async () => {
+      fixture.componentRef.setInput('options', conConteggio);
+      await fixture.whenStable();
+
+      const senza = bottoni()[2];
+      expect(senza.querySelector('.count')).toBeNull();
+      expect(senza.getAttribute('aria-label')).toBeNull();
     });
   });
 });

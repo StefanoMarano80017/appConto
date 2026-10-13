@@ -128,12 +128,11 @@ export class MerchantsPage implements OnDestroy {
   /** Le voci del filtro, con il conteggio sull'intero archivio. */
   protected readonly filterOptions = computed<ChoiceOption<ClassificationFilter>[]>(() => {
     const counts = this.data()?.counts;
-    const count = (value: number | undefined): string => (value === undefined ? '' : ` (${value})`);
 
     return [
-      { id: 'all', label: `Tutti${count(counts?.all)}` },
-      { id: 'classified', label: `Classificati${count(counts?.classified)}` },
-      { id: 'unclassified', label: `Da classificare${count(counts?.unclassified)}` },
+      { id: 'all', label: 'Tutti', count: counts?.all },
+      { id: 'classified', label: 'Classificati', count: counts?.classified },
+      { id: 'unclassified', label: 'Da classificare', count: counts?.unclassified },
     ];
   });
 
