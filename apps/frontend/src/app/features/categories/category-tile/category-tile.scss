@@ -1,0 +1,167 @@
+@use '../../../shared/styles/mixins';
+@use '../../../shared/styles/typography';
+
+/*
+ * Il pannello di `app-color-picker` è `position: fixed`: qui (e sugli antenati)
+ * niente `opacity`, `transform`, `filter`, `contain` né `overflow: hidden`, che
+ * lo chiuderebbero in un nuovo blocco contenitore o in uno stacking context
+ * sotto le tessere successive. Per questo l'ellissi del nome sta su uno
+ * `<span>` interno e l'attenuazione di `busy` va sui singoli figli.
+ */
+:host {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+:host(:hover) {
+  background: var(--color-surface-elevated);
+}
+
+:host(.editing) {
+  @include mixins.form-control-focus;
+}
+
+:host(.confirming) {
+  flex-wrap: wrap;
+}
+
+// Non sul color picker: il trigger disabilitato si attenua da sé, e l'opacità
+// renderebbe semitrasparente anche il suo pannello aperto.
+:host(.busy) > :not(app-color-picker) {
+  opacity: 0.6;
+}
+
+app-color-picker {
+  flex: none;
+}
+
+/*
+ * Nome e campo hanno la stessa altezza, lo stesso padding e lo stesso bordo
+ * (trasparente) perché la tessera non cambi altezza entrando in modifica.
+ */
+.name,
+.name-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2rem;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+span.name {
+  display: flex;
+  align-items: center;
+}
+
+button.name {
+  cursor: text;
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+}
+
+.name-input {
+  outline: none;
+}
+
+.name-text {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.icon,
+.lock-slot {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-muted);
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.icon {
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.icon.delete:hover:not(:disabled) {
+  color: var(--color-error);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.count {
+  flex: none;
+  @include typography.text('caption');
+  font-variant-numeric: tabular-nums;
+}
+
+.ask {
+  flex: 1 1 100%;
+  margin: 0;
+  @include typography.text('caption');
+}
+
+.confirm {
+  display: flex;
+  gap: var(--space-3);
+
+  button {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-control);
+    @include typography.text('secondary');
+    cursor: pointer;
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  button.danger {
+    border: var(--border-width) solid var(--color-error);
+    background: transparent;
+    color: var(--color-error);
+  }
+
+  button.ghost {
+    border: var(--border-width) solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-muted);
+  }
+}

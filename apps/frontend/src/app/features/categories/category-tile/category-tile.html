@@ -1,0 +1,84 @@
+@let current = category();
+@if (confirming() && current) {
+  <p class="ask">
+    {{ current.merchantCount }}
+    {{ current.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
+    su «Da classificare». Eliminare?
+  </p>
+  <div class="confirm">
+    <button
+      type="button"
+      class="danger"
+      [disabled]="deleting()"
+      (click)="deleteConfirmed.emit()"
+    >
+      {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+    </button>
+    <button type="button" class="ghost" [disabled]="deleting()" (click)="deleteCancelled.emit()">
+      Annulla
+    </button>
+  </div>
+} @else {
+  <app-color-picker
+    appearance="inline"
+    [value]="color()"
+    [ariaLabel]="colorLabel()"
+    [disabled]="busy()"
+    (valueCommitted)="onColor($event)"
+  />
+
+  @if (editing()) {
+    <input
+      #field
+      type="text"
+      class="name-input"
+      autocomplete="off"
+      [value]="draftName()"
+      [attr.aria-label]="nameLabel()"
+      [disabled]="busy()"
+      (input)="onFieldInput($event)"
+      (keydown)="onFieldKeydown($event)"
+    />
+  } @else if (current && locked()) {
+    <span class="name" [title]="current.name"><span class="name-text">{{ current.name }}</span></span>
+    <span class="lock-slot" title="Categoria protetta">
+      <svg class="lock" aria-hidden="true" lucideLock></svg>
+    </span>
+  } @else if (current) {
+    <button
+      type="button"
+      class="name"
+      [title]="current.name"
+      [disabled]="busy()"
+      (click)="startEditing()"
+    >
+      <span class="name-text">{{ current.name }}</span>
+    </button>
+    <button
+      type="button"
+      class="icon edit"
+      [attr.aria-label]="'Rinomina ' + current.name"
+      [disabled]="busy()"
+      (click)="startEditing()"
+    >
+      <svg aria-hidden="true" lucidePencil></svg>
+    </button>
+  }
+
+  @if (current) {
+    <span class="count" [attr.aria-label]="current.merchantCount + ' merchant'">{{
+      current.merchantCount
+    }}</span>
+    @if (!locked() && !editing()) {
+      <button
+        type="button"
+        class="icon delete"
+        [attr.aria-label]="'Elimina ' + current.name"
+        [disabled]="busy()"
+        (click)="deleteAsked.emit()"
+      >
+        <svg aria-hidden="true" lucideTrash2></svg>
+      </button>
+    }
+  }
+}
