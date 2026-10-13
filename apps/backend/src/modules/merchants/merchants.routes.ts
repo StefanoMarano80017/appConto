@@ -1,7 +1,9 @@
 import { Router, json } from 'express';
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors.js';
-import { toMerchantDto, toMerchantSummaryDto } from './merchants.dto.js';
+import { queryParam } from '../../shared/http/query-params.js';
+import { parseMerchantQuery } from './merchant-query.js';
+import { toMerchantDto, toMerchantPageDto, toMerchantSummaryDto } from './merchants.dto.js';
 import { merchantsService } from './merchants.service.js';
 
 export const merchantsRouter = Router();
@@ -29,9 +31,18 @@ merchantsRouter.get('/summary', (_req, res) => {
   res.json(merchantsService.listSummaries().map(toMerchantSummaryDto));
 });
 
-// GET /merchants
-merchantsRouter.get('/', (_req, res) => {
-  res.json(merchantsService.listAllWithCategory().map(toMerchantDto));
+// GET /merchants?search=&classification=&page=&pageSize=&sortBy=&sortDirection=
+merchantsRouter.get('/', (req, res) => {
+  const query = parseMerchantQuery({
+    search: queryParam(req.query.search, 'search'),
+    classification: queryParam(req.query.classification, 'classification'),
+    page: queryParam(req.query.page, 'page'),
+    pageSize: queryParam(req.query.pageSize, 'pageSize'),
+    sortBy: queryParam(req.query.sortBy, 'sortBy'),
+    sortDirection: queryParam(req.query.sortDirection, 'sortDirection'),
+  });
+
+  res.json(toMerchantPageDto(merchantsService.search(query)));
 });
 
 // PATCH /merchants/:id — rinomina, indipendente dalla categoria

@@ -5,11 +5,15 @@ export {
   merchantsService,
   type MerchantWithCategory,
   type MerchantSummary,
+  type MerchantPage,
+  type MerchantCounts,
 } from './merchants.service.js';
 export {
   toMerchantDto,
   toMerchantSummaryDto,
+  toMerchantPageDto,
   type MerchantDto,
+  type MerchantPageDto,
   type MerchantSummaryDto,
 } from './merchants.dto.js';
 export { merchantsRouter } from './merchants.routes.js';

@@ -1,6 +1,11 @@
 import { toCategoryDto, type CategoryDto } from '../categories/index.js';
 import { merchantLabel } from './merchant.model.js';
-import type { MerchantSummary, MerchantWithCategory } from './merchants.service.js';
+import type {
+  MerchantCounts,
+  MerchantPage,
+  MerchantSummary,
+  MerchantWithCategory,
+} from './merchants.service.js';
 
 /** Rappresentazione del merchant esposta dalle API. */
 export interface MerchantDto {
@@ -41,5 +46,25 @@ export function toMerchantSummaryDto(summary: MerchantSummary): MerchantSummaryD
     transactionCount: summary.transactionCount,
     totalSpent: summary.totalSpent,
     lastTransactionDate: summary.lastTransactionDate,
+  };
+}
+
+/** Una pagina di merchant, con la paginazione e i conteggi dell'archivio. */
+export interface MerchantPageDto {
+  items: MerchantSummaryDto[];
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  counts: MerchantCounts;
+}
+
+export function toMerchantPageDto(page: MerchantPage): MerchantPageDto {
+  return {
+    items: page.summaries.map(toMerchantSummaryDto),
+    pagination: {
+      page: page.page,
+      pageSize: page.pageSize,
+      total: page.total,
+      totalPages: page.totalPages,
+    },
+    counts: page.counts,
   };
 }
