@@ -37,6 +37,9 @@ type FocusTarget = keyof typeof FOCUS_TARGETS;
  * La tessera non salva nulla da sé: emette gli output e lascia alla pagina le
  * chiamate alle API e gli stati `busy` / `confirmingDelete` / `deleting`.
  */
+/** Durata della transizione del contenuto: la stessa dell'animazione in `category-tile.scss`. */
+const SWAP_MS = 220;
+
 @Component({
   selector: 'app-category-tile',
   imports: [ColorPicker, LucideCheck, LucideLock, LucideTrash2, LucideX],
@@ -48,6 +51,7 @@ type FocusTarget = keyof typeof FOCUS_TARGETS;
     '[class.draft]': 'isDraft()',
     '[class.busy]': 'busy()',
     '[class.confirming]': 'confirming()',
+    '[class.swapping]': 'swapping()',
     '(keydown)': 'onKeydown($event)',
     '(focusout)': 'onFocusout($event)',
     '(pointerdown)': 'onPointerdown($event)',
@@ -76,6 +80,14 @@ export class CategoryTile implements OnInit {
 
   protected readonly isDraft = computed(() => this.category() === null);
   protected readonly confirming = computed(() => this.confirmingDelete() && !this.isDraft());
+  /** Vero per la durata della transizione fra il contenuto normale e la conferma. */
+  protected readonly swapping = signal(false);
+  /** La frase intera della conferma, per lo screen reader e per il `title`. */
+  protected readonly askText = computed(() => {
+    const count = this.category()?.merchantCount ?? 0;
+    const verb = count === 1 ? 'verrà spostato' : 'verranno spostati';
+    return `${count} merchant ${verb} su «Da classificare». Eliminare?`;
+  });
   protected readonly color = computed(() => {
     const category = this.category();
     return category ? (category.color ?? DEFAULT_COLOR) : this.draftColor();
@@ -115,6 +127,7 @@ export class CategoryTile implements OnInit {
         return;
       }
       this.wasConfirming = confirming;
+      this.playSwap();
       if (confirming) {
         this.pendingFocus = null;
         afterNextRender(
@@ -140,6 +153,12 @@ export class CategoryTile implements OnInit {
         afterNextRender(() => this.flushFocus(), { injector: this.injector });
       }
     });
+  }
+
+  /** Accende per un attimo la classe che anima il contenuto appena comparso. */
+  private playSwap(): void {
+    this.swapping.set(true);
+    setTimeout(() => this.swapping.set(false), SWAP_MS);
   }
 
   ngOnInit(): void {

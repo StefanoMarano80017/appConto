@@ -1,16 +1,33 @@
 @let current = category();
 @if (confirming() && current) {
-  <p class="ask">
-    {{ current.merchantCount }}
-    {{ current.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
-    su «Da classificare». Eliminare?
+  <!--
+    La tessera non cambia misura: la conferma occupa la stessa riga, con un testo
+    breve (la frase intera resta per gli screen reader) e due pulsanti icona.
+  -->
+  <p class="ask" [title]="askText()">
+    <span aria-hidden="true">Eliminare? {{ current.merchantCount }} merchant → «Da classificare»</span>
+    <span class="sr-only">{{ askText() }}</span>
   </p>
   <div class="confirm">
-    <button type="button" class="danger" [disabled]="deleting()" (click)="deleteConfirmed.emit()">
-      {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
+    <button
+      type="button"
+      class="icon danger"
+      [attr.aria-label]="deleting() ? 'Eliminazione in corso' : 'Sì, elimina ' + current.name"
+      [title]="deleting() ? 'Eliminazione…' : 'Sì, elimina'"
+      [disabled]="deleting()"
+      (click)="deleteConfirmed.emit()"
+    >
+      <svg aria-hidden="true" lucideCheck></svg>
     </button>
-    <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
-      Annulla
+    <button
+      type="button"
+      class="icon ghost"
+      aria-label="Annulla"
+      title="Annulla"
+      [disabled]="deleting()"
+      (click)="cancelDelete()"
+    >
+      <svg aria-hidden="true" lucideX></svg>
     </button>
   </div>
 } @else {

@@ -229,28 +229,31 @@ describe('CategoryTile', () => {
     host.confirmingDelete.set(true);
     await stable();
 
-    expect(q('.ask')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(q('.ask .sr-only')?.textContent?.trim()).toBe(
       '1 merchant verrà spostato su «Da classificare». Eliminare?',
+    );
+    expect(q('.ask span[aria-hidden]')?.textContent?.trim()).toBe(
+      'Eliminare? 1 merchant → «Da classificare»',
     );
     expect(q('app-color-picker')).toBeNull();
     expect(q('button.name')).toBeNull();
 
     host.category.set({ ...SPESA, merchantCount: 3 });
     await stable();
-    expect(q('.ask')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(q('.ask .sr-only')?.textContent?.trim()).toBe(
       '3 merchant verranno spostati su «Da classificare». Eliminare?',
     );
 
     const [confirm, cancel] = Array.from(tile().querySelectorAll<HTMLButtonElement>('.confirm button'));
-    expect(confirm.textContent?.trim()).toBe('Sì, elimina');
-    expect(cancel.textContent?.trim()).toBe('Annulla');
+    expect(confirm.getAttribute('aria-label')).toBe('Sì, elimina Spesa');
+    expect(cancel.getAttribute('aria-label')).toBe('Annulla');
     confirm.click();
     cancel.click();
     expect(host.events).toEqual([['deleteAsked'], ['deleteConfirmed'], ['deleteCancelled']]);
 
     host.deleting.set(true);
     await stable();
-    expect(confirm.textContent?.trim()).toBe('Eliminazione…');
+    expect(confirm.getAttribute('aria-label')).toBe('Eliminazione in corso');
     expect(confirm.disabled).toBe(true);
     expect(cancel.disabled).toBe(true);
   });

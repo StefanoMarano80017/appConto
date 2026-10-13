@@ -38,7 +38,7 @@ L'utente ha scelto, fra tre mockup (griglia di tessere, elenco + pannello di mod
 
 - Che il nome non sembri modificabile: il nome è un pulsante con sfondo al passaggio del mouse e cursore testo. *(La matita della prima versione è stata tolta su richiesta dell’utente: l’unica modifica è il nome, già cliccabile.)*
 - Salvare un nome per errore: si salva solo con Invio o uscendo dal campo con un valore cambiato e non vuoto; Esc annulla sempre.
-- Una tessera che cambia altezza o fa saltare la griglia entrando in modifica o in conferma di eliminazione oltre lo stretto necessario.
+- Una tessera che cambia misura o fa saltare la griglia: l'altezza è fissa (2,75rem) in ogni stato, anche in modifica e in conferma di eliminazione.
 - Colori, spaziature, raggi o font letterali: `npm run gate` deve passare senza nuovi `ds-exception`. La regola speciale del raggio da 4px della vecchia cella di rinomina sparisce insieme alla tabella.
 - Regressioni sul comportamento esistente: protezione di «Da classificare», messaggio sullo spostamento dei merchant all'eliminazione, ricarica della lista dopo un salvataggio fallito.
 
@@ -69,7 +69,7 @@ Stile: sfondo `--color-surface`, bordo `--color-border`, raggio `--radius-input`
 | riposo | come sopra |
 | in modifica del nome | il nome diventa un `<input>`, bordo `--color-primary` e anello `--color-focus-ring` (mixin `form-control-focus`); cestino nascosto |
 | salvataggio in corso | tessera attenuata (opacità 0,6, *non* sul color picker aperto: vedi il commento esistente in `categories-page.scss`), controlli disabilitati |
-| conferma eliminazione | il contenuto della tessera è sostituito da: «N merchant verranno spostati su «Da classificare». Eliminare?» + [Sì, elimina] [Annulla]. La tessera può crescere in altezza solo qui |
+| conferma eliminazione | stessa misura della tessera: il contenuto è sostituito da «Eliminare? N merchant → «Da classificare»» (al massimo due righe; la frase intera «N merchant verrà/verranno spostato/i su «Da classificare». Eliminare?» resta per gli screen reader e nel `title`) + due pulsanti icona ✓ (rosso, «Sì, elimina X») e ✕ («Annulla»). Il passaggio fra contenuto normale e conferma, in entrambe le direzioni, è una dissolvenza con piccolo scorrimento (220ms, spenta con `prefers-reduced-motion`) |
 | protetta («Da classificare») | lucchetto, nome non cliccabile, nessun cestino; il colore resta modificabile (come oggi) |
 
 `aria-label` coerenti con l'attuale pagina: «Nome di X», «Colore di X», «Azioni per X».

@@ -12,7 +12,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: 2.75rem;
+  // Altezza fissa: né la modifica né la conferma di eliminazione la cambiano.
+  height: 2.75rem;
   padding: var(--space-2) var(--space-4);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-input);
@@ -41,8 +42,27 @@
   box-shadow: none;
 }
 
-:host(.confirming) {
-  flex-wrap: wrap;
+/*
+ * Il contenuto che compare (la conferma, o il contenuto normale che torna)
+ * entra con una breve dissolvenza e un piccolo scorrimento. Solo mentre dura
+ * la transizione: a riposo nessun `opacity` né `transform` sui figli, che
+ * chiuderebbero il pannello `position: fixed` del color picker.
+ */
+:host(.swapping) > * {
+  animation: content-swap 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes content-swap {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-3));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host(.swapping) > * {
+    animation: none;
+  }
 }
 
 // Non sul color picker: il trigger disabilitato si attenua da sé, e l'opacità
@@ -177,35 +197,29 @@ button:focus-visible {
 }
 
 .ask {
-  flex: 1 1 100%;
+  flex: 1;
+  min-width: 0;
   margin: 0;
   @include typography.text('caption');
+  line-height: 1.25;
+  // Al massimo due righe dentro l'altezza fissa della tessera.
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .confirm {
+  flex: none;
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
 
-  button {
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-control);
-    @include typography.text('secondary');
-    cursor: pointer;
+.icon.danger {
+  color: var(--color-error);
 
-    &:disabled {
-      cursor: not-allowed;
-    }
-  }
-
-  button.danger {
-    border: var(--border-width) solid var(--color-error);
-    background: transparent;
+  &:hover:not(:disabled) {
     color: var(--color-error);
-  }
-
-  button.ghost {
-    border: var(--border-width) solid var(--color-border);
-    background: transparent;
-    color: var(--color-text-muted);
   }
 }

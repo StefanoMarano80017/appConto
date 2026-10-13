@@ -272,9 +272,9 @@ describe('CategoriesPage', () => {
 
     click(root(fixture).querySelector('button.delete'));
     fixture.detectChanges();
-    expect(root(fixture).textContent).toContain('2 merchant verranno spostati');
+    expect(root(fixture).textContent).toContain('2 merchant verranno spostati su «Da classificare»');
 
-    click(buttonByText(fixture, 'Sì, elimina'));
+    click(root(fixture).querySelector('.confirm button.danger'));
     const request = http.expectOne(`${API_BASE_URL}/categories/c-1`);
     expect(request.request.method).toBe('DELETE');
     request.flush(null);
