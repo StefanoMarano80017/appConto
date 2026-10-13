@@ -1,48 +1,25 @@
-import { cashFlowService } from '../cash-flow/index.js';
-import { loansService } from '../loans/index.js';
-import { merchantLabel } from '../merchants/index.js';
+import { DEFAULT_LOAN_QUERY, loansService } from '../loans/index.js';
+import { DEFAULT_MERCHANT_QUERY, merchantLabel, merchantsService } from '../merchants/index.js';
 import { requireMonth, summarizeEntries } from '../summary/index.js';
 import {
+  DEFAULT_QUERY,
   expenseCents,
   hasExpense,
   toAmountCents,
-  toTransactionDto,
   transactionsService,
   type TransactionWithMerchant,
 } from '../transactions/index.js';
-import { applyFilters, type DashboardFilters } from './dashboard-filters.js';
-import { previousMonth } from './dashboard.period.js';
+import { clampMonth, comparisonWindow, defaultMonth, previousMonth } from './dashboard.period.js';
 import type {
-  CategoryBreakdown,
-  CategoryComparison,
+  DashboardCategory,
   DashboardViewModel,
-  MerchantBreakdown,
-  MonthComparison,
-  TopMerchant,
-  TransactionRef,
+  RecentTransaction,
 } from './dashboard.view-model.js';
 
-/** Quanti merchant mostrare nella sezione "top": l'elenco completo vive in `/merchants`. */
-const TOP_MERCHANTS_LIMIT = 5;
+const TOP_CATEGORIES_LIMIT = 5;
+const RECENT_TRANSACTIONS_LIMIT = 5;
 
 const UNCATEGORIZED_NAME = 'Senza categoria';
-const UNKNOWN_MERCHANT_NAME = 'Senza merchant';
-
-interface MerchantAccumulator {
-  id: string;
-  label: string;
-  amountCents: number;
-  transactions: TransactionRef[];
-}
-
-interface CategoryAccumulator {
-  id: string | null;
-  name: string;
-  color: string | null;
-  amountCents: number;
-  transactionCount: number;
-  merchants: Map<string, MerchantAccumulator>;
-}
 
 /** Un movimento e la quota che ne è spesa reale. */
 interface ExpenseEntry extends TransactionWithMerchant {
@@ -50,13 +27,17 @@ interface ExpenseEntry extends TransactionWithMerchant {
   expense: number;
 }
 
+interface CategoryTotal {
+  name: string;
+  color: string | null;
+  amountCents: number;
+}
+
 /**
  * I soli movimenti che contengono una spesa, con la quota che lo è.
  *
  * Prelievi e giroconti non sono spesa e restano fuori. Un pagamento in parte
- * prestato entra per la sola quota rimasta a carico proprio: è quella che è
- * finita davvero in una categoria. Calcolare la quota una volta qui evita che
- * ogni sezione della dashboard la ricavi a modo suo.
+ * prestato entra per la sola quota rimasta a carico proprio.
  */
 function expensesOnly(
   entries: readonly TransactionWithMerchant[],
@@ -74,12 +55,11 @@ function expensesOnly(
   });
 }
 
-/** Spese per categoria, in centesimi: base sia del drill down sia del confronto. */
-function expenseCentsByCategory(entries: readonly ExpenseEntry[]): Map<
-  string | null,
-  { name: string; color: string | null; amountCents: number }
-> {
-  const totals = new Map<string | null, { name: string; color: string | null; amountCents: number }>();
+/** Spese per categoria, in centesimi. */
+function expenseCentsByCategory(
+  entries: readonly ExpenseEntry[],
+): Map<string | null, CategoryTotal> {
+  const totals = new Map<string | null, CategoryTotal>();
 
   for (const { merchant, expense } of entries) {
     const category = merchant?.category ?? null;
@@ -97,135 +77,31 @@ function expenseCentsByCategory(entries: readonly ExpenseEntry[]): Map<
   return totals;
 }
 
-/** Gerarchia categoria -> merchant -> transazioni, costruita dai soli dati esistenti. */
-function buildCategoryBreakdown(entries: readonly ExpenseEntry[]): CategoryBreakdown[] {
-  const categories = new Map<string | null, CategoryAccumulator>();
+const sumCents = (totals: Iterable<CategoryTotal>): number =>
+  [...totals].reduce((sum, total) => sum + total.amountCents, 0);
 
-  for (const { transaction, merchant, expense: amountCents } of entries) {
-    const category = merchant?.category ?? null;
-    const categoryKey = category?.id ?? null;
+/** Restringe ai movimenti con data contabile nell'intervallo (estremi inclusi, `null` = aperto). */
+const withinDates = (entries: readonly ExpenseEntry[], from: string | null, to: string | null) =>
+  entries.filter(
+    ({ transaction }) =>
+      (from === null || transaction.bookingDate >= from) &&
+      (to === null || transaction.bookingDate <= to),
+  );
 
-    const accumulator = categories.get(categoryKey) ?? {
-      id: categoryKey,
-      name: category?.name ?? UNCATEGORIZED_NAME,
-      color: category?.color ?? null,
-      amountCents: 0,
-      transactionCount: 0,
-      merchants: new Map<string, MerchantAccumulator>(),
-    };
-    accumulator.amountCents += amountCents;
-    accumulator.transactionCount += 1;
+/** Una frazione espressa in percentuale, con un decimale. */
+const percentOf = (fraction: number): number => Math.round(fraction * 1000) / 10;
 
-    const merchantKey = transaction.merchantId ?? '';
-    const merchantAccumulator = accumulator.merchants.get(merchantKey) ?? {
-      id: merchantKey,
-      label: merchant === null ? UNKNOWN_MERCHANT_NAME : merchantLabel(merchant.merchant),
-      amountCents: 0,
-      transactions: [],
-    };
-    merchantAccumulator.amountCents += amountCents;
-    merchantAccumulator.transactions.push({
-      id: transaction.id,
-      bookingDate: transaction.bookingDate,
-      description: transaction.description,
-      amount: amountCents / 100,
-    });
-
-    accumulator.merchants.set(merchantKey, merchantAccumulator);
-    categories.set(categoryKey, accumulator);
-  }
-
-  return [...categories.values()]
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      color: category.color,
-      amount: category.amountCents / 100,
-      transactionCount: category.transactionCount,
-      merchants: [...category.merchants.values()]
-        .map(
-          (merchant): MerchantBreakdown => ({
-            id: merchant.id,
-            label: merchant.label,
-            amount: merchant.amountCents / 100,
-            transactionCount: merchant.transactions.length,
-            transactions: [...merchant.transactions].sort((a, b) =>
-              b.bookingDate.localeCompare(a.bookingDate),
-            ),
-          }),
-        )
-        .sort((a, b) => b.amount - a.amount),
-    }))
-    .sort((a, b) => b.amount - a.amount);
-}
-
-function buildTopMerchants(entries: readonly ExpenseEntry[]): TopMerchant[] {
-  const totals = new Map<string, TopMerchant & { amountCents: number }>();
-
-  for (const { merchant, expense } of entries) {
-    if (merchant === null) {
-      continue;
-    }
-
-    const total = totals.get(merchant.merchant.id) ?? {
-      id: merchant.merchant.id,
-      label: merchantLabel(merchant.merchant),
-      amount: 0,
-      amountCents: 0,
-      transactionCount: 0,
-      categoryName: merchant.category?.name ?? null,
-    };
-    total.amountCents += expense;
-    total.transactionCount += 1;
-    totals.set(merchant.merchant.id, total);
-  }
-
-  return [...totals.values()]
-    .map(({ amountCents, ...merchant }) => ({ ...merchant, amount: amountCents / 100 }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, TOP_MERCHANTS_LIMIT);
-}
-
-function buildComparison(
-  month: string,
-  current: readonly ExpenseEntry[],
-  previous: readonly ExpenseEntry[],
-): MonthComparison {
-  const currentByCategory = expenseCentsByCategory(current);
-  const previousByCategory = expenseCentsByCategory(previous);
-
-  const currentCents = [...currentByCategory.values()].reduce((s, c) => s + c.amountCents, 0);
-  const previousCents = [...previousByCategory.values()].reduce((s, c) => s + c.amountCents, 0);
-
-  const keys = new Set([...currentByCategory.keys(), ...previousByCategory.keys()]);
-  const byCategory: CategoryComparison[] = [...keys]
-    .map((key) => {
-      const now = currentByCategory.get(key);
-      const before = previousByCategory.get(key);
-      const reference = now ?? before;
-
-      return {
-        id: key,
-        name: reference?.name ?? UNCATEGORIZED_NAME,
-        color: reference?.color ?? null,
-        current: (now?.amountCents ?? 0) / 100,
-        previous: (before?.amountCents ?? 0) / 100,
-        difference: ((now?.amountCents ?? 0) - (before?.amountCents ?? 0)) / 100,
-      };
-    })
-    // Prima le variazioni più marcate, in aumento o in diminuzione.
-    .sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
+function toRecentTransaction({ transaction, merchant }: TransactionWithMerchant): RecentTransaction {
+  const category = merchant?.category ?? null;
 
   return {
-    previousMonth: previousMonth(month),
-    currentExpenses: currentCents / 100,
-    previousExpenses: previousCents / 100,
-    difference: (currentCents - previousCents) / 100,
-    percentChange:
-      previousCents === 0
-        ? null
-        : Math.round(((currentCents - previousCents) / previousCents) * 1000) / 10,
-    byCategory,
+    id: transaction.id,
+    bookingDate: transaction.bookingDate,
+    label: merchant === null ? transaction.description : merchantLabel(merchant.merchant),
+    type: transaction.type,
+    category:
+      category === null ? null : { id: category.id, name: category.name, color: category.color },
+    amount: transaction.amount,
   };
 }
 
@@ -233,41 +109,106 @@ function buildComparison(
  * Caso d'uso "dashboard".
  *
  * Non possiede dati propri e non conosce SQLite: compone i servizi pubblici di
- * `transactions`, `merchants` (tramite le transazioni arricchite), `summary`,
- * `cash-flow` e `loans`. Tutte le sezioni derivano dallo stesso insieme
- * filtrato e dalla stessa ripartizione fra spesa e credito, quindi non possono
- * raccontare cose diverse.
+ * `transactions`, `merchants`, `summary` e `loans`. Tutte le sezioni derivano
+ * dallo stesso insieme di movimenti e dalla stessa ripartizione fra spesa e
+ * credito, quindi non possono raccontare cose diverse.
  */
 export const dashboardService = {
-  getDashboard(month: string, filters: DashboardFilters): DashboardViewModel {
-    const validMonth = requireMonth(month);
+  /** `month` assente: il mese dell'ultimo movimento. `today` è la data locale (`YYYY-MM-DD`). */
+  getDashboard(month: string | undefined, today: string): DashboardViewModel {
+    const latest = transactionsService.search(DEFAULT_QUERY).transactions;
+    const lastTransactionDate = latest[0]?.transaction.bookingDate ?? null;
 
-    const entries = applyFilters(
-      transactionsService.listByMonthWithMerchant(validMonth),
-      filters,
-    );
-    const previousEntries = applyFilters(
-      transactionsService.listByMonthWithMerchant(previousMonth(validMonth)),
-      filters,
-    );
+    const validMonth =
+      month === undefined
+        ? defaultMonth(lastTransactionDate, today)
+        : clampMonth(requireMonth(month), today);
+    const window = comparisonWindow(validMonth, today);
 
     // Una sola lettura dei prestiti per tutta la risposta.
     const lentByTransaction = loansService.lentCentsByTransaction();
+    const entries = transactionsService.listByMonthWithMerchant(validMonth);
     const expenses = expensesOnly(entries, lentByTransaction);
+
+    const summary = summarizeEntries(validMonth, entries, lentByTransaction);
+    const withdrawalsCents = entries
+      .filter(({ transaction }) => transaction.type === 'WITHDRAWAL')
+      .reduce((sum, { transaction }) => sum + Math.abs(toAmountCents(transaction.amount)), 0);
+
+    // Confronto: la finestra corrente può fermarsi a oggi, quella precedente è sempre delimitata.
+    const currentCategories = expenseCentsByCategory(withinDates(expenses, null, window.currentTo));
+    const previousCategories = expenseCentsByCategory(
+      withinDates(
+        expensesOnly(
+          transactionsService.listByMonthWithMerchant(previousMonth(validMonth)),
+          lentByTransaction,
+        ),
+        window.previousFrom,
+        window.previousTo,
+      ),
+    );
+    const currentCents = sumCents(currentCategories.values());
+    const previousCents = sumCents(previousCategories.values());
+
+    // Importo e percentuale riguardano il mese intero; la variazione, la finestra di confronto.
+    const topCategories = [...expenseCentsByCategory(expenses).entries()]
+      .map(
+        ([id, total]): DashboardCategory => ({
+          id,
+          name: total.name,
+          color: total.color,
+          amount: total.amountCents / 100,
+          percentage:
+            summary.expenses > 0 ? percentOf(total.amountCents / 100 / summary.expenses) : null,
+          difference:
+            ((currentCategories.get(id)?.amountCents ?? 0) -
+              (previousCategories.get(id)?.amountCents ?? 0)) /
+            100,
+        }),
+      )
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, TOP_CATEGORIES_LIMIT);
+
+    // Movimenti LOAN dell'archivio per cui non è registrato alcun prestito.
+    const linkedLoanTransactions = new Set(
+      loansService
+        .allocations()
+        .filter((allocation) => allocation.type === 'LOAN')
+        .map((allocation) => allocation.transactionId),
+    );
+    const loanTransactions = transactionsService.search({
+      ...DEFAULT_QUERY,
+      types: ['LOAN'],
+      pageSize: 25,
+    }).total;
+    const { totals } = loansService.list(DEFAULT_LOAN_QUERY);
 
     return {
       month: validMonth,
-      filters,
-      summary: summarizeEntries(validMonth, entries, lentByTransaction),
-      cashFlow: cashFlowService.getCashFlow(validMonth),
-      categories: buildCategoryBreakdown(expenses),
-      topMerchants: buildTopMerchants(expenses),
-      comparison: buildComparison(
-        validMonth,
-        expenses,
-        expensesOnly(previousEntries, lentByTransaction),
-      ),
-      transactions: entries.map(toTransactionDto),
+      today,
+      lastTransactionDate,
+      summary: {
+        income: summary.income,
+        expenses: summary.expenses,
+        balance: summary.balance,
+        withdrawals: withdrawalsCents / 100,
+      },
+      comparison: {
+        previousExpenses: previousCents / 100,
+        percentChange:
+          previousCents === 0 ? null : percentOf((currentCents - previousCents) / previousCents),
+        ...window,
+      },
+      topCategories,
+      recentTransactions: latest.slice(0, RECENT_TRANSACTIONS_LIMIT).map(toRecentTransaction),
+      attention: {
+        unclassifiedMerchants: merchantsService.search(DEFAULT_MERCHANT_QUERY).counts.unclassified,
+      },
+      loans: {
+        remaining: totals.remaining,
+        openCount: totals.openCount,
+        unlinkedTransactions: Math.max(loanTransactions - linkedLoanTransactions.size, 0),
+      },
     };
   },
 };

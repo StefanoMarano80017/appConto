@@ -1,85 +1,52 @@
-import type { CashFlowViewModel } from '../cash-flow/index.js';
-import type { SummaryViewModel } from '../summary/index.js';
-import type { TransactionDto } from '../transactions/index.js';
-import type { DashboardFilters } from './dashboard-filters.js';
+import type { TransactionType } from '../transactions/index.js';
+import type { ComparisonWindow } from './dashboard.period.js';
 
 /**
- * Vista aggregata della dashboard.
+ * Vista essenziale della landing del riepilogo.
  *
  * Non è un'entità e non viene mai persistita: raccoglie in una sola risposta
- * tutto ciò che la schermata mostra, così le sezioni non possono divergere fra
- * loro né rispetto ai filtri applicati.
+ * ciò che la schermata mostra, così le sezioni non possono divergere fra loro.
  */
 
-/** Transazione ridotta all'essenziale, per il terzo livello del drill down. */
-export interface TransactionRef {
-  id: string;
-  bookingDate: string;
-  description: string;
-  /** Importo della spesa, in valore assoluto. */
-  amount: number;
-}
-
-export interface MerchantBreakdown {
-  id: string;
-  /** Nome scelto dall'utente, altrimenti quello della banca. */
-  label: string;
-  amount: number;
-  transactionCount: number;
-  transactions: TransactionRef[];
-}
-
-export interface CategoryBreakdown {
+export interface DashboardCategory {
   /** `null` per le spese di merchant non ancora classificati. */
   id: string | null;
   name: string;
   color: string | null;
+  /** Spesa del mese mostrato, positiva. */
   amount: number;
-  transactionCount: number;
-  /** Merchant della categoria, dal più speso al meno speso. */
-  merchants: MerchantBreakdown[];
+  /** Quota sulle uscite del mese, un decimale; `null` se le uscite non sono positive. */
+  percentage: number | null;
+  /** Spesa nella finestra corrente meno quella della finestra precedente: positivo = si è speso di più. */
+  difference: number;
 }
 
-export interface TopMerchant {
+export interface RecentTransaction {
   id: string;
+  bookingDate: string;
+  /** Nome scelto dall'utente o della banca; la descrizione se il merchant manca. */
   label: string;
-  /** Solo spese reali, in valore assoluto. */
+  type: TransactionType;
+  category: { id: string; name: string; color: string | null } | null;
+  /** Con segno, come in banca. */
   amount: number;
-  transactionCount: number;
-  categoryName: string | null;
-}
-
-export interface CategoryComparison {
-  id: string | null;
-  name: string;
-  color: string | null;
-  current: number;
-  previous: number;
-  /** `current - previous`: positivo = si è speso di più. */
-  difference: number;
-}
-
-export interface MonthComparison {
-  previousMonth: string;
-  currentExpenses: number;
-  previousExpenses: number;
-  difference: number;
-  /** `null` quando il mese precedente non ha spese: la variazione non è calcolabile. */
-  percentChange: number | null;
-  /** Categorie presenti in almeno uno dei due mesi, per variazione più marcata. */
-  byCategory: CategoryComparison[];
 }
 
 export interface DashboardViewModel {
   month: string;
-  /** Filtri effettivamente applicati, riproposti al chiamante. */
-  filters: DashboardFilters;
-  summary: SummaryViewModel;
-  /** La liquidità dipende dal solo mese: filtrarla non avrebbe significato. */
-  cashFlow: CashFlowViewModel;
-  categories: CategoryBreakdown[];
-  topMerchants: TopMerchant[];
-  comparison: MonthComparison;
-  /** Le transazioni del mese che soddisfano i filtri. */
-  transactions: TransactionDto[];
+  today: string;
+  /** Data dell'ultimo movimento dell'intero archivio; `null` se è vuoto. */
+  lastTransactionDate: string | null;
+  summary: { income: number; expenses: number; balance: number; withdrawals: number };
+  comparison: {
+    previousExpenses: number;
+    /** `null` quando le spese precedenti sono zero: la variazione non è calcolabile. */
+    percentChange: number | null;
+  } & ComparisonWindow;
+  /** Al massimo cinque, dalla più spesa. */
+  topCategories: DashboardCategory[];
+  /** Gli ultimi cinque movimenti dell'archivio, indipendenti dal mese. */
+  recentTransactions: RecentTransaction[];
+  attention: { unclassifiedMerchants: number };
+  loans: { remaining: number; openCount: number; unlinkedTransactions: number };
 }
