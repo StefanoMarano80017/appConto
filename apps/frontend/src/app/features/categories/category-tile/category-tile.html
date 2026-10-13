@@ -73,10 +73,8 @@
       </button>
     }
 
-    <span class="count">
-      {{ current.merchantCount }}
-      <span class="sr-only"> merchant</span>
-    </span>
+    <!-- prettier-ignore -->
+    <span class="count">{{ current.merchantCount }}<span class="sr-only"> merchant</span></span>
 
     @if (locked()) {
       <span class="lock-slot" title="Categoria protetta">
