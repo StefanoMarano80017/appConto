@@ -327,6 +327,62 @@ describe('MerchantsPage', () => {
     expect(text()).toContain('Nome non valido.');
   });
 
+  describe('uscita animata della riga', () => {
+    /** Per ogni riga a schermo, la classe con cui uscirebbe se sparisse adesso. */
+    const leaving = (): [string, string][] =>
+      (harness.routeDebugElement!.componentInstance as { rows(): { merchant: MerchantSummary; leave: string }[] })
+        .rows()
+        .map((row) => [row.merchant.id, row.leave]);
+
+    const saveCategory = async (): Promise<void> => {
+      await chooseCategory('Spesa');
+      http.expectOne(`${API_BASE_URL}/merchants/m-1/category`).flush({ ...merchant(), category: SPESA });
+      await settle();
+    };
+
+    it('dopo un salvataggio riuscito solo la riga salvata è pronta a uscire', async () => {
+      await open('/merchants?classification=unclassified');
+
+      expect(leaving()).toEqual([['m-1', ''], ['m-2', '']]);
+
+      await saveCategory();
+
+      expect(leaving()).toEqual([['m-1', 'row-leaving'], ['m-2', '']]);
+
+      // Arrivata la ricarica, le righe rimaste (e quella risalita) non porterebbero animazioni.
+      await flush(page({ items: [merchant({ id: 'm-2' }), merchant({ id: 'm-3' })] }));
+
+      expect(leaving()).toEqual([['m-2', ''], ['m-3', '']]);
+    });
+
+    it('cambiando ordinamento durante la ricarica nessuna riga esce animata', async () => {
+      await open('/merchants?classification=unclassified');
+      await saveCategory();
+
+      await click(button('Nome', 'thead'));
+
+      expect(leaving()).toEqual([['m-1', ''], ['m-2', '']]);
+      // La ricarica è stata annullata dal cambio di criteri: risponde solo l'elenco ordinato.
+      for (const request of pending().filter((candidate) => !candidate.cancelled)) {
+        request.flush(page());
+      }
+      await settle();
+    });
+
+    it('dopo un salvataggio fallito nessuna riga esce animata', async () => {
+      await open('/merchants?classification=unclassified');
+
+      await chooseCategory('Spesa');
+      http
+        .expectOne(`${API_BASE_URL}/merchants/m-1/category`)
+        .flush({ error: 'Categoria inesistente.' }, { status: 500, statusText: 'Error' });
+      await settle();
+
+      expect(leaving()).toEqual([['m-1', ''], ['m-2', '']]);
+      await flush();
+    });
+  });
+
   it('errore nel caricamento: Riprova rilancia la richiesta', async () => {
     await harness.navigateByUrl('/merchants', MerchantsPage);
     await settle();

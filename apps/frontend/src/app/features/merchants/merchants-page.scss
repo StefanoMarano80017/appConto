@@ -58,6 +58,29 @@ app-search-input.search {
   }
 }
 
+@keyframes row-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes cell-close {
+  to {
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom-width: 0;
+  }
+}
+
+@keyframes content-collapse {
+  from {
+    max-height: 5rem;
+  }
+  to {
+    max-height: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton .line {
     animation: none;
@@ -89,6 +112,35 @@ app-search-input.search {
 
   tr.saving {
     opacity: 0.6;
+  }
+
+  /*
+   * La riga appena classificata che lascia l'elenco: sfuma e si richiude
+   * insieme, così le righe sotto risalgono invece di saltare. L'altezza di
+   * una riga di tabella non si anima da sola: si richiudono il contenuto di
+   * ogni cella (.cell, il tetto è più alto di qualsiasi riga) e il suo padding.
+   * Angular toglie la riga quando l'animazione della riga finisce.
+   */
+  tr.row-leaving {
+    animation: row-fade 200ms ease-in forwards;
+
+    td {
+      animation: cell-close 200ms ease-in forwards;
+    }
+
+    .cell {
+      overflow: hidden;
+      animation: content-collapse 200ms ease-in forwards;
+    }
+
+    /* Senza movimento la riga sparisce subito: senza animazione Angular la toglie all'istante. */
+    @media (prefers-reduced-motion: reduce) {
+      &,
+      td,
+      .cell {
+        animation: none;
+      }
+    }
   }
 
   th:first-child,
