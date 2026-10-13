@@ -1,62 +1,82 @@
 @use '../../shared/styles/typography';
 
 /*
- * Il titolo "Riepilogo" ora vive solo nella fascia superiore della shell:
- * qui non c'è più un h1 da stilare, resta solo il layout del contenitore.
+ * Mentre arriva il mese nuovo resta a schermo il precedente, attenuato. Su un
+ * elemento interno e non su `app-panel`, il cui host è `display: contents`.
  */
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-6);
+.content.stale {
+  opacity: 0.6;
 }
 
-.subtitle {
-  margin: var(--space-1) 0 0;
-  color: var(--color-text-muted);
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+}
+
+.month {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.month-name {
+  @include typography.text('section-title');
+
+  min-width: 9rem;
+  text-align: center;
   text-transform: capitalize;
 }
 
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
-}
-
-.control {
-  @include typography.text('secondary');
-
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  /* Il ruolo 'secondary' porta `text-secondary`: qui serve più tenue. */
+/* Come i passi della paginazione: frecce senza bordo, un fondo al passaggio. */
+.step {
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
   color: var(--color-text-muted);
+  cursor: pointer;
 
-  input {
-    font: inherit;
-    padding: var(--space-3) var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-  }
-
-  /* Il campo è a tutta larghezza: nella barra degli strumenti ha una misura sua. */
-  app-select {
-    min-width: calc(var(--space-10) * 4);
+  svg {
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 }
 
-.chips {
-  margin-top: var(--space-7);
+.step:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.updated {
+  @include typography.text('caption');
+
+  margin: 0;
 }
 
 app-stat-card-grid {
+  display: block;
   margin: var(--space-9) 0 var(--space-4);
 }
 
-.message {
+.withdrawals {
+  @include typography.text('secondary');
+
+  margin: 0;
   color: var(--color-text-muted);
 }
 
+.message {
+  margin: 0;
+  color: var(--color-text-muted);
+}

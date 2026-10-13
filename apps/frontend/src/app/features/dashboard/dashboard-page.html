@@ -1,65 +1,55 @@
 <app-page-layout>
-  <app-panel>
-    <div class="toolbar">
-      <div>
-        <!-- Il titolo "Riepilogo" è già nella fascia superiore della shell: qui resta solo il mese. -->
-        <p class="subtitle">{{ formatMonth(filters.month()) }}</p>
+  @if (error(); as message) {
+    <app-panel>
+      <app-error-retry [message]="message" (retry)="dashboard.reload()" />
+    </app-panel>
+  }
+
+  @if (data(); as data) {
+    <app-panel>
+      <div class="content" [class.stale]="isReloading()">
+        <!-- Il titolo «Riepilogo» è già nella fascia superiore della shell: qui resta solo il mese. -->
+        <div class="heading">
+          <nav class="month" aria-label="Mese mostrato">
+            <button
+              type="button"
+              class="step"
+              aria-label="Mese precedente"
+              (click)="goToMonth(-1)"
+            ><svg lucideChevronLeft aria-hidden="true"></svg></button>
+
+            <span class="month-name">{{ formatMonth(data.month) }}</span>
+
+            <button
+              type="button"
+              class="step"
+              aria-label="Mese successivo"
+              [disabled]="isCurrentMonth()"
+              (click)="goToMonth(1)"
+            ><svg lucideChevronRight aria-hidden="true"></svg></button>
+          </nav>
+
+          @if (data.lastTransactionDate; as lastDate) {
+            <p class="updated">Dati aggiornati al {{ formatBookingDate(lastDate) }}</p>
+          }
+        </div>
+
+        <app-stat-card-grid [items]="cards()" />
+
+        <!-- Solo se ce ne sono: spiega perché le uscite possono sembrare basse. -->
+        @if (data.summary.withdrawals > 0) {
+          <p class="withdrawals">
+            Prelevati in contanti <app-amount [value]="data.summary.withdrawals" tone="neutral" />
+            · non inclusi nelle uscite
+          </p>
+        }
       </div>
+    </app-panel>
 
-      <div class="controls">
-        <label class="control">
-          <span>Mese</span>
-          <input type="month" [value]="filters.month()" (change)="onMonthChange($event)" />
-        </label>
-
-        <label class="control">
-          <span>Tipo</span>
-          <app-select
-            appearance="field"
-            placeholder="Tutti"
-            [options]="typeOptions"
-            [value]="filters.filters().type"
-            (valueChange)="onTypeChange($event)"
-          />
-        </label>
-      </div>
-    </div>
-
-    @if (activeFilters().length > 0) {
-      <app-filter-chips
-        class="chips"
-        [chips]="activeFilters()"
-        clearLabel="Azzera filtri"
-        (removed)="removeFilter($event)"
-        (cleared)="filters.clearFilters()"
-      />
-    }
-
-    @if (error(); as message) {
-      <p class="message message--error">{{ message }}</p>
-    }
-
-    @if (dashboard()) {
-      <app-stat-card-grid [items]="summaryCards()" />
-    } @else if (loading()) {
+    <!-- Task 4: «Dove sono andati i soldi», «Da sistemare» / «Prestiti», «Ultimi movimenti». -->
+  } @else if (error() === null) {
+    <app-panel>
       <p class="message">Caricamento in corso…</p>
-    }
-  </app-panel>
-
-  @if (dashboard(); as data) {
-    <app-cash-flow-card [cashFlow]="data.cashFlow" />
-
-    <app-category-breakdown
-      [categories]="data.categories"
-      (categorySelected)="filters.setCategory($event)"
-      (merchantSelected)="filters.setMerchant($event)"
-    />
-
-    <app-top-merchants
-      [merchants]="data.topMerchants"
-      (merchantSelected)="filters.setMerchant($event)"
-    />
-
-    <app-month-comparison [comparison]="data.comparison" />
+    </app-panel>
   }
 </app-page-layout>

@@ -66,9 +66,3 @@ export function formatBookingDate(bookingDate: string): string {
 export function formatMonth(month: string): string {
   return monthFormatter.format(new Date(`${month}-01T00:00:00`));
 }
-
-/** Il mese corrente in formato `YYYY-MM`. */
-export function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
