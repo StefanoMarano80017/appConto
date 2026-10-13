@@ -189,10 +189,13 @@ export class MerchantsPage implements OnDestroy {
       clearTimeout(this.searchTimeout);
     }
     // La ricerca sostituisce la voce di cronologia: digitare non riempie il tasto "indietro".
-    this.searchTimeout = setTimeout(
-      () => this.apply({ search: value.trim() }, true),
-      SEARCH_DEBOUNCE_MS,
-    );
+    // Uno spazio in più non cambia il criterio: niente navigazione, e la pagina resta quella.
+    this.searchTimeout = setTimeout(() => {
+      const search = value.trim();
+      if (search !== this.query().search) {
+        this.apply({ search }, true);
+      }
+    }, SEARCH_DEBOUNCE_MS);
   }
 
   /** La stessa colonna inverte il verso; una colonna nuova parte dal suo verso naturale. */

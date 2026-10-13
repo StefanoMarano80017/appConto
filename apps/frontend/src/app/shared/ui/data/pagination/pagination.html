@@ -1,7 +1,7 @@
 <div class="pagination">
   <p class="range">
     @if (range(); as shown) {
-      {{ shown.first }}–{{ shown.last }} di {{ shown.total }} {{ itemLabel() }}
+      {{ shown }}
     } @else {
       {{ emptyText() }}
     }

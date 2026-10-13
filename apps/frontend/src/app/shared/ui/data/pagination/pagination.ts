@@ -43,7 +43,13 @@ export class Pagination {
   /** La dimensione corrente nella forma che il select confronta con gli `id`. */
   protected readonly pageSizeValue = computed(() => String(this.pagination().pageSize));
 
-  /** `41–60 di 279 merchant`. */
+  /**
+   * `41–60 di 279 merchant`; `null` senza risultati.
+   *
+   * Una pagina oltre l'ultima (capita quando si svuota l'ultima pagina
+   * classificandone le righe) non ha un intervallo sensato: si dice solo
+   * quanti risultati ci sono, `60 merchant`, invece di `76–60 di 60`.
+   */
   protected readonly range = computed(() => {
     const { page, pageSize, total } = this.pagination();
     if (total === 0) {
@@ -51,8 +57,11 @@ export class Pagination {
     }
 
     const first = (page - 1) * pageSize + 1;
+    if (first > total) {
+      return `${total} ${this.itemLabel()}`;
+    }
 
-    return { first, last: Math.min(page * pageSize, total), total };
+    return `${first}–${Math.min(page * pageSize, total)} di ${total} ${this.itemLabel()}`;
   });
 
   /** Il testo quando non c'è nulla da mostrare. */

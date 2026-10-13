@@ -181,6 +181,35 @@ describe('MerchantsPage', () => {
     await flush();
   });
 
+  it('una ricerca che non cambia il criterio non torna a pagina 1', async () => {
+    await open('/merchants?search=coop&page=2', page({
+      pagination: { page: 2, pageSize: 25, total: 30, totalPages: 2 }
+    }));
+
+    const input = root().querySelector<HTMLInputElement>('app-search-input input')!;
+    input.value = 'coop ';
+    input.dispatchEvent(new Event('input'));
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await settle();
+
+    expect(router.url).toBe('/merchants?search=coop&page=2');
+  });
+
+  it("una ricerca nuova finisce nell'URL e torna a pagina 1", async () => {
+    await open('/merchants?page=2', page({
+      pagination: { page: 2, pageSize: 25, total: 30, totalPages: 2 }
+    }));
+
+    const input = root().querySelector<HTMLInputElement>('app-search-input input')!;
+    input.value = 'coop';
+    input.dispatchEvent(new Event('input'));
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await settle();
+
+    expect(router.url).toBe('/merchants?search=coop');
+    await flush();
+  });
+
   it('dopo aver assegnato una categoria ricarica la pagina corrente', async () => {
     await open('/merchants?classification=unclassified&page=2', page({
       pagination: { page: 2, pageSize: 25, total: 30, totalPages: 2 }
@@ -206,12 +235,15 @@ describe('MerchantsPage', () => {
   it("pagina oltre l'ultima con risultati: resta sulla pagina e lo dice", async () => {
     await open('/merchants?page=4', page({
       items: [],
-      pagination: { page: 4, totalPages: 3, total: 60, pageSize: 25 }
+      pagination: { page: 4, totalPages: 3, total: 60, pageSize: 25 },
+      counts: { all: 80, classified: 20, unclassified: 60 }
     }));
 
     expect(text()).toContain('Hai sistemato tutti i merchant di questa pagina.');
     expect(text()).toContain('Ne restano 60 nelle pagine precedenti.');
-    expect(root().querySelector('app-pagination')).not.toBeNull();
+    expect(root().querySelector('app-pagination .range')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      '60 merchant'
+    );
     expect(router.url).toBe('/merchants?page=4');
 
     await click(button("Vai all'ultima pagina"));

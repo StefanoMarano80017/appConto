@@ -32,6 +32,13 @@ describe('Pagination', () => {
     expect(text()).toBe('41–60 di 279 merchant');
   });
 
+  it("oltre l'ultima pagina mostra solo il totale, mai un intervallo impossibile", async () => {
+    await render({ page: 4, pageSize: 25, total: 60, totalPages: 3 });
+
+    expect(text()).toBe('60 merchant');
+    expect(text()).not.toContain('76–');
+  });
+
   it('senza risultati dice Nessun seguito dal nome', async () => {
     await render({ page: 1, pageSize: 25, total: 0, totalPages: 0 });
 
