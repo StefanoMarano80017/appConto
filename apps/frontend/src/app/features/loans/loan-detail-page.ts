@@ -20,8 +20,8 @@ import {
 } from './loan-form';
 import { LOAN_STATUS_LABELS, LoanDetail } from './loan.model';
 import { LoansApi, loanRequest } from './loans.api';
-import { Panel } from '@shared/layout/panel';
-import { PageLayout } from '@shared/layout/page-layout';
+import { Panel } from '@shared/layout/panel/panel';
+import { PageLayout } from '@shared/layout/page-layout/page-layout';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { Badge } from '@shared/ui/feedback/badge/badge';
 import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
@@ -29,7 +29,7 @@ import { FormField } from '@shared/ui/forms/form-field/form-field';
 import { Select } from '@shared/ui/forms/select/select';
 import type { SelectOption } from '@shared/ui/forms/select/select.model';
 import { formFieldDescribedBy } from '@shared/ui/forms/form-field/form-field.ids';
-import { StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid/stat-card-grid';
 
 /** Il giorno corrente in formato `YYYY-MM-DD`: la data più probabile per una restituzione. */
 function today(): string {

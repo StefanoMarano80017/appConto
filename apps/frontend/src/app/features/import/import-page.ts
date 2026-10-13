@@ -15,8 +15,8 @@ import {
 } from './column-mapping';
 import { ColumnPicker } from './column-picker';
 import { ImportApi, ImportResult } from './import.api';
-import { Panel } from '@shared/layout/panel';
-import { PageLayout } from '@shared/layout/page-layout';
+import { Panel } from '@shared/layout/panel/panel';
+import { PageLayout } from '@shared/layout/page-layout/page-layout';
 
 /**
  * Importazione di un estratto conto, in due modalità.

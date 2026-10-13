@@ -1,7 +1,7 @@
 import { Component, computed, input, output, signal } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { PeriodPreset, matchingPreset, resolvePeriod } from '../../core/period';
-import { Panel } from '@shared/layout/panel';
+import { Panel } from '@shared/layout/panel/panel';
 import { ChoiceGroup } from '@shared/ui/forms/choice-group/choice-group';
 import { FilterChips } from '@shared/ui/filters/filter-chips/filter-chips';
 import { PeriodFilter } from '@shared/ui/filters/period-filter/period-filter';

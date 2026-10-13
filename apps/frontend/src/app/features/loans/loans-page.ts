@@ -16,8 +16,8 @@ import {
 } from './loan-query';
 import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
-import { Panel } from '@shared/layout/panel';
-import { PageLayout } from '@shared/layout/page-layout';
+import { Panel } from '@shared/layout/panel/panel';
+import { PageLayout } from '@shared/layout/page-layout/page-layout';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { Badge } from '@shared/ui/feedback/badge/badge';
 import { EmptyState } from '@shared/ui/feedback/empty-state/empty-state';
@@ -25,7 +25,7 @@ import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
 import { SearchInput } from '@shared/ui/forms/search-input/search-input';
 import { Select } from '@shared/ui/forms/select/select';
 import type { SelectOption } from '@shared/ui/forms/select/select.model';
-import { StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid';
+import { StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid/stat-card-grid';
 import {
   LucideArrowUp,
   LucideArrowDown,

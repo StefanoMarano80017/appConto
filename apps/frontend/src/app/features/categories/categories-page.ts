@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toErrorMessage } from '../../core/http-error';
-import { Panel } from '@shared/layout/panel';
-import { PageLayout } from '@shared/layout/page-layout';
-import { SectionHeader } from '@shared/layout/section-header';
+import { Panel } from '@shared/layout/panel/panel';
+import { PageLayout } from '@shared/layout/page-layout/page-layout';
+import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { CategoriesApi } from './categories.api';
 import { CategoryWithUsage } from './category.model';
 

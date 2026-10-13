@@ -11,9 +11,9 @@ import {
 } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { DateRange } from '../../core/period';
-import { Panel } from '@shared/layout/panel';
-import { PanelFooter } from '@shared/layout/panel-footer';
-import { SectionHeader } from '@shared/layout/section-header';
+import { Panel } from '@shared/layout/panel/panel';
+import { PanelFooter } from '@shared/layout/panel/panel-footer';
+import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { ChartTooltip } from '@shared/ui/chart/core/chart-tooltip';
 import { LineChart } from '@shared/ui/chart/line/line-chart';

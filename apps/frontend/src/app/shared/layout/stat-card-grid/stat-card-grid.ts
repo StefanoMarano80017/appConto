@@ -7,7 +7,7 @@ import {
   LucideTrendingUp,
   LucideWallet
 } from '@lucide/angular';
-import { signedPercent } from '../../core/format';
+import { signedPercent } from '../../../core/format';
 import { Amount, AmountTone } from '@shared/ui/data/amount/amount';
 
 /**

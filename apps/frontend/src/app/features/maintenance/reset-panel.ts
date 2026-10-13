@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toErrorMessage } from '../../core/http-error';
-import { Panel } from '@shared/layout/panel';
+import { Panel } from '@shared/layout/panel/panel';
 import { MaintenanceApi } from './maintenance.api';
 import { RESET_CONFIRMATION, ResetOutcome } from './maintenance.model';
 

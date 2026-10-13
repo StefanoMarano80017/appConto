@@ -10,8 +10,8 @@ import {
   signal
 } from '@angular/core';
 import { LucideLayoutGrid, LucideList } from '@lucide/angular';
-import { Panel } from '@shared/layout/panel';
-import { SectionHeader } from '@shared/layout/section-header';
+import { Panel } from '@shared/layout/panel/panel';
+import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { Treemap } from '@shared/ui/chart/treemap/treemap';
 import type { TileColor, TreemapActivation } from '@shared/ui/chart/treemap/treemap.model';

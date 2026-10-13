@@ -17,7 +17,7 @@ import { Category } from '../categories/category.model';
 import { LoanLink, LoanLinks, indexLinksByTransaction } from '../loans/loan.model';
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
-import { PageLayout } from '@shared/layout/page-layout';
+import { PageLayout } from '@shared/layout/page-layout/page-layout';
 import { TransactionsTablePanel } from '@shared/ui/transactions-table-panel';
 import type {
   TransactionsTableExtraColumnContext,

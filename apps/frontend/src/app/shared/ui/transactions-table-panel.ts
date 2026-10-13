@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
-import { Panel } from '../layout/panel';
-import { SectionHeader } from '../layout/section-header';
+import { Panel } from '@shared/layout/panel/panel';
+import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { EmptyState } from './feedback/empty-state/empty-state';
 import { ErrorRetry } from './feedback/error-retry/error-retry';
 import { TransactionsPagination } from './transactions-pagination';

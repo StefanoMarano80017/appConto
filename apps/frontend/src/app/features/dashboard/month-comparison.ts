@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { formatAmount, formatMonth, signedPercent, typographicMinus } from '../../core/format';
-import { Panel } from '@shared/layout/panel';
+import { Panel } from '@shared/layout/panel/panel';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { MonthComparison } from './dashboard.model';
 

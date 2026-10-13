@@ -1,8 +1,8 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { formatBookingDate, formatMonth } from '../../core/format';
-import { Panel } from '@shared/layout/panel';
-import { SectionHeader } from '@shared/layout/section-header';
+import { Panel } from '@shared/layout/panel/panel';
+import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { TRANSACTION_TYPE_PLURAL_LABELS } from '../transactions/transaction-type';
 import { CashFlow } from './cash-flow.model';
