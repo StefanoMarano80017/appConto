@@ -35,7 +35,7 @@
         type="button"
         class="step"
         aria-label="Successiva"
-        [disabled]="pagination().page === pagination().totalPages"
+        [disabled]="pagination().page >= pagination().totalPages"
         (click)="pageSelected.emit(pagination().page + 1)"
       ><svg lucideChevronRight aria-hidden="true"></svg></button>
     </nav>

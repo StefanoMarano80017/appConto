@@ -1,10 +1,5 @@
 <app-page-layout>
-  <!-- Durante un ricaricamento le righe di prima restano, attenuate e segnalate come occupate. -->
-  <app-panel
-    [noPadding]="true"
-    [class.stale]="data() !== undefined && merchants.isLoading()"
-    [attr.aria-busy]="merchants.isLoading() || null"
-  >
+  <app-panel [noPadding]="true" [attr.aria-busy]="merchants.isLoading() || null">
     <app-panel-content>
       <app-section-header
         title="Merchant"
@@ -41,114 +36,123 @@
     </app-panel-content>
 
     @if (error() === null) {
-      @if (data(); as data) {
-        @if (data.counts.all === 0) {
-          <div class="empty">
-            <app-empty-state message="Nessun merchant. Importa un estratto conto per iniziare." />
-          </div>
-        } @else if (emptyPage()) {
-          <div class="empty">
-            <app-empty-state
-              message="Hai sistemato tutti i merchant di questa pagina."
-              [hint]="'Ne restano ' + data.pagination.total + ' nelle pagine precedenti.'"
-              actionLabel="Vai all'ultima pagina"
-              (action)="apply({ page: data.pagination.totalPages })"
-            />
-          </div>
-        } @else if (data.items.length === 0) {
-          <div class="empty">
-            @if (query().classification === 'unclassified' && query().search === '') {
-              <app-empty-state message="Tutti i merchant sono stati classificati." />
-            } @else {
+      <!--
+        Cambiando i criteri le righe di prima restano, attenuate: solo la
+        tabella, perché intestazione, ricerca e filtro sono già quelli nuovi.
+        Dopo un salvataggio si ricarica la stessa pagina e nulla si attenua.
+      -->
+      <div class="table-area" [class.stale]="stale()">
+        @if (data(); as data) {
+          @if (data.counts.all === 0) {
+            <div class="empty">
+              <app-empty-state message="Nessun merchant. Importa un estratto conto per iniziare." />
+            </div>
+          } @else if (emptyPage()) {
+            <div class="empty">
               <app-empty-state
-                message="Nessun merchant corrisponde alla ricerca."
-                actionLabel="Azzera ricerca e filtro"
-                (action)="resetSearch()"
+                message="Hai sistemato tutti i merchant di questa pagina."
+                [hint]="'Ne restano ' + data.pagination.total + ' nelle pagine precedenti.'"
+                actionLabel="Vai all'ultima pagina"
+                (action)="apply({ page: data.pagination.totalPages })"
               />
+            </div>
+          } @else if (data.items.length === 0) {
+            <div class="empty">
+              @if (query().classification === 'unclassified' && query().search === '') {
+                <app-empty-state message="Tutti i merchant sono stati classificati." />
+              } @else {
+                <app-empty-state
+                  message="Nessun merchant corrisponde alla ricerca."
+                  actionLabel="Azzera ricerca e filtro"
+                  (action)="resetSearch()"
+                />
+              }
+            </div>
+          } @else {
+            <div class="scroller">
+              <table class="merchants">
+                <thead>
+                  <tr>
+                    @for (column of columns; track column.field) {
+                      <th
+                        app-sortable-header
+                        [class.numeric]="column.numeric"
+                        [label]="column.label"
+                        [active]="query().sortBy === column.field"
+                        [direction]="query().sortDirection"
+                        (sorted)="sortBy(column.field)"
+                      ></th>
+                    }
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <!-- La chiave porta la revisione: dopo un errore le righe si ricreano e i campi tornano al valore salvato. -->
+                  @for (row of rows(); track row.key) {
+                    @let merchant = row.merchant;
+                    <tr [class.saving]="savingId() === merchant.id">
+                      <td class="name">
+                        <input
+                          type="text"
+                          [value]="merchant.displayName ?? ''"
+                          [placeholder]="merchant.name"
+                          [disabled]="savingId() === merchant.id"
+                          [attr.aria-label]="'Nome di ' + merchant.name"
+                          (change)="rename(merchant, $any($event.target).value)"
+                        />
+
+                        @if (merchant.displayName !== null) {
+                          <span class="original">{{ merchant.name }}</span>
+                        }
+                      </td>
+
+                      <td class="category">
+                        <app-select
+                          [options]="categories()"
+                          placeholder="— Nessuna categoria"
+                          placeholderPosition="end"
+                          [value]="merchant.category?.id ?? null"
+                          [disabled]="savingId() === merchant.id"
+                          [ariaLabel]="'Categoria di ' + merchant.label"
+                          (valueChange)="changeCategory(merchant, $event)"
+                        />
+                      </td>
+
+                      <td class="numeric">{{ merchant.transactionCount }}</td>
+                      <td class="numeric">
+                        <app-amount [value]="merchant.totalSpent" tone="neutral" />
+                      </td>
+                      <td class="date">
+                        {{
+                          merchant.lastTransactionDate
+                            ? formatBookingDate(merchant.lastTransactionDate)
+                            : '—'
+                        }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Sulla pagina svuotata resta: si può scegliere un'altra pagina. -->
+          @if (data.pagination.total > 0) {
+            <app-pagination
+              itemLabel="merchant"
+              [pagination]="data.pagination"
+              (pageSelected)="apply({ page: $event })"
+              (pageSizeSelected)="apply({ pageSize: $event })"
+            />
+          }
+        } @else if (merchants.isLoading()) {
+          <div class="skeleton" aria-hidden="true">
+            @for (row of skeletonRows; track $index) {
+              <span class="line"></span>
             }
           </div>
-        } @else {
-          <div class="scroller">
-            <table class="merchants">
-              <thead>
-                <tr>
-                  @for (column of columns; track column.field) {
-                    <th
-                      app-sortable-header
-                      [class.numeric]="column.numeric"
-                      [label]="column.label"
-                      [active]="query().sortBy === column.field"
-                      [direction]="query().sortDirection"
-                      (sorted)="sortBy(column.field)"
-                    ></th>
-                  }
-                </tr>
-              </thead>
-
-              <tbody>
-                @for (merchant of data.items; track merchant.id) {
-                  <tr [class.saving]="savingId() === merchant.id">
-                    <td class="name">
-                      <input
-                        type="text"
-                        [value]="merchant.displayName ?? ''"
-                        [placeholder]="merchant.name"
-                        [disabled]="savingId() === merchant.id"
-                        [attr.aria-label]="'Nome di ' + merchant.name"
-                        (change)="rename(merchant, $any($event.target).value)"
-                      />
-
-                      @if (merchant.displayName !== null) {
-                        <span class="original">{{ merchant.name }}</span>
-                      }
-                    </td>
-
-                    <td class="category">
-                      <app-select
-                        [options]="categories()"
-                        placeholder="— Nessuna categoria"
-                        placeholderPosition="end"
-                        [value]="merchant.category?.id ?? null"
-                        [disabled]="savingId() === merchant.id"
-                        [ariaLabel]="'Categoria di ' + merchant.label"
-                        (valueChange)="changeCategory(merchant, $event)"
-                      />
-                    </td>
-
-                    <td class="numeric">{{ merchant.transactionCount }}</td>
-                    <td class="numeric">
-                      <app-amount [value]="merchant.totalSpent" tone="neutral" />
-                    </td>
-                    <td class="date">
-                      {{
-                        merchant.lastTransactionDate
-                          ? formatBookingDate(merchant.lastTransactionDate)
-                          : '—'
-                      }}
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
         }
-
-        <!-- Sulla pagina svuotata resta: si può scegliere un'altra pagina. -->
-        @if (data.pagination.total > 0) {
-          <app-pagination
-            itemLabel="merchant"
-            [pagination]="data.pagination"
-            (pageSelected)="apply({ page: $event })"
-            (pageSizeSelected)="apply({ pageSize: $event })"
-          />
-        }
-      } @else if (merchants.isLoading()) {
-        <div class="skeleton" aria-hidden="true">
-          @for (row of skeletonRows; track $index) {
-            <span class="line"></span>
-          }
-        </div>
-      }
+      </div>
     }
   </app-panel>
 </app-page-layout>

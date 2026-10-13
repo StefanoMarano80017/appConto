@@ -119,6 +119,14 @@ export class MerchantsPage implements OnDestroy {
     return error === undefined ? null : toErrorMessage(error);
   });
 
+  /**
+   * Le righe a schermo non corrispondono più ai criteri: ne sta arrivando una
+   * fetta diversa. La ricarica della stessa fetta (`reloading`) non conta.
+   */
+  protected readonly stale = computed(
+    () => this.data() !== undefined && this.merchants.status() === 'loading',
+  );
+
   /** Le voci del filtro, con il conteggio sull'intero archivio. */
   protected readonly filterOptions = computed<ChoiceOption<ClassificationFilter>[]>(() => {
     const counts = this.data()?.counts;
@@ -149,6 +157,27 @@ export class MerchantsPage implements OnDestroy {
   protected readonly saveError = signal<string | null>(null);
   /** Merchant con una modifica in corso. */
   protected readonly savingId = signal<string | null>(null);
+  /**
+   * Cresce a ogni salvataggio fallito ed entra nella chiave delle righe.
+   *
+   * La ricarica restituisce gli stessi valori di prima, quindi Angular non
+   * riscriverebbe né la select né il campo del nome, che terrebbero quanto
+   * scelto o digitato: ricreare le righe li riporta al valore salvato.
+   */
+  private readonly revision = signal(0);
+
+  /**
+   * Le righe della tabella, ciascuna con la propria chiave.
+   *
+   * La chiave sta nell'oggetto e non nell'espressione di `track`: `@for`
+   * ricalcola la chiave anche delle righe già a schermo, che con la revisione
+   * corrente risulterebbe uguale e nulla verrebbe ricreato.
+   */
+  protected readonly rows = computed(() => {
+    const revision = this.revision();
+
+    return (this.data()?.items ?? []).map((merchant) => ({ merchant, key: `${merchant.id}:${revision}` }));
+  });
 
   protected readonly columns = COLUMNS;
   protected readonly skeletonRows = Array.from({ length: SKELETON_ROWS });
@@ -249,6 +278,7 @@ export class MerchantsPage implements OnDestroy {
       error: (error: unknown) => {
         this.saveError.set(toErrorMessage(error));
         this.savingId.set(null);
+        this.revision.update((revision) => revision + 1);
         this.merchants.reload();
       },
     });

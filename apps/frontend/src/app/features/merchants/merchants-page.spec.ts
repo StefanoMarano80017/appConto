@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
-import { selectTrigger } from '@shared/ui/forms/select/select.testing';
+import { selectTrigger, selectedName } from '@shared/ui/forms/select/select.testing';
 import { Category } from '../categories/category.model';
 import { MerchantPage, MerchantSummary } from './merchant.model';
 import { MerchantsPage } from './merchants-page';
@@ -169,6 +169,9 @@ describe('MerchantsPage', () => {
     // httpResource azzera il valore quando cambia la richiesta: le righe di prima restano comunque.
     expect(root().querySelector('.skeleton')).toBeNull();
     expect(root().querySelectorAll('tbody tr').length).toBe(2);
+    // Si attenua solo la tabella: intestazione, ricerca e filtro restano pieni.
+    expect(root().querySelector('.table-area.stale')).not.toBeNull();
+    expect(root().querySelector('app-panel.stale')).toBeNull();
     await flush();
   });
 
@@ -223,9 +226,10 @@ describe('MerchantsPage', () => {
     patch.flush({ ...merchant(), category: SPESA });
     await settle();
 
-    // Durante la ricarica le righe restano visibili: niente skeleton, niente lampeggio.
+    // Durante la ricarica le righe restano visibili: niente skeleton, niente lampeggio, niente attenuazione.
     expect(root().querySelector('.skeleton')).toBeNull();
     expect(root().querySelectorAll('tbody tr').length).toBe(2);
+    expect(root().querySelector('.stale')).toBeNull();
 
     const url = await flush(page({ items: [merchant({ id: 'm-3', label: 'Coop', name: 'COOP' })] }));
     expect(url).toBe(`${API_BASE_URL}/merchants?classification=unclassified&page=2`);
@@ -297,7 +301,30 @@ describe('MerchantsPage', () => {
     await settle();
 
     expect(text()).toContain('Categoria inesistente.');
+    expect(root().querySelector('.stale')).toBeNull();
     await flush();
+
+    // La riga torna al valore salvato e l'errore resta visibile.
+    expect(selectedName(root(), 'tbody tr:first-child .category')).toBe('— Nessuna categoria');
+    expect(text()).toContain('Categoria inesistente.');
+  });
+
+  it('errore nella rinomina: il campo torna al nome salvato', async () => {
+    await open('/merchants');
+
+    const input = root().querySelector<HTMLInputElement>('input[aria-label="Nome di ESSELUNGA SPA"]')!;
+    input.value = 'Esselunga';
+    input.dispatchEvent(new Event('change'));
+    await settle();
+
+    const patch = http.expectOne(`${API_BASE_URL}/merchants/m-1`);
+    expect(patch.request.body).toEqual({ displayName: 'Esselunga' });
+    patch.flush({ error: 'Nome non valido.' }, { status: 500, statusText: 'Error' });
+    await settle();
+    await flush();
+
+    expect(root().querySelector<HTMLInputElement>('input[aria-label="Nome di ESSELUNGA SPA"]')!.value).toBe('');
+    expect(text()).toContain('Nome non valido.');
   });
 
   it('errore nel caricamento: Riprova rilancia la richiesta', async () => {

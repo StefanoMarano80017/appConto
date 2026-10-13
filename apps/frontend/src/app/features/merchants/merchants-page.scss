@@ -22,6 +22,11 @@ app-search-input.search {
   color: var(--color-error);
 }
 
+/* Le righe di prima mentre arrivano quelle dei criteri nuovi: stessa attenuazione di app-panel. */
+.table-area.stale {
+  opacity: 0.6;
+}
+
 /* Gli stati vuoti stanno al centro, con il respiro della tabella che sostituiscono. */
 .empty {
   padding: var(--space-8) var(--space-6);

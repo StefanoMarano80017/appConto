@@ -60,4 +60,10 @@ describe('Pagination', () => {
 
     expect(emitted).toEqual([4]);
   });
+
+  it("oltre l'ultima pagina Successiva è disabilitata", async () => {
+    await render({ page: 4, pageSize: 25, total: 60, totalPages: 3 });
+
+    expect(host().querySelector<HTMLButtonElement>('button[aria-label="Successiva"]')!.disabled).toBe(true);
+  });
 });
