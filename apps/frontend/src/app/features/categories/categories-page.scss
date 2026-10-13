@@ -22,13 +22,8 @@
     font: inherit;
   }
 
-  input[type='color'] {
-    width: 2.5rem;
-    height: 2rem;
-    padding: 0;
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
+  app-color-picker {
+    width: 8rem;
   }
 
   button {
@@ -103,16 +98,10 @@
     background: var(--color-surface);
   }
 
-  .color input[type='color'] {
-    width: 2rem;
-    height: 1.5rem;
-    padding: 0;
-    border: var(--border-width) solid var(--color-border);
-    border-radius: 4px; // ds-exception: §8, stessa di .name input.rename sopra
-    background: var(--color-surface);
-  }
-
-  tr.saving {
+  // Non sulla cella del colore: l'opacità renderebbe semitrasparente anche il
+  // pannello del color picker aperto (e lo chiuderebbe in uno stacking context
+  // sotto le righe successive). Il trigger disabilitato si attenua da sé.
+  tr.saving > td:not(.color) {
     opacity: 0.6;
   }
 

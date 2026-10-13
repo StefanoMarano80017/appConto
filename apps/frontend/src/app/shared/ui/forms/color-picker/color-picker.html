@@ -1,0 +1,112 @@
+<button
+  #trigger
+  type="button"
+  class="color-picker-trigger"
+  [class.inline]="appearance() === 'inline'"
+  [class.field]="appearance() === 'field'"
+  [class.open]="open()"
+  [attr.aria-label]="ariaLabel()"
+  aria-haspopup="dialog"
+  [attr.aria-expanded]="open()"
+  [attr.aria-controls]="panelId"
+  [disabled]="isDisabled()"
+  (click)="toggle()"
+  (keydown)="onTriggerKeydown($event)"
+  (blur)="onTriggerBlur()"
+>
+  <span
+    class="color-picker-swatch"
+    aria-hidden="true"
+    [style.background-color]="currentColor()"
+  ></span>
+  @if (appearance() === 'field') {
+    <span class="color-picker-value">{{ currentColor() }}</span>
+  }
+  <svg class="color-picker-chevron" aria-hidden="true" lucideChevronDown></svg>
+</button>
+
+@if (open()) {
+  <div
+    #panel
+    class="color-picker-panel"
+    role="dialog"
+    [id]="panelId"
+    aria-label="Scegli un colore"
+    (keydown)="onPanelKeydown($event)"
+  >
+    <p class="color-picker-heading">Scegli un colore</p>
+    <div class="color-picker-palette" role="group" aria-label="Colori predefiniti">
+      @for (color of colors; track color.value; let index = $index) {
+        <button
+          type="button"
+          class="color-picker-option"
+          [class.active]="activeIndex() === index"
+          [class.selected]="selectedIndex() === index"
+          [style.background-color]="color.value"
+          [attr.aria-label]="color.name"
+          [attr.aria-pressed]="selectedIndex() === index"
+          [attr.data-color-index]="index"
+          [tabindex]="activeIndex() === index ? 0 : -1"
+          (click)="chooseColor(color.value)"
+        ></button>
+      }
+    </div>
+    <div class="color-picker-custom">
+      <label for="color-picker-hex-{{ panelId }}">Personalizzato</label>
+      <div
+        class="color-picker-preview"
+        role="img"
+        [attr.aria-label]="'Anteprima colore ' + currentColor()"
+        [style.background-color]="currentColor()"
+      >
+        <span>{{ currentColor() }}</span>
+      </div>
+      <div class="color-picker-rgb" role="group" aria-label="Regola colore RGB">
+        @for (channel of rgbChannels; track channel.key) {
+          <label class="color-picker-channel" [attr.data-channel]="channel.key">
+            <span class="color-picker-channel-heading">
+              <span>{{ channel.name }}</span>
+              <output>{{ rgb()[channel.key] }}</output>
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="255"
+              step="1"
+              [attr.aria-label]="channel.name + ' (RGB)'"
+              [value]="rgb()[channel.key]"
+              [style.--channel-color]="channel.color"
+              (input)="setRgbChannel(channel.key, $event)"
+            />
+          </label>
+        }
+      </div>
+      <div class="color-picker-custom-input">
+        <span
+          class="color-picker-swatch"
+          aria-hidden="true"
+          [style.background-color]="customColorIsValid() ? customColorDraft() : currentColor()"
+        ></span>
+        <input
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          spellcheck="false"
+          [id]="'color-picker-hex-' + panelId"
+          aria-label="Codice HEX del colore personalizzato"
+          [attr.aria-invalid]="customColorIsValid() ? null : 'true'"
+          [value]="customColorDraft()"
+          (input)="setCustomColor($event)"
+        />
+      </div>
+      @if (!customColorIsValid()) {
+        <span class="color-picker-custom-error" role="status"
+          >Inserisci un codice HEX valido, ad esempio #4F9B68.</span
+        >
+      }
+      <button type="button" class="color-picker-confirm" data-confirm (click)="confirmColor()">
+        Conferma
+      </button>
+    </div>
+  </div>
+}

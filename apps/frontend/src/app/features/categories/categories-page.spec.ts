@@ -13,10 +13,13 @@ describe('CategoriesPage', () => {
     name: 'Alimentari',
     color: '#3f8f4f',
     merchantCount: 0,
-    ...overrides
+    ...overrides,
   });
 
-  const load = (fixture: ReturnType<typeof TestBed.createComponent>, categories: CategoryWithUsage[] = []): void => {
+  const load = (
+    fixture: ReturnType<typeof TestBed.createComponent>,
+    categories: CategoryWithUsage[] = [],
+  ): void => {
     fixture.detectChanges();
     http.expectOne(`${API_BASE_URL}/categories`).flush(categories);
     fixture.detectChanges();
@@ -24,7 +27,7 @@ describe('CategoriesPage', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()]
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
 
     http = TestBed.inject(HttpTestingController);
@@ -36,10 +39,14 @@ describe('CategoriesPage', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
     fixture.detectChanges();
 
-    http.expectOne(`${API_BASE_URL}/categories`).flush([category(), category({ id: 'c-2', name: 'Casa' })]);
+    http
+      .expectOne(`${API_BASE_URL}/categories`)
+      .flush([category(), category({ id: 'c-2', name: 'Casa' })]);
     fixture.detectChanges();
 
-    const renameInputs = fixture.nativeElement.querySelectorAll('input.rename') as NodeListOf<HTMLInputElement>;
+    const renameInputs = fixture.nativeElement.querySelectorAll(
+      'input.rename',
+    ) as NodeListOf<HTMLInputElement>;
     expect(renameInputs.length).toBe(2);
     expect(renameInputs[0].value).toBe('Alimentari');
     expect(renameInputs[1].value).toBe('Casa');
@@ -52,30 +59,36 @@ describe('CategoriesPage', () => {
     http.expectOne(`${API_BASE_URL}/categories`).flush([category({ merchantCount: 3 })]);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement.textContent as string)).toContain('3');
+    expect(fixture.nativeElement.textContent as string).toContain('3');
   });
 
   it('mostra un messaggio di errore se il caricamento fallisce', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
     fixture.detectChanges();
 
-    http.expectOne(`${API_BASE_URL}/categories`).flush('errore', { status: 500, statusText: 'Server Error' });
+    http
+      .expectOne(`${API_BASE_URL}/categories`)
+      .flush('errore', { status: 500, statusText: 'Server Error' });
     fixture.detectChanges();
 
-    expect((fixture.nativeElement.textContent as string)).toContain('Si è verificato un errore imprevisto.');
+    expect(fixture.nativeElement.textContent as string).toContain(
+      'Si è verificato un errore imprevisto.',
+    );
   });
 
   it('crea una nuova categoria dal form', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
     load(fixture);
 
-    const nameInput = fixture.nativeElement.querySelector('input[name="newName"]') as HTMLInputElement;
+    const nameInput = fixture.nativeElement.querySelector(
+      'input[name="newName"]',
+    ) as HTMLInputElement;
     nameInput.value = 'Regali';
     nameInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
-      new Event('submit', { cancelable: true })
+      new Event('submit', { cancelable: true }),
     );
     fixture.detectChanges();
 
@@ -85,7 +98,9 @@ describe('CategoriesPage', () => {
     request.flush({ id: 'c-new', name: 'Regali', color: '#9aa3af' });
     fixture.detectChanges();
 
-    const renameInputs = fixture.nativeElement.querySelectorAll('input.rename') as NodeListOf<HTMLInputElement>;
+    const renameInputs = fixture.nativeElement.querySelectorAll(
+      'input.rename',
+    ) as NodeListOf<HTMLInputElement>;
     const createdInput = Array.from(renameInputs).find((input) => input.value === 'Regali');
     expect(createdInput).toBeTruthy();
   });
@@ -94,22 +109,27 @@ describe('CategoriesPage', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
     load(fixture);
 
-    const nameInput = fixture.nativeElement.querySelector('input[name="newName"]') as HTMLInputElement;
+    const nameInput = fixture.nativeElement.querySelector(
+      'input[name="newName"]',
+    ) as HTMLInputElement;
     nameInput.value = 'Doppione';
     nameInput.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('form') as HTMLFormElement).dispatchEvent(
-      new Event('submit', { cancelable: true })
+      new Event('submit', { cancelable: true }),
     );
 
     http
       .expectOne(`${API_BASE_URL}/categories`)
-      .flush({ error: 'Esiste già una categoria con il nome "Doppione".' }, { status: 409, statusText: 'Conflict' });
+      .flush(
+        { error: 'Esiste già una categoria con il nome "Doppione".' },
+        { status: 409, statusText: 'Conflict' },
+      );
     fixture.detectChanges();
 
-    expect((fixture.nativeElement.textContent as string)).toContain(
-      'Esiste già una categoria con il nome "Doppione".'
+    expect(fixture.nativeElement.textContent as string).toContain(
+      'Esiste già una categoria con il nome "Doppione".',
     );
   });
 
@@ -131,9 +151,69 @@ describe('CategoriesPage', () => {
     expect(updatedInput.value).toBe('Spesa alimentare');
   });
 
+  it('salva il colore scelto nella palette del color picker condiviso', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category()]);
+
+    (
+      fixture.nativeElement.querySelector('.color .color-picker-trigger') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector(
+        '.color-picker-option[aria-label="Blu"]',
+      ) as HTMLButtonElement
+    ).click();
+
+    const request = http.expectOne(`${API_BASE_URL}/categories/c-1`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ color: '#5572b8' });
+    request.flush(category({ color: '#5572b8' }));
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement.querySelector('.color .color-picker-swatch') as HTMLElement).style
+        .backgroundColor,
+    ).toBe('rgb(85, 114, 184)');
+  });
+
+  it('salva il colore RGB solo alla conferma, non mentre si usano gli slider', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category()]);
+
+    (
+      fixture.nativeElement.querySelector('.color .color-picker-trigger') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    const redSlider = fixture.nativeElement.querySelector(
+      '.color input[type="range"][aria-label="Rosso (RGB)"]',
+    ) as HTMLInputElement;
+    redSlider.value = '255';
+    redSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    http.expectNone(`${API_BASE_URL}/categories/c-1`);
+    expect(redSlider.disabled).toBe(false);
+
+    redSlider.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+    http.expectNone(`${API_BASE_URL}/categories/c-1`);
+
+    (fixture.nativeElement.querySelector('.color-picker-confirm') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const request = http.expectOne(`${API_BASE_URL}/categories/c-1`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ color: '#ff8f4f' });
+    request.flush(category({ color: '#ff8f4f' }));
+    fixture.detectChanges();
+  });
+
   it('non permette di rinominare «Da classificare»', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
-    load(fixture, [category({ id: 'c9bfcd74-e342-4a3f-8b0c-116f89236d51', name: 'Da classificare' })]);
+    load(fixture, [
+      category({ id: 'c9bfcd74-e342-4a3f-8b0c-116f89236d51', name: 'Da classificare' }),
+    ]);
 
     expect(fixture.nativeElement.querySelector('input.rename')).toBeNull();
   });
@@ -165,7 +245,7 @@ describe('CategoriesPage', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
     fixture.detectChanges();
 
-    expect((fixture.nativeElement.textContent as string)).not.toContain('Alimentari');
+    expect(fixture.nativeElement.textContent as string).not.toContain('Alimentari');
   });
 
   it('annulla senza eliminare', () => {
@@ -184,7 +264,9 @@ describe('CategoriesPage', () => {
 
   it('non permette di eliminare «Da classificare»', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
-    load(fixture, [category({ id: 'c9bfcd74-e342-4a3f-8b0c-116f89236d51', name: 'Da classificare' })]);
+    load(fixture, [
+      category({ id: 'c9bfcd74-e342-4a3f-8b0c-116f89236d51', name: 'Da classificare' }),
+    ]);
 
     expect(fixture.nativeElement.querySelector('button.danger')).toBeNull();
   });

@@ -96,8 +96,8 @@ L'endpoint `/usage` non viene wrappato lato frontend in questo lavoro (nessun co
 
 - `categories-page.ts` / `.html` / `.scss`, standalone, stato via `signal()`/`computed()` (nessun form reattivo, coerente col resto del progetto)
 - Lista categorie: nome, swatch colore, conteggio merchant assegnati
-- Creazione: form con nome (input testo) e colore (`<input type="color">` nativo — non esiste un color-picker nel progetto, non se ne introduce uno per YAGNI)
-- Modifica inline di nome/colore per riga
+- Creazione: form con nome (input testo) e color picker condiviso, con palette predefinita e selezione libera
+- Modifica inline di nome (input) e colore (`app-color-picker` condiviso) per riga
 - Eliminazione con **pattern a due passi** identico a quello di `transactions-page.ts` (signal `confirmingDelete`, primo click mostra l'avviso con il conteggio merchant preso da `merchantCount`, secondo click esegue)
   - Messaggio: *"Questa categoria è assegnata a N merchant. Eliminandola, verranno spostati su «Da classificare». Eliminare definitivamente?"*
 - Riga "Da classificare": bottoni di rinomina ed eliminazione disabilitati/nascosti (identificata via costante `FALLBACK_CATEGORY_ID`, duplicata lato frontend come già avviene per altre costanti di dominio)

@@ -20,11 +20,10 @@
         (input)="newName.set($any($event.target).value)"
         [disabled]="creating()"
       />
-      <input
-        type="color"
-        name="newColor"
-        [value]="newColor()"
-        (change)="newColor.set($any($event.target).value)"
+      <app-color-picker
+        appearance="field"
+        ariaLabel="Colore nuova categoria"
+        [(value)]="newColor"
         [disabled]="creating()"
       />
       <button type="submit" [disabled]="creating() || newName().trim() === ''">
@@ -69,12 +68,12 @@
                   }
                 </td>
                 <td class="color">
-                  <input
-                    type="color"
+                  <app-color-picker
+                    appearance="inline"
                     [value]="category.color ?? '#9aa3af'"
                     [disabled]="savingId() === category.id"
-                    [attr.aria-label]="'Colore di ' + category.name"
-                    (change)="recolor(category, $any($event.target).value)"
+                    [ariaLabel]="'Colore di ' + category.name"
+                    (valueCommitted)="recolor(category, $event)"
                   />
                 </td>
                 <td class="numeric">{{ category.merchantCount }}</td>
@@ -83,7 +82,11 @@
                     @if (confirmingDeleteId() === category.id) {
                       <span class="ask">
                         {{ category.merchantCount }}
-                        {{ category.merchantCount === 1 ? 'merchant verrà spostato' : 'merchant verranno spostati' }}
+                        {{
+                          category.merchantCount === 1
+                            ? 'merchant verrà spostato'
+                            : 'merchant verranno spostati'
+                        }}
                         su «Da classificare». Eliminare?
                       </span>
                       <button
@@ -94,11 +97,18 @@
                       >
                         {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
                       </button>
-                      <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
+                      <button
+                        type="button"
+                        class="ghost"
+                        [disabled]="deleting()"
+                        (click)="cancelDelete()"
+                      >
                         Annulla
                       </button>
                     } @else {
-                      <button type="button" class="danger" (click)="askDelete(category.id)">Elimina</button>
+                      <button type="button" class="danger" (click)="askDelete(category.id)">
+                        Elimina
+                      </button>
                     }
                   }
                 </td>
