@@ -16,46 +16,47 @@ app-search-input.search {
   max-width: 22rem;
 }
 
-.filters {
-  display: flex;
-  gap: var(--space-3);
-
-  button {
-    padding: var(--space-3) var(--space-5);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    @include typography.text('secondary');
-    color: var(--color-text-muted);
-  }
-
-  button.active {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
-
-  .badge {
-    margin-left: var(--space-3);
-    font-variant-numeric: tabular-nums;
-    opacity: 0.7;
-  }
-}
-
-.message {
-  color: var(--color-text-muted);
-}
-
-.message.error {
+/* L'errore dell'ultimo salvataggio: sta sopra la tabella, la riga è già tornata al valore salvato. */
+.save-error {
+  margin: 0 0 var(--space-6);
   color: var(--color-error);
 }
 
-.message.done {
-  color: var(--color-income);
+/* Gli stati vuoti stanno al centro, con il respiro della tabella che sostituiscono. */
+.empty {
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
 }
 
-.count {
-  @include typography.text('secondary');
-  color: var(--color-text-muted);
+/* Lo skeleton del primo caricamento, come in transactions-table-panel. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: 0 var(--space-6) var(--space-6);
+
+  .line {
+    height: 1.25rem;
+    border-radius: var(--radius-badge);
+    background: var(--color-background);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton .line {
+    animation: none;
+  }
 }
 
 /*

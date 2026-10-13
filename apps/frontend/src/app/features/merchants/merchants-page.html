@@ -1,11 +1,16 @@
 <app-page-layout>
-  <app-panel [noPadding]=true>
+  <!-- Durante un ricaricamento le righe di prima restano, attenuate e segnalate come occupate. -->
+  <app-panel
+    [noPadding]="true"
+    [class.stale]="data() !== undefined && merchants.isLoading()"
+    [attr.aria-busy]="merchants.isLoading() || null"
+  >
     <app-panel-content>
       <app-section-header
         title="Merchant"
         subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
       >
-        <button panelActions type="button" (click)="load()" [disabled]="loading()">
+        <button panelActions type="button" (click)="merchants.reload()" [disabled]="merchants.isLoading()">
           Aggiorna
         </button>
       </app-section-header>
@@ -13,114 +18,137 @@
       <div class="toolbar">
         <app-search-input
           class="search"
-          [value]="search()"
+          [value]="searchText()"
           placeholder="Cerca un merchant…"
-          (valueChange)="search.set($event)"
+          (valueChange)="onSearchTyped($event)"
         />
 
-        <div class="filters" role="group" aria-label="Filtro merchant">
-          <button
-            type="button"
-            [class.active]="filter() === 'all'"
-            (click)="filter.set('all')"
-          >
-            Tutti <span class="badge">{{ counts().all }}</span>
-          </button>
-
-          <button
-            type="button"
-            [class.active]="filter() === 'classified'"
-            (click)="filter.set('classified')"
-          >
-            Classificati <span class="badge">{{ counts().classified }}</span>
-          </button>
-
-          <button
-            type="button"
-            [class.active]="filter() === 'unclassified'"
-            (click)="filter.set('unclassified')"
-          >
-            Da classificare <span class="badge">{{ counts().unclassified }}</span>
-          </button>
-        </div>
+        <app-choice-group
+          [options]="filterOptions()"
+          [value]="query().classification"
+          ariaLabel="Filtro merchant"
+          (selected)="apply({ classification: $event })"
+        />
       </div>
 
-      @if (error(); as message) {
-        <p class="message error">{{ message }}</p>
+      @if (saveError(); as message) {
+        <p class="save-error" role="alert">{{ message }}</p>
       }
 
-      @if (loading()) {
-        <p class="message">Caricamento in corso…</p>
-      } @else if (merchants().length === 0) {
-        <p class="message">Nessun merchant. Importa un estratto conto per iniziare.</p>
-      } @else if (visible().length === 0) {
-        @if (filter() === 'unclassified' && search() === '') {
-          <p class="message done">Tutti i merchant sono stati classificati.</p>
-        } @else {
-          <p class="message">Nessun merchant corrisponde alla ricerca.</p>
-        }
-      } @else {
-        <p class="count">{{ visible().length }} di {{ counts().all }} merchant</p>
+      @if (error(); as message) {
+        <app-error-retry [message]="message" (retry)="merchants.reload()" />
       }
     </app-panel-content>
 
-    @if (!loading() && merchants().length > 0 && visible().length > 0) {
-      <div class="scroller">
-        <table class="merchants">
-          <thead>
-            <tr>
-              <th scope="col">Nome</th>
-              <th scope="col">Categoria</th>
-              <th scope="col" class="numeric">Transazioni</th>
-              <th scope="col" class="numeric">Totale speso</th>
-              <th scope="col">Ultima transazione</th>
-            </tr>
-          </thead>
-  
-          <tbody>
-            @for (merchant of visible(); track merchant.id) {
-              <tr [class.saving]="savingId() === merchant.id">
-                <td class="name">
-                  <input
-                    type="text"
-                    [value]="merchant.displayName ?? ''"
-                    [placeholder]="merchant.name"
-                    [disabled]="savingId() === merchant.id"
-                    [attr.aria-label]="'Nome di ' + merchant.name"
-                    (change)="rename(merchant, $any($event.target).value)"
-                  />
-  
-                  @if (merchant.displayName !== null) {
-                    <span class="original">{{ merchant.name }}</span>
-                  }
-                </td>
-  
-                <td class="category">
-                  <app-select
-                    [options]="categories()"
-                    placeholder="— Nessuna categoria"
-                    placeholderPosition="end"
-                    [value]="merchant.category?.id ?? null"
-                    [disabled]="savingId() === merchant.id"
-                    [ariaLabel]="'Categoria di ' + merchant.label"
-                    (valueChange)="changeCategory(merchant, $event)"
-                  />
-                </td>
-  
-                <td class="numeric">{{ merchant.transactionCount }}</td>
-                <td class="numeric">{{ formatAmount(merchant.totalSpent) }}</td>
-                <td class="date">
-                  {{
-                    merchant.lastTransactionDate
-                      ? formatBookingDate(merchant.lastTransactionDate)
-                      : '—'
-                  }}
-                </td>
-              </tr>
+    @if (error() === null) {
+      @if (data(); as data) {
+        @if (data.counts.all === 0) {
+          <div class="empty">
+            <app-empty-state message="Nessun merchant. Importa un estratto conto per iniziare." />
+          </div>
+        } @else if (emptyPage()) {
+          <div class="empty">
+            <app-empty-state
+              message="Hai sistemato tutti i merchant di questa pagina."
+              [hint]="'Ne restano ' + data.pagination.total + ' nelle pagine precedenti.'"
+              actionLabel="Vai all'ultima pagina"
+              (action)="apply({ page: data.pagination.totalPages })"
+            />
+          </div>
+        } @else if (data.items.length === 0) {
+          <div class="empty">
+            @if (query().classification === 'unclassified' && query().search === '') {
+              <app-empty-state message="Tutti i merchant sono stati classificati." />
+            } @else {
+              <app-empty-state
+                message="Nessun merchant corrisponde alla ricerca."
+                actionLabel="Azzera ricerca e filtro"
+                (action)="resetSearch()"
+              />
             }
-          </tbody>
-        </table>
-      </div>
+          </div>
+        } @else {
+          <div class="scroller">
+            <table class="merchants">
+              <thead>
+                <tr>
+                  @for (column of columns; track column.field) {
+                    <th
+                      app-sortable-header
+                      [class.numeric]="column.numeric"
+                      [label]="column.label"
+                      [active]="query().sortBy === column.field"
+                      [direction]="query().sortDirection"
+                      (sorted)="sortBy(column.field)"
+                    ></th>
+                  }
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (merchant of data.items; track merchant.id) {
+                  <tr [class.saving]="savingId() === merchant.id">
+                    <td class="name">
+                      <input
+                        type="text"
+                        [value]="merchant.displayName ?? ''"
+                        [placeholder]="merchant.name"
+                        [disabled]="savingId() === merchant.id"
+                        [attr.aria-label]="'Nome di ' + merchant.name"
+                        (change)="rename(merchant, $any($event.target).value)"
+                      />
+
+                      @if (merchant.displayName !== null) {
+                        <span class="original">{{ merchant.name }}</span>
+                      }
+                    </td>
+
+                    <td class="category">
+                      <app-select
+                        [options]="categories()"
+                        placeholder="— Nessuna categoria"
+                        placeholderPosition="end"
+                        [value]="merchant.category?.id ?? null"
+                        [disabled]="savingId() === merchant.id"
+                        [ariaLabel]="'Categoria di ' + merchant.label"
+                        (valueChange)="changeCategory(merchant, $event)"
+                      />
+                    </td>
+
+                    <td class="numeric">{{ merchant.transactionCount }}</td>
+                    <td class="numeric">
+                      <app-amount [value]="merchant.totalSpent" tone="neutral" />
+                    </td>
+                    <td class="date">
+                      {{
+                        merchant.lastTransactionDate
+                          ? formatBookingDate(merchant.lastTransactionDate)
+                          : '—'
+                      }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Sulla pagina svuotata resta: si può scegliere un'altra pagina. -->
+        @if (data.pagination.total > 0) {
+          <app-pagination
+            itemLabel="merchant"
+            [pagination]="data.pagination"
+            (pageSelected)="apply({ page: $event })"
+            (pageSizeSelected)="apply({ pageSize: $event })"
+          />
+        }
+      } @else if (merchants.isLoading()) {
+        <div class="skeleton" aria-hidden="true">
+          @for (row of skeletonRows; track $index) {
+            <span class="line"></span>
+          }
+        </div>
+      }
     }
   </app-panel>
 </app-page-layout>
