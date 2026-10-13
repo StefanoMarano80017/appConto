@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { LucideTrendingUp } from '@lucide/angular';
 import { Select } from './select';
 import { SelectOption } from './select.model';
+import { normalizeSearch } from './select-search';
 import { chooseOption, selectedName, selectTrigger } from './select.testing';
 
 const OPTIONS: readonly SelectOption[] = [
@@ -240,6 +241,41 @@ describe('Select', () => {
     expect(option('Alimentari')?.classList.contains('active')).toBe(true);
   });
 
+  for (const position of ['start', 'end'] as const) {
+    it(`con placeholder in ${position === 'start' ? 'cima' : 'fondo'} gli id seguono l'ordine del DOM e la tastiera lo segue`, async () => {
+      fixture.componentInstance.placeholder.set('Tutti');
+      fixture.componentInstance.placeholderPosition.set(position);
+      await fixture.whenStable();
+      await open();
+
+      const ids = options().map((item) => item.id);
+      expect(ids).toHaveLength(4);
+      ids.forEach((id, index) => {
+        expect(id).toMatch(/-option-(\d+)$/);
+        expect(Number(/-option-(\d+)$/.exec(id)![1])).toBe(index);
+      });
+      expect(options()[position === 'start' ? 0 : 3].classList.contains('placeholder')).toBe(true);
+
+      const active = (): string | null => trigger().getAttribute('aria-activedescendant');
+      key(trigger(), 'Home');
+      await fixture.whenStable();
+      expect(active()).toBe(options()[0].id);
+
+      for (let i = 1; i < 4; i++) {
+        key(trigger(), 'ArrowDown');
+        await fixture.whenStable();
+        expect(active()).toBe(options()[i].id);
+      }
+
+      key(trigger(), 'Home');
+      await fixture.whenStable();
+      key(trigger(), 'End');
+      await fixture.whenStable();
+      expect(active()).toBe(options().at(-1)!.id);
+      expect(options().at(-1)!.classList.contains('active')).toBe(true);
+    });
+  }
+
   it('Tab chiude senza scegliere', async () => {
     const changes = vi.fn();
     select().value.subscribe(changes);
@@ -405,6 +441,62 @@ describe('Select', () => {
       expect(options()).toHaveLength(MANY.length);
     });
 
+    it('con placeholder in cima la ricerca attiva la prima opzione, non il placeholder', async () => {
+      fixture.componentInstance.placeholder.set('Tutte');
+      await fixture.whenStable();
+      await open();
+      await type('cin');
+
+      expect(options().map((item) => item.textContent?.trim())).toEqual(['Tutte', 'Cinema']);
+      expect(options()[0].id).toMatch(/-option-0$/);
+      expect(options()[1].id).toMatch(/-option-1$/);
+      expect(search()?.getAttribute('aria-activedescendant')).toBe(option('Cinema')?.id);
+      expect(search()?.getAttribute('aria-activedescendant')).not.toBe(option('Tutte')?.id);
+
+      key(search()!, 'Enter');
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.value()).toBe('cinema');
+    });
+
+    it('senza risultati con placeholder in fondo resta solo il placeholder, attivo e scelto da Invio', async () => {
+      fixture.componentInstance.placeholder.set('— Nessuna');
+      fixture.componentInstance.placeholderPosition.set('end');
+      await fixture.whenStable();
+      await open();
+      await type('zzz');
+
+      expect(options()).toHaveLength(1);
+      expect(options()[0].classList.contains('placeholder')).toBe(true);
+      expect(options()[0].id).toMatch(/-option-0$/);
+      expect(search()?.getAttribute('aria-activedescendant')).toBe(options()[0].id);
+
+      key(search()!, 'Enter');
+      await fixture.whenStable();
+
+      expect(fixture.componentInstance.value()).toBeNull();
+      expect(panel()).toBeNull();
+    });
+
+    it('il placeholder non ha <mark>, le opzioni filtrate sì, e gli id seguono il DOM', async () => {
+      fixture.componentInstance.placeholder.set('Tutte');
+      await fixture.whenStable();
+      await open();
+      await type('ri');
+
+      const expected = MANY.filter((item) => normalizeSearch(item.name).includes('ri')).map((item) => item.name);
+      expect(expected.length).toBeGreaterThan(1);
+      expect(options()).toHaveLength(expected.length + 1);
+      expect(options()[0].textContent?.trim()).toBe('Tutte');
+      expect(options()[0].querySelector('mark')).toBeNull();
+      for (const item of options().slice(1)) {
+        expect(item.querySelector('mark')).not.toBeNull();
+      }
+      expect(options().slice(1).map((item) => item.textContent?.trim())).toEqual(expected);
+      options().forEach((item, index) => expect(item.id).toMatch(new RegExp(`-option-${index}$`)));
+      expect(search()?.getAttribute('aria-activedescendant')).toBe(options()[1].id);
+    });
+
     it('la ricerca è annunciata col nome del campo e non sta in un label annidato', async () => {
       await open();
 
@@ -549,6 +641,32 @@ describe('Select', () => {
 
       window.dispatchEvent(new Event('scroll'));
       expect(panel()?.style.top).toBe('84px');
+    });
+
+    it('chiudere e riaprire non duplica i listener: uno scroll riposiziona una volta sola', async () => {
+      await open();
+      key(trigger(), 'Escape');
+      await fixture.whenStable();
+      await open();
+
+      // `position()` legge l'altezza del pannello una volta per chiamata.
+      const height = vi.mocked(Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')!.get!);
+      height.mockClear();
+      window.dispatchEvent(new Event('scroll'));
+
+      expect(height).toHaveBeenCalledTimes(1);
+    });
+
+    it('distrutto a pannello aperto rimuove tutti i listener globali', async () => {
+      await open();
+      const documentRemove = vi.spyOn(document, 'removeEventListener');
+      const windowRemove = vi.spyOn(window, 'removeEventListener');
+
+      fixture.destroy();
+
+      expect(documentRemove).toHaveBeenCalledWith('pointerdown', expect.any(Function), true);
+      expect(windowRemove).toHaveBeenCalledWith('scroll', expect.any(Function), true);
+      expect(windowRemove).toHaveBeenCalledWith('resize', expect.any(Function));
     });
 
     it('si apre sopra se il pannello non ci sta sotto e sopra c\'è più spazio', async () => {

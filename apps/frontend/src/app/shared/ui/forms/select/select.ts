@@ -4,7 +4,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   ElementRef,
   forwardRef,
@@ -21,29 +20,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { LucideCheck, LucideChevronDown, LucideDynamicIcon, LucideSearch } from '@lucide/angular';
 import { ColorMarkerComponent } from '@shared/ui/data/color-marker/color-marker';
 import { SelectOption } from './select.model';
-import { matchSegments, normalizeSearch, SearchSegment } from './select-search';
+import { matchOptions, placeholderItem, SelectItem, typeAheadIndex } from './select-items';
+import { panelPlacement } from './select-position';
 
 /** Contatore di modulo: rende univoci gli id di listbox e voci fra le istanze. */
 let nextId = 0;
 
 /** Oltre questo numero di opzioni `searchable: 'auto'` mostra la ricerca. */
 const SEARCH_THRESHOLD = 8;
-/** Distanza in pixel fra trigger e pannello. */
-const PANEL_GAP = 4;
-/** Margine in pixel dal bordo del viewport quando il pannello va spostato a sinistra. */
-const VIEWPORT_MARGIN = 4;
 /** I controlli che prendono il fuoco da soli al click: un click fuori su di loro non riporta il fuoco al trigger. */
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex], [contenteditable]';
-
-/** Una voce del pannello: un'opzione oppure la voce vuota (`placeholder`), che vale `null`. */
-interface SelectItem<T extends string> {
-  readonly id: T | null;
-  readonly name: string;
-  readonly color?: string | null;
-  readonly icon?: SelectOption<T>['icon'];
-  readonly segments: readonly SearchSegment[];
-  readonly placeholder: boolean;
-}
 
 /**
  * Select a scelta singola con pannello proprio (pattern "select-only
@@ -126,23 +112,12 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   });
 
   /** Le opzioni che corrispondono alla ricerca, con i segmenti per `<mark>`. */
-  protected readonly matches = computed<readonly SelectItem<T>[]>(() => {
-    const query = this.searchEnabled() ? this.query() : '';
-    const matches: SelectItem<T>[] = [];
-    for (const option of this.options()) {
-      const segments = matchSegments(option.name, query);
-      if (segments) {
-        matches.push({ ...option, segments, placeholder: false });
-      }
-    }
-    return matches;
-  });
+  protected readonly matches = computed(() =>
+    matchOptions(this.options(), this.searchEnabled() ? this.query() : ''),
+  );
 
   /** La voce vuota: sempre visibile, anche filtrando. */
-  protected readonly placeholderItem = computed<SelectItem<T> | null>(() => {
-    const name = this.placeholder();
-    return name === null ? null : { id: null, name, segments: [{ text: name, match: false }], placeholder: true };
-  });
+  protected readonly placeholderItem = computed(() => placeholderItem<T>(this.placeholder()));
 
   /** Le voci nell'ordine del pannello: è l'indice qui dentro che `activeIndex` usa. */
   protected readonly items = computed<readonly SelectItem<T>[]>(() => {
@@ -153,7 +128,7 @@ export class Select<T extends string = string> implements ControlValueAccessor {
     return this.placeholderPosition() === 'start' ? [empty, ...this.matches()] : [...this.matches(), empty];
   });
 
-  /** Indice della prima opzione in `items` (dopo la voce vuota, se sta in cima). */
+  /** Indice della prima opzione in `items` (dopo la voce vuota, se sta in cima); lo usa anche il template per numerare le righe. */
   protected readonly matchOffset = computed(() =>
     this.placeholderItem() && this.placeholderPosition() === 'start' ? 1 : 0,
   );
@@ -202,7 +177,20 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   };
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.unlisten());
+    // I listener globali vivono esattamente quanto il pannello aperto: li toglie il cleanup, anche alla distruzione.
+    effect((onCleanup) => {
+      if (!this.open()) {
+        return;
+      }
+      document.addEventListener('pointerdown', this.closeOnOutside, true);
+      window.addEventListener('scroll', this.reposition, true);
+      window.addEventListener('resize', this.reposition);
+      onCleanup(() => {
+        document.removeEventListener('pointerdown', this.closeOnOutside, true);
+        window.removeEventListener('scroll', this.reposition, true);
+        window.removeEventListener('resize', this.reposition);
+      });
+    });
 
     // Un select disabilitato o reso readonly a pannello aperto non deve restare aperto.
     effect(() => {
@@ -356,7 +344,6 @@ export class Select<T extends string = string> implements ControlValueAccessor {
     const selectedIndex = this.items().findIndex((item) => item.id === this.selectedId());
     this.activeIndex.set(Math.max(selectedIndex, 0));
     this.open.set(true);
-    this.listen();
 
     afterNextRender(
       () => {
@@ -376,7 +363,6 @@ export class Select<T extends string = string> implements ControlValueAccessor {
       return;
     }
     this.open.set(false);
-    this.unlisten();
   }
 
   private chooseActive(): void {
@@ -400,19 +386,10 @@ export class Select<T extends string = string> implements ControlValueAccessor {
     if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
-    const letter = normalizeSearch(event.key);
-    if (letter === '') {
-      return;
-    }
-    const items = this.items();
-    for (let step = 1; step <= items.length; step++) {
-      const index = (this.activeIndex() + step) % items.length;
-      const item = items[index];
-      if (!item.placeholder && normalizeSearch(item.name).startsWith(letter)) {
-        event.preventDefault();
-        this.moveTo(index);
-        return;
-      }
+    const index = typeAheadIndex(this.items(), this.activeIndex(), event.key);
+    if (index !== -1) {
+      event.preventDefault();
+      this.moveTo(index);
     }
   }
 
@@ -444,7 +421,7 @@ export class Select<T extends string = string> implements ControlValueAccessor {
   }
 
   /**
-   * Calcola `top`/`bottom`/`left`/`min-width` del pannello dal trigger. Scrive
+   * Misura trigger, pannello e viewport e applica `panelPlacement`. Scrive
    * direttamente sullo stile, senza passare dai signal: così scroll e resize
    * non richiedono un giro di change detection.
    */
@@ -455,30 +432,19 @@ export class Select<T extends string = string> implements ControlValueAccessor {
       return;
     }
     const rect = trigger.getBoundingClientRect();
-    // Sopra solo se il pannello, alla sua altezza reale, sotto non ci sta e sopra c'è più spazio.
-    const spaceBelow = window.innerHeight - rect.bottom - PANEL_GAP - VIEWPORT_MARGIN;
-    const spaceAbove = rect.top - PANEL_GAP - VIEWPORT_MARGIN;
-    const above = panel.offsetHeight > spaceBelow && spaceAbove > spaceBelow;
-
-    panel.classList.toggle('above', above);
-    panel.style.top = above ? '' : `${rect.bottom + PANEL_GAP}px`;
-    panel.style.bottom = above ? `${window.innerHeight - rect.top + PANEL_GAP}px` : '';
+    const height = panel.offsetHeight;
+    // La larghezza si misura col `min-width` del trigger attuale: uno vecchio e più
+    // largo (trigger ristretto da un resize) sposterebbe il pannello troppo a sinistra.
     panel.style.minWidth = `${rect.width}px`;
+    const placement = panelPlacement(
+      rect,
+      { width: panel.offsetWidth, height },
+      { width: window.innerWidth, height: window.innerHeight },
+    );
 
-    // Allineato al trigger, ma spostato a sinistra se uscirebbe dal viewport.
-    const maxLeft = window.innerWidth - panel.offsetWidth - VIEWPORT_MARGIN;
-    panel.style.left = `${Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft))}px`;
-  }
-
-  private listen(): void {
-    document.addEventListener('pointerdown', this.closeOnOutside, true);
-    window.addEventListener('scroll', this.reposition, true);
-    window.addEventListener('resize', this.reposition);
-  }
-
-  private unlisten(): void {
-    document.removeEventListener('pointerdown', this.closeOnOutside, true);
-    window.removeEventListener('scroll', this.reposition, true);
-    window.removeEventListener('resize', this.reposition);
+    panel.classList.toggle('above', placement.above);
+    panel.style.top = placement.top === null ? '' : `${placement.top}px`;
+    panel.style.bottom = placement.bottom === null ? '' : `${placement.bottom}px`;
+    panel.style.left = `${placement.left}px`;
   }
 }
