@@ -68,6 +68,8 @@ transactionsService.remove(
   { usagesOf: () => [] },
 );
 merchantsService.updateDisplayName(merchantIdOf('DELTA'), 'Caffè Roma');
+// iniziale minuscola tra maiuscole: un ordinamento che distingue le maiuscole la sposterebbe in fondo
+merchantsService.updateDisplayName(merchantIdOf('STIPENDIO'), 'cassa');
 merchantsService.assignCategory(merchantIdOf('DELTA'), categoryId('Alimentari'));
 
 function labels(query: Partial<MerchantQuery>): string[] {
@@ -78,7 +80,7 @@ function labels(query: Partial<MerchantQuery>): string[] {
 
 describe('ricerca dei merchant', () => {
   it('di default ordina per numero di transazioni decrescente', () => {
-    assert.deepEqual(labels({}).slice(0, 4), ['ALFA', 'BETA', 'Caffè Roma', 'GAMMA']);
+    assert.deepEqual(labels({}).slice(0, 4), ['ALFA', 'BETA', 'Caffè Roma', 'cassa']);
   });
 
   it('a parità di valore ordina per nome crescente', () => {
@@ -92,14 +94,14 @@ describe('ricerca dei merchant', () => {
       'ALFA',
       'BETA',
       'Caffè Roma',
+      'cassa',
       'GAMMA',
-      'STIPENDIO',
       'VUOTO',
     ]);
     assert.deepEqual(labels({ sortBy: 'name', sortDirection: 'desc' }), [
       'VUOTO',
-      'STIPENDIO',
       'GAMMA',
+      'cassa',
       'Caffè Roma',
       'BETA',
       'ALFA',
@@ -112,8 +114,8 @@ describe('ricerca dei merchant', () => {
     assert.deepEqual(labels({ sortBy: 'category', sortDirection: 'asc' }).slice(1), [
       'ALFA',
       'BETA',
+      'cassa',
       'GAMMA',
-      'STIPENDIO',
       'VUOTO',
     ]);
   });
