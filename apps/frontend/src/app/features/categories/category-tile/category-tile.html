@@ -6,12 +6,7 @@
     su «Da classificare». Eliminare?
   </p>
   <div class="confirm">
-    <button
-      type="button"
-      class="danger"
-      [disabled]="deleting()"
-      (click)="deleteConfirmed.emit()"
-    >
+    <button type="button" class="danger" [disabled]="deleting()" (click)="deleteConfirmed.emit()">
       {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
     </button>
     <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
@@ -60,30 +55,35 @@
         <svg aria-hidden="true" lucideX></svg>
       </button>
     }
-  } @else if (current && locked()) {
-    <span class="name" [title]="current.name"><span class="name-text">{{ current.name }}</span></span>
-    <span class="lock-slot" title="Categoria protetta">
-      <svg class="lock" aria-hidden="true" lucideLock></svg>
-      <span class="sr-only">Categoria protetta</span>
-    </span>
   } @else if (current) {
-    <button
-      type="button"
-      class="name"
-      [title]="current.name"
-      [attr.aria-label]="'Rinomina ' + current.name"
-      [disabled]="busy()"
-      (click)="startEditing()"
-    >
-      <span class="name-text">{{ current.name }}</span>
-    </button>
-  }
+    @if (locked()) {
+      <span class="name" [title]="current.name">
+        <span class="name-text">{{ current.name }}</span>
+      </span>
+    } @else {
+      <button
+        type="button"
+        class="name"
+        [title]="current.name"
+        [attr.aria-label]="'Rinomina ' + current.name"
+        [disabled]="busy()"
+        (click)="startEditing()"
+      >
+        <span class="name-text">{{ current.name }}</span>
+      </button>
+    }
 
-  @if (current) {
-    <span class="count"
-      >{{ current.merchantCount }}<span class="sr-only"> merchant</span></span
-    >
-    @if (!locked() && !editing()) {
+    <span class="count">
+      {{ current.merchantCount }}
+      <span class="sr-only"> merchant</span>
+    </span>
+
+    @if (locked()) {
+      <span class="lock-slot" title="Categoria protetta">
+        <svg class="lock" aria-hidden="true" lucideLock></svg>
+        <span class="sr-only">Categoria protetta</span>
+      </span>
+    } @else {
       <button
         type="button"
         class="icon delete"

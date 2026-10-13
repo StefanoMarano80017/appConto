@@ -14,8 +14,12 @@
 @if (readonly()) {
   <!-- Solo lettura è testo, non un controllo: niente button, chevron né pannello. -->
   <span class="select-trigger select-readonly inline readonly">
-    <ng-container *ngTemplateOutlet="leading; context: { icon: current?.icon, color: current?.color }" />
-    <span class="select-name" [class.muted]="showsPlaceholder" [title]="triggerText">{{ triggerText }}</span>
+    <ng-container *ngTemplateOutlet="leading; 
+      context: { icon: current?.icon, color: current?.color }" 
+    />
+    <span class="select-name" [class.muted]="showsPlaceholder" [title]="triggerText">
+      {{ triggerText }}
+    </span>
   </span>
 } @else {
   <button
@@ -102,7 +106,11 @@
         }
       </ul>
       <!-- La voce "nessun risultato" non viene letta da sola: la si annuncia qui. -->
-      <div class="sr-only" aria-live="polite">@if (matches().length === 0) {{{ emptyText() }}}</div>
+      <div class="sr-only" aria-live="polite">
+        @if (matches().length === 0) {
+          {{ emptyText() }}
+        }
+      </div>
     </div>
   }
 }
@@ -120,7 +128,19 @@
   >
     <ng-container *ngTemplateOutlet="leading; context: { icon: item.icon, color: item.color }" />
     <!-- I segmenti stanno su una riga: uno spazio fra l'uno e l'altro comparirebbe nel testo. -->
-    <span class="select-option-name">@for (segment of item.segments; track $index) {@if (segment.match) {<mark>{{ segment.text }}</mark>} @else {<ng-container>{{ segment.text }}</ng-container>}}</span>
+    <span class="select-option-name">
+      @for (segment of item.segments; track $index) {
+        @if (segment.match) {
+          <mark>
+            {{ segment.text }}
+          </mark>
+        } @else {
+          <ng-container>
+            {{ segment.text }}
+          </ng-container>
+        }
+      }
+    </span>
     @if (item.id === selectedId()) {
       <svg class="select-check" aria-hidden="true" lucideCheck></svg>
     }
