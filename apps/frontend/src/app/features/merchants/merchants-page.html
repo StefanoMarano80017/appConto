@@ -90,57 +90,66 @@
                   <!--
                     La chiave porta la revisione: dopo un errore le righe si ricreano e i campi tornano al valore salvato.
                     La riga appena classificata che lascia l'elenco esce sfumando e richiudendosi; le altre spariscono subito.
-                    Ogni cella avvolge il contenuto in .cell: l'altezza di una riga di tabella si richiude solo così.
+                    Ogni cella avvolge il contenuto in .cell > .cell-content: l'altezza di una riga di tabella si richiude solo così.
                   -->
                   @for (row of rows(); track row.key) {
                     @let merchant = row.merchant;
-                    <tr [class.saving]="savingId() === merchant.id" [animate.leave]="row.leave">
+                    @let busy = savingId() === merchant.id || row.leave !== '';
+                    <tr [class.saving]="busy" [animate.leave]="row.leave">
                       <td class="name">
                         <div class="cell">
-                          <input
-                            type="text"
-                            [value]="merchant.displayName ?? ''"
-                            [placeholder]="merchant.name"
-                            [disabled]="savingId() === merchant.id"
-                            [attr.aria-label]="'Nome di ' + merchant.name"
-                            (change)="rename(merchant, $any($event.target).value)"
-                          />
+                          <div class="cell-content">
+                            <input
+                              type="text"
+                              [value]="merchant.displayName ?? ''"
+                              [placeholder]="merchant.name"
+                              [disabled]="busy"
+                              [attr.aria-label]="'Nome di ' + merchant.name"
+                              (change)="rename(merchant, $any($event.target).value)"
+                            />
 
-                          @if (merchant.displayName !== null) {
-                            <span class="original">{{ merchant.name }}</span>
-                          }
+                            @if (merchant.displayName !== null) {
+                              <span class="original">{{ merchant.name }}</span>
+                            }
+                          </div>
                         </div>
                       </td>
 
                       <td class="category">
                         <div class="cell">
-                          <app-select
-                            [options]="categories()"
-                            placeholder="— Nessuna categoria"
-                            placeholderPosition="end"
-                            [value]="merchant.category?.id ?? null"
-                            [disabled]="savingId() === merchant.id"
-                            [ariaLabel]="'Categoria di ' + merchant.label"
-                            (valueChange)="changeCategory(merchant, $event)"
-                          />
+                          <div class="cell-content">
+                            <app-select
+                              [options]="categories()"
+                              placeholder="— Nessuna categoria"
+                              placeholderPosition="end"
+                              [value]="merchant.category?.id ?? null"
+                              [disabled]="busy"
+                              [ariaLabel]="'Categoria di ' + merchant.label"
+                              (valueChange)="changeCategory(merchant, $event)"
+                            />
+                          </div>
                         </div>
                       </td>
 
                       <td class="numeric">
-                        <div class="cell">{{ merchant.transactionCount }}</div>
+                        <div class="cell"><div class="cell-content">{{ merchant.transactionCount }}</div></div>
                       </td>
                       <td class="numeric">
                         <div class="cell">
-                          <app-amount [value]="merchant.totalSpent" tone="neutral" />
+                          <div class="cell-content">
+                            <app-amount [value]="merchant.totalSpent" tone="neutral" />
+                          </div>
                         </div>
                       </td>
                       <td class="date">
                         <div class="cell">
-                          {{
-                            merchant.lastTransactionDate
-                              ? formatBookingDate(merchant.lastTransactionDate)
-                              : '—'
-                          }}
+                          <div class="cell-content">
+                            {{
+                              merchant.lastTransactionDate
+                                ? formatBookingDate(merchant.lastTransactionDate)
+                                : '—'
+                            }}
+                          </div>
                         </div>
                       </td>
                     </tr>

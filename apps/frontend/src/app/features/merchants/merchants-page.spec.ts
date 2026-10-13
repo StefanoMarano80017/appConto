@@ -348,11 +348,25 @@ describe('MerchantsPage', () => {
       await saveCategory();
 
       expect(leaving()).toEqual([['m-1', 'row-leaving'], ['m-2', '']]);
+      // Fino alla ricarica la riga resta attenuata: la dissolvenza parte da lì, senza lampeggi.
+      expect(root().querySelector('tbody tr:first-child')!.classList).toContain('saving');
 
       // Arrivata la ricarica, le righe rimaste (e quella risalita) non porterebbero animazioni.
       await flush(page({ items: [merchant({ id: 'm-2' }), merchant({ id: 'm-3' })] }));
 
       expect(leaving()).toEqual([['m-2', ''], ['m-3', '']]);
+    });
+
+    it('la riga salvata che resta in elenco torna normale dopo la ricarica', async () => {
+      await open('/merchants');
+      await saveCategory();
+
+      expect(root().querySelector('tbody tr:first-child')!.classList).toContain('saving');
+
+      await flush(page({ items: [merchant({ category: SPESA }), merchant({ id: 'm-2' })] }));
+
+      expect(leaving()).toEqual([['m-1', ''], ['m-2', '']]);
+      expect(root().querySelector('tbody tr.saving')).toBeNull();
     });
 
     it('cambiando ordinamento durante la ricarica nessuna riga esce animata', async () => {

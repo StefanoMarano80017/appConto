@@ -169,7 +169,7 @@ export class MerchantsPage implements OnDestroy {
    * Il merchant appena salvato con successo e la pagina su cui lo era.
    *
    * Se la ricarica lo toglie dall'elenco (non soddisfa più il filtro) la sua
-   * riga esce animata; vale solo finché a schermo c'è quella stessa pagina.
+   * riga esce animata; vale solo finché si ricarica quella stessa pagina.
    */
   private readonly saved = signal<{ id: string; page: MerchantPage } | null>(null);
 
@@ -184,14 +184,17 @@ export class MerchantsPage implements OnDestroy {
    * `animate.leave` usa il valore dell'ultimo aggiornamento, quindi va
    * preparato prima che la ricarica tolga la riga. Solo la riga appena salvata
    * con successo la porta, e solo mentre si ricarica la stessa fetta: un cambio
-   * di pagina, ordinamento, filtro o ricerca (`stale`) la toglie all'istante,
-   * e così le righe ricreate da un salvataggio fallito.
+   * di pagina, ordinamento, filtro o ricerca (`loading`) la toglie all'istante,
+   * e così le righe ricreate da un salvataggio fallito. Fino ad allora la riga
+   * resta anche attenuata, come durante il salvataggio: la dissolvenza parte da
+   * lì e non c'è un ritorno a piena opacità prima dell'uscita.
    */
   protected readonly rows = computed(() => {
     const revision = this.revision();
     const data = this.data();
     const saved = this.saved();
-    const leavingId = saved !== null && saved.page === data && !this.stale() ? saved.id : null;
+    const leavingId =
+      saved !== null && saved.page === data && this.merchants.status() === 'reloading' ? saved.id : null;
 
     return (data?.items ?? []).map((merchant) => ({
       merchant,

@@ -1,6 +1,9 @@
 @use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
+/* La curva dell'uscita della riga: accelera e poi si posa, senza scatti. */
+$row-leave-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -59,6 +62,7 @@ app-search-input.search {
 }
 
 @keyframes row-fade {
+  35%,
   to {
     opacity: 0;
   }
@@ -74,10 +78,10 @@ app-search-input.search {
 
 @keyframes content-collapse {
   from {
-    max-height: 5rem;
+    grid-template-rows: 1fr;
   }
   to {
-    max-height: 0;
+    grid-template-rows: 0fr;
   }
 }
 
@@ -115,22 +119,34 @@ app-search-input.search {
   }
 
   /*
-   * La riga appena classificata che lascia l'elenco: sfuma e si richiude
-   * insieme, così le righe sotto risalgono invece di saltare. L'altezza di
-   * una riga di tabella non si anima da sola: si richiudono il contenuto di
-   * ogni cella (.cell, il tetto è più alto di qualsiasi riga) e il suo padding.
-   * Angular toglie la riga quando l'animazione della riga finisce.
+   * La riga appena classificata che lascia l'elenco: prima sfuma (120ms),
+   * poi si richiude (220ms), così le righe sotto risalgono invece di saltare.
+   *
+   * L'altezza di una riga di tabella non si anima da sola: si richiudono il
+   * padding e il bordo di ogni cella e il suo contenuto, con .cell a griglia
+   * la cui unica riga passa da 1fr (l'altezza reale) a 0fr. Griglia e
+   * `overflow: hidden` valgono solo all'uscita: a riposo la cella è identica.
+   *
+   * Angular toglie la riga alla fine dell'animazione più lunga della `<tr>`
+   * stessa (non guarda le celle): per questo la dissolvenza dura quanto
+   * l'intera uscita e tiene l'opacità a 0 mentre le celle si richiudono.
+   * Senza `from` parte dall'opacità attenuata del salvataggio.
    */
   tr.row-leaving {
-    animation: row-fade 200ms ease-in forwards;
+    animation: row-fade 340ms $row-leave-easing forwards;
 
     td {
-      animation: cell-close 200ms ease-in forwards;
+      animation: cell-close 220ms $row-leave-easing 120ms both;
     }
 
     .cell {
+      display: grid;
+      animation: content-collapse 220ms $row-leave-easing 120ms both;
+    }
+
+    .cell-content {
+      min-height: 0;
       overflow: hidden;
-      animation: content-collapse 200ms ease-in forwards;
     }
 
     /* Senza movimento la riga sparisce subito: senza animazione Angular la toglie all'istante. */
