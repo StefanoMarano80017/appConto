@@ -17,20 +17,6 @@
     gap: var(--space-3);
   }
 
-  select {
-    font: inherit;
-    max-width: 20rem;
-    padding: var(--space-3) var(--space-4);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-  }
-
-  select[aria-invalid='true'] {
-    border-color: var(--color-error);
-  }
-
   input[type='radio'] {
     accent-color: var(--color-primary);
   }

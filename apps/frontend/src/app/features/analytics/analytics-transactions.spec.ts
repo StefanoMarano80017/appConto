@@ -8,6 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../core/api';
 import { EMPTY_QUERY, TransactionQueryState } from '../transactions/transaction-query';
 import { Transaction, TransactionPage } from '../transactions/transaction.model';
+import { selectTrigger } from '../../shared/ui/select.testing';
 import { AnalyticsTransactions } from './analytics-transactions';
 
 /** Il solo periodo dell'analisi, senza filtri. */
@@ -207,9 +208,12 @@ describe('AnalyticsTransactions', () => {
     await render();
     await respond(page(25, 60));
 
-    const size = host().querySelector<HTMLSelectElement>('app-transactions-pagination select')!;
-    size.value = '50';
-    size.dispatchEvent(new Event('change'));
+    // Non `chooseOption`: la scelta avvia una richiesta e `whenStable` aspetterebbe la risposta.
+    selectTrigger(host(), 'app-transactions-pagination').click();
+    await settle();
+    Array.from(host().querySelectorAll<HTMLElement>('app-transactions-pagination [role="option"]'))
+      .find((option) => option.textContent?.trim() === '50')!
+      .click();
     await settle();
 
     const [request] = pending();

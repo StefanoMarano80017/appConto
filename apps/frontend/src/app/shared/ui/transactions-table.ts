@@ -4,8 +4,8 @@ import { formatBookingDate } from '../../core/format';
 import { Truncate } from '../../core/truncate';
 import { Amount } from './amount';
 import { SortableHeader } from './sortable-header';
-import { VisualSelect } from './visual-select';
-import type { VisualSelectOption } from './visual-select';
+import { Select } from './select';
+import type { SelectOption } from './select.model';
 import type {
   TransactionsTableCategory,
   TransactionsTableCategoryChange,
@@ -36,7 +36,7 @@ const COLUMNS: readonly {
  *
  * In sola lettura la tabella non riceve l'elenco delle categorie: le basta
  * quella che ogni riga già porta con sé per mostrarne nome e colore. Una sola
- * lista per tutta la tabella, e non un array nuovo per riga, così `VisualSelect`
+ * lista per tutta la tabella, e non un array nuovo per riga, così `Select`
  * non ricalcola nulla a ogni giro di change detection.
  */
 function categoriesOf(rows: readonly TransactionsTableRow[]): TransactionsTableCategory[] {
@@ -61,13 +61,13 @@ function categoriesOf(rows: readonly TransactionsTableRow[]): TransactionsTableC
  * salvataggio arrivano da fuori (nella feature dei movimenti, `transaction-edits.ts`),
  * perché `shared/` non inietta API (§10 della proposta sui componenti condivisi).
  *
- * È generica sulla riga come `VisualSelect` lo è sull'opzione: gli eventi
+ * È generica sulla riga come `Select` lo è sull'opzione: gli eventi
  * restituiscono le righe col tipo di chi le ha passate, non con quello
  * strutturale di qui.
  */
 @Component({
   selector: 'app-transactions-table',
-  imports: [NgTemplateOutlet, Truncate, VisualSelect, Amount, SortableHeader],
+  imports: [NgTemplateOutlet, Truncate, Select, Amount, SortableHeader],
   templateUrl: './transactions-table.html',
   styleUrl: './transactions-table.scss',
 })
@@ -86,7 +86,7 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
    * Obbligatori anche in sola lettura: la cella mostra il nome e l'icona del
    * tipo, non il suo codice.
    */
-  readonly typeOptions = input.required<readonly VisualSelectOption<R['type']>[]>();
+  readonly typeOptions = input.required<readonly SelectOption<R['type']>[]>();
 
   /**
    * Le categorie fra cui scegliere, in modifica.
@@ -94,7 +94,7 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
    * In sola lettura non servono: la categoria mostrata è quella del merchant
    * della riga (v. `categoriesOf`).
    */
-  readonly categoryOptions = input<readonly VisualSelectOption[]>([]);
+  readonly categoryOptions = input<readonly SelectOption[]>([]);
 
   /** Colonna ordinata; `null` rende le intestazioni non cliccabili. */
   readonly sortBy = input<TransactionsTableSortField | null>(null);
@@ -163,7 +163,7 @@ export class TransactionsTable<R extends TransactionsTableRow = TransactionsTabl
   protected readonly columns = COLUMNS;
 
   /** Le categorie che le celle offrono (in modifica) o mostrano (in sola lettura). */
-  protected readonly categories = computed<readonly VisualSelectOption[]>(() =>
+  protected readonly categories = computed<readonly SelectOption[]>(() =>
     this.editable() ? this.categoryOptions() : categoriesOf(this.transactions()),
   );
 

@@ -23,6 +23,8 @@ import { Badge } from '../../shared/ui/badge';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { SearchInput } from '../../shared/ui/search-input';
+import { Select } from '../../shared/ui/select';
+import type { SelectOption } from '../../shared/ui/select.model';
 import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 import {
   LucideArrowUp,
@@ -61,6 +63,7 @@ const COLUMNS: readonly { label: string; field: LoanSortField | null; numeric: b
     Panel,
     RouterLink,
     SearchInput,
+    Select,
     StatCardGrid,
     LucideArrowUp,
     LucideArrowDown
@@ -93,6 +96,11 @@ export class LoansPage implements OnDestroy {
 
   protected readonly data = computed<LoanList | undefined>(() =>
     this.loans.hasValue() ? this.loans.value() : undefined
+  );
+
+  /** Le persone a cui si è prestato, come voci del filtro. */
+  protected readonly borrowerOptions = computed<SelectOption<string>[]>(() =>
+    (this.data()?.borrowers ?? []).map((borrower) => ({ id: borrower, name: borrower }))
   );
 
   protected readonly error = computed(() => {

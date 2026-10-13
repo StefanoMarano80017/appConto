@@ -1,0 +1,284 @@
+@use '../styles/typography';
+@use '../styles/mixins';
+
+:host {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+/* Nei form il trigger occupa tutta la larghezza del campo, come gli input accanto. */
+:host(.field) {
+  display: block;
+}
+
+/*
+ * Le regole del trigger stanno tutte sotto `.select-trigger.inline` o
+ * `.select-trigger.field`: con l'encapsulation emulata valgono almeno (0,3,0)
+ * e battono le regole globali di `button` in `styles.scss`, fino a
+ * `button:active:not(:disabled)` e `button:disabled:hover`, (0,2,1).
+ */
+.select-value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.select-icon {
+  flex: none;
+  width: var(--space-6);
+  height: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.select-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.muted {
+    color: var(--color-text-muted);
+  }
+}
+
+.select-chevron {
+  flex: none;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+/* Trigger `inline`: l'aspetto dell'ex `visual-select` (rimosso), per le celle di tabella. */
+.select-trigger.inline {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Mai più largo della cella che lo ospita: in una colonna fissa il nome si tronca. */
+  max-width: min(12rem, 100%);
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  vertical-align: middle;
+  cursor: pointer;
+
+  .select-name,
+  .select-chevron {
+    margin-top: var(--space-1);
+  }
+
+  /* Il readonly è testo, non un controllo: niente sfondo all'hover (come `.picker:not(.readonly)`). */
+  &:hover:not(:disabled):not(.readonly),
+  &.open {
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    box-shadow: none;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &.readonly {
+    cursor: default;
+  }
+}
+
+/* Trigger `field`: lo stesso mixin della regola globale di input e textarea. */
+.select-trigger.field {
+  @include mixins.form-control;
+
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  text-align: left;
+  cursor: pointer;
+
+  /* A pannello aperto il campo resta "a fuoco", anche quando il fuoco è sulla ricerca. */
+  &.open {
+    @include mixins.form-control-focus;
+  }
+
+  /* Nel mixin l'hover vince sul bordo d'errore: qui un campo non valido resta rosso anche sotto il puntatore. */
+  /* Lo stesso vale a pannello aperto, dove il bordo del focus coprirebbe l'errore. */
+  &[aria-invalid='true']:hover:not(:disabled),
+  &[aria-invalid='true'].open {
+    border-color: var(--color-error);
+  }
+
+  &:disabled {
+    border-color: var(--color-border);
+  }
+}
+
+/* Dopo una scelta col mouse il fuoco torna sul trigger, ma l'anello compare solo dal prossimo fuoco. */
+.select-trigger.selection-made:focus-visible {
+  outline: none;
+
+  &.field {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    box-shadow: none;
+  }
+
+  /* Anche dopo una scelta un campo non valido resta rosso. */
+  &.field[aria-invalid='true'] {
+    border-color: var(--color-error);
+  }
+}
+
+.select-panel {
+  position: fixed;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  max-width: min(20rem, calc(100vw - var(--space-4)));
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-dropdown);
+  color: var(--color-text-primary);
+  animation: select-panel-enter 120ms ease-out;
+
+  &.above {
+    animation-name: select-panel-enter-above;
+  }
+}
+
+/* Il pannello arriva verso il trigger: dal basso quando sta sotto, dall'alto quando sta sopra. */
+@keyframes select-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes select-panel-enter-above {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select-panel {
+    animation: none;
+  }
+}
+
+.select-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--border-width) solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.select-search-icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/*
+ * Tre classi annidate apposta: la regola globale dei campi
+ * (`input:not(...):not(...):not(...)`) vale (0,3,1) e il suo hover (0,5,1).
+ * Qui (0,6,0) e (0,7,0): la ricerca resta una riga piatta, senza bordo né
+ * anello, anche sotto il puntatore e a fuoco.
+ */
+.select-panel .select-search-row .select-search {
+  @include typography.text('body');
+
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-primary);
+  outline: none;
+  box-shadow: none;
+
+  &:hover,
+  &:focus-visible {
+    border: none;
+    background: none;
+    box-shadow: none;
+  }
+}
+
+.select-list {
+  max-height: 15rem;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.select-option {
+  @include typography.text('table-text');
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  cursor: pointer;
+
+  &.active {
+    background: var(--color-surface-hover);
+  }
+
+  &.placeholder {
+    color: var(--color-text-muted);
+  }
+
+  mark {
+    background: none;
+    color: var(--color-primary-hover);
+    font-weight: 600;
+  }
+}
+
+.select-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-check {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-primary-hover);
+}
+
+.select-divider {
+  height: var(--border-width);
+  margin: var(--space-2);
+  background: var(--color-border);
+}
+
+.select-empty {
+  @include typography.text('caption');
+
+  padding: var(--space-3) var(--space-4);
+}

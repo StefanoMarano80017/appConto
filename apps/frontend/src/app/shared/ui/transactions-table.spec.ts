@@ -1,5 +1,6 @@
 import { Component, TemplateRef, computed, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { LucideEllipsis, LucideTrendingDown, LucideTrendingUp } from '@lucide/angular';
 import { TransactionsTable } from './transactions-table';
 import type {
   TransactionsTableCategory,
@@ -9,7 +10,8 @@ import type {
   TransactionsTableRow,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
-import type { VisualSelectOption } from './visual-select';
+import type { SelectOption } from './select.model';
+import { chooseOption, selectTrigger } from './select.testing';
 
 /*
  * La tabella è di sola presentazione: nessun provider HTTP né router. Se un
@@ -21,13 +23,13 @@ import type { VisualSelectOption } from './visual-select';
  * neppure nei test (v. scripts/design-system-gate.sh).
  */
 
-const TYPE_OPTIONS: readonly VisualSelectOption[] = [
-  { id: 'EXPENSE', name: 'Spesa', icon: 'trending-down' },
-  { id: 'INCOME', name: 'Entrata', icon: 'trending-up' },
-  { id: 'OTHER', name: 'Altro', icon: 'ellipsis' },
+const TYPE_OPTIONS: readonly SelectOption[] = [
+  { id: 'EXPENSE', name: 'Spesa', icon: LucideTrendingDown.icon },
+  { id: 'INCOME', name: 'Entrata', icon: LucideTrendingUp.icon },
+  { id: 'OTHER', name: 'Altro', icon: LucideEllipsis.icon },
 ];
 
-const CATEGORY_OPTIONS: readonly VisualSelectOption[] = [
+const CATEGORY_OPTIONS: readonly SelectOption[] = [
   { id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' },
   { id: 'cat-2', name: 'Casa', color: '#2f6fbf' },
 ];
@@ -67,13 +69,6 @@ describe('TransactionsTable', () => {
 
   const render = async (transactions: readonly TransactionsTableRow[]): Promise<void> => {
     fixture.componentRef.setInput('transactions', transactions);
-    await fixture.whenStable();
-  };
-
-  /** Sceglie un valore nel `select` nativo di un `VisualSelect`, come farebbe l'utente. */
-  const choose = async (select: HTMLSelectElement, value: string): Promise<void> => {
-    select.value = value;
-    select.dispatchEvent(new Event('change'));
     await fixture.whenStable();
   };
 
@@ -248,8 +243,8 @@ describe('TransactionsTable', () => {
   it('senza `mode` è in sola lettura', async () => {
     await render([conMerchant('1', -300, 'ESSELUNGA', alimentari)]);
 
-    expect(host().querySelector('select')).toBeNull();
-    expect(host().querySelector('tbody app-visual-select .picker.readonly')).not.toBeNull();
+    expect(host().querySelector('app-select button[role="combobox"]')).toBeNull();
+    expect(host().querySelector('tbody app-select .select-readonly')).not.toBeNull();
   });
 
   describe('in sola lettura', () => {
@@ -261,7 +256,7 @@ describe('TransactionsTable', () => {
       fixture.componentRef.setInput('selectable', true);
       await render([conMerchant('1', -300, 'ESSELUNGA', alimentari), transaction('2', 500)]);
 
-      expect(host().querySelector('select')).toBeNull();
+      expect(host().querySelector('app-select button[role="combobox"]')).toBeNull();
       expect(host().querySelector('input[type="checkbox"]')).toBeNull();
       expect(host().querySelector('th.select, td.select')).toBeNull();
     });
@@ -269,10 +264,11 @@ describe('TransactionsTable', () => {
     it('tipo e categoria restano visibili come picker in sola lettura', async () => {
       await render([conMerchant('1', -300, 'ESSELUNGA', alimentari)]);
 
-      const pickers = [...host().querySelectorAll('tbody app-visual-select .picker')];
+      const pickers = [...host().querySelectorAll('tbody app-select')];
+      const readonly = [...host().querySelectorAll('tbody app-select .select-readonly')];
 
       expect(pickers.length).toBe(2);
-      expect(pickers.every((picker) => picker.classList.contains('readonly'))).toBe(true);
+      expect(readonly.length).toBe(2);
       expect(host().querySelector('tbody td.type')?.textContent).toContain('Spesa');
     });
 
@@ -289,7 +285,7 @@ describe('TransactionsTable', () => {
         cella.textContent?.trim(),
       );
 
-      expect(categorie).toEqual(['Alimentari', 'Casa', '—']);
+      expect(categorie).toEqual(['Alimentari', 'Casa', '— Nessuna categoria']);
     });
 
     it('ignora `savingId`: nessuna riga in salvataggio', async () => {
@@ -314,28 +310,26 @@ describe('TransactionsTable', () => {
       fixture.componentInstance.categoryChange.subscribe((change) => categoryChanges.push(change));
     });
 
-    const typeSelect = (): HTMLSelectElement =>
-      host().querySelector<HTMLSelectElement>('tbody td.type select')!;
+    const chooseType = (name: string): Promise<void> =>
+      chooseOption(fixture, host(), 'tbody td.type', name);
 
-    const categorySelect = (): HTMLSelectElement =>
-      host().querySelector<HTMLSelectElement>('tbody td.category select')!;
+    const chooseCategory = (name: string): Promise<void> =>
+      chooseOption(fixture, host(), 'tbody td.category', name);
 
     it('cambiare il tipo emette `typeChange` con la riga e il tipo scelto', async () => {
       const riga = conMerchant('1', -300, 'ESSELUNGA', alimentari);
       await render([riga]);
 
-      await choose(typeSelect(), 'OTHER');
+      await chooseType('Altro');
 
       expect(typeChanges).toEqual([{ row: riga, type: 'OTHER' }]);
     });
 
-    // Lo stesso tipo di prima, o l'opzione vuota «—», non sono una modifica:
-    // nessuno deve salvare nulla.
-    it('non emette nulla se il tipo non cambia o si sceglie «—»', async () => {
+    // Lo stesso tipo di prima non è una modifica: nessuno deve salvare nulla.
+    it('non emette nulla se il tipo non cambia', async () => {
       await render([transaction('1', -300)]);
 
-      await choose(typeSelect(), 'EXPENSE');
-      await choose(typeSelect(), '');
+      await chooseType('Spesa');
 
       expect(typeChanges).toEqual([]);
     });
@@ -344,8 +338,8 @@ describe('TransactionsTable', () => {
       const riga = conMerchant('1', -300, 'ESSELUNGA', alimentari);
       await render([riga]);
 
-      await choose(categorySelect(), 'cat-2');
-      await choose(categorySelect(), '');
+      await chooseCategory('Casa');
+      await chooseCategory('— Nessuna categoria');
 
       expect(categoryChanges).toEqual([
         { row: riga, categoryId: 'cat-2' },
@@ -356,7 +350,7 @@ describe('TransactionsTable', () => {
     it('non emette nulla se la categoria scelta è quella che il merchant ha già', async () => {
       await render([conMerchant('1', -300, 'ESSELUNGA', alimentari)]);
 
-      await choose(categorySelect(), 'cat-1');
+      await chooseCategory('Alimentari');
 
       expect(categoryChanges).toEqual([]);
     });
@@ -364,15 +358,19 @@ describe('TransactionsTable', () => {
     it('le categorie fra cui scegliere sono quelle ricevute, non solo quella della riga', async () => {
       await render([conMerchant('1', -300, 'ESSELUNGA', alimentari)]);
 
-      const opzioni = [...categorySelect().options].map((option) => option.textContent?.trim());
+      host().querySelector<HTMLButtonElement>('tbody td.category app-select button')!.click();
+      await fixture.whenStable();
+      const opzioni = [...host().querySelectorAll('tbody td.category [role="option"]')].map(
+        (option) => option.textContent?.trim(),
+      );
 
-      expect(opzioni).toEqual(['—', 'Alimentari', 'Casa']);
+      expect(opzioni).toEqual(['Alimentari', 'Casa', '— Nessuna categoria']);
     });
 
     it('senza merchant la categoria non si sceglie', async () => {
       await render([transaction('1', -300)]);
 
-      expect(host().querySelector('tbody td.category select')).toBeNull();
+      expect(host().querySelector('tbody td.category app-select')).toBeNull();
       expect(host().querySelector('tbody td.category')?.textContent?.trim()).toBe('—');
     });
 
@@ -384,8 +382,8 @@ describe('TransactionsTable', () => {
 
       expect(righe[0].classList.contains('saving')).toBe(true);
       expect(righe[1].classList.contains('saving')).toBe(false);
-      expect(typeSelect().disabled).toBe(true);
-      expect(categorySelect().disabled).toBe(true);
+      expect(selectTrigger(host(), 'tbody tr:first-child td.type').disabled).toBe(true);
+      expect(selectTrigger(host(), 'tbody tr:first-child td.category').disabled).toBe(true);
     });
 
     it('mostra l’errore ricevuto sopra la tabella', async () => {

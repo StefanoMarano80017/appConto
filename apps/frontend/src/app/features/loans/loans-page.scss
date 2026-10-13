@@ -54,15 +54,9 @@ app-search-input {
   }
 }
 
-.borrower select {
-  font: inherit;
-  @include typography.text('secondary');
-  color: var(--color-text-primary);
+/* Il campo è a tutta larghezza: la persona ha un tetto, i nomi lunghi nel pannello si troncano con i puntini. */
+.borrower app-select {
   max-width: 12rem;
-  padding: var(--space-3) var(--space-4);
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
 }
 
 .reset {

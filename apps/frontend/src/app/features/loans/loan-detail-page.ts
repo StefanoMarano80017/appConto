@@ -26,6 +26,8 @@ import { Amount } from '../../shared/ui/amount';
 import { Badge } from '../../shared/ui/badge';
 import { ErrorRetry } from '../../shared/ui/error-retry';
 import { FormField } from '../../shared/ui/form-field';
+import { Select } from '../../shared/ui/select';
+import type { SelectOption } from '../../shared/ui/select.model';
 import { formFieldDescribedBy } from '../../shared/ui/form-field.ids';
 import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
 
@@ -71,6 +73,7 @@ const CANDIDATE_PAGE_SIZE = 100;
     PageLayout,
     Panel,
     RouterLink,
+    Select,
     StatCardGrid
   ],
   templateUrl: './loan-detail-page.html',
@@ -111,6 +114,13 @@ export class LoanDetailPage {
   /** I movimenti in entrata a cui la restituzione può essere collegata. */
   protected readonly repaymentCandidates = signal<Transaction[]>([]);
 
+  /** I movimenti collegabili, con lo stesso testo (data · importo · descrizione) di prima. */
+  protected readonly repaymentOptions = computed<SelectOption<string>[]>(() =>
+    this.repaymentCandidates().map((candidate) => ({
+      id: candidate.id,
+      name: `${formatBookingDate(candidate.bookingDate)} · ${formatAmount(candidate.amount)} · ${candidate.description}`
+    }))
+  );
   protected readonly repaymentAmountDescribedBy = computed(() =>
     formFieldDescribedBy('repaymentAmount', { error: this.repaymentErrors().amount != null, hint: true })
   );
@@ -227,8 +237,9 @@ export class LoanDetailPage {
     this.repaymentErrors.set({});
   }
 
-  protected updateRepaymentField(field: keyof RepaymentFormValue, value: string): void {
-    this.repaymentForm.update((form) => ({ ...form, [field]: value }));
+  protected updateRepaymentField(field: keyof RepaymentFormValue, value: string | null): void {
+    // Il select emette `null` per «Contanti»: nel form resta la stringa vuota.
+    this.repaymentForm.update((form) => ({ ...form, [field]: value ?? '' }));
   }
 
   protected saveRepayment(): void {

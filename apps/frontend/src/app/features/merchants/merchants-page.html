@@ -96,8 +96,10 @@
                 </td>
   
                 <td class="category">
-                  <app-visual-select
+                  <app-select
                     [options]="categories()"
+                    placeholder="— Nessuna categoria"
+                    placeholderPosition="end"
                     [value]="merchant.category?.id ?? null"
                     [disabled]="savingId() === merchant.id"
                     [ariaLabel]="'Categoria di ' + merchant.label"

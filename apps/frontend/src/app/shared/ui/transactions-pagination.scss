@@ -81,13 +81,8 @@
   @include typography.text('secondary');
   color: var(--color-text-muted);
 
-  select {
-    padding: var(--space-2) var(--space-3);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    font: inherit;
-    @include typography.text('caption');
-    color: var(--color-text-primary);
+  /* Il campo è a tutta larghezza: qui basta lo spazio per le cifre. */
+  app-select {
+    min-width: calc(var(--space-10) * 2);
   }
 }

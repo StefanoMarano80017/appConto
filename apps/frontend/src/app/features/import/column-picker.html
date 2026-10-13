@@ -1,35 +1,31 @@
 <div class="picker">
   <app-form-field [id]="'bookingDate'" label="Data" [error]="errors().bookingDate">
-    <select
-      id="bookingDate"
-      [value]="form().bookingDate"
-      (change)="update('bookingDate', $any($event.target).value)"
-      [attr.aria-invalid]="errors().bookingDate ? 'true' : null"
-      [attr.aria-describedby]="bookingDateDescribedBy()"
-    >
-      <option value="">— scegli la colonna —</option>
-      @for (header of analysis().headers; track header) {
-        <option [value]="header">{{ header }}</option>
-      }
-    </select>
+    <app-select
+      appearance="field"
+      triggerId="bookingDate"
+      placeholder="— scegli la colonna —"
+      [options]="headerOptions()"
+      [value]="form().bookingDate || null"
+      (valueChange)="update('bookingDate', $event ?? '')"
+      [ariaInvalid]="!!errors().bookingDate"
+      [ariaDescribedBy]="bookingDateDescribedBy()"
+    />
     @if (example(form().bookingDate); as value) {
       <span class="example">es. {{ value }}</span>
     }
   </app-form-field>
 
   <app-form-field [id]="'description'" label="Descrizione" [error]="errors().description">
-    <select
-      id="description"
-      [value]="form().description"
-      (change)="update('description', $any($event.target).value)"
-      [attr.aria-invalid]="errors().description ? 'true' : null"
-      [attr.aria-describedby]="descriptionDescribedBy()"
-    >
-      <option value="">— scegli la colonna —</option>
-      @for (header of analysis().headers; track header) {
-        <option [value]="header">{{ header }}</option>
-      }
-    </select>
+    <app-select
+      appearance="field"
+      triggerId="description"
+      placeholder="— scegli la colonna —"
+      [options]="headerOptions()"
+      [value]="form().description || null"
+      (valueChange)="update('description', $event ?? '')"
+      [ariaInvalid]="!!errors().description"
+      [ariaDescribedBy]="descriptionDescribedBy()"
+    />
     @if (example(form().description); as value) {
       <span class="example">es. {{ value }}</span>
     }
@@ -62,12 +58,13 @@
     @if (form().amountKind === 'single') {
       <label>
         <span class="field-hint">Colonna dell'importo, col segno che porta</span>
-        <select [value]="form().amount" (change)="update('amount', $any($event.target).value)">
-          <option value="">— scegli la colonna —</option>
-          @for (header of analysis().headers; track header) {
-            <option [value]="header">{{ header }}</option>
-          }
-        </select>
+        <app-select
+      appearance="field"
+      placeholder="— scegli la colonna —"
+      [options]="headerOptions()"
+      [value]="form().amount || null"
+      (valueChange)="update('amount', $event ?? '')"
+    />
         @if (example(form().amount); as value) {
           <span class="example">es. {{ value }}</span>
         }
@@ -76,24 +73,26 @@
       <div class="pair">
         <label>
           <span class="field-hint">Uscite</span>
-          <select [value]="form().debit" (change)="update('debit', $any($event.target).value)">
-            <option value="">— scegli la colonna —</option>
-            @for (header of analysis().headers; track header) {
-              <option [value]="header">{{ header }}</option>
-            }
-          </select>
+          <app-select
+      appearance="field"
+      placeholder="— scegli la colonna —"
+      [options]="headerOptions()"
+      [value]="form().debit || null"
+      (valueChange)="update('debit', $event ?? '')"
+    />
           @if (example(form().debit); as value) {
             <span class="example">es. {{ value }}</span>
           }
         </label>
         <label>
           <span class="field-hint">Entrate</span>
-          <select [value]="form().credit" (change)="update('credit', $any($event.target).value)">
-            <option value="">— scegli la colonna —</option>
-            @for (header of analysis().headers; track header) {
-              <option [value]="header">{{ header }}</option>
-            }
-          </select>
+          <app-select
+      appearance="field"
+      placeholder="— scegli la colonna —"
+      [options]="headerOptions()"
+      [value]="form().credit || null"
+      (valueChange)="update('credit', $event ?? '')"
+    />
           @if (example(form().credit); as value) {
             <span class="example">es. {{ value }}</span>
           }
@@ -111,17 +110,15 @@
     label="Tipo movimento"
     hint="Facoltativa: distingue prelievi e accrediti. Senza, decide il segno dell'importo."
   >
-    <select
-      id="typeHint"
-      [value]="form().typeHint"
-      (change)="update('typeHint', $any($event.target).value)"
-      [attr.aria-describedby]="typeHintDescribedBy()"
-    >
-      <option value="">Nessuna colonna</option>
-      @for (header of analysis().headers; track header) {
-        <option [value]="header">{{ header }}</option>
-      }
-    </select>
+    <app-select
+      appearance="field"
+      triggerId="typeHint"
+      placeholder="Nessuna colonna"
+      [options]="headerOptions()"
+      [value]="form().typeHint || null"
+      (valueChange)="update('typeHint', $event ?? '')"
+      [ariaDescribedBy]="typeHintDescribedBy()"
+    />
     @if (example(form().typeHint); as value) {
       <span class="example">es. {{ value }}</span>
     }

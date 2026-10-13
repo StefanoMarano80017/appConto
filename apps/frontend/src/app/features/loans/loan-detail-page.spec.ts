@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
+import { selectTrigger } from '../../shared/ui/select.testing';
 import { LoanDetail } from './loan.model';
 import { LoanDetailPage } from './loan-detail-page';
 
@@ -227,6 +228,28 @@ describe('LoanDetailPage', () => {
 
     expect(text()).toContain('Chiuso');
     expect(text()).toContain('0,00');
+  });
+
+  it('collega il rimborso a un movimento scelto dal select', async () => {
+    await open();
+    await click('.header button');
+    await flushCandidates();
+
+    const root = harness.routeNativeElement as HTMLElement;
+    selectTrigger(root, '.loan-form.inline').click();
+    await settle();
+    const option = Array.from(root.querySelectorAll<HTMLElement>('[role="option"]')).find(
+      (candidate) => candidate.textContent?.includes('BONIFICO DA MAMMA')
+    );
+    option?.click();
+    await settle();
+
+    await click('.loan-form.inline button[type="submit"]');
+
+    const request = http.expectOne(`${API_BASE_URL}/loans/l-1/repayments`);
+    expect(request.request.body.transactionId).toBe('t-9');
+    request.flush(detail());
+    await settle();
   });
 
   it('un prestito chiuso non propone altre restituzioni', async () => {

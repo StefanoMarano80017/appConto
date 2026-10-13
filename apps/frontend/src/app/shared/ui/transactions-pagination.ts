@@ -1,5 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
+import { Select } from './select';
+import type { SelectOption } from './select.model';
 import { TRANSACTIONS_PAGE_SIZES } from './transactions-pagination.model';
 import type { TransactionsPagination as TransactionsPaginationData } from './transactions-pagination.model';
 
@@ -17,7 +19,7 @@ type PageSlot = { kind: 'page'; page: number } | { kind: 'gap' };
  */
 @Component({
   selector: 'app-transactions-pagination',
-  imports: [LucideChevronLeft, LucideChevronRight],
+  imports: [LucideChevronLeft, LucideChevronRight, Select],
   templateUrl: './transactions-pagination.html',
   styleUrl: './transactions-pagination.scss',
 })
@@ -27,7 +29,13 @@ export class TransactionsPagination {
   readonly pageSelected = output<number>();
   readonly pageSizeSelected = output<number>();
 
-  protected readonly pageSizes = TRANSACTIONS_PAGE_SIZES;
+  /** Le dimensioni di pagina come voci del select: id e nome sono il numero in stringa. */
+  protected readonly pageSizeOptions: readonly SelectOption<string>[] = TRANSACTIONS_PAGE_SIZES.map(
+    (size) => ({ id: String(size), name: String(size) }),
+  );
+
+  /** La dimensione corrente nella forma che il select confronta con gli `id`. */
+  protected readonly pageSizeValue = computed(() => String(this.pagination().pageSize));
 
   /** `41–60 di 279 transazioni`. */
   protected readonly range = computed(() => {
