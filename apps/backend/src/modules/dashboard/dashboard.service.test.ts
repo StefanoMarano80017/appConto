@@ -13,7 +13,8 @@ const { importService } = await import('../import/index.js');
 const { categoriesService } = await import('../categories/index.js');
 const { merchantsService } = await import('../merchants/index.js');
 const { transactionsService } = await import('../transactions/index.js');
-const { dashboardService, previousMonth } = await import('./dashboard.service.js');
+const { dashboardService } = await import('./dashboard.service.js');
+const { previousMonth } = await import('./dashboard.period.js');
 const { NO_FILTERS } = await import('./dashboard-filters.js');
 
 runMigrations();

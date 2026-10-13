@@ -1,5 +1,6 @@
 /** API pubblica della feature `dashboard`. */
-export { dashboardService, previousMonth } from './dashboard.service.js';
+export { dashboardService } from './dashboard.service.js';
+export { previousMonth } from './dashboard.period.js';
 export { dashboardRouter } from './dashboard.routes.js';
 export {
   applyFilters,

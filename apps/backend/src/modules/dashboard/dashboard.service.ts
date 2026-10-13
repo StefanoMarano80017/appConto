@@ -11,6 +11,7 @@ import {
   type TransactionWithMerchant,
 } from '../transactions/index.js';
 import { applyFilters, type DashboardFilters } from './dashboard-filters.js';
+import { previousMonth } from './dashboard.period.js';
 import type {
   CategoryBreakdown,
   CategoryComparison,
@@ -41,15 +42,6 @@ interface CategoryAccumulator {
   amountCents: number;
   transactionCount: number;
   merchants: Map<string, MerchantAccumulator>;
-}
-
-/** Il mese precedente a `YYYY-MM`. */
-export function previousMonth(month: string): string {
-  const [year, monthNumber] = month.split('-').map(Number) as [number, number];
-
-  return monthNumber === 1
-    ? `${year - 1}-12`
-    : `${year}-${String(monthNumber - 1).padStart(2, '0')}`;
 }
 
 /** Un movimento e la quota che ne è spesa reale. */
