@@ -8,7 +8,7 @@ import {
   LucideWallet
 } from '@lucide/angular';
 import { signedPercent } from '../../core/format';
-import { Amount, AmountTone } from '../ui/amount';
+import { Amount, AmountTone } from '@shared/ui/data/amount/amount';
 
 /**
  * Le quattro icone che una card KPI può portare.

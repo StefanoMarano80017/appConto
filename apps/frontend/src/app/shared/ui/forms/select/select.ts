@@ -19,7 +19,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { LucideCheck, LucideChevronDown, LucideDynamicIcon, LucideSearch } from '@lucide/angular';
-import { ColorMarkerComponent } from './color-marker';
+import { ColorMarkerComponent } from '@shared/ui/data/color-marker/color-marker';
 import { SelectOption } from './select.model';
 import { matchSegments, normalizeSearch, SearchSegment } from './select-search';
 

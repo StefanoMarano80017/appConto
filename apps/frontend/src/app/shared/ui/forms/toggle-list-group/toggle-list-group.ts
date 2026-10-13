@@ -1,5 +1,5 @@
 import { Component, computed, input, output, signal } from '@angular/core';
-import { SearchInput } from './search-input';
+import { SearchInput } from '@shared/ui/forms/search-input/search-input';
 
 const MAX_LABEL_LENGTH = 25;
 

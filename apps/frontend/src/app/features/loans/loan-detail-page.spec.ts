@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
-import { selectTrigger } from '@shared/ui/select.testing';
+import { selectTrigger } from '@shared/ui/forms/select/select.testing';
 import { LoanDetail } from './loan.model';
 import { LoanDetailPage } from './loan-detail-page';
 

@@ -3,7 +3,7 @@ import { Params, RouterLink } from '@angular/router';
 import { formatBookingDate } from '../../core/format';
 import { Panel } from '@shared/layout/panel';
 import { SectionHeader } from '@shared/layout/section-header';
-import { Amount } from '@shared/ui/amount';
+import { Amount } from '@shared/ui/data/amount/amount';
 import { LoansSection } from './analytics.model';
 
 /**

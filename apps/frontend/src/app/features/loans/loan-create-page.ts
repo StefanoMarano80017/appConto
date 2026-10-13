@@ -11,9 +11,9 @@ import { LoanFormErrors, LoanFormValue, validateLoanForm } from './loan-form';
 import { LoansApi } from './loans.api';
 import { Panel } from '@shared/layout/panel';
 import { PageLayout } from '@shared/layout/page-layout';
-import { Amount } from '@shared/ui/amount';
-import { FormField } from '@shared/ui/form-field';
-import { formFieldDescribedBy } from '@shared/ui/form-field.ids';
+import { Amount } from '@shared/ui/data/amount/amount';
+import { FormField } from '@shared/ui/forms/form-field/form-field';
+import { formFieldDescribedBy } from '@shared/ui/forms/form-field/form-field.ids';
 
 /**
  * Creazione di un prestito a partire da un movimento.

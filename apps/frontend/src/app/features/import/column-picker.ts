@@ -1,8 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
-import { FormField } from '@shared/ui/form-field';
-import { Select } from '@shared/ui/select';
-import type { SelectOption } from '@shared/ui/select.model';
-import { formFieldDescribedBy } from '@shared/ui/form-field.ids';
+import { FormField } from '@shared/ui/forms/form-field/form-field';
+import { Select } from '@shared/ui/forms/select/select';
+import type { SelectOption } from '@shared/ui/forms/select/select.model';
+import { formFieldDescribedBy } from '@shared/ui/forms/form-field/form-field.ids';
 import {
   ColumnMappingErrors,
   ColumnMappingFormValue,

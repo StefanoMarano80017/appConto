@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { Panel } from '@shared/layout/panel';
-import { Amount } from '@shared/ui/amount';
+import { Amount } from '@shared/ui/data/amount/amount';
 import { SectionHeader } from '@shared/layout/section-header';
 import { CategoryBreakdown } from './dashboard.model';
 

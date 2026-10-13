@@ -1,8 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Panel } from '../layout/panel';
 import { SectionHeader } from '../layout/section-header';
-import { EmptyState } from './empty-state';
-import { ErrorRetry } from './error-retry';
+import { EmptyState } from './feedback/empty-state/empty-state';
+import { ErrorRetry } from './feedback/error-retry/error-retry';
 import { TransactionsPagination } from './transactions-pagination';
 import { TransactionsTable } from './transactions-table';
 import type {
@@ -15,7 +15,7 @@ import type {
   TransactionsTableSortField,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
-import type { SelectOption } from './select.model';
+import type { SelectOption } from './forms/select/select.model';
 
 /** Righe finte mostrate durante il primo caricamento. */
 const SKELETON_ROWS = 8;

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
-import { chooseOption, selectTrigger } from '@shared/ui/select.testing';
+import { chooseOption, selectTrigger } from '@shared/ui/forms/select/select.testing';
 import { TransactionPage } from './transaction.model';
 import { TransactionsPage } from './transactions-page';
 

@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { formatAmount, typographicMinus } from '../../core/format';
+import { formatAmount, typographicMinus } from '../../../../core/format';
 
 /** Il tono: `auto` lo deduce dal segno del valore. */
 export type AmountTone = 'auto' | 'neutral' | 'positive' | 'negative';

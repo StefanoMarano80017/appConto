@@ -8,7 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../core/api';
 import { EMPTY_QUERY, TransactionQueryState } from '../transactions/transaction-query';
 import { Transaction, TransactionPage } from '../transactions/transaction.model';
-import { selectTrigger } from '@shared/ui/select.testing';
+import { selectTrigger } from '@shared/ui/forms/select/select.testing';
 import { AnalyticsTransactions } from './analytics-transactions';
 
 /** Il solo periodo dell'analisi, senza filtri. */

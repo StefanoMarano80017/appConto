@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../../core/api';
 import { DashboardFilterStore } from './dashboard-filter.store';
 import { DashboardPage } from './dashboard-page';
 import { Dashboard } from './dashboard.model';
-import { chooseOption } from '@shared/ui/select.testing';
+import { chooseOption } from '@shared/ui/forms/select/select.testing';
 
 const transaction = (id: string, description: string, amount: number) => ({
   id,

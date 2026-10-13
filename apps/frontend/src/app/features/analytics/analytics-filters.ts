@@ -18,14 +18,14 @@ import { ClassificationFilter } from './analytics.model';
 import { comfortableGranularity } from './period-granularity';
 import { Panel } from '@shared/layout/panel';
 import { SectionHeader } from '@shared/layout/section-header';
-import { Badge } from '@shared/ui/badge';
-import { ChoiceGroup } from '@shared/ui/choice-group';
-import { FilterChips } from '@shared/ui/filter-chips';
-import { FilterGroup } from '@shared/ui/filter-group';
-import { PeriodFilter } from '@shared/ui/period-filter';
-import { ToggleButtonGroup } from '@shared/ui/toggle-button-group';
+import { Badge } from '@shared/ui/feedback/badge/badge';
+import { ChoiceGroup } from '@shared/ui/forms/choice-group/choice-group';
+import { FilterChips } from '@shared/ui/filters/filter-chips/filter-chips';
+import { FilterGroup } from '@shared/ui/filters/filter-group/filter-group';
+import { PeriodFilter } from '@shared/ui/filters/period-filter/period-filter';
+import { ToggleButtonGroup } from '@shared/ui/forms/toggle-button-group/toggle-button-group';
 import { AnalyticsStore } from './analytics.store';
-import { ToggleListGroup } from '@shared/ui/toggle-list-group';
+import { ToggleListGroup } from '@shared/ui/forms/toggle-list-group/toggle-list-group';
 
 /** Quanti merchant proporre alla volta: l'elenco completo è quasi sempre lungo. */
 const SUGGESTED_MERCHANTS = 8;

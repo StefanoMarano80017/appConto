@@ -1,6 +1,6 @@
 import { Component, input, linkedSignal } from '@angular/core';
 import { LucideChevronDown, LucideChevronUp } from '@lucide/angular';
-import { Badge } from './badge';
+import { Badge } from '@shared/ui/feedback/badge/badge';
 
 let nextId = 0;
 

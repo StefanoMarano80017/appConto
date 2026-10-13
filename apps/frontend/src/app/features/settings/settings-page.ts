@@ -5,8 +5,8 @@ import { toErrorMessage } from '../../core/http-error';
 import { ThemeMode, ThemeStore } from '../../core/theme';
 import { PageLayout } from '@shared/layout/page-layout';
 import { Panel } from '@shared/layout/panel';
-import { FormField } from '@shared/ui/form-field';
-import { formFieldDescribedBy } from '@shared/ui/form-field.ids';
+import { FormField } from '@shared/ui/forms/form-field/form-field';
+import { formFieldDescribedBy } from '@shared/ui/forms/form-field/form-field.ids';
 import { ResetPanel } from '../maintenance/reset-panel';
 import { SettingsApi } from './settings.api';
 import {

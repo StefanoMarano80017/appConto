@@ -12,10 +12,10 @@ import {
 import { LucideLayoutGrid, LucideList } from '@lucide/angular';
 import { Panel } from '@shared/layout/panel';
 import { SectionHeader } from '@shared/layout/section-header';
-import { Amount } from '@shared/ui/amount';
+import { Amount } from '@shared/ui/data/amount/amount';
 import { Treemap } from '@shared/ui/chart/treemap/treemap';
 import type { TileColor, TreemapActivation } from '@shared/ui/chart/treemap/treemap.model';
-import { ChoiceGroup, ChoiceOption } from '@shared/ui/choice-group';
+import { ChoiceGroup, ChoiceOption } from '@shared/ui/forms/choice-group/choice-group';
 import { Category } from '../categories/category.model';
 import { MerchantDistribution } from './analytics.model';
 

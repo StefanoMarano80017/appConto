@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
-import { PERIOD_PRESETS, PeriodPreset } from '../../core/period';
-import { ChoiceGroup } from './choice-group';
+import { PERIOD_PRESETS, PeriodPreset } from '../../../../core/period';
+import { ChoiceGroup } from '@shared/ui/forms/choice-group/choice-group';
 
 @Component({
   selector: 'app-period-filter',

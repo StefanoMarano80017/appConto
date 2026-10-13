@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
-import { Select } from './select';
-import type { SelectOption } from './select.model';
+import { Select } from './forms/select/select';
+import type { SelectOption } from './forms/select/select.model';
 import { TRANSACTIONS_PAGE_SIZES } from './transactions-pagination.model';
 import type { TransactionsPagination as TransactionsPaginationData } from './transactions-pagination.model';
 

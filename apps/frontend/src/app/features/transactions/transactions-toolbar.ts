@@ -2,11 +2,11 @@ import { Component, computed, input, output, signal } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { PeriodPreset, matchingPreset, resolvePeriod } from '../../core/period';
 import { Panel } from '@shared/layout/panel';
-import { ChoiceGroup } from '@shared/ui/choice-group';
-import { FilterChips } from '@shared/ui/filter-chips';
-import { PeriodFilter } from '@shared/ui/period-filter';
-import { SearchInput } from '@shared/ui/search-input';
-import { ToggleButtonGroup } from '@shared/ui/toggle-button-group';
+import { ChoiceGroup } from '@shared/ui/forms/choice-group/choice-group';
+import { FilterChips } from '@shared/ui/filters/filter-chips/filter-chips';
+import { PeriodFilter } from '@shared/ui/filters/period-filter/period-filter';
+import { SearchInput } from '@shared/ui/forms/search-input/search-input';
+import { ToggleButtonGroup } from '@shared/ui/forms/toggle-button-group/toggle-button-group';
 import { Category } from '../categories/category.model';
 import { MerchantSummary } from '../merchants/merchant.model';
 import {

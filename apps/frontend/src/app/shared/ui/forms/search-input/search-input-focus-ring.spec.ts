@@ -52,10 +52,10 @@ import { compile } from 'sass';
  */
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-/** `src/`, tre livelli sopra `src/app/shared/ui`. */
-const SRC = join(QUI, '../../..');
+/** `src/`, cinque livelli sopra `src/app/shared/ui/forms/search-input`. */
+const SRC = join(QUI, '../../../../..');
 const cssGlobale = compile(join(SRC, 'styles.scss'), { loadPaths: [SRC] }).css;
-const cssRicerca = compile(join(SRC, 'app/shared/ui/search-input.scss'), {
+const cssRicerca = compile(join(SRC, 'app/shared/ui/forms/search-input/search-input.scss'), {
   loadPaths: [SRC],
 }).css;
 
