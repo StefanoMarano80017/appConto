@@ -10,8 +10,8 @@ import type {
   TransactionsTableRow,
   TransactionsTableTypeChange,
 } from './transactions-table.model';
-import type { SelectOption } from './forms/select/select.model';
-import { chooseOption, selectTrigger } from './forms/select/select.testing';
+import type { SelectOption } from '@shared/ui/forms/select/select.model';
+import { chooseOption, selectTrigger } from '@shared/ui/forms/select/select.testing';
 
 /*
  * La tabella è di sola presentazione: nessun provider HTTP né router. Se un

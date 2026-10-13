@@ -1,11 +1,11 @@
 import { httpResource } from '@angular/common/http';
 import { Component, computed, input, linkedSignal, signal } from '@angular/core';
 import { toErrorMessage } from '../../core/http-error';
-import { TransactionsTablePanel } from '@shared/ui/transactions-table-panel';
+import { TransactionsTablePanel } from '@shared/transactions/transactions-table-panel/transactions-table-panel';
 import type {
   TransactionsTableSortDirection,
   TransactionsTableSortField,
-} from '@shared/ui/transactions-table.model';
+} from '@shared/transactions/transactions-table/transactions-table.model';
 import { EMPTY_QUERY, TransactionQueryState } from '../transactions/transaction-query';
 import { TransactionPage } from '../transactions/transaction.model';
 import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';

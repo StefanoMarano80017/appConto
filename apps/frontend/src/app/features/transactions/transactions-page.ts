@@ -18,11 +18,11 @@ import { LoanLink, LoanLinks, indexLinksByTransaction } from '../loans/loan.mode
 import { loanLinksRequest } from '../loans/loans.api';
 import { MerchantSummary } from '../merchants/merchant.model';
 import { PageLayout } from '@shared/layout/page-layout/page-layout';
-import { TransactionsTablePanel } from '@shared/ui/transactions-table-panel';
+import { TransactionsTablePanel } from '@shared/transactions/transactions-table-panel/transactions-table-panel';
 import type {
   TransactionsTableExtraColumnContext,
   TransactionsTableExtraColumnDef,
-} from '@shared/ui/transactions-table.model';
+} from '@shared/transactions/transactions-table/transactions-table.model';
 import {
   TransactionQueryState,
   hasFilters,

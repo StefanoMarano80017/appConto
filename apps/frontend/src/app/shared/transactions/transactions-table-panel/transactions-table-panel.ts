@@ -1,10 +1,10 @@
 import { Component, computed, input, output } from '@angular/core';
 import { Panel } from '@shared/layout/panel/panel';
 import { SectionHeader } from '@shared/layout/section-header/section-header';
-import { EmptyState } from './feedback/empty-state/empty-state';
-import { ErrorRetry } from './feedback/error-retry/error-retry';
-import { TransactionsPagination } from './transactions-pagination';
-import { TransactionsTable } from './transactions-table';
+import { EmptyState } from '@shared/ui/feedback/empty-state/empty-state';
+import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
+import { TransactionsPagination } from '@shared/transactions/transactions-pagination/transactions-pagination';
+import { TransactionsTable } from '@shared/transactions/transactions-table/transactions-table';
 import type {
   TransactionsTableCategoryChange,
   TransactionsTableExtraColumnDef,
@@ -14,8 +14,8 @@ import type {
   TransactionsTableSortDirection,
   TransactionsTableSortField,
   TransactionsTableTypeChange,
-} from './transactions-table.model';
-import type { SelectOption } from './forms/select/select.model';
+} from '@shared/transactions/transactions-table/transactions-table.model';
+import type { SelectOption } from '@shared/ui/forms/select/select.model';
 
 /** Righe finte mostrate durante il primo caricamento. */
 const SKELETON_ROWS = 8;

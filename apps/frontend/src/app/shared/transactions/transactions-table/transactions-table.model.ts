@@ -1,5 +1,5 @@
 import type { TemplateRef } from '@angular/core';
-import type { TransactionsPagination } from './transactions-pagination.model';
+import type { TransactionsPagination } from '@shared/transactions/transactions-pagination/transactions-pagination.model';
 
 /**
  * Il contratto della tabella dei movimenti condivisa.

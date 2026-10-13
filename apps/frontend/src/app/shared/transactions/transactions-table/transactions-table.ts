@@ -1,11 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
-import { formatBookingDate } from '../../core/format';
-import { Truncate } from '../../core/truncate';
-import { Amount } from './data/amount/amount';
-import { SortableHeader } from './data/sortable-header/sortable-header';
-import { Select } from './forms/select/select';
-import type { SelectOption } from './forms/select/select.model';
+import { formatBookingDate } from '../../../core/format';
+import { Truncate } from '../../../core/truncate';
+import { Amount } from '@shared/ui/data/amount/amount';
+import { SortableHeader } from '@shared/ui/data/sortable-header/sortable-header';
+import { Select } from '@shared/ui/forms/select/select';
+import type { SelectOption } from '@shared/ui/forms/select/select.model';
 import type {
   TransactionsTableCategory,
   TransactionsTableCategoryChange,

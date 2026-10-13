@@ -8,9 +8,9 @@ import type {
   TransactionsTableMode,
   TransactionsTablePage,
   TransactionsTableRow,
-} from './transactions-table.model';
-import type { SelectOption } from './forms/select/select.model';
-import { chooseOption } from './forms/select/select.testing';
+} from '@shared/transactions/transactions-table/transactions-table.model';
+import type { SelectOption } from '@shared/ui/forms/select/select.model';
+import { chooseOption } from '@shared/ui/forms/select/select.testing';
 
 /*
  * Come per la tabella: righe e tipi finti e locali, nessun provider. Il
