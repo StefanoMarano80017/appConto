@@ -95,6 +95,23 @@ button.name {
   }
 }
 
+/*
+ * Nella bozza il campo non ha enfasi: né bordo né alone né sfondo diverso,
+ * nemmeno al focus o al passaggio del mouse, che per gli `input` arrivano
+ * dalle regole globali dei campi di modulo. Il contorno tratteggiato della
+ * tessera e il cursore bastano a dire dove scrivere.
+ */
+:host(.draft) .name-input {
+  &,
+  &:hover:not(:disabled),
+  &:focus,
+  &:focus-visible {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
 .name-text {
   display: block;
   overflow: hidden;
