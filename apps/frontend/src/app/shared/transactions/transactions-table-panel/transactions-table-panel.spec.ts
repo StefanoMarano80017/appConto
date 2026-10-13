@@ -169,7 +169,7 @@ describe('TransactionsTablePanel', () => {
     expect(el.textContent).toContain('Prova a modificare i filtri.');
     expect(el.querySelector('.empty button')).toBeNull();
     expect(el.querySelector('app-transactions-table')).toBeNull();
-    expect(el.querySelector('app-transactions-pagination')).toBeNull();
+    expect(el.querySelector('app-pagination')).toBeNull();
   });
 
   it('con elenco vuoto mostra l’azione se richiesta e la inoltra', async () => {
@@ -186,12 +186,12 @@ describe('TransactionsTablePanel', () => {
 
   it('dispone la tabella nel pannello fra due barre di paginazione', () => {
     const panel = el.querySelector('app-panel') as HTMLElement;
-    const children = [...panel.querySelectorAll('app-transactions-pagination, app-transactions-table')];
+    const children = [...panel.querySelectorAll('app-pagination, app-transactions-table')];
 
     expect(children.map((child) => child.tagName.toLowerCase())).toEqual([
-      'app-transactions-pagination',
+      'app-pagination',
       'app-transactions-table',
-      'app-transactions-pagination',
+      'app-pagination',
     ]);
     expect(panel.querySelectorAll('app-transactions-table tbody tr')).toHaveLength(2);
   });
@@ -235,11 +235,11 @@ describe('TransactionsTablePanel', () => {
 
   it('propaga la pagina richiesta e la dimensione selezionata', async () => {
     const pages = el.querySelectorAll(
-      'app-transactions-pagination .page:not(.current)',
+      'app-pagination .page:not(.current)',
     ) as NodeListOf<HTMLButtonElement>;
 
     pages[0].click();
-    await chooseOption(fixture, el, 'app-transactions-pagination', '50');
+    await chooseOption(fixture, el, 'app-pagination', '50');
 
     expect(host.selectedPage).toBe(1);
     expect(host.selectedPageSize).toBe(50);

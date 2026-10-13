@@ -1,9 +1,9 @@
 <div class="pagination">
   <p class="range">
     @if (range(); as shown) {
-      {{ shown.first }}–{{ shown.last }} di {{ shown.total }} transazioni
+      {{ shown.first }}–{{ shown.last }} di {{ shown.total }} {{ itemLabel() }}
     } @else {
-      Nessuna transazione
+      {{ emptyText() }}
     }
   </p>
 

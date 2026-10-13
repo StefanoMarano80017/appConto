@@ -150,7 +150,7 @@ describe('TransactionsPage', () => {
     await open('/transactions');
     await flush();
 
-    await click('app-transactions-pagination .page:not(.current)');
+    await click('app-pagination .page:not(.current)');
     const url = await flush(page({ pagination: { page: 2, pageSize: 25, total: 279, totalPages: 12 } }));
 
     expect(router.url).toContain('page=');
@@ -173,9 +173,9 @@ describe('TransactionsPage', () => {
 
     // Non `chooseOption`: la scelta avvia una richiesta e `whenStable` aspetterebbe la risposta.
     const root = harness.routeNativeElement!;
-    selectTrigger(root, 'app-transactions-pagination').click();
+    selectTrigger(root, 'app-pagination').click();
     await settle();
-    Array.from(root.querySelectorAll<HTMLElement>('app-transactions-pagination [role="option"]'))
+    Array.from(root.querySelectorAll<HTMLElement>('app-pagination [role="option"]'))
       .find((option) => option.textContent?.trim() === '50')!
       .click();
     await settle();
@@ -284,7 +284,7 @@ describe('TransactionsPage', () => {
     const host = harness.routeNativeElement!;
     const tutti = [...host.querySelectorAll('*')];
     const posizione = (elemento: Element | null): number => tutti.indexOf(elemento!);
-    const paginazioni = [...host.querySelectorAll('app-transactions-pagination')];
+    const paginazioni = [...host.querySelectorAll('app-pagination')];
 
     // Toolbar, paginazione, tabella, paginazione. `Panel` proietta il contenuto
     // con un solo `<ng-content />` e l'host è `display: contents`, quindi

@@ -1,5 +1,5 @@
 import type { TemplateRef } from '@angular/core';
-import type { TransactionsPagination } from '@shared/transactions/transactions-pagination/transactions-pagination.model';
+import type { PaginationData } from '@shared/ui/data/pagination/pagination.model';
 
 /**
  * Il contratto della tabella dei movimenti condivisa.
@@ -131,5 +131,5 @@ export interface TransactionsTableExtraColumnDef<
  */
 export interface TransactionsTablePage<R extends TransactionsTableRow = TransactionsTableRow> {
   readonly items: readonly R[];
-  readonly pagination: TransactionsPagination;
+  readonly pagination: PaginationData;
 }

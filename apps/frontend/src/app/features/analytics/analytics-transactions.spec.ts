@@ -180,7 +180,7 @@ describe('AnalyticsTransactions', () => {
     await render();
     await respond(page(25, 60));
 
-    expect(host().querySelectorAll('app-panel app-transactions-pagination')).toHaveLength(2);
+    expect(host().querySelectorAll('app-panel app-pagination')).toHaveLength(2);
     expect(host().querySelector('app-panel app-transactions-table')).not.toBeNull();
   });
 
@@ -189,7 +189,7 @@ describe('AnalyticsTransactions', () => {
     await respond(page(25, 60));
 
     const second = [
-      ...host().querySelectorAll<HTMLButtonElement>('app-transactions-pagination .page'),
+      ...host().querySelectorAll<HTMLButtonElement>('app-pagination .page'),
     ].find((button) => button.textContent?.trim() === '2');
     second!.click();
     await settle();
@@ -209,9 +209,9 @@ describe('AnalyticsTransactions', () => {
     await respond(page(25, 60));
 
     // Non `chooseOption`: la scelta avvia una richiesta e `whenStable` aspetterebbe la risposta.
-    selectTrigger(host(), 'app-transactions-pagination').click();
+    selectTrigger(host(), 'app-pagination').click();
     await settle();
-    Array.from(host().querySelectorAll<HTMLElement>('app-transactions-pagination [role="option"]'))
+    Array.from(host().querySelectorAll<HTMLElement>('app-pagination [role="option"]'))
       .find((option) => option.textContent?.trim() === '50')!
       .click();
     await settle();
@@ -227,7 +227,7 @@ describe('AnalyticsTransactions', () => {
     await respond(page(25, 60));
 
     const goToSecond = async (): Promise<void> => {
-      [...host().querySelectorAll<HTMLButtonElement>('app-transactions-pagination .page')]
+      [...host().querySelectorAll<HTMLButtonElement>('app-pagination .page')]
         .find((button) => button.textContent?.trim() === '2')!
         .click();
       await settle();

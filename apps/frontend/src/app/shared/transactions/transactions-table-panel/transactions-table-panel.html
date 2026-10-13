@@ -32,7 +32,9 @@
         <app-section-header [title]="heading" />
       }
 
-      <app-transactions-pagination
+      <app-pagination
+        itemLabel="transazioni"
+        emptyLabel="Nessuna transazione"
         [pagination]="data.pagination"
         (pageSelected)="pageSelected.emit($event)"
         (pageSizeSelected)="pageSizeSelected.emit($event)"
@@ -91,7 +93,9 @@
         (categoryChange)="categoryChange.emit($event)"
       />
 
-      <app-transactions-pagination
+      <app-pagination
+        itemLabel="transazioni"
+        emptyLabel="Nessuna transazione"
         [pagination]="data.pagination"
         (pageSelected)="pageSelected.emit($event)"
         (pageSizeSelected)="pageSizeSelected.emit($event)"

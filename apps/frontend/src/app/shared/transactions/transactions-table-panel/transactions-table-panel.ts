@@ -3,7 +3,7 @@ import { Panel } from '@shared/layout/panel/panel';
 import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { EmptyState } from '@shared/ui/feedback/empty-state/empty-state';
 import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
-import { TransactionsPagination } from '@shared/transactions/transactions-pagination/transactions-pagination';
+import { Pagination } from '@shared/ui/data/pagination/pagination';
 import { TransactionsTable } from '@shared/transactions/transactions-table/transactions-table';
 import type {
   TransactionsTableCategoryChange,
@@ -42,7 +42,7 @@ const SKELETON_ROWS = 8;
  */
 @Component({
   selector: 'app-transactions-table-panel',
-  imports: [EmptyState, ErrorRetry, Panel, SectionHeader, TransactionsPagination, TransactionsTable],
+  imports: [EmptyState, ErrorRetry, Panel, SectionHeader, Pagination, TransactionsTable],
   templateUrl: './transactions-table-panel.html',
   styleUrl: './transactions-table-panel.scss',
 })

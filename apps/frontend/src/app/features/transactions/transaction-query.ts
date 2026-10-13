@@ -1,6 +1,6 @@
 import { ParamMap, Params } from '@angular/router';
 import { DateRange } from '../../core/period';
-import { TRANSACTIONS_PAGE_SIZES } from '@shared/transactions/transactions-pagination/transactions-pagination.model';
+import { PAGE_SIZES as SHARED_PAGE_SIZES } from '@shared/ui/data/pagination/pagination.model';
 import { TRANSACTION_TYPES, TransactionType } from './transaction-type';
 
 /**
@@ -31,7 +31,7 @@ export type TransactionSortField = (typeof TRANSACTION_SORT_FIELDS)[number];
 
 export type SortDirection = 'asc' | 'desc';
 
-export const PAGE_SIZES = TRANSACTIONS_PAGE_SIZES;
+export const PAGE_SIZES = SHARED_PAGE_SIZES;
 
 export interface TransactionQueryState extends DateRange {
   search: string;
