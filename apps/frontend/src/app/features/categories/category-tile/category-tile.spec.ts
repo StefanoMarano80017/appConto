@@ -249,11 +249,37 @@ describe('CategoryTile', () => {
   });
 
   it('Esc in conferma emette deleteCancelled', async () => {
-    await setup((h) => h.confirmingDelete.set(true));
+    await setup();
+    const trash = q<HTMLButtonElement>('button.delete') as HTMLButtonElement;
+    trash.focus();
+    trash.click();
 
-    key(q('.confirm button') as HTMLElement, 'Escape');
+    host.confirmingDelete.set(true);
+    await stable();
 
-    expect(host.events).toEqual([['deleteCancelled']]);
+    // Il focus entra nella conferma, così la tastiera la raggiunge.
+    const active = document.activeElement as HTMLElement;
+    expect(q('.confirm')?.contains(active)).toBe(true);
+
+    key(active, 'Escape');
+    expect(host.events).toEqual([['deleteAsked'], ['deleteCancelled']]);
+
+    host.confirmingDelete.set(false);
+    await stable();
+
+    // All'annullo il focus torna sul cestino.
+    expect(document.activeElement).toBe(q('button.delete'));
+  });
+
+  it("Esc durante l'eliminazione in corso non annulla", async () => {
+    await setup((h) => {
+      h.confirmingDelete.set(true);
+      h.deleting.set(true);
+    });
+
+    key(q('.confirm') as HTMLElement, 'Escape');
+
+    expect(host.events).toEqual([]);
   });
 
   it('bozza: parte in modifica; Invio emette created con il colore predefinito (#9aa3af)', async () => {
@@ -301,6 +327,28 @@ describe('CategoryTile', () => {
     expect(field()).not.toBeNull();
 
     key(input, 'Escape');
+    expect(host.events).toEqual([['draftDismissed']]);
+  });
+
+  it('bozza: focusout senza relatedTarget dopo un pointerdown sul color picker non la chiude', async () => {
+    await setup((h) => h.category.set(null));
+    const input = field() as HTMLInputElement;
+    const trigger = q('app-color-picker button') as HTMLElement;
+
+    // Safari non dà il focus ai bottoni al clic: il campo perde il focus verso il nulla.
+    trigger.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    focusOut(input, null);
+    await stable();
+
+    expect(host.events).toEqual([]);
+    expect(field()).not.toBeNull();
+  });
+
+  it("bozza: focusout senza relatedTarget e senza pointerdown interno la chiude", async () => {
+    await setup((h) => h.category.set(null));
+
+    focusOut(field() as HTMLInputElement, null);
+
     expect(host.events).toEqual([['draftDismissed']]);
   });
 

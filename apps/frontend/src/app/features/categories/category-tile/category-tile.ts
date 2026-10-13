@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   inject,
   Injector,
@@ -39,6 +40,7 @@ const DEFAULT_COLOR = '#9aa3af';
     '[class.confirming]': 'confirming()',
     '(keydown)': 'onKeydown($event)',
     '(focusout)': 'onFocusout($event)',
+    '(pointerdown)': 'onPointerdown()',
   },
 })
 export class CategoryTile implements OnInit {
@@ -80,6 +82,36 @@ export class CategoryTile implements OnInit {
   private readonly field = viewChild<ElementRef<HTMLInputElement>>('field');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
+
+  /** Vero fra un `pointerdown` dentro la tessera e la fine di quel task. */
+  private pointerInside = false;
+  /** Vero dopo un annullo: alla chiusura della conferma il focus torna sul cestino. */
+  private restoreFocusToTrash = false;
+  private wasConfirming = false;
+
+  constructor() {
+    // Il cestino premuto sparisce col passaggio alla conferma e il focus
+    // cadrebbe sul body, dove Esc non arriva più alla tessera: lo si porta su
+    // «Annulla» (mai su «Sì, elimina», che un Invio distratto attiverebbe).
+    effect(() => {
+      const confirming = this.confirming();
+      if (confirming === this.wasConfirming) {
+        return;
+      }
+      this.wasConfirming = confirming;
+      afterNextRender(
+        () => {
+          if (confirming) {
+            this.host.querySelector<HTMLButtonElement>('.confirm button.ghost')?.focus();
+          } else if (this.restoreFocusToTrash) {
+            this.restoreFocusToTrash = false;
+            this.host.querySelector<HTMLButtonElement>('button.delete')?.focus();
+          }
+        },
+        { injector: this.injector },
+      );
+    });
+  }
 
   ngOnInit(): void {
     if (this.isDraft()) {
@@ -134,7 +166,7 @@ export class CategoryTile implements OnInit {
     // Il pannello del color picker gestisce (e ferma) il proprio Esc.
     if (this.confirming()) {
       event.preventDefault();
-      this.deleteCancelled.emit();
+      this.cancelDelete();
     } else if (this.editing()) {
       event.preventDefault();
       if (this.isDraft()) {
@@ -143,6 +175,26 @@ export class CategoryTile implements OnInit {
         this.editing.set(false);
       }
     }
+  }
+
+  protected cancelDelete(): void {
+    // Con l'eliminazione in corso non c'è più nulla da annullare.
+    if (this.deleting()) {
+      return;
+    }
+    this.restoreFocusToTrash = true;
+    this.deleteCancelled.emit();
+  }
+
+  /**
+   * Safari non dà il focus ai bottoni al clic: premere il trigger del color
+   * picker toglie il focus al campo con `relatedTarget` null, come un'uscita.
+   * Si ricorda il `pointerdown` interno fino alla fine del task, che comprende
+   * lo spostamento del focus, per non scambiarlo per un'uscita.
+   */
+  protected onPointerdown(): void {
+    this.pointerInside = true;
+    setTimeout(() => (this.pointerInside = false));
   }
 
   /**
@@ -155,6 +207,9 @@ export class CategoryTile implements OnInit {
     }
     const next = event.relatedTarget;
     if (next instanceof Node && this.host.contains(next)) {
+      return;
+    }
+    if (next === null && this.pointerInside) {
       return;
     }
     if (this.isDraft()) {

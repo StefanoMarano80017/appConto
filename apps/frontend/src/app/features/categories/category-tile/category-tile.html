@@ -14,7 +14,7 @@
     >
       {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
     </button>
-    <button type="button" class="ghost" [disabled]="deleting()" (click)="deleteCancelled.emit()">
+    <button type="button" class="ghost" [disabled]="deleting()" (click)="cancelDelete()">
       Annulla
     </button>
   </div>
