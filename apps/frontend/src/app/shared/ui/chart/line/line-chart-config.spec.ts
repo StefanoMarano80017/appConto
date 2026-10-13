@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { formatAmount } from '../../../core/format';
+import { formatAmount } from '../../../../core/format';
 import { lineChartData, lineChartOptions, lineChartValueRange } from './line-chart-config';
 import { LINE_CHART_GEOMETRY, type LineChartTheme } from './line-chart-theme';
 import type { LinePointMarker, LineSeries } from './line-chart.model';
-import { niceScale } from './value-scale';
+import { niceScale } from '@shared/ui/chart/core/value-scale';
 
 interface Point {
   label: string;

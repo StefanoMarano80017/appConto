@@ -114,7 +114,7 @@ verifica 'shared non conosce le feature' \
 # treemap-layout). La treemap non usa Chart.js, ma il suo algoritmo è un
 # dettaglio interno quanto le configurazioni dei grafici.
 verifica 'Chart.js resta dentro shared/ui/chart' \
-  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(chart\\|chart-theme\\|line-chart-config\\|line-chart-theme\\|line-guides-plugin\\|doughnut-chart-config\\|doughnut-chart-theme\\|doughnut-grouping\\|treemap-layout\\)['\\\"']\" src/app/features"
+  bash -c "grep -rn \"from ['\\\"']chart\\.js['\\\"']\" src/app --include='*.ts' | grep -v shared/ui/chart | grep -v '\\.spec\\.ts'; grep -rn \"from.*shared/ui/chart/\\(core/chart\\|core/chart-theme\\|line/line-chart-config\\|line/line-chart-theme\\|line/line-guides-plugin\\|doughnut/doughnut-chart-config\\|doughnut/doughnut-chart-theme\\|doughnut/doughnut-grouping\\|treemap/treemap-layout\\)['\\\"']\" src/app/features"
 
 # Il nome dell'alias legacy deve essere seguito subito da ) o da , per evitare
 # di catturare i nomi nuovi verso cui stiamo migrando: --border catturerebbe

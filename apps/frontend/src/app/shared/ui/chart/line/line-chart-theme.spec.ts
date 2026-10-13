@@ -72,7 +72,7 @@ describe('resolveLineChartTheme', () => {
 
 describe('token del tema del grafico', () => {
   const qui = dirname(fileURLToPath(import.meta.url));
-  const sorgente = readFileSync(join(qui, '../../styles/_primitives.scss'), 'utf8');
+  const sorgente = readFileSync(join(qui, '../../../styles/_primitives.scss'), 'utf8');
   // Le due palette sono mixin distinti: si verifica ciascuna, non la loro unione.
   const iDark = sorgente.indexOf('@mixin dark-palette');
   const iLight = sorgente.indexOf('@mixin light-palette');

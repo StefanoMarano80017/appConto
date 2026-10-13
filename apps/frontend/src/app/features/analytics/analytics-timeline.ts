@@ -15,13 +15,13 @@ import { Panel } from '@shared/layout/panel';
 import { PanelFooter } from '@shared/layout/panel-footer';
 import { SectionHeader } from '@shared/layout/section-header';
 import { Amount } from '@shared/ui/amount';
-import { ChartTooltip } from '@shared/ui/chart/chart-tooltip';
-import { LineChart } from '@shared/ui/chart/line-chart';
+import { ChartTooltip } from '@shared/ui/chart/core/chart-tooltip';
+import { LineChart } from '@shared/ui/chart/line/line-chart';
 import {
   chartColorVar,
   type LinePointMarker,
   type LineSeries,
-} from '@shared/ui/chart/line-chart.model';
+} from '@shared/ui/chart/line/line-chart.model';
 import { ChoiceGroup, type ChoiceOption } from '@shared/ui/choice-group';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { cumulativeNet, type CumulativePoint } from './timeline-cumulative';

@@ -1,6 +1,6 @@
-import type { ChartSeriesColor } from './chart.model';
+import type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
-export type { ChartSeriesColor } from './chart.model';
+export type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 /**
  * Il colore di una fetta: un colore-serie del design system oppure, per le

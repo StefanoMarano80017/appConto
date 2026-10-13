@@ -3,7 +3,7 @@ import { signal, type WritableSignal } from '@angular/core';
 import { vi } from 'vitest';
 import { formatPercent } from '../../core/format';
 import { ThemeStore } from '../../core/theme';
-import { CHART_CONSTRUCTOR } from '@shared/ui/chart/doughnut-chart';
+import { CHART_CONSTRUCTOR } from '@shared/ui/chart/doughnut/doughnut-chart';
 import { AnalyticsCategories } from './analytics-categories';
 import { CategoryDistribution } from './analytics.model';
 

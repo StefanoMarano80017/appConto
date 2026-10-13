@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { seriesColorToken } from './chart-theme';
-import { CHART_SERIES_COLORS } from './chart.model';
+import { seriesColorToken } from '@shared/ui/chart/core/chart-theme';
+import { CHART_SERIES_COLORS } from '@shared/ui/chart/core/chart.model';
 import {
   DOUGHNUT_CHART_GEOMETRY,
   DOUGHNUT_CHART_TOKENS,
@@ -41,7 +41,7 @@ describe('resolveDoughnutChartTheme', () => {
 
 describe('token del tema della ciambella', () => {
   const qui = dirname(fileURLToPath(import.meta.url));
-  const sorgente = readFileSync(join(qui, '../../styles/_primitives.scss'), 'utf8');
+  const sorgente = readFileSync(join(qui, '../../../styles/_primitives.scss'), 'utf8');
   // Le due palette sono mixin distinti: si verifica ciascuna, non la loro unione.
   const iDark = sorgente.indexOf('@mixin dark-palette');
   const iLight = sorgente.indexOf('@mixin light-palette');

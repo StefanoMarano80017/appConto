@@ -1,8 +1,8 @@
-import { resolveSeriesColors } from './chart-theme';
-import type { ChartSeriesColor } from './chart.model';
+import { resolveSeriesColors } from '@shared/ui/chart/core/chart-theme';
+import type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 // `seriesColorToken` vive nello strato comune: riesportato per chi lo importava da qui.
-export { seriesColorToken } from './chart-theme';
+export { seriesColorToken } from '@shared/ui/chart/core/chart-theme';
 
 /*
  * Interno al layer del grafico: le feature non lo importano.

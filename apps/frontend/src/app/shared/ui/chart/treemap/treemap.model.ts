@@ -1,6 +1,6 @@
-import type { SliceColor } from './doughnut-chart.model';
+import type { SliceColor } from '@shared/ui/chart/doughnut/doughnut-chart.model';
 
-export type { ChartSeriesColor } from './chart.model';
+export type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 /**
  * Il colore di una tessera: lo stesso contratto delle fette della ciambella,

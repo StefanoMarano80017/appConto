@@ -1,8 +1,8 @@
-import type { ChartSeriesColor } from './chart.model';
+import type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 // I colori-serie stanno in `chart.model`: qui restano riesportati per chi li importava dalla linea.
-export { CHART_SERIES_COLORS, chartColorVar } from './chart.model';
-export type { ChartSeriesColor } from './chart.model';
+export { CHART_SERIES_COLORS, chartColorVar } from '@shared/ui/chart/core/chart.model';
+export type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 export interface LineSeries<T, K extends string = string> {
   readonly key: K;

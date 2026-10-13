@@ -9,9 +9,9 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { formatAmount, formatPercent } from '../../../core/format';
-import { chartColorVar } from './chart.model';
-import { groupTopN } from './doughnut-grouping';
+import { formatAmount, formatPercent } from '../../../../core/format';
+import { chartColorVar } from '@shared/ui/chart/core/chart.model';
+import { groupTopN } from '@shared/ui/chart/doughnut/doughnut-grouping';
 import { squarify, type TreemapRect } from './treemap-layout';
 import type { TileColor, TreemapActivation } from './treemap.model';
 

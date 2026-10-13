@@ -1,5 +1,5 @@
-import { resolveSeriesColors } from './chart-theme';
-import type { ChartSeriesColor } from './chart.model';
+import { resolveSeriesColors } from '@shared/ui/chart/core/chart-theme';
+import type { ChartSeriesColor } from '@shared/ui/chart/core/chart.model';
 
 /*
  * Interno al layer del grafico: le feature non lo importano.

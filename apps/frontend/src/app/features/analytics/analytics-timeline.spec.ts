@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
-import { CHART_CONSTRUCTOR, LineChart } from '@shared/ui/chart/line-chart';
+import { CHART_CONSTRUCTOR, LineChart } from '@shared/ui/chart/line/line-chart';
 import { AnalyticsTimeline, TimelineSelection } from './analytics-timeline';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 

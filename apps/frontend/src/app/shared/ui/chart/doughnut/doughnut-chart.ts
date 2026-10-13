@@ -15,8 +15,8 @@ import {
   TemplateRef,
 } from '@angular/core';
 import type { Plugin } from 'chart.js';
-import { ThemeStore } from '../../../core/theme';
-import { AppChart, type ChartDataPoint } from './chart';
+import { ThemeStore } from '../../../../core/theme';
+import { AppChart, type ChartDataPoint } from '@shared/ui/chart/core/chart';
 import { doughnutChartData, doughnutChartOptions } from './doughnut-chart-config';
 import { resolveDoughnutChartTheme, type DoughnutChartTheme } from './doughnut-chart-theme';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
@@ -24,7 +24,7 @@ import { groupedSliceLabel, groupTopN } from './doughnut-grouping';
 
 // Le feature non importano `chart.ts`: il token passa da qui, il punto
 // d'ingresso pubblico, così le loro spec possono sostituire Chart.js.
-export { CHART_CONSTRUCTOR } from './chart';
+export { CHART_CONSTRUCTOR } from '@shared/ui/chart/core/chart';
 export { groupedSliceLabel } from './doughnut-grouping';
 
 /** Contesto del centro: la fetta attiva, oppure `null` se non ce n'è una. */

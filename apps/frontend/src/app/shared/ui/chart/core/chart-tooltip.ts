@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { Panel } from '../../layout/panel';
-import { PanelFooter } from '../../layout/panel-footer';
-import { SectionHeader } from '../../layout/section-header';
+import { Panel } from '@shared/layout/panel';
+import { PanelFooter } from '@shared/layout/panel-footer';
+import { SectionHeader } from '@shared/layout/section-header';
 
 /**
  * Tooltip condiviso per i grafici: usa il layout standard di un pannello,

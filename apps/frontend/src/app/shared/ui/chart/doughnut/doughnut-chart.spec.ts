@@ -1,7 +1,7 @@
 import { Component, signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { ThemeStore } from '../../../core/theme';
+import { ThemeStore } from '../../../../core/theme';
 import { CHART_CONSTRUCTOR, DoughnutCenter, DoughnutChart, groupedSliceLabel } from './doughnut-chart';
 import type { DoughnutSlice, SliceColor } from './doughnut-chart.model';
 

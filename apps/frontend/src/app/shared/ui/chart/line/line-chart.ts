@@ -9,8 +9,8 @@ import {
   model,
   signal
 } from '@angular/core';
-import { ThemeStore } from '../../../core/theme';
-import { AppChart, type ChartDataPoint } from './chart';
+import { ThemeStore } from '../../../../core/theme';
+import { AppChart, type ChartDataPoint } from '@shared/ui/chart/core/chart';
 import { lineChartData, lineChartOptions, lineChartValueRange } from './line-chart-config';
 import { resolveLineChartTheme, type LineChartTheme } from './line-chart-theme';
 import type { LineChartValueAxis, LinePointMarker, LineSeries } from './line-chart.model';
@@ -18,7 +18,7 @@ import { LINE_CHART_PLUGINS } from './line-guides-plugin';
 
 // Le feature non importano `chart.ts`: il token passa da qui, il punto
 // d'ingresso pubblico, così le loro spec possono sostituire Chart.js.
-export { CHART_CONSTRUCTOR } from './chart';
+export { CHART_CONSTRUCTOR } from '@shared/ui/chart/core/chart';
 
 /**
  * Grafico a linee condiviso.

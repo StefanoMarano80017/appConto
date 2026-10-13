@@ -1,8 +1,8 @@
 import { Component, signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { ThemeStore } from '../../../core/theme';
-import { CHART_CONSTRUCTOR } from './chart';
+import { ThemeStore } from '../../../../core/theme';
+import { CHART_CONSTRUCTOR } from '@shared/ui/chart/core/chart';
 import { LineChart } from './line-chart';
 import type { LinePointMarker, LineSeries } from './line-chart.model';
 import { LINE_CHART_PLUGINS } from './line-guides-plugin';

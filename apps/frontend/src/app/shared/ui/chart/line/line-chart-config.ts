@@ -1,10 +1,10 @@
 import type { ChartData, ChartDataset } from 'chart.js';
-import { formatAmount } from '../../../core/format';
-import type { ChartOptionsWithoutInteractionCallbacks } from './chart';
+import { formatAmount } from '../../../../core/format';
+import type { ChartOptionsWithoutInteractionCallbacks } from '@shared/ui/chart/core/chart';
 import { LINE_CHART_GEOMETRY, type LineChartFont, type LineChartTheme } from './line-chart-theme';
 import type { LineChartValueAxis, LinePointMarker, LineSeries } from './line-chart.model';
 import type { LineGuidesState } from './line-guides-plugin';
-import { niceScale } from './value-scale';
+import { niceScale } from '@shared/ui/chart/core/value-scale';
 
 /**
  * Formato e scala dell'asse Y stanno insieme, così non si possono

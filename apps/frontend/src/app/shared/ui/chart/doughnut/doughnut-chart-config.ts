@@ -1,6 +1,6 @@
 import type { ChartData } from 'chart.js';
 import { color as parseColor } from 'chart.js/helpers';
-import type { ChartOptionsWithoutInteractionCallbacks } from './chart';
+import type { ChartOptionsWithoutInteractionCallbacks } from '@shared/ui/chart/core/chart';
 import {
   DOUGHNUT_CHART_DIMMED_ALPHA,
   DOUGHNUT_CHART_GEOMETRY,
