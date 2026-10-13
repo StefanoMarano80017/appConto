@@ -1,8 +1,26 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResourceRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api';
 import { Merchant, MerchantSummary } from './merchant.model';
+import { MerchantQueryState, toMerchantQueryParams } from './merchant-query';
+
+/**
+ * La richiesta corrispondente ai criteri correnti.
+ *
+ * Usa la stessa serializzazione dell'URL e porta solo i parametri non predefiniti.
+ */
+export function merchantsRequest(state: MerchantQueryState): HttpResourceRequest {
+  let params = new HttpParams();
+
+  for (const [name, value] of Object.entries(toMerchantQueryParams(state))) {
+    if (value !== null && value !== undefined) {
+      params = params.set(name, String(value));
+    }
+  }
+
+  return { url: `${API_BASE_URL}/merchants`, params };
+}
 
 @Injectable({ providedIn: 'root' })
 export class MerchantsApi {

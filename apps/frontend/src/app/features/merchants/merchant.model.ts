@@ -1,3 +1,4 @@
+import { PaginationData } from '@shared/ui/data/pagination/pagination.model';
 import { Category } from '../categories/category.model';
 
 /** Esercente, così come viene esposto dalle API del backend. */
@@ -21,4 +22,18 @@ export interface MerchantSummary extends Merchant {
   totalSpent: number;
   /** Data contabile dell'ultima transazione, in formato ISO `YYYY-MM-DD`. */
   lastTransactionDate: string | null;
+}
+
+/** Quanti merchant ci sono per ciascun filtro di classificazione, a prescindere dalla pagina. */
+export interface MerchantCounts {
+  all: number;
+  classified: number;
+  unclassified: number;
+}
+
+/** Una pagina di merchant con i totali per filtro. */
+export interface MerchantPage {
+  items: MerchantSummary[];
+  pagination: PaginationData;
+  counts: MerchantCounts;
 }
