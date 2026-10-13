@@ -106,6 +106,8 @@ describe('CategoryTile', () => {
     expect(document.activeElement).toBe(input);
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe('Spesa'.length);
+    expect(input.placeholder).toBe('');
+    expect(tile().classList).not.toContain('draft');
     expect(q('button.delete')).toBeNull();
     expect(tile().classList).toContain('editing');
   });
@@ -280,6 +282,8 @@ describe('CategoryTile', () => {
     expect(document.activeElement).toBe(input);
     expect(q('.count')).toBeNull();
     expect(q('button.delete')).toBeNull();
+    expect(tile().classList).toContain('draft');
+    expect(input.placeholder).toBe('Nome della nuova categoria');
 
     key(input, 'Enter');
     expect(host.events).toEqual([]);

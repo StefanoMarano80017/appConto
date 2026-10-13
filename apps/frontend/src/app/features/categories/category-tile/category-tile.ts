@@ -45,6 +45,7 @@ type FocusTarget = keyof typeof FOCUS_TARGETS;
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.editing]': 'editing()',
+    '[class.draft]': 'isDraft()',
     '[class.busy]': 'busy()',
     '[class.confirming]': 'confirming()',
     '(keydown)': 'onKeydown($event)',

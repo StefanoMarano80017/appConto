@@ -22,6 +22,9 @@ L'utente ha scelto, fra tre mockup (griglia di tessere, elenco + pannello di mod
 - **Layout A, griglia di tessere** (mockup `.superpowers/brainstorm/…/layout.html`, opzione A).
 - La descrizione del comportamento riportata in chat (rinomina, colore, elimina da menu ⋯ — poi sostituito da un pulsante cestino, vedi «Dettagli risolti» —, lucchetto su «Da classificare», toolbar con ricerca / ordina / nuova categoria, tutto lato client) è stata approvata così com'è.
 
+- **Bozza di creazione senza bordo colorato** (scelta fra tre mockup, opzione A): contorno tratteggiato `--color-border-strong`, sfondo trasparente, nessun anello di focus, segnaposto «Nome della nuova categoria».
+- **Animazioni** all'entrata della bozza e della categoria appena creata (dissolvenza con leggera salita, 220ms) e all'uscita di quella eliminata (dissolvenza con leggero rimpicciolimento, 180ms). Caricamento, ricerca e riordino restano istantanei; `prefers-reduced-motion` le spegne.
+
 ## Non-obiettivi
 
 - Toccare il backend: `GET /categories` restituisce già tutte le categorie con `merchantCount`; `POST`, `PATCH`, `DELETE /categories/:id` restano identici.

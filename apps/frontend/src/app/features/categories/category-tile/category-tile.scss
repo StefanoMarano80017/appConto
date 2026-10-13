@@ -28,6 +28,19 @@
   @include mixins.form-control-focus;
 }
 
+/*
+ * La bozza di una nuova categoria: contorno tratteggiato neutro e sfondo
+ * trasparente, lo spazio ancora da riempire. Niente bordo primario né anello
+ * di focus: a indicare dove scrivere bastano il cursore e il segnaposto.
+ */
+:host(.draft),
+:host(.draft.editing) {
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+  background: transparent;
+  box-shadow: none;
+}
+
 :host(.confirming) {
   flex-wrap: wrap;
 }
@@ -75,6 +88,11 @@ button.name {
 
 .name-input {
   outline: none;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+  }
 }
 
 .name-text {

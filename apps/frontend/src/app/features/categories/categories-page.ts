@@ -59,6 +59,8 @@ export class CategoriesPage implements OnInit {
   protected readonly deleting = signal(false);
 
   protected readonly drafting = signal(false);
+  /** La categoria appena creata, l'unica che entra nella griglia con un'animazione. */
+  protected readonly enteringId = signal<string | null>(null);
   protected readonly creating = signal(false);
 
   ngOnInit(): void {
@@ -104,6 +106,7 @@ export class CategoriesPage implements OnInit {
 
     this.api.create(draft).subscribe({
       next: (created) => {
+        this.enteringId.set(created.id);
         this.categories.update((categories) => [...categories, { ...created, merchantCount: 0 }]);
         // Una ricerca che non la comprende nasconderebbe la categoria appena creata.
         if (filterCategories([created], this.search()).length === 0) {

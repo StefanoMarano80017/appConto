@@ -94,3 +94,41 @@ app-search-input.search {
     animation: none;
   }
 }
+
+/*
+ * Entrata della tessera nuova (bozza o categoria appena creata) e uscita di
+ * quella eliminata. `transform` e `opacity` valgono solo durante l'animazione,
+ * senza `forwards` all'entrata: a riposo la tessera non tiene nessuno dei due,
+ * che chiuderebbero il pannello `position: fixed` del color picker.
+ */
+$tile-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+app-category-tile.tile-entering {
+  animation: tile-enter 220ms $tile-easing;
+}
+
+app-category-tile.tile-leaving {
+  animation: tile-leave 180ms $tile-easing forwards;
+  pointer-events: none;
+}
+
+@keyframes tile-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2)) scale(0.97);
+  }
+}
+
+@keyframes tile-leave {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  app-category-tile.tile-entering,
+  app-category-tile.tile-leaving {
+    animation: none;
+  }
+}

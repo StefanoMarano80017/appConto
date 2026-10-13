@@ -51,6 +51,7 @@
       <div class="grid">
         @if (drafting()) {
           <app-category-tile
+            animate.enter="tile-entering"
             [category]="null"
             [busy]="creating()"
             (created)="create($event)"
@@ -58,8 +59,16 @@
           />
         }
 
+        <!--
+          Entra animata solo la categoria appena creata, esce animata solo quella
+          appena eliminata: caricamento, ricerca e riordino restano istantanei.
+          `animate.leave` usa il valore dell'ultimo aggiornamento, quando la
+          tessera era ancora in conferma di eliminazione.
+        -->
         @for (category of visible(); track category.id) {
           <app-category-tile
+            [animate.enter]="category.id === enteringId() ? 'tile-entering' : ''"
+            [animate.leave]="category.id === confirmingDeleteId() ? 'tile-leaving' : ''"
             [category]="category"
             [locked]="isProtected(category.id)"
             [busy]="savingIds().has(category.id)"
