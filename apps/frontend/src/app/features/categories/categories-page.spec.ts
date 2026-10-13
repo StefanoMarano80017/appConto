@@ -215,6 +215,39 @@ describe('CategoriesPage', () => {
     expect(root(fixture).querySelector('input.name-input')).toBeNull();
   });
 
+  it('creazione con una ricerca che non la comprende: la ricerca si azzera e la tessera si vede', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category(), category({ id: 'c-2', name: 'Casa' })]);
+    fixture.debugElement.query(By.directive(SearchInput)).triggerEventHandler('valueChange', 'casa');
+    fixture.detectChanges();
+    expect(names(fixture)).toEqual(['Casa']);
+
+    click(buttonByText(fixture, '+ Nuova categoria'));
+    fixture.detectChanges();
+    typeAndEnter(fixture, tiles(fixture)[0], 'Regali', false);
+    http.expectOne(`${API_BASE_URL}/categories`).flush({ id: 'c-3', name: 'Regali', color: null });
+    fixture.detectChanges();
+
+    expect(names(fixture)).toEqual(['Alimentari', 'Casa', 'Regali']);
+  });
+
+  it('creazione che la ricerca comprende: la ricerca resta', () => {
+    const fixture = TestBed.createComponent(CategoriesPage);
+    load(fixture, [category(), category({ id: 'c-2', name: 'Casa' })]);
+    fixture.debugElement.query(By.directive(SearchInput)).triggerEventHandler('valueChange', 'casa');
+    fixture.detectChanges();
+
+    click(buttonByText(fixture, '+ Nuova categoria'));
+    fixture.detectChanges();
+    typeAndEnter(fixture, tiles(fixture)[0], 'Casa al mare', false);
+    http
+      .expectOne(`${API_BASE_URL}/categories`)
+      .flush({ id: 'c-3', name: 'Casa al mare', color: null });
+    fixture.detectChanges();
+
+    expect(names(fixture)).toEqual(['Casa', 'Casa al mare']);
+  });
+
   it('creazione fallita: errore visibile e bozza ancora aperta col testo', () => {
     const fixture = TestBed.createComponent(CategoriesPage);
     load(fixture, [category()]);

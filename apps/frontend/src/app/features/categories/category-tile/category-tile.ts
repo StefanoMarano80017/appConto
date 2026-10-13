@@ -13,12 +13,21 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LucideLock, LucidePencil, LucideTrash2 } from '@lucide/angular';
+import { LucideCheck, LucideLock, LucidePencil, LucideTrash2, LucideX } from '@lucide/angular';
 import { ColorPicker } from '@shared/ui/forms/color-picker/color-picker';
 import { CategoryWithUsage } from '../category.model';
 
 /** Colore della bozza e delle categorie senza colore. */
 const DEFAULT_COLOR = '#9aa3af';
+
+/** Dove riportare il focus quando il controllo che lo aveva sparisce o si disabilita. */
+const FOCUS_TARGETS = {
+  name: 'button.name',
+  picker: 'app-color-picker button',
+  trash: 'button.delete',
+  field: 'input.name-input',
+} as const;
+type FocusTarget = keyof typeof FOCUS_TARGETS;
 
 /**
  * Tessera di una categoria: colore, nome rinominabile in linea, numero di
@@ -30,7 +39,7 @@ const DEFAULT_COLOR = '#9aa3af';
  */
 @Component({
   selector: 'app-category-tile',
-  imports: [ColorPicker, LucideLock, LucidePencil, LucideTrash2],
+  imports: [ColorPicker, LucideCheck, LucideLock, LucidePencil, LucideTrash2, LucideX],
   templateUrl: './category-tile.html',
   styleUrl: './category-tile.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,14 +94,20 @@ export class CategoryTile implements OnInit {
 
   /** Vero fra un `pointerdown` sul color picker della tessera e la fine di quel task. */
   private pointerInside = false;
-  /** Vero dopo un annullo: alla chiusura della conferma il focus torna sul cestino. */
-  private restoreFocusToTrash = false;
+  /**
+   * Controllo su cui riportare il focus appena esiste ed è abilitato. Serve
+   * perché il controllo che aveva il focus sparisce (campo, cestino) o si
+   * disabilita durante il salvataggio (`busy`), e il focus cadrebbe sul body.
+   */
+  private pendingFocus: FocusTarget | null = null;
   private wasConfirming = false;
+  private wasBusy = false;
 
   constructor() {
     // Il cestino premuto sparisce col passaggio alla conferma e il focus
     // cadrebbe sul body, dove Esc non arriva più alla tessera: lo si porta su
     // «Annulla» (mai su «Sì, elimina», che un Invio distratto attiverebbe).
+    // Alla chiusura (annullo o eliminazione fallita) torna sul cestino.
     effect(() => {
       const confirming = this.confirming();
       if (confirming === this.wasConfirming) {
@@ -100,20 +115,29 @@ export class CategoryTile implements OnInit {
       }
       this.wasConfirming = confirming;
       if (confirming) {
-        // Un annullo precedente non deve rubare il focus a una chiusura futura.
-        this.restoreFocusToTrash = false;
+        this.pendingFocus = null;
+        afterNextRender(
+          () => this.host.querySelector<HTMLButtonElement>('.confirm button.ghost')?.focus(),
+          { injector: this.injector },
+        );
+      } else if (this.focusIsHereOrLost()) {
+        // Se il focus è già altrove (per esempio sul cestino di un'altra
+        // tessera, che apre la propria conferma) non lo si sposta.
+        this.restoreFocus('trash');
       }
-      afterNextRender(
-        () => {
-          if (confirming) {
-            this.host.querySelector<HTMLButtonElement>('.confirm button.ghost')?.focus();
-          } else if (this.restoreFocusToTrash) {
-            this.restoreFocusToTrash = false;
-            this.host.querySelector<HTMLButtonElement>('button.delete')?.focus();
-          }
-        },
-        { injector: this.injector },
-      );
+    });
+
+    // Finito il salvataggio i controlli si riabilitano: è il momento di
+    // riprendere il focus richiesto mentre erano disabilitati.
+    effect(() => {
+      const busy = this.busy();
+      if (busy === this.wasBusy) {
+        return;
+      }
+      this.wasBusy = busy;
+      if (!busy && this.pendingFocus) {
+        afterNextRender(() => this.flushFocus(), { injector: this.injector });
+      }
     });
   }
 
@@ -159,6 +183,8 @@ export class CategoryTile implements OnInit {
     if (this.isDraft()) {
       this.draftColor.set(color);
     } else {
+      // Il picker rende il focus al proprio trigger, che `busy` disabilita subito dopo.
+      this.pendingFocus = 'picker';
       this.recolored.emit(color);
     }
   }
@@ -177,6 +203,7 @@ export class CategoryTile implements OnInit {
         this.draftDismissed.emit();
       } else {
         this.editing.set(false);
+        this.restoreFocus('name');
       }
     }
   }
@@ -186,7 +213,6 @@ export class CategoryTile implements OnInit {
     if (this.deleting()) {
       return;
     }
-    this.restoreFocusToTrash = true;
     this.deleteCancelled.emit();
   }
 
@@ -200,7 +226,10 @@ export class CategoryTile implements OnInit {
     // Solo il color picker: un clic su una parte non focalizzabile della
     // tessera (padding, spazio intorno al quadratino) toglie davvero il focus
     // al campo, e quell'uscita deve chiudere la modifica come sempre.
-    if (!(event.target instanceof Element) || !event.target.closest('app-color-picker')) {
+    if (
+      !(event.target instanceof Element) ||
+      !event.target.closest('app-color-picker, .draft-action')
+    ) {
       return;
     }
     this.pointerInside = true;
@@ -229,23 +258,63 @@ export class CategoryTile implements OnInit {
       }
       return;
     }
-    this.commitRename();
+    // Il focus se n'è andato da sé: non lo si riporta indietro.
+    this.commitRename(false);
   }
 
-  private commitRename(): void {
+  /** Il focus resta sulla tessera, o è caduto sul body perché il suo controllo è sparito. */
+  private focusIsHereOrLost(): boolean {
+    const active = document.activeElement;
+    return active === null || active === document.body || this.host.contains(active);
+  }
+
+  private restoreFocus(target: FocusTarget): void {
+    this.pendingFocus = target;
+    afterNextRender(() => this.flushFocus(), { injector: this.injector });
+  }
+
+  /** Mette il focus sul controllo in attesa se c'è, è abilitato e il focus non è altrove. */
+  private flushFocus(): void {
+    const target = this.pendingFocus;
+    if (!target) {
+      return;
+    }
+    const element = this.host.querySelector<HTMLButtonElement | HTMLInputElement>(
+      FOCUS_TARGETS[target],
+    );
+    if (!element || element.disabled) {
+      return;
+    }
+    this.pendingFocus = null;
+    if (this.focusIsHereOrLost()) {
+      element.focus();
+    }
+  }
+
+  private commitRename(keepFocus = true): void {
     const name = this.draftName().trim();
     this.editing.set(false);
+    if (keepFocus) {
+      // Se il salvataggio parte il nome è disabilitato: `flushFocus` riprova a fine `busy`.
+      this.restoreFocus('name');
+    }
     if (name !== '' && name !== this.category()?.name) {
       this.renamed.emit(name);
     }
   }
 
-  private create(): void {
+  protected create(): void {
     const name = this.draftName().trim();
     if (name === '') {
       return;
     }
-    // La bozza resta in modifica: se la creazione fallisce il testo è ancora lì.
+    // La bozza resta in modifica: se la creazione fallisce il testo è ancora lì
+    // e, finito `busy`, il campo riprende il focus.
+    this.pendingFocus = 'field';
     this.created.emit({ name, color: this.draftColor() });
+  }
+
+  protected dismissDraft(): void {
+    this.draftDismissed.emit();
   }
 }

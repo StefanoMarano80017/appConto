@@ -89,7 +89,7 @@ describe('CategoryTile', () => {
     expect(name.getAttribute('title')).toBe('Spesa');
     expect(name.querySelector('span')).not.toBeNull();
     expect(q('button.edit svg')).not.toBeNull();
-    expect(q('.count')?.textContent?.trim()).toBe('3');
+    expect(q('.count')?.textContent?.trim()).toBe('3 merchant');
     expect(q('button.delete')?.getAttribute('aria-label')).toBe('Elimina Spesa');
     expect(field()).toBeNull();
   });
@@ -401,5 +401,165 @@ describe('CategoryTile', () => {
     await stable();
 
     expect(host.events).toEqual([['recolored', '#5572b8']]);
+  });
+  describe('focus da tastiera', () => {
+    it('Esc in modifica riporta il focus sul nome', async () => {
+      await setup();
+      const input = await startEditing();
+
+      key(input, 'Escape');
+      await stable();
+
+      expect(document.activeElement).toBe(q('button.name'));
+    });
+
+    it('Invio senza modifiche riporta il focus sul nome', async () => {
+      await setup();
+      const input = await startEditing();
+
+      key(input, 'Enter');
+      await stable();
+
+      expect(host.events).toEqual([]);
+      expect(document.activeElement).toBe(q('button.name'));
+    });
+
+    it('Invio che salva: il focus torna sul nome quando busy finisce', async () => {
+      await setup();
+      const input = await startEditing();
+      type(input, 'Supermercato');
+      key(input, 'Enter');
+      host.busy.set(true);
+      await stable();
+
+      expect((q<HTMLButtonElement>('button.name') as HTMLButtonElement).disabled).toBe(true);
+      expect(document.activeElement).not.toBe(q('button.name'));
+
+      host.busy.set(false);
+      await stable();
+      await stable();
+
+      expect(document.activeElement).toBe(q('button.name'));
+    });
+
+    it('cambio colore: il focus torna sul trigger del picker quando busy finisce', async () => {
+      await setup();
+      (q<HTMLButtonElement>('app-color-picker button') as HTMLButtonElement).click();
+      await stable();
+      (q<HTMLButtonElement>('[aria-label="Blu"]') as HTMLButtonElement).click();
+      expect(document.activeElement).toBe(q('app-color-picker button'));
+      // Il browser toglie il focus a un controllo che si disabilita; jsdom no
+      // (e non sa togliere il focus a un elemento già disabilitato), quindi lo
+      // si toglie a mano prima di `busy`.
+      (document.activeElement as HTMLElement).blur();
+      host.busy.set(true);
+      await stable();
+      expect(document.activeElement).toBe(document.body);
+
+      host.busy.set(false);
+      await stable();
+      await stable();
+
+      expect(host.events).toEqual([['recolored', '#5572b8']]);
+      expect(document.activeElement).toBe(q('app-color-picker button'));
+    });
+
+    it('eliminazione fallita: alla chiusura della conferma il focus torna sul cestino', async () => {
+      await setup((h) => h.confirmingDelete.set(true));
+      (tile().querySelector('.confirm button.danger') as HTMLButtonElement).click();
+      host.deleting.set(true);
+      await stable();
+
+      host.deleting.set(false);
+      host.confirmingDelete.set(false);
+      await stable();
+
+      expect(document.activeElement).toBe(q('button.delete'));
+    });
+
+    it('la conferma che si chiude non ruba il focus finito altrove', async () => {
+      await setup((h) => h.confirmingDelete.set(true));
+      const outside = root().querySelector('.outside') as HTMLButtonElement;
+      outside.focus();
+
+      host.confirmingDelete.set(false);
+      await stable();
+
+      expect(document.activeElement).toBe(outside);
+    });
+
+    it('bozza: creazione fallita, finito busy il campo riprende il focus', async () => {
+      await setup((h) => h.category.set(null));
+      const input = field() as HTMLInputElement;
+      type(input, 'Palestra');
+      key(input, 'Enter');
+      // Come sopra: jsdom non toglie il focus al campo che si disabilita.
+      input.blur();
+      host.busy.set(true);
+      await stable();
+      expect(document.activeElement).toBe(document.body);
+
+      host.busy.set(false);
+      await stable();
+      await stable();
+
+      expect(field()?.value).toBe('Palestra');
+      expect(document.activeElement).toBe(field());
+    });
+  });
+
+  describe('pulsanti della bozza', () => {
+    const createButton = (): HTMLButtonElement =>
+      q<HTMLButtonElement>('button[aria-label="Crea categoria"]') as HTMLButtonElement;
+    const dismissButton = (): HTMLButtonElement =>
+      q<HTMLButtonElement>('button[aria-label="Annulla nuova categoria"]') as HTMLButtonElement;
+
+    it('solo nella bozza; ✓ disabilitato a nome vuoto, poi emette created', async () => {
+      await setup((h) => h.category.set(null));
+
+      expect(createButton().disabled).toBe(true);
+      type(field() as HTMLInputElement, ' Palestra ');
+      await stable();
+      expect(createButton().disabled).toBe(false);
+
+      createButton().click();
+      expect(host.events).toEqual([['created', { name: 'Palestra', color: '#9aa3af' }]]);
+    });
+
+    it('✕ emette draftDismissed anche con un nome scritto', async () => {
+      await setup((h) => h.category.set(null));
+      type(field() as HTMLInputElement, 'Palestra');
+      await stable();
+
+      dismissButton().click();
+
+      expect(host.events).toEqual([['draftDismissed']]);
+    });
+
+    it('il clic sui pulsanti della bozza non la chiude per focusout', async () => {
+      await setup((h) => h.category.set(null));
+      const input = field() as HTMLInputElement;
+
+      createButton().dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      focusOut(input, null);
+      focusOut(input, dismissButton());
+
+      expect(host.events).toEqual([]);
+    });
+
+    it('le categorie esistenti non hanno i pulsanti della bozza', async () => {
+      await setup();
+      await startEditing();
+
+      expect(q('.draft-action')).toBeNull();
+    });
+  });
+
+  it('lettori di schermo: lucchetto e conteggio hanno testo nascosto, non aria-label', async () => {
+    await setup((h) => h.locked.set(true));
+
+    expect(q('.lock-slot .sr-only')?.textContent?.trim()).toBe('Categoria protetta');
+    expect(q('.count .sr-only')?.textContent?.trim()).toBe('merchant');
+    expect(q('.count')?.hasAttribute('aria-label')).toBe(false);
   });
 });

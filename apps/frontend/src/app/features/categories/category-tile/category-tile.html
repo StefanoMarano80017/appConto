@@ -39,10 +39,31 @@
       (input)="onFieldInput($event)"
       (keydown)="onFieldKeydown($event)"
     />
+    @if (isDraft()) {
+      <button
+        type="button"
+        class="icon draft-action create"
+        aria-label="Crea categoria"
+        [disabled]="busy() || draftName().trim() === ''"
+        (click)="create()"
+      >
+        <svg aria-hidden="true" lucideCheck></svg>
+      </button>
+      <button
+        type="button"
+        class="icon draft-action dismiss"
+        aria-label="Annulla nuova categoria"
+        [disabled]="busy()"
+        (click)="dismissDraft()"
+      >
+        <svg aria-hidden="true" lucideX></svg>
+      </button>
+    }
   } @else if (current && locked()) {
     <span class="name" [title]="current.name"><span class="name-text">{{ current.name }}</span></span>
     <span class="lock-slot" title="Categoria protetta">
       <svg class="lock" aria-hidden="true" lucideLock></svg>
+      <span class="sr-only">Categoria protetta</span>
     </span>
   } @else if (current) {
     <button
@@ -66,9 +87,9 @@
   }
 
   @if (current) {
-    <span class="count" [attr.aria-label]="current.merchantCount + ' merchant'">{{
-      current.merchantCount
-    }}</span>
+    <span class="count"
+      >{{ current.merchantCount }}<span class="sr-only"> merchant</span></span
+    >
     @if (!locked() && !editing()) {
       <button
         type="button"
