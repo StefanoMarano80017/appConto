@@ -1,15 +1,6 @@
 <app-page-layout>
   <app-panel [noPadding]="true" [attr.aria-busy]="merchants.isLoading() || null">
     <app-panel-content>
-      <app-section-header
-        title="Merchant"
-        subtitle="Assegna una categoria: tutte le transazioni dell'esercente la ereditano."
-      >
-        <button panelActions type="button" (click)="merchants.reload()" [disabled]="merchants.isLoading()">
-          Aggiorna
-        </button>
-      </app-section-header>
-
       <div class="toolbar">
         <app-search-input
           class="search"

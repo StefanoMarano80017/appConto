@@ -2,7 +2,6 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '@shared/layout/panel/panel';
 import { PageLayout } from '@shared/layout/page-layout/page-layout';
-import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { EmptyState } from '@shared/ui/feedback/empty-state/empty-state';
 import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
 import { SearchInput } from '@shared/ui/forms/search-input/search-input';
@@ -28,8 +27,7 @@ const FALLBACK_CATEGORY_ID = 'c9bfcd74-e342-4a3f-8b0c-116f89236d51';
     PageLayout,
     Panel,
     SearchInput,
-    Select,
-    SectionHeader
+    Select
   ],
   templateUrl: './categories-page.html',
   styleUrl: './categories-page.scss'

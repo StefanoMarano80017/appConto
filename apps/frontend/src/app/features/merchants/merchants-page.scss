@@ -10,7 +10,7 @@ $row-leave-easing: cubic-bezier(0.4, 0, 0.2, 1);
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
-  margin: var(--space-8) 0 var(--space-6);
+  margin: 0 0 var(--space-6);
 }
 
 app-search-input.search {

@@ -17,7 +17,6 @@ import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '@shared/layout/panel/panel';
 import { PanelContentComponent } from '@shared/layout/panel/panel-content';
 import { PageLayout } from '@shared/layout/page-layout/page-layout';
-import { SectionHeader } from '@shared/layout/section-header/section-header';
 import { Amount } from '@shared/ui/data/amount/amount';
 import { Pagination } from '@shared/ui/data/pagination/pagination';
 import { SortableHeader } from '@shared/ui/data/sortable-header/sortable-header';
@@ -72,7 +71,6 @@ const COLUMNS: readonly { label: string; field: MerchantSortField; numeric: bool
     Panel,
     PanelContentComponent,
     SearchInput,
-    SectionHeader,
     Select,
     SortableHeader,
   ],
