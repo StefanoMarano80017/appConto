@@ -13,6 +13,9 @@ import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
 import { Dashboard } from './dashboard.model';
 import { dashboardRequest } from './dashboard.api';
 import { comparisonCaption, monthBounds, parseMonthParam, shiftMonth } from './dashboard-month';
+import { AttentionPanel, attentionHasContent } from './attention-panel';
+import { RecentTransactions } from './recent-transactions';
+import { TopCategories } from './top-categories';
 
 /**
  * Home dell'applicazione: il riepilogo essenziale di un mese.
@@ -29,12 +32,15 @@ import { comparisonCaption, monthBounds, parseMonthParam, shiftMonth } from './d
   selector: 'app-dashboard-page',
   imports: [
     Amount,
+    AttentionPanel,
     ErrorRetry,
     LucideChevronLeft,
     LucideChevronRight,
     PageLayout,
     Panel,
-    StatCardGrid
+    RecentTransactions,
+    StatCardGrid,
+    TopCategories
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss'
@@ -75,6 +81,20 @@ export class DashboardPage {
     const data = this.data();
 
     return data === undefined ? { from: '', to: '' } : monthBounds(data.month);
+  });
+
+  /**
+   * La colonna «Da sistemare» / «Prestiti» ha qualcosa da mostrare. Se no,
+   * le categorie prendono tutta la riga. Stessa regola del pannello, non una
+   * copia: una sola funzione decide per entrambi.
+   */
+  protected readonly hasAttention = computed(() => {
+    const data = this.data();
+
+    return (
+      data !== undefined &&
+      attentionHasContent(data.attention, data.loans, data.lastTransactionDate, data.today)
+    );
   });
 
   protected readonly error = computed(() => {

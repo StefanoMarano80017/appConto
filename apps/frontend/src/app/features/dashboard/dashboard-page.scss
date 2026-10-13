@@ -80,3 +80,31 @@ app-stat-card-grid {
   margin: 0;
   color: var(--color-text-muted);
 }
+
+/* Stessa attenuazione della testata: anche le sezioni sotto sono del mese precedente. */
+.sections.stale {
+  opacity: 0.6;
+}
+
+/*
+ * Categorie a sinistra, «Da sistemare» / «Prestiti» a destra; sotto i 900px
+ * una colonna sola, prima le categorie. Senza la colonna di destra le
+ * categorie prendono tutta la riga. Nessuno spazio fra le righe: i pannelli
+ * portano già il proprio margine sotto.
+ */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  column-gap: var(--space-5);
+}
+
+.columns.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 900px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

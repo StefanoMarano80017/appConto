@@ -1,0 +1,81 @@
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.all {
+  @include typography.text('body');
+
+  color: var(--color-primary);
+  text-decoration: none;
+  text-align: right;
+}
+
+.all:hover {
+  text-decoration: underline;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Data, etichetta, categoria, importo su una riga. Sotto i 600px la categoria
+ * scende sotto l'etichetta: quattro colonne in 390px schiaccerebbero il nome.
+ */
+li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 2fr) minmax(0, 1fr) auto;
+  grid-template-areas: 'date label category amount';
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) 0;
+}
+
+li + li {
+  border-top: 1px solid var(--color-row-divider);
+}
+
+.date {
+  grid-area: date;
+  @include typography.text('caption');
+
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.label {
+  grid-area: label;
+  overflow-wrap: anywhere;
+}
+
+.category {
+  grid-area: category;
+  @include typography.text('secondary');
+
+  overflow-wrap: anywhere;
+}
+
+/* `<app-amount>` porta già mono e tabular-nums: qui restano solo geometria e allineamento. */
+.amount {
+  grid-area: amount;
+  min-width: 6rem;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'date label amount'
+      '. category category';
+  }
+
+  .amount {
+    min-width: 0;
+  }
+}

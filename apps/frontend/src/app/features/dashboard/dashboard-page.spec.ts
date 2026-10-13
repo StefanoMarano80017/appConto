@@ -211,6 +211,34 @@ describe('DashboardPage', () => {
     expect(text()).toContain('agosto 2026');
   });
 
+  it('mostra categorie, attività da sistemare e ultimi movimenti del mese', async () => {
+    await open('/');
+    await flush();
+
+    expect(text()).toContain('Dove sono andati i soldi');
+    expect(text()).toContain('17 merchant da classificare');
+    expect(text()).toContain('Ultimi movimenti');
+    expect(element().querySelector('.columns')?.classList).not.toContain('single');
+
+    const category = element().querySelector('app-top-categories a.row')?.getAttribute('href') ?? '';
+    expect(category).toContain('from=2026-09-01');
+    expect(category).toContain('to=2026-09-30');
+  });
+
+  it('senza nulla da sistemare le categorie prendono tutta la riga', async () => {
+    await open('/');
+    await flush(
+      dashboard({
+        lastTransactionDate: '2026-10-10',
+        attention: { unclassifiedMerchants: 0 },
+        loans: { remaining: 0, openCount: 0, unlinkedTransactions: 3 }
+      })
+    );
+
+    expect(element().querySelector('app-attention-panel')).toBeNull();
+    expect(element().querySelector('.columns')?.classList).toContain('single');
+  });
+
   it('un errore si può riprovare', async () => {
     await open('/');
     http

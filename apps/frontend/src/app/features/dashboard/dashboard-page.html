@@ -46,7 +46,22 @@
       </div>
     </app-panel>
 
-    <!-- Task 4: «Dove sono andati i soldi», «Da sistemare» / «Prestiti», «Ultimi movimenti». -->
+    <div class="sections" [class.stale]="isReloading()">
+      <div class="columns" [class.single]="!hasAttention()">
+        <app-top-categories [categories]="data.topCategories" [range]="monthRange()" />
+
+        @if (hasAttention()) {
+          <app-attention-panel
+            [attention]="data.attention"
+            [loans]="data.loans"
+            [lastTransactionDate]="data.lastTransactionDate"
+            [today]="data.today"
+          />
+        }
+      </div>
+
+      <app-recent-transactions [transactions]="data.recentTransactions" />
+    </div>
   } @else if (error() === null) {
     <app-panel>
       <p class="message">Caricamento in corso…</p>
