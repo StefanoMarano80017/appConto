@@ -1,136 +1,83 @@
-@use '../../shared/styles/mixins';
 @use '../../shared/styles/typography';
 
-.message {
-  color: var(--color-text-muted);
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  margin: var(--space-8) 0 var(--space-6);
 }
 
-.create-form {
+app-search-input.search {
+  flex: 1;
+  min-width: 12rem;
+  max-width: 22rem;
+}
+
+.sort {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  margin: var(--space-8) 0 var(--space-6);
+  gap: var(--space-3);
 
-  input[type='text'] {
-    flex: 1;
-    max-width: 20rem;
-    padding: var(--space-3) var(--space-4);
-    border: var(--border-width) solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-    font: inherit;
+  .sort-label {
+    @include typography.text('secondary');
+    color: var(--color-text-muted);
   }
+}
 
-  app-color-picker {
-    width: 8rem;
-  }
+/* «+ Nuova categoria» sta a destra della barra. */
+.new {
+  margin-left: auto;
+  padding: var(--space-3) var(--space-5);
+  border: var(--border-width) solid var(--color-primary);
+  border-radius: var(--radius-control);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
 
-  button {
-    padding: var(--space-3) var(--space-5);
-    border: var(--border-width) solid var(--color-primary);
-    border-radius: var(--radius-control);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-  }
+/* L'errore dell'ultima azione: sta sopra la griglia, la tessera è già tornata al valore salvato. */
+.action-error {
+  margin: 0 0 var(--space-6);
+  color: var(--color-error);
 }
 
 /*
- * L'involucro condiviso delle tabelle (v. shared/styles/_mixins.scss).
- *
- * `overflow-x: auto` arriva da lì, ed è il punto: quattro colonne a 900px con
- * la barra laterale ancora presente lasciano poco più di 600px, e una tabella
- * che non ci sta deve scorrere dentro il proprio riquadro — mai spingere la
- * pagina.
+ * Il pannello di `app-color-picker` è `position: fixed`: sulla griglia (e sulle
+ * tessere) niente `opacity`, `transform`, `filter`, `contain` né
+ * `overflow: hidden`, che lo chiuderebbero sotto le tessere successive.
  */
-.scroller {
-  @include mixins.data-table;
-
-  margin-top: var(--space-6);
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-4);
 }
 
-.categories {
-  th,
-  td {
-    vertical-align: middle;
+/* Gli stati vuoti stanno al centro, sotto l'eventuale bozza. */
+.empty {
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+/* Lo skeleton del primo caricamento: stessi rettangoli della griglia. */
+.skeleton .line {
+  min-height: 2.75rem;
+  border-radius: var(--radius-input);
+  background: var(--color-background);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
   }
-
-  /* Il mixin allinea e non manda a capo; le cifre qui vogliono anche il monospaziato tabellare. */
-  .numeric {
-    font-variant-numeric: tabular-nums;
+  50% {
+    opacity: 0.45;
   }
+}
 
-  /*
-   * Le due celle modificabili in linea (rinomina, colore) restano a 4px
-   * invece dei 6px di `--radius-control`. Non è un letterale dimenticato:
-   * allinearlo al token cambierebbe l'aspetto di una modifica in linea che
-   * oggi funziona, cosa che questa migrazione non deve fare.
-   *
-   * Una precisazione che vale la pena scrivere, perché il piano l'ha data per
-   * scontata: `frontend-shared-components-proposal.md` §8 inventaria questa
-   * divergenza per `merchants-page` e `transactions-table`, **non** per questa
-   * pagina, che pure ce l'ha. La decisione della specifica — «resta un
-   * letterale locale, invariato» — si applica qui per coerenza fra le tre celle
-   * modificabili in linea dell'app, non perché il documento la nomini.
-   *
-   * Non si usa `--radius-badge`, che pure vale 4px: un token che si chiama
-   * «badge» su un controllo di modulo direbbe al prossimo lettore una cosa
-   * falsa sul perché quel valore è quello.
-   *
-   * Il marcatore `ds-exception` sulle due righe le dichiara al gate del design
-   * system, che le stampa a ogni esecuzione invece di contarle come
-   * fallimenti. Senza, «zero» resterebbe irraggiungibile su questo file per
-   * sempre.
-   */
-  .name input.rename {
-    font: inherit;
-    width: 100%;
-    padding: var(--space-2) var(--space-3);
-    border: var(--border-width) solid transparent;
-    border-radius: 4px; // ds-exception: §8, cella modificabile in linea
-    background: transparent;
-    color: var(--color-text-primary);
-  }
-
-  .name input.rename:hover:not(:disabled),
-  .name input.rename:focus {
-    border-color: var(--color-border);
-    background: var(--color-surface);
-  }
-
-  // Non sulla cella del colore: l'opacità renderebbe semitrasparente anche il
-  // pannello del color picker aperto (e lo chiuderebbe in uno stacking context
-  // sotto le righe successive). Il trigger disabilitato si attenua da sé.
-  tr.saving > td:not(.color) {
-    opacity: 0.6;
-  }
-
-  .actions {
-    white-space: nowrap;
-    text-align: right;
-
-    .ask {
-      margin-right: var(--space-4);
-      @include typography.text('caption');
-    }
-
-    button {
-      padding: var(--space-2) var(--space-4);
-      border-radius: var(--radius-control);
-      @include typography.text('secondary');
-      margin-left: var(--space-3);
-    }
-
-    button.danger {
-      border: var(--border-width) solid var(--color-error);
-      background: transparent;
-      color: var(--color-error);
-    }
-
-    button.ghost {
-      border: var(--border-width) solid var(--color-border);
-      background: transparent;
-      color: var(--color-text-muted);
-    }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton .line {
+    animation: none;
   }
 }

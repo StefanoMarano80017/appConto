@@ -7,116 +7,90 @@
       <button panelActions type="button" (click)="load()" [disabled]="loading()">Aggiorna</button>
     </app-section-header>
 
-    @if (error(); as message) {
-      <p class="message message--error">{{ message }}</p>
-    }
-
-    <form class="create-form" (submit)="create($event)">
-      <input
-        type="text"
-        name="newName"
-        placeholder="Nome nuova categoria"
-        [value]="newName()"
-        (input)="newName.set($any($event.target).value)"
-        [disabled]="creating()"
+    <div class="toolbar">
+      <app-search-input
+        class="search"
+        [value]="search()"
+        placeholder="Cerca categoria…"
+        (valueChange)="search.set($event)"
       />
-      <app-color-picker
-        appearance="field"
-        ariaLabel="Colore nuova categoria"
-        [(value)]="newColor"
-        [disabled]="creating()"
-      />
-      <button type="submit" [disabled]="creating() || newName().trim() === ''">
-        {{ creating() ? 'Creazione…' : 'Aggiungi categoria' }}
-      </button>
-    </form>
 
-    @if (createError(); as message) {
-      <p class="message message--error">{{ message }}</p>
-    }
-
-    @if (loading()) {
-      <p class="message">Caricamento in corso…</p>
-    } @else if (categories().length === 0) {
-      <p class="message">Nessuna categoria.</p>
-    } @else {
-      <div class="scroller">
-        <table class="categories">
-          <thead>
-            <tr>
-              <th scope="col">Nome</th>
-              <th scope="col">Colore</th>
-              <th scope="col" class="numeric">Merchant assegnati</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (category of categories(); track category.id) {
-              <tr [class.saving]="savingId() === category.id">
-                <td class="name">
-                  @if (isProtected(category.id)) {
-                    {{ category.name }}
-                  } @else {
-                    <input
-                      type="text"
-                      class="rename"
-                      [value]="category.name"
-                      [disabled]="savingId() === category.id"
-                      [attr.aria-label]="'Nome di ' + category.name"
-                      (change)="rename(category, $any($event.target).value)"
-                    />
-                  }
-                </td>
-                <td class="color">
-                  <app-color-picker
-                    appearance="inline"
-                    [value]="category.color ?? '#9aa3af'"
-                    [disabled]="savingId() === category.id"
-                    [ariaLabel]="'Colore di ' + category.name"
-                    (valueCommitted)="recolor(category, $event)"
-                  />
-                </td>
-                <td class="numeric">{{ category.merchantCount }}</td>
-                <td class="actions">
-                  @if (!isProtected(category.id)) {
-                    @if (confirmingDeleteId() === category.id) {
-                      <span class="ask">
-                        {{ category.merchantCount }}
-                        {{
-                          category.merchantCount === 1
-                            ? 'merchant verrà spostato'
-                            : 'merchant verranno spostati'
-                        }}
-                        su «Da classificare». Eliminare?
-                      </span>
-                      <button
-                        type="button"
-                        class="danger confirm-delete"
-                        [disabled]="deleting()"
-                        (click)="deleteCategory(category)"
-                      >
-                        {{ deleting() ? 'Eliminazione…' : 'Sì, elimina' }}
-                      </button>
-                      <button
-                        type="button"
-                        class="ghost"
-                        [disabled]="deleting()"
-                        (click)="cancelDelete()"
-                      >
-                        Annulla
-                      </button>
-                    } @else {
-                      <button type="button" class="danger" (click)="askDelete(category.id)">
-                        Elimina
-                      </button>
-                    }
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <div class="sort">
+        <span class="sort-label">Ordina</span>
+        <app-select
+          [options]="sortOptions"
+          [value]="sort()"
+          ariaLabel="Ordina"
+          (valueChange)="sort.set($event ?? 'name-asc')"
+        />
       </div>
+
+      <button
+        type="button"
+        class="new"
+        [disabled]="drafting() || creating()"
+        (click)="openDraft()"
+      >
+        + Nuova categoria
+      </button>
+    </div>
+
+    @if (actionError(); as message) {
+      <p class="action-error" role="alert">{{ message }}</p>
+    }
+
+    @if (loading() && categories().length === 0) {
+      <div class="grid skeleton" aria-hidden="true">
+        @for (tile of skeletonTiles; track $index) {
+          <span class="line"></span>
+        }
+      </div>
+    } @else if (loadError(); as message) {
+      <app-error-retry [message]="message" (retry)="load()" />
+    } @else {
+      <div class="grid">
+        @if (drafting()) {
+          <app-category-tile
+            [category]="null"
+            [busy]="creating()"
+            (created)="create($event)"
+            (draftDismissed)="drafting.set(false)"
+          />
+        }
+
+        @for (category of visible(); track category.id) {
+          <app-category-tile
+            [category]="category"
+            [locked]="isProtected(category.id)"
+            [busy]="savingIds().has(category.id)"
+            [confirmingDelete]="confirmingDeleteId() === category.id"
+            [deleting]="deleting() && confirmingDeleteId() === category.id"
+            (renamed)="rename(category, $event)"
+            (recolored)="recolor(category, $event)"
+            (deleteAsked)="askDelete(category.id)"
+            (deleteCancelled)="cancelDelete()"
+            (deleteConfirmed)="deleteCategory(category)"
+          />
+        }
+      </div>
+
+      @if (visible().length === 0) {
+        <div class="empty">
+          @if (categories().length === 0) {
+            <app-empty-state
+              message="Nessuna categoria."
+              actionLabel="Crea la prima categoria"
+              (action)="openDraft()"
+            />
+          } @else {
+            <app-empty-state
+              message="Nessuna categoria corrisponde alla ricerca."
+              actionLabel="Azzera ricerca"
+              (action)="resetSearch()"
+            />
+          }
+        </div>
+      }
     }
   </app-panel>
 </app-page-layout>
