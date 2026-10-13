@@ -67,10 +67,16 @@ li + li {
   font-variant-numeric: tabular-nums;
 }
 
-/* Un importo anche questo: stessa famiglia mono delle cifre accanto, in taglia secondaria. */
+/*
+ * Un importo anche questo: stessa famiglia mono delle cifre accanto, in taglia
+ * secondaria. Larghezza minima come le altre cifre, perché gli importi restino
+ * in colonna anche quando le variazioni hanno lunghezze diverse.
+ */
 .change {
   @include typography.text('caption');
 
+  min-width: 6rem;
+  text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
