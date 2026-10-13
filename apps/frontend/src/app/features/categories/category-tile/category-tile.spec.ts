@@ -95,6 +95,21 @@ describe('CategoryTile', () => {
     expect(field()).toBeNull();
   });
 
+  it('il focusout emesso dal pulsante del nome mentre viene sostituito dal campo non annulla la modifica', async () => {
+    await setup();
+
+    const name = q<HTMLButtonElement>('button.name') as HTMLButtonElement;
+    name.click();
+    // Chromium/Edge emettono un `focusout` con `relatedTarget` null sul pulsante
+    // focalizzato che sta per essere rimosso: arriva a modifica già attiva.
+    name.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    await stable();
+
+    expect(field()).not.toBeNull();
+    expect(tile().classList).toContain('editing');
+    expect(host.events).toEqual([]);
+  });
+
   it('clic sul nome apre il campo col nome selezionato e il focus', async () => {
     await setup();
 

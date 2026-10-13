@@ -245,6 +245,12 @@ export class CategoryTile implements OnInit {
     if (!this.editing()) {
       return;
     }
+    // Il pulsante del nome che il clic ha appena sostituito col campo: i browser
+    // basati su Chromium emettono su di esso un `focusout` con `relatedTarget`
+    // null mentre lo rimuovono, a modifica già attiva. Non è un'uscita dal campo.
+    if (event.target instanceof Element && event.target.matches('button.name')) {
+      return;
+    }
     const next = event.relatedTarget;
     if (next instanceof Node && this.host.contains(next)) {
       return;
