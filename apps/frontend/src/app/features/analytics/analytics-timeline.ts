@@ -11,18 +11,18 @@ import {
 } from '@angular/core';
 import { formatBookingDate } from '../../core/format';
 import { DateRange } from '../../core/period';
-import { Panel } from '../../shared/layout/panel';
-import { PanelFooter } from '../../shared/layout/panel-footer';
-import { SectionHeader } from '../../shared/layout/section-header';
-import { Amount } from '../../shared/ui/amount';
-import { ChartTooltip } from '../../shared/ui/chart/chart-tooltip';
-import { LineChart } from '../../shared/ui/chart/line-chart';
+import { Panel } from '@shared/layout/panel';
+import { PanelFooter } from '@shared/layout/panel-footer';
+import { SectionHeader } from '@shared/layout/section-header';
+import { Amount } from '@shared/ui/amount';
+import { ChartTooltip } from '@shared/ui/chart/chart-tooltip';
+import { LineChart } from '@shared/ui/chart/line-chart';
 import {
   chartColorVar,
   type LinePointMarker,
   type LineSeries,
-} from '../../shared/ui/chart/line-chart.model';
-import { ChoiceGroup, type ChoiceOption } from '../../shared/ui/choice-group';
+} from '@shared/ui/chart/line-chart.model';
+import { ChoiceGroup, type ChoiceOption } from '@shared/ui/choice-group';
 import { Timeline, TimelineBucket, TimelineGranularity } from './analytics.model';
 import { cumulativeNet, type CumulativePoint } from './timeline-cumulative';
 

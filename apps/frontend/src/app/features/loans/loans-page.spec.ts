@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../../core/api';
 import { EMPTY_LOAN_QUERY } from './loan-query';
 import { LoanList, LoanSummary } from './loan.model';
 import { LoansPage } from './loans-page';
-import { selectTrigger } from '../../shared/ui/select.testing';
+import { selectTrigger } from '@shared/ui/select.testing';
 
 const loan = (overrides: Partial<LoanSummary> = {}): LoanSummary => ({
   id: 'l-1',

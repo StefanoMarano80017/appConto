@@ -1,12 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { formatAmount, formatBookingDate } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
-import { Panel } from '../../shared/layout/panel';
-import { PanelContentComponent } from '../../shared/layout/panel-content';
-import { PageLayout } from '../../shared/layout/page-layout';
-import { SectionHeader } from '../../shared/layout/section-header';
-import { SearchInput } from '../../shared/ui/search-input';
-import { Select } from '../../shared/ui/select';
+import { Panel } from '@shared/layout/panel';
+import { PanelContentComponent } from '@shared/layout/panel-content';
+import { PageLayout } from '@shared/layout/page-layout';
+import { SectionHeader } from '@shared/layout/section-header';
+import { SearchInput } from '@shared/ui/search-input';
+import { Select } from '@shared/ui/select';
 import { CategoriesApi } from '../categories/categories.api';
 import { Category } from '../categories/category.model';
 import { MerchantFilter, filterMerchants } from './merchant-filter';

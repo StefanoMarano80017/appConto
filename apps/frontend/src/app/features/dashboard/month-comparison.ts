@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { formatAmount, formatMonth, signedPercent, typographicMinus } from '../../core/format';
-import { Panel } from '../../shared/layout/panel';
-import { Amount } from '../../shared/ui/amount';
+import { Panel } from '@shared/layout/panel';
+import { Amount } from '@shared/ui/amount';
 import { MonthComparison } from './dashboard.model';
 
 @Component({

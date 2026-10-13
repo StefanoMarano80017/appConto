@@ -1,11 +1,11 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
-import { Panel } from '../../shared/layout/panel';
-import { PageLayout } from '../../shared/layout/page-layout';
-import { FilterChips } from '../../shared/ui/filter-chips';
-import { Select } from '../../shared/ui/select';
-import { StatCardDelta, StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
+import { Panel } from '@shared/layout/panel';
+import { PageLayout } from '@shared/layout/page-layout';
+import { FilterChips } from '@shared/ui/filter-chips';
+import { Select } from '@shared/ui/select';
+import { StatCardDelta, StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid';
 import { CashFlowCard } from '../cash-flow/cash-flow-card';
 import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
 import {

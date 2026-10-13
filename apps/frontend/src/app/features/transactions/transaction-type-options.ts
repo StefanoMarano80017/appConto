@@ -7,7 +7,7 @@ import {
   LucideTrendingUp,
   type LucideIconData,
 } from '@lucide/angular';
-import type { SelectOption } from '../../shared/ui/select.model';
+import type { SelectOption } from '@shared/ui/select.model';
 import { TRANSACTION_TYPES, TRANSACTION_TYPE_LABELS, TransactionType } from './transaction-type';
 
 /** L'icona di ogni tipo: il verso del denaro, prima ancora di leggere l'etichetta. */

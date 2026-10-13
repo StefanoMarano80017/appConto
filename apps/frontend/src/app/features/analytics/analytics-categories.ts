@@ -11,12 +11,12 @@ import {
 } from '@angular/core';
 import { LucideChartPie, LucideList } from '@lucide/angular';
 import { formatPercent } from '../../core/format';
-import { Panel } from '../../shared/layout/panel';
-import { SectionHeader } from '../../shared/layout/section-header';
-import { Amount } from '../../shared/ui/amount';
-import { DoughnutCenter, DoughnutChart, groupedSliceLabel } from '../../shared/ui/chart/doughnut-chart';
-import type { DoughnutSlice, SliceColor } from '../../shared/ui/chart/doughnut-chart.model';
-import { ChoiceGroup, ChoiceOption } from '../../shared/ui/choice-group';
+import { Panel } from '@shared/layout/panel';
+import { SectionHeader } from '@shared/layout/section-header';
+import { Amount } from '@shared/ui/amount';
+import { DoughnutCenter, DoughnutChart, groupedSliceLabel } from '@shared/ui/chart/doughnut-chart';
+import type { DoughnutSlice, SliceColor } from '@shared/ui/chart/doughnut-chart.model';
+import { ChoiceGroup, ChoiceOption } from '@shared/ui/choice-group';
 import { CategoryDistribution } from './analytics.model';
 
 type CategoriesView = 'chart' | 'list';

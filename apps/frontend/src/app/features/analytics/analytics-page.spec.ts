@@ -13,7 +13,7 @@ import { AnalyticsTimeline } from './analytics-timeline';
 import { AnalyticsPage } from './analytics-page';
 import { AnalyticsCategories } from './analytics-categories';
 import { Analytics, TimelineBucket } from './analytics.model';
-import { LineChart } from '../../shared/ui/chart/line-chart';
+import { LineChart } from '@shared/ui/chart/line-chart';
 import { AnalyticsStore } from './analytics.store';
 
 /** Sta al posto dell'esplorazione: qui interessa solo dove porta il collegamento. */

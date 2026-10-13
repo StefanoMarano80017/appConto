@@ -1,6 +1,6 @@
 import { ParamMap, Params } from '@angular/router';
 import { DateRange } from '../../core/period';
-import { TRANSACTIONS_PAGE_SIZES } from '../../shared/ui/transactions-pagination.model';
+import { TRANSACTIONS_PAGE_SIZES } from '@shared/ui/transactions-pagination.model';
 import { TRANSACTION_TYPES, TransactionType } from './transaction-type';
 
 /**

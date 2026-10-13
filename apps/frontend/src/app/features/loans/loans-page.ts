@@ -16,16 +16,16 @@ import {
 } from './loan-query';
 import { LOAN_STATUS_LABELS, LoanList } from './loan.model';
 import { loansRequest } from './loans.api';
-import { Panel } from '../../shared/layout/panel';
-import { PageLayout } from '../../shared/layout/page-layout';
-import { Amount } from '../../shared/ui/amount';
-import { Badge } from '../../shared/ui/badge';
-import { EmptyState } from '../../shared/ui/empty-state';
-import { ErrorRetry } from '../../shared/ui/error-retry';
-import { SearchInput } from '../../shared/ui/search-input';
-import { Select } from '../../shared/ui/select';
-import type { SelectOption } from '../../shared/ui/select.model';
-import { StatCardGrid, StatCardItem } from '../../shared/layout/stat-card-grid';
+import { Panel } from '@shared/layout/panel';
+import { PageLayout } from '@shared/layout/page-layout';
+import { Amount } from '@shared/ui/amount';
+import { Badge } from '@shared/ui/badge';
+import { EmptyState } from '@shared/ui/empty-state';
+import { ErrorRetry } from '@shared/ui/error-retry';
+import { SearchInput } from '@shared/ui/search-input';
+import { Select } from '@shared/ui/select';
+import type { SelectOption } from '@shared/ui/select.model';
+import { StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid';
 import {
   LucideArrowUp,
   LucideArrowDown,
