@@ -79,7 +79,7 @@ describe('CategoryTile', () => {
     await stable();
   }
 
-  it('mostra colore, nome, matita e numero di merchant', async () => {
+  it('mostra colore, nome e numero di merchant, senza matita', async () => {
     await setup();
 
     const picker = q('app-color-picker .color-picker-trigger') as HTMLElement;
@@ -88,7 +88,8 @@ describe('CategoryTile', () => {
     expect(name.textContent?.trim()).toBe('Spesa');
     expect(name.getAttribute('title')).toBe('Spesa');
     expect(name.querySelector('span')).not.toBeNull();
-    expect(q('button.edit svg')).not.toBeNull();
+    expect(name.getAttribute('aria-label')).toBe('Rinomina Spesa');
+    expect(q('button.edit')).toBeNull();
     expect(q('.count')?.textContent?.trim()).toBe('3 merchant');
     expect(q('button.delete')?.getAttribute('aria-label')).toBe('Elimina Spesa');
     expect(field()).toBeNull();
@@ -105,18 +106,8 @@ describe('CategoryTile', () => {
     expect(document.activeElement).toBe(input);
     expect(input.selectionStart).toBe(0);
     expect(input.selectionEnd).toBe('Spesa'.length);
-    expect(q('button.edit')).toBeNull();
     expect(q('button.delete')).toBeNull();
     expect(tile().classList).toContain('editing');
-  });
-
-  it('anche la matita apre il campo', async () => {
-    await setup();
-
-    (q<HTMLButtonElement>('button.edit') as HTMLButtonElement).click();
-    await stable();
-
-    expect(field()?.value).toBe('Spesa');
   });
 
   it('Invio emette il nome ripulito dagli spazi', async () => {
@@ -189,14 +180,13 @@ describe('CategoryTile', () => {
     expect(field()?.value).toBe('Supermercato');
   });
 
-  it('categoria bloccata: lucchetto, niente matita né cestino, nome non modificabile', async () => {
+  it('categoria bloccata: lucchetto, niente cestino, nome non modificabile', async () => {
     await setup((h) => {
       h.category.set({ ...SPESA, name: 'Da classificare' });
       h.locked.set(true);
     });
 
     expect(q('svg.lock')).not.toBeNull();
-    expect(q('button.edit')).toBeNull();
     expect(q('button.delete')).toBeNull();
     expect(q('button.name')).toBeNull();
     const name = q('.name') as HTMLElement;
@@ -387,7 +377,7 @@ describe('CategoryTile', () => {
     await setup((h) => h.busy.set(true));
 
     const buttons = Array.from(tile().querySelectorAll<HTMLButtonElement>('button'));
-    expect(buttons.length).toBeGreaterThanOrEqual(4);
+    expect(buttons.length).toBeGreaterThanOrEqual(3);
     expect(buttons.every((button) => button.disabled)).toBe(true);
     expect(tile().classList).toContain('busy');
   });

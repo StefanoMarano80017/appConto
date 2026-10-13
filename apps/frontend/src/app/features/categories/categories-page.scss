@@ -48,8 +48,21 @@ app-search-input.search {
  */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
-  gap: var(--space-4);
+  /*
+   * Al massimo tre colonne, anche su schermi larghi: tessere più ampie si
+   * leggono meglio. Sotto i 18rem per tessera le colonne calano fino a una.
+   */
+  --grid-max-columns: 3;
+  --grid-gap: var(--space-4);
+
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(
+      max(18rem, calc((100% - (var(--grid-max-columns) - 1) * var(--grid-gap)) / var(--grid-max-columns))),
+      1fr
+    )
+  );
+  gap: var(--grid-gap);
 }
 
 /* Gli stati vuoti stanno al centro, sotto l'eventuale bozza. */

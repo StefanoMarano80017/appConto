@@ -10,8 +10,8 @@ L'utente ha scelto, fra tre mockup (griglia di tessere, elenco + pannello di mod
 
 ## Obiettivi
 
-- Ogni categoria è una **tessera** bassa: quadratino colore, nome, icona matita, numero di merchant. Le tessere stanno in una **griglia responsiva**: 3–4 colonne su desktop, una su schermi stretti. Con le 24 categorie del seed la pagina si vede quasi tutta senza scroll.
-- **Rinomina inline esplicita**: clic sul nome o sulla matita → la tessera diventa un campo con bordo e anello di focus evidenti.
+- Ogni categoria è una **tessera** bassa: quadratino colore, nome, numero di merchant. Le tessere stanno in una **griglia responsiva**: al massimo 3 colonne su desktop (decisione dell’utente dopo la prima versione, per leggibilità), una su schermi stretti. Con le 24 categorie del seed la pagina si vede quasi tutta senza scroll.
+- **Rinomina inline esplicita**: clic sul nome → la tessera diventa un campo con bordo e anello di focus evidenti.
 - **Colore** dal quadratino, con `app-color-picker` (`appearance="inline"`).
 - **Ricerca** e **ordinamento** nella toolbar.
 - **Creazione** da un pulsante «+ Nuova categoria» nella toolbar, al posto del form sempre visibile in cima.
@@ -33,7 +33,7 @@ L'utente ha scelto, fra tre mockup (griglia di tessere, elenco + pannello di mod
 
 ## Anti-obiettivi
 
-- Che il nome non sembri modificabile: la matita è **sempre visibile** (non solo al passaggio del mouse) sulle categorie rinominabili.
+- Che il nome non sembri modificabile: il nome è un pulsante con sfondo al passaggio del mouse e cursore testo. *(La matita della prima versione è stata tolta su richiesta dell’utente: l’unica modifica è il nome, già cliccabile.)*
 - Salvare un nome per errore: si salva solo con Invio o uscendo dal campo con un valore cambiato e non vuoto; Esc annulla sempre.
 - Una tessera che cambia altezza o fa saltare la griglia entrando in modifica o in conferma di eliminazione oltre lo stretto necessario.
 - Colori, spaziature, raggi o font letterali: `npm run gate` deve passare senza nuovi `ds-exception`. La regola speciale del raggio da 4px della vecchia cella di rinomina sparisce insieme alla tabella.
@@ -52,28 +52,28 @@ app-page-layout
   └ griglia di tessere | skeleton | stato vuoto | app-error-retry
 ```
 
-- Griglia: `grid-template-columns: repeat(auto-fill, minmax(<≈14rem>, 1fr))` con gap piccolo (token `--space-3`/`--space-4`). La larghezza minima esatta è lasciata al builder, purché a 1280px di viewport con la sidebar si vedano almeno 3 colonne.
+- Griglia: `repeat(auto-fill, minmax(max(18rem, (100% - 2 gap) / 3), 1fr))`, gap `--space-4`: al massimo 3 colonne, meno sotto i 18rem per tessera, una su schermi stretti.
 - Toolbar come in `merchants-page.scss` (`.toolbar`): flex, a capo su schermi stretti.
 
 ### La tessera
 
-Da sinistra a destra: quadratino colore · nome (troncato con ellissi, `title` col nome completo) · matita (o lucchetto) · numero di merchant (cifre tabellari, colore muted) · pulsante cestino.
+Da sinistra a destra: quadratino colore · nome (troncato con ellissi, `title` col nome completo) · lucchetto (solo per la categoria protetta) · numero di merchant (cifre tabellari, colore muted) · pulsante cestino.
 
 Stile: sfondo `--color-surface`, bordo `--color-border`, raggio `--radius-input`, hover `--color-surface-elevated`. Altezza costante a riposo.
 
 | Stato | Aspetto |
 |---|---|
 | riposo | come sopra |
-| in modifica del nome | il nome diventa un `<input>`, bordo `--color-primary` e anello `--color-focus-ring` (mixin `form-control-focus`); matita e cestino nascosti |
+| in modifica del nome | il nome diventa un `<input>`, bordo `--color-primary` e anello `--color-focus-ring` (mixin `form-control-focus`); cestino nascosto |
 | salvataggio in corso | tessera attenuata (opacità 0,6, *non* sul color picker aperto: vedi il commento esistente in `categories-page.scss`), controlli disabilitati |
 | conferma eliminazione | il contenuto della tessera è sostituito da: «N merchant verranno spostati su «Da classificare». Eliminare?» + [Sì, elimina] [Annulla]. La tessera può crescere in altezza solo qui |
-| protetta («Da classificare») | lucchetto al posto della matita, nome non cliccabile, nessun cestino; il colore resta modificabile (come oggi) |
+| protetta («Da classificare») | lucchetto, nome non cliccabile, nessun cestino; il colore resta modificabile (come oggi) |
 
 `aria-label` coerenti con l'attuale pagina: «Nome di X», «Colore di X», «Azioni per X».
 
 ### Rinomina
 
-- Si entra in modifica con un clic sul nome o sulla matita (entrambi sono `<button>` per la tastiera); il campo prende il focus con il testo selezionato.
+- Si entra in modifica con un clic sul nome (è un `<button>`, raggiungibile da tastiera, `aria-label` «Rinomina X»); il campo prende il focus con il testo selezionato.
 - **Invio** o **blur** con valore cambiato e non vuoto (dopo `trim`) → `PATCH { name }`. Valore vuoto o invariato → esce dalla modifica senza salvare.
 - **Esc** → esce senza salvare, ripristinando il nome.
 - Una sola tessera in modifica alla volta: aprirne un'altra chiude (con salvataggio, se cambiato) la precedente tramite il blur *(scelta di Claude)*.

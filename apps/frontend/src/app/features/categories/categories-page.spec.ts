@@ -290,7 +290,6 @@ describe('CategoriesPage', () => {
     const tile = tiles(fixture)[0];
     expect(tile.querySelector('button.delete')).toBeNull();
     expect(tile.querySelector('button.name')).toBeNull();
-    expect(tile.querySelector('button.edit')).toBeNull();
     expect(tile.querySelector('app-color-picker')).not.toBeNull();
   });
 

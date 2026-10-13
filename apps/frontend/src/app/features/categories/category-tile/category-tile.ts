@@ -13,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LucideCheck, LucideLock, LucidePencil, LucideTrash2, LucideX } from '@lucide/angular';
+import { LucideCheck, LucideLock, LucideTrash2, LucideX } from '@lucide/angular';
 import { ColorPicker } from '@shared/ui/forms/color-picker/color-picker';
 import { CategoryWithUsage } from '../category.model';
 
@@ -39,7 +39,7 @@ type FocusTarget = keyof typeof FOCUS_TARGETS;
  */
 @Component({
   selector: 'app-category-tile',
-  imports: [ColorPicker, LucideCheck, LucideLock, LucidePencil, LucideTrash2, LucideX],
+  imports: [ColorPicker, LucideCheck, LucideLock, LucideTrash2, LucideX],
   templateUrl: './category-tile.html',
   styleUrl: './category-tile.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

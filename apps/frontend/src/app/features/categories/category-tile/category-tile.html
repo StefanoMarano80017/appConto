@@ -70,19 +70,11 @@
       type="button"
       class="name"
       [title]="current.name"
-      [disabled]="busy()"
-      (click)="startEditing()"
-    >
-      <span class="name-text">{{ current.name }}</span>
-    </button>
-    <button
-      type="button"
-      class="icon edit"
       [attr.aria-label]="'Rinomina ' + current.name"
       [disabled]="busy()"
       (click)="startEditing()"
     >
-      <svg aria-hidden="true" lucidePencil></svg>
+      <span class="name-text">{{ current.name }}</span>
     </button>
   }
 
