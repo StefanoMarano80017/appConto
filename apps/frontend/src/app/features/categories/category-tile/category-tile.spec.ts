@@ -344,6 +344,28 @@ describe('CategoryTile', () => {
     expect(field()).not.toBeNull();
   });
 
+  it('bozza: pointerdown sul padding della tessera e focusout senza relatedTarget la chiude', async () => {
+    await setup((h) => h.category.set(null));
+
+    tile().dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    focusOut(field() as HTMLInputElement, null);
+
+    expect(host.events).toEqual([['draftDismissed']]);
+  });
+
+  it('rinomina: pointerdown sul padding della tessera e focusout senza relatedTarget salva', async () => {
+    await setup();
+    const input = await startEditing();
+    type(input, 'Supermercato');
+
+    tile().dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    focusOut(input, null);
+    await stable();
+
+    expect(host.events).toEqual([['renamed', 'Supermercato']]);
+    expect(field()).toBeNull();
+  });
+
   it("bozza: focusout senza relatedTarget e senza pointerdown interno la chiude", async () => {
     await setup((h) => h.category.set(null));
 

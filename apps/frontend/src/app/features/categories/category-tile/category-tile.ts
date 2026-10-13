@@ -40,7 +40,7 @@ const DEFAULT_COLOR = '#9aa3af';
     '[class.confirming]': 'confirming()',
     '(keydown)': 'onKeydown($event)',
     '(focusout)': 'onFocusout($event)',
-    '(pointerdown)': 'onPointerdown()',
+    '(pointerdown)': 'onPointerdown($event)',
   },
 })
 export class CategoryTile implements OnInit {
@@ -83,7 +83,7 @@ export class CategoryTile implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
 
-  /** Vero fra un `pointerdown` dentro la tessera e la fine di quel task. */
+  /** Vero fra un `pointerdown` sul color picker della tessera e la fine di quel task. */
   private pointerInside = false;
   /** Vero dopo un annullo: alla chiusura della conferma il focus torna sul cestino. */
   private restoreFocusToTrash = false;
@@ -99,6 +99,10 @@ export class CategoryTile implements OnInit {
         return;
       }
       this.wasConfirming = confirming;
+      if (confirming) {
+        // Un annullo precedente non deve rubare il focus a una chiusura futura.
+        this.restoreFocusToTrash = false;
+      }
       afterNextRender(
         () => {
           if (confirming) {
@@ -189,10 +193,16 @@ export class CategoryTile implements OnInit {
   /**
    * Safari non dà il focus ai bottoni al clic: premere il trigger del color
    * picker toglie il focus al campo con `relatedTarget` null, come un'uscita.
-   * Si ricorda il `pointerdown` interno fino alla fine del task, che comprende
+   * Si ricorda il `pointerdown` sul picker fino alla fine del task, che comprende
    * lo spostamento del focus, per non scambiarlo per un'uscita.
    */
-  protected onPointerdown(): void {
+  protected onPointerdown(event: PointerEvent): void {
+    // Solo il color picker: un clic su una parte non focalizzabile della
+    // tessera (padding, spazio intorno al quadratino) toglie davvero il focus
+    // al campo, e quell'uscita deve chiudere la modifica come sempre.
+    if (!(event.target instanceof Element) || !event.target.closest('app-color-picker')) {
+      return;
+    }
     this.pointerInside = true;
     setTimeout(() => (this.pointerInside = false));
   }
