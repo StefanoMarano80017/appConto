@@ -1,10 +1,8 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { formatBookingDate } from '../../core/format';
 import { TransactionType } from '../transactions/transaction-type';
 import { ClassificationFilter, TimelineGranularity } from './analytics.model';
 import {
   DateRange,
-  PERIOD_PRESET_LABELS,
   PeriodPreset,
   resolvePeriod
 } from '../../core/period';
@@ -72,21 +70,6 @@ export class AnalyticsStore {
     return (
       types.length + categoryIds.length + merchantIds.length > 0 || classification !== 'all'
     );
-  });
-
-  readonly selectedPeriodLabel = computed(() => {
-    const { from, to } = this.rangeState();
-    if (this.presetState() !== 'custom') {
-      return PERIOD_PRESET_LABELS[this.presetState()];
-    }
-    if (from === null && to === null) {
-      return PERIOD_PRESET_LABELS.all;
-    }
-
-    const start = from === null ? 'inizio' : formatBookingDate(from);
-    const end = to === null ? 'oggi' : formatBookingDate(to);
-
-    return `${start} → ${end}`;
   });
 
   selectPreset(preset: PeriodPreset): void {

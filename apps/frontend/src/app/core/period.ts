@@ -25,9 +25,8 @@ export interface DateRange {
 /**
  * `shortLabel` alimenta i segmenti di `ChoiceGroup`, dove sette etichette per
  * intero non ci starebbero in una colonna da 260px utili senza andare a capo
- * su più righe di quante ne valga la pena. `label` resta la forma per esteso:
- * `selectedPeriodLabel()` (analytics.store.ts) e ogni altro punto che oggi la
- * legge continuano a dire "Questo mese", non "1M".
+ * su più righe di quante ne valga la pena. `label` resta la forma per esteso,
+ * "Questo mese" e non "1M", per chi la legge.
  */
 export const PERIOD_PRESETS: readonly { id: PeriodPreset; label: string; shortLabel: string }[] = [
   { id: 'this-month', label: 'Questo mese', shortLabel: '1M' },
@@ -36,14 +35,6 @@ export const PERIOD_PRESETS: readonly { id: PeriodPreset; label: string; shortLa
   { id: 'this-year', label: "Quest'anno", shortLabel: '12M' },
   { id: 'all', label: 'Tutto', shortLabel: 'Tutto' }
 ];
-
-export const PERIOD_PRESET_LABELS: Record<PeriodPreset, string> = {
-  ...(Object.fromEntries(PERIOD_PRESETS.map(({ id, label }) => [id, label])) as Record<
-    PeriodPreset,
-    string
-  >),
-  custom: 'Periodo personalizzato'
-};
 
 const pad = (value: number): string => String(value).padStart(2, '0');
 
