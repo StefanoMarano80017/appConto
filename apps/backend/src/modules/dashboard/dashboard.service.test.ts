@@ -57,6 +57,13 @@ importService.importCsv(
 setType('RIMBORSO', 'EXPENSE');
 setType('BONIFICO AMICO', 'LOAN');
 
+// Luglio 2032: un prelievo e uno storno di contante, per il totale dei prelievi.
+importService.importCsv(
+  csv('05/07/2032,Prelievo,PRELIEVO LUGLIO,-200.00', '06/07/2032,Accredito,STORNO PRELIEVO,50.00'),
+);
+setType('PRELIEVO LUGLIO', 'WITHDRAWAL');
+setType('STORNO PRELIEVO', 'WITHDRAWAL');
+
 // Mese precedente a quello osservato: serve al confronto.
 importService.importCsv(
   csv(
@@ -123,6 +130,14 @@ describe('indicatori e confronto', () => {
     const { topCategories } = dashboardService.getDashboard('2032-05', '2033-04-10');
     assert.ok(topCategories.every((c) => c.percentage === null));
   });
+  it('mese dominato da rimborsi: nessuna categoria elencata', () => {
+    const { topCategories } = dashboardService.getDashboard('2032-05', '2033-04-10');
+    assert.deepEqual(topCategories, []);
+  });
+  it('prelievi: gli storni positivi riducono il totale', () => {
+    const { summary } = dashboardService.getDashboard('2032-07', '2033-04-10');
+    assert.equal(summary.withdrawals, 150);
+  });
 });
 
 describe('archivio e attenzione', () => {
@@ -135,8 +150,8 @@ describe('archivio e attenzione', () => {
   it('ultimo movimento e merchant da classificare', () => {
     const view = dashboardService.getDashboard('2033-03', '2033-04-10');
     assert.equal(view.lastTransactionDate, '2033-03-20');
-    // STIPENDIO, PRELIEVO BANCOMAT, NEGOZIO NUOVO, RIMBORSO, BONIFICO AMICO
-    assert.equal(view.attention.unclassifiedMerchants, 5);
+    // STIPENDIO, PRELIEVO BANCOMAT, NEGOZIO NUOVO, RIMBORSO, BONIFICO AMICO, più PRELIEVO LUGLIO e STORNO PRELIEVO (2032-07)
+    assert.equal(view.attention.unclassifiedMerchants, 7);
   });
   it('un movimento prestito senza prestito registrato è contato come non collegato', () =>
     assert.deepEqual(dashboardService.getDashboard('2033-03', '2033-04-10').loans, {

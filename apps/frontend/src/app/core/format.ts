@@ -18,7 +18,7 @@ export function formatAmount(amount: number): string {
  * Non è un vezzo: i due glifi hanno larghezze diverse, e in una colonna di
  * importi il trattino non si allinea col meno. Sta qui, e non nei chiamanti,
  * perché i chiamanti sono due — `Amount`, che lo applica a ogni importo, e la
- * fascia di `MonthComparison`, che rende una variazione firmata senza passare
+ * testata della dashboard, che rende una variazione firmata senza passare
  * da `Amount` (v. il commento di `signed()` là). Averlo in due copie era il
  * modo di ritrovarsi, fra qualche mese, con due convenzioni di segno nella
  * stessa fascia di tre cifre: è precisamente quello che è appena successo.
@@ -40,7 +40,7 @@ export function typographicMinus(text: string): string {
  * valore assoluto.
  *
  * Sta qui, e non nei componenti, perché i chiamanti sono due — il chip di
- * `StatCardGrid` e la fascia di `MonthComparison` — e fino a poco fa erano
+ * `StatCardGrid` e la testata della dashboard — e fino a poco fa erano
  * due copie identiche della stessa riga, con un commento in una che
  * dichiarava l'equivalenza con l'altra. Una modifica a una sola delle due le
  * ha fatte divergere: sulla stessa pagina della dashboard i due chip

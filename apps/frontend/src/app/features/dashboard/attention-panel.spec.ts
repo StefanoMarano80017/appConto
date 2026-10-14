@@ -92,6 +92,14 @@ describe('AttentionPanel', () => {
     expect(text()).toContain('14 movimenti di prestito senza dettaglio, considerati saldati');
   });
 
+  it('con un solo prestito e un solo movimento usa il singolare', async () => {
+    await render(quiet({ loans: { remaining: 1030, openCount: 1, unlinkedTransactions: 1 } }));
+
+    const remaining = formatAmount(1030).replace(/\s+/g, ' ');
+    expect(link(`Da ricevere ${remaining} · 1 aperto →`)).not.toBeNull();
+    expect(text()).toContain('1 movimento di prestito senza dettaglio, considerato saldato');
+  });
+
   it('senza movimenti scollegati non mostra la nota', async () => {
     await render(quiet({ loans: { remaining: 1030, openCount: 2, unlinkedTransactions: 0 } }));
 

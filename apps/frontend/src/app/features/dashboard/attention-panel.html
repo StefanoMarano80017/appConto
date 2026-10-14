@@ -34,13 +34,17 @@
             <a routerLink="/loans" [queryParams]="{ status: 'open' }">
               <!-- Credito da riscuotere, non un'entrata né un'uscita: tono neutro, come nei prestiti. -->
               Da ricevere <app-amount [value]="loans().remaining" tone="neutral" />
-              · {{ loans().openCount }} aperti →
+              · {{ loans().openCount === 1 ? '1 aperto' : loans().openCount + ' aperti' }} →
             </a>
           </li>
         </ul>
         @if (loans().unlinkedTransactions > 0) {
           <p class="note">
-            {{ loans().unlinkedTransactions }} movimenti di prestito senza dettaglio, considerati saldati
+            @if (loans().unlinkedTransactions === 1) {
+              1 movimento di prestito senza dettaglio, considerato saldato
+            } @else {
+              {{ loans().unlinkedTransactions }} movimenti di prestito senza dettaglio, considerati saldati
+            }
           </p>
         }
       </section>

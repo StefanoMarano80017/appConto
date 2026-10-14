@@ -133,7 +133,8 @@ export const dashboardService = {
     const summary = summarizeEntries(validMonth, entries, lentByTransaction);
     const withdrawalsCents = entries
       .filter(({ transaction }) => transaction.type === 'WITHDRAWAL')
-      .reduce((sum, { transaction }) => sum + Math.abs(toAmountCents(transaction.amount)), 0);
+      // Uscite meno storni: un prelievo positivo (storno di contante) riduce il totale.
+      .reduce((sum, { transaction }) => sum - toAmountCents(transaction.amount), 0);
 
     // Confronto: la finestra corrente può fermarsi a oggi, quella precedente è sempre delimitata.
     const currentCategories = expenseCentsByCategory(withinDates(expenses, null, window.currentTo));
@@ -151,7 +152,9 @@ export const dashboardService = {
     const previousCents = sumCents(previousCategories.values());
 
     // Importo e percentuale riguardano il mese intero; la variazione, la finestra di confronto.
+    // Solo categorie con spesa netta positiva: un mese di soli rimborsi non ne ha.
     const topCategories = [...expenseCentsByCategory(expenses).entries()]
+      .filter(([, total]) => total.amountCents > 0)
       .map(
         ([id, total]): DashboardCategory => ({
           id,

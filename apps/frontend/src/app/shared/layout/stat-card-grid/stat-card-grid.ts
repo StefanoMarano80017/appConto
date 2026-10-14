@@ -102,8 +102,8 @@ export class StatCardGrid {
 
   /*
    * Esposta al template, non reimplementata: la formattazione vive in
-   * `core/format.ts`, una volta sola. Prima stava qui e in `month-comparison`
-   * in due copie identiche, con un commento in ciascuna che rimandava
+   * `core/format.ts`, una volta sola. Prima stava qui e nella testata della
+   * dashboard in due copie identiche, con un commento in ciascuna che rimandava
    * all'altra — e una modifica a una sola delle due le ha fatte divergere
    * davvero, mostrando due glifi di meno diversi sulla stessa pagina.
    */
