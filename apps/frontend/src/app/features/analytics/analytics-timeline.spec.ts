@@ -162,13 +162,20 @@ describe('AnalyticsTimeline', () => {
     await fixture.whenStable();
   };
 
-  const subtitle = (): string =>
+  /** L'intestazione del pannello: il titolo del grafico, che cambia con la vista. */
+  const chartTitle = (): string =>
     host().querySelector('app-section-header')?.textContent?.replace(/\s+/g, ' ') ?? '';
 
-  const openTable = async (): Promise<void> => {
-    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
-    await fixture.whenStable();
-  };
+  /** Le righe del riquadro, come «etichetta: importo», nell'ordine in cui le mostra. */
+  const tooltipLines = (): string[] =>
+    [...host().querySelectorAll('.tooltip li')].map((li) => {
+      const name = li.querySelector('.name')?.textContent?.trim();
+      const amount = (li.querySelector('.amount')?.textContent ?? '')
+        .replace(/\./g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return `${name}: ${amount}`;
+    });
 
   beforeEach(async () => {
     chartMocks.instances.length = 0;
@@ -181,7 +188,7 @@ describe('AnalyticsTimeline', () => {
     }).compileComponents();
   });
 
-  it('passa al grafico i bucket e una serie per entrata e una per uscita', async () => {
+  it('passa al grafico i bucket e una serie per entrate, uscite e netto', async () => {
     await render();
 
     expect(lineChart().points()).toEqual(weekly().buckets);
@@ -189,7 +196,7 @@ describe('AnalyticsTimeline', () => {
       lineChart()
         .series()
         .map((series) => series.label),
-    ).toEqual(['Entrate', 'Uscite']);
+    ).toEqual(['Entrate', 'Uscite', 'Netto']);
     expect(lineChart().valueAxis()).toBe('amount');
   });
 
@@ -199,7 +206,7 @@ describe('AnalyticsTimeline', () => {
       buckets: [bucket('2026-07-06', 0, 125), bucket('2026-07-13', 0, 80)],
     });
 
-    expect(drawnKeys()).toEqual(['expenses']);
+    expect(drawnKeys()).toEqual(['expenses', 'net']);
   });
 
   it('non disegna una serie senza valori di uscita', async () => {
@@ -208,24 +215,25 @@ describe('AnalyticsTimeline', () => {
       buckets: [bucket('2026-07-06', 125, 0), bucket('2026-07-13', 80, 0)],
     });
 
-    expect(drawnKeys()).toEqual(['income']);
+    expect(drawnKeys()).toEqual(['income', 'net']);
   });
 
-  it('il movimento netto non è acceso di partenza, ma si può accendere', async () => {
+  it('il netto è acceso di partenza, ma si può spegnere e riaccendere', async () => {
     await render();
+    expect(drawnKeys()).toEqual(['income', 'expenses', 'net']);
+
+    await toggleLegend('Netto');
     expect(drawnKeys()).toEqual(['income', 'expenses']);
 
-    await toggleLegend('Movimento netto');
-
+    await toggleLegend('Netto');
     expect(drawnKeys()).toEqual(['income', 'expenses', 'net']);
   });
 
   it('mantiene ordine, valori e colori dichiarati per ogni serie', async () => {
     await render();
-    await toggleLegend('Movimento netto');
 
     const series = lineChart().series();
-    expect(series.map((item) => item.label)).toEqual(['Entrate', 'Uscite', 'Movimento netto']);
+    expect(series.map((item) => item.label)).toEqual(['Entrate', 'Uscite', 'Netto']);
     expect(series.map((item) => item.color)).toEqual(['chart-1', 'chart-5', 'chart-3']);
     expect(series.map((item) => weekly().buckets.map((point) => item.value(point)))).toEqual([
       [0, 1725, 0, 0],
@@ -246,10 +254,10 @@ describe('AnalyticsTimeline', () => {
       button.textContent?.trim(),
     );
 
-    // «Movimento netto», non «Saldo netto»: è `netMovement`, che conta anche
+    // «Netto», non «Saldo netto»: è `netMovement`, che conta anche
     // prelievi, trasferimenti e prestiti. «Saldo netto» resta il nome del KPI
-    // (entrate meno uscite) e della vista cumulata, che ne è la storia.
-    expect(labels).toEqual(['Entrate', 'Uscite', 'Movimento netto']);
+    // (entrate meno uscite), di cui la vista cumulata («Saldo periodo») è la storia.
+    expect(labels).toEqual(['Entrate', 'Uscite', 'Netto']);
   });
 
   it("non si può nascondere l'ultima serie visibile", async () => {
@@ -257,8 +265,11 @@ describe('AnalyticsTimeline', () => {
 
     await toggleLegend('Entrate');
     await toggleLegend('Uscite');
+    expect(drawnKeys()).toEqual(['net']);
 
-    expect(drawnKeys()).toEqual(['expenses']);
+    await toggleLegend('Netto');
+
+    expect(drawnKeys()).toEqual(['net']);
   });
 
   it('segna gli intervalli incompleti con un punto vuoto', async () => {
@@ -330,6 +341,7 @@ describe('AnalyticsTimeline', () => {
     expect(chartMocks.instances.at(-1)?.activeElements).toEqual([
       { datasetIndex: 0, index: 2 },
       { datasetIndex: 1, index: 2 },
+      { datasetIndex: 2, index: 2 },
     ]);
   });
 
@@ -423,12 +435,12 @@ describe('AnalyticsTimeline', () => {
   });
 
   // Il caso del round precedente: un bucket a rimborso netto (`expenses`
-  // negativo) deve mostrare lo stesso segno nel riquadro al passaggio del
-  // mouse e nella tabella. Prima di questo fix il riquadro passava da
-  // `amountTone()` (tono forzato su un valore non negato) e la tabella da
-  // `value()` (valore negato, tono auto): sullo stesso bucket rendevano segni
-  // opposti.
-  it('il riquadro e la tabella concordano sul segno di un rimborso netto', async () => {
+  // negativo) deve mostrare nel riquadro il segno di un'entrata. Prima di
+  // quel fix il riquadro passava da `amountTone()` (tono forzato su un valore
+  // non negato) e rendeva il segno opposto. La tabella dei valori, con cui
+  // lo si confrontava, non c'è più nel pannello: resta il riquadro, che legge
+  // `rows` come la leggeva lei.
+  it('il riquadro mostra il segno giusto di un rimborso netto', async () => {
     await render({
       granularity: 'week',
       buckets: [bucket('2026-07-06', 1000, 300, false), bucket('2026-07-13', 200, -50, false)],
@@ -440,13 +452,7 @@ describe('AnalyticsTimeline', () => {
       ?.querySelector('.amount')
       ?.textContent?.trim();
 
-    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
-    await fixture.whenStable();
-    const rows = host().querySelectorAll('table.values tbody tr');
-    const tableExpenses = rows[1]?.querySelectorAll('td.numeric')[1]?.textContent?.trim();
-
     expect(tooltipExpenses).toContain('+50,00');
-    expect(tableExpenses).toContain('+50,00');
   });
 
   it('un intervallo incompleto lo dice anche nel riquadro', async () => {
@@ -491,45 +497,19 @@ describe('AnalyticsTimeline', () => {
     expect(lineChart().selectedIndex()).toBeNull();
   });
 
-  it('i valori sono leggibili anche in tabella, senza passare dal grafico', async () => {
+  it('associa i valori del riquadro alle chiavi delle serie mantenendo ordine e segni', async () => {
     await render();
+    await select(1);
 
-    expect(host().querySelector('table.values')).toBeNull();
+    expect(tooltipLines()).toEqual([
+      'Entrate: +1725,00 €',
+      'Uscite: −340,00 €',
+      'Netto: +1385,00 €',
+    ]);
 
-    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
-    await fixture.whenStable();
-
-    const rows = host().querySelectorAll('table.values tbody tr');
-    expect(rows.length).toBe(4);
-    expect(text()).toContain('incompleto');
-
-    // Il segno, sulla cella giusta: in questa riga (indice 2, income 0) il
-    // saldo netto vale anch'esso -880,07, quindi un'asserzione sull'intera
-    // fixture (`text()`) sarebbe passata anche con le uscite non negate —
-    // esattamente il difetto che questa correzione doveva chiudere.
-    const expensesCell = rows[2]?.querySelectorAll('td.numeric')[1];
-    expect(expensesCell?.textContent?.replace(/\./g, '')).toContain('−880,07');
-  });
-
-  it('associa valori e totali alle chiavi delle serie mantenendo ordine e segni', async () => {
-    await render();
-    await openTable();
-
-    const headers = [...host().querySelectorAll('table.values thead th')].map((header) =>
-      header.textContent?.trim(),
-    );
-    expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Movimento netto']);
-
-    const rows = host().querySelectorAll('table.values tbody tr');
-    const middleRow = [...(rows[1]?.querySelectorAll('td.numeric') ?? [])].map((cell) =>
-      (cell.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ').trim(),
-    );
-    expect(middleRow).toEqual(['+1725,00 €', '−340,00 €', '+1385,00 €']);
-
-    const totals = [...host().querySelectorAll('table.values tfoot td.numeric')];
-    expect(totals[0]?.textContent?.replace(/\./g, '')).toContain('+1725,00');
-    expect(totals[1]?.textContent?.replace(/\./g, '')).toContain('−1886,57');
-    expect(totals[2]?.querySelector('app-amount')).toBeNull();
+    // Una serie spenta in legenda esce anche dal riquadro.
+    await toggleLegend('Netto');
+    expect(tooltipLines()).toEqual(['Entrate: +1725,00 €', 'Uscite: −340,00 €']);
   });
 
   it('chiede il passo scelto senza cambiarlo da sé', async () => {
@@ -546,23 +526,29 @@ describe('AnalyticsTimeline', () => {
   });
 
   it('etichetta gli intervalli secondo il passo', async () => {
+    const tooltipTitle = (): string =>
+      host().querySelector('app-chart-tooltip h2')?.textContent?.trim() ?? '';
+
     await render(weekly(), 'week');
-    expect(text()).toContain('settimana');
     expect(xLabels()).toEqual(['29/06', '06/07', '13/07', '20/07']);
+    await select(1);
+    expect(tooltipTitle()).toContain('settimana del 6 luglio');
 
     await render(
       { granularity: 'day', buckets: [bucket('2026-07-06', 10, 5), bucket('2026-07-07', 0, 9)] },
       'day',
     );
-    expect(text()).toContain('giorno');
     expect(xLabels()).toEqual(['06/07', '07/07']);
+    await select(1);
+    expect(tooltipTitle()).toContain('07/07/2026');
 
     await render(
       { granularity: 'month', buckets: [bucket('2026-06', 1000, 500), bucket('2026-07', 0, 900)] },
       'month',
     );
-    expect(text()).toContain('mese');
     expect(xLabels()).toEqual(['giu 26', 'lug 26']);
+    await select(1);
+    expect(tooltipTitle()).toContain('luglio 2026');
   });
 
   it('aggiorna le etichette quando cambia la granularità sulla stessa istanza', async () => {
@@ -593,7 +579,7 @@ describe('AnalyticsTimeline', () => {
   it('un solo intervallo resta leggibile', async () => {
     await render({ granularity: 'week', buckets: [bucket('2026-07-06', 100, 50)] });
 
-    expect(drawnKeys()).toEqual(['income', 'expenses']);
+    expect(drawnKeys()).toEqual(['income', 'expenses', 'net']);
     expect(host().querySelector('canvas')).not.toBeNull();
 
     await select(0);
@@ -677,12 +663,8 @@ describe('AnalyticsTimeline', () => {
 
     expect(xLabels()).toEqual(['giu 26', 'lug 26']);
 
-    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
-    await fixture.whenStable();
-    const rowLabels = [...host().querySelectorAll('table.values tbody th')].map((th) =>
-      th.textContent?.trim(),
-    );
-    expect(rowLabels).toEqual(['giugno 2026', 'luglio 2026']);
+    await select(0);
+    expect(host().querySelector('app-chart-tooltip h2')?.textContent).toContain('giugno 2026');
 
     const requested: TimelineSelection[] = [];
     fixture.componentInstance.periodSelected.subscribe((selection) => requested.push(selection));
@@ -701,35 +683,18 @@ describe('AnalyticsTimeline', () => {
     ]);
   });
 
-  it('intestazioni e totali della tabella seguono le serie', async () => {
-    await render();
-    host().querySelector<HTMLButtonElement>('.table-toggle')?.click();
-    await fixture.whenStable();
-
-    const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
-      th.textContent?.trim(),
-    );
-    expect(headers).toEqual(['Intervallo', 'Entrate', 'Uscite', 'Movimento netto']);
-
-    const footer = [...host().querySelectorAll('table.values tfoot td')].map((td) =>
-      (td.textContent ?? '').replace(/\./g, '').trim(),
-    );
-    expect(footer[0]).toContain('+1725,00');
-    expect(footer[1]).toContain('−1886,57');
-    expect(footer[2]).toBe('');
-  });
-
   describe('vista cumulata', () => {
     // weekly(): variazioni −120,50, +1385,00, −880,07, −546,00.
     const CUMULATIVE = [-120.5, 1264.5, 384.43, -161.57];
 
-    it('di partenza la vista è «Flussi», con il sottotitolo di sempre', async () => {
+    it('di partenza la vista è «Flussi», col titolo «Flusso nel tempo»', async () => {
       await render();
 
       expect(viewButton('Flussi')?.getAttribute('aria-pressed')).toBe('true');
       expect(viewButton('Cumulato')?.getAttribute('aria-pressed')).toBe('false');
       expect(host().querySelector('[aria-label="Vista dell\'andamento"]')).not.toBeNull();
-      expect(subtitle()).toContain('Stessi movimenti del resto della pagina');
+      expect(chartTitle()).toContain('Flusso nel tempo');
+      expect(chartTitle()).not.toContain('Andamento cumulato');
       expect(lineChart().zeroLine()).toBe(false);
     });
 
@@ -738,7 +703,7 @@ describe('AnalyticsTimeline', () => {
       await chooseView('Cumulato');
 
       const series = lineChart().series();
-      expect(series.map((item) => item.label)).toEqual(['Saldo netto del periodo']);
+      expect(series.map((item) => item.label)).toEqual(['Saldo periodo']);
       expect(series.map((item) => item.color)).toEqual(['chart-3']);
       expect(
         lineChart()
@@ -756,14 +721,15 @@ describe('AnalyticsTimeline', () => {
       expect(host().querySelector('.legend')).toBeNull();
     });
 
-    it('cambia il sottotitolo: non è il saldo del conto', async () => {
+    it('cambia il titolo in «Andamento cumulato», e torna com’era ai flussi', async () => {
       await render();
       await chooseView('Cumulato');
 
-      expect(subtitle()).toContain(
-        "Entrate meno uscite, sommate dall'inizio del periodo. Non è il saldo del conto: prelievi, trasferimenti e la quota dei prestiti che resta credito non lo muovono.",
-      );
-      expect(subtitle()).not.toContain('Stessi movimenti');
+      expect(chartTitle()).toContain('Andamento cumulato');
+      expect(chartTitle()).not.toContain('Flusso nel tempo');
+
+      await chooseView('Flussi');
+      expect(chartTitle()).toContain('Flusso nel tempo');
     });
 
     it('si torna ai flussi con le serie di prima', async () => {
@@ -771,7 +737,7 @@ describe('AnalyticsTimeline', () => {
       await chooseView('Cumulato');
       await chooseView('Flussi');
 
-      expect(drawnKeys()).toEqual(['income', 'expenses']);
+      expect(drawnKeys()).toEqual(['income', 'expenses', 'net']);
       expect(host().querySelector('.legend')).not.toBeNull();
     });
 
@@ -822,7 +788,7 @@ describe('AnalyticsTimeline', () => {
       const shown = (tooltip()?.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ');
       expect(shown).toContain('settimana del 6 luglio');
       expect(shown).toContain('+1264,50');
-      expect(shown).toContain('Saldo netto del periodo');
+      expect(shown).toContain('Saldo periodo');
       expect(shown).toContain('+1385,00 € in questa settimana');
       expect(shown).not.toContain('Entrate');
     });
@@ -881,26 +847,15 @@ describe('AnalyticsTimeline', () => {
       ]);
     });
 
-    it('la tabella ha Periodo, Variazione e Cumulato', async () => {
+    it('il riquadro di un intervallo incompleto ha cumulato, variazione e la nota', async () => {
       await render();
       await chooseView('Cumulato');
-      await openTable();
+      await select(3);
 
-      const headers = [...host().querySelectorAll('table.values thead th')].map((th) =>
-        th.textContent?.trim(),
-      );
-      expect(headers).toEqual(['Periodo', 'Variazione', 'Cumulato']);
-
-      const cells = [...host().querySelectorAll('table.values tbody tr')].map((row) =>
-        [...row.querySelectorAll('td.numeric')].map((td) =>
-          (td.textContent ?? '').replace(/\./g, '').trim(),
-        ),
-      );
-      expect(cells[1]?.[0]).toContain('+1385,00');
-      expect(cells[1]?.[1]).toContain('+1264,50');
-      expect(cells[3]?.[0]).toContain('−546,00');
-      expect(cells[3]?.[1]).toContain('−161,57');
-      expect(text()).toContain('incompleto');
+      const shown = (tooltip()?.textContent ?? '').replace(/\./g, '').replace(/\s+/g, ' ');
+      expect(tooltipLines()).toEqual(['Saldo periodo: −161,57 €']);
+      expect(shown).toContain('−546,00 € in questa settimana');
+      expect(shown).toContain('Intervallo incompleto');
     });
 
     it('la vista resta nel componente: nessun cambio di passo né di periodo', async () => {
