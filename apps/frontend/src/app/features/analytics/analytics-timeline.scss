@@ -10,8 +10,8 @@
  * La mappatura conserva le relazioni di tinta che la versione precedente
  * aveva verificato — blu, caldo, acqua — e tiene fuori dalle linee il verde e
  * il rosso degli importi, che in deuteranopia cadevano a DeltaE 4,2. Il
- * grafico continua a portare legenda e tabella valori, quindi il colore non è
- * mai l'unico canale.
+ * grafico porta legenda e riquadro con le etichette delle serie, quindi il
+ * colore non è mai l'unico canale.
  */
 .legend {
   display: flex;
@@ -84,7 +84,7 @@ app-panel-footer {
 
 /*
  * Il grafico prende l'altezza assegnata da `.chart`; la misura minima
- * mantiene gli assi leggibili quando la tabella è aperta.
+ * mantiene gli assi leggibili.
  */
 .plot {
   flex: 1 0 auto;
@@ -168,88 +168,8 @@ app-panel-footer {
   white-space: nowrap;
 }
 
-.table-toggle {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-primary);
-  font: inherit;
-  @include typography.text('body');
-  cursor: pointer;
-  text-decoration: underline;
-}
-
 .message {
   margin: var(--space-7) 0 0;
-}
-
-.scroller {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow: auto;
-  margin-top: var(--space-6);
-}
-
-.values {
-  width: 100%;
-  border-collapse: collapse;
-  @include typography.text('table-text');
-
-  caption {
-    text-align: left;
-    padding-bottom: var(--space-4);
-    @include typography.text('caption');
-  }
-
-  th,
-  td {
-    text-align: left;
-    padding: var(--space-3) var(--space-5);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  thead th {
-    @include typography.text('label');
-  }
-
-  tbody th {
-    font-weight: 400;
-  }
-
-  tfoot th,
-  tfoot td {
-    border-bottom: 0;
-    font-weight: 600;
-  }
-
-  /*
-   * `tfoot td { font-weight: 600 }` sopra non basta per le celle che ora
-   * contengono `<app-amount>`: `:host(.amount-row)` dichiara `font-weight: 500`
-   * direttamente sul proprio host, e una regola diretta batte l'ereditarietà
-   * da un antenato. Serve una regola che colpisca l'elemento stesso.
-   */
-  tfoot app-amount {
-    font-weight: 600;
-  }
-
-  /*
-   * `font-variant-numeric` resta qui: la classe è condivisa con l'intestazione
-   * di colonna (testo scritto a mano, non un importo), non solo con le celle
-   * ora rese da `<app-amount>`.
-   */
-  .numeric {
-    text-align: right;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-}
-
-.incomplete {
-  margin-left: var(--space-3);
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
-  @include typography.text('caption');
 }
 
 /* Vista e passo affiancati nell'intestazione; su schermi stretti vanno a capo, allineati a destra. */

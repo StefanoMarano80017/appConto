@@ -288,7 +288,7 @@ describe('AnalyticsTimeline', () => {
     await render();
 
     expect(lineChart().ariaLabel()).toBe(
-      'Andamento nel tempo su 4 intervalli. I valori sono disponibili anche nella tabella.',
+      'Andamento nel tempo su 4 intervalli.',
     );
     expect(host().querySelectorAll('[tabindex="0"]').length).toBe(1);
   });
