@@ -35,7 +35,7 @@ export function isShutdownMessage(message: unknown): message is { readonly type:
     typeof message === 'object' &&
     message !== null &&
     'type' in message &&
-    (message as { type: unknown }).type === 'shutdown'
+    message.type === 'shutdown'
   );
 }
 

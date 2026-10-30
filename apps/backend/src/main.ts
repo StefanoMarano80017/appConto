@@ -6,7 +6,7 @@ import { connectLauncher } from './launcher-ipc.js';
 import { listenWithFallback } from './listen.js';
 import { createAutoBackupScheduler } from './modules/maintenance/index.js';
 import { SETTINGS_PROBLEM } from './paths.js';
-import { startServer, StartupFailedError } from './server.js';
+import { startServer, StartupFailedError, type StartedServer } from './server.js';
 import { logger } from './shared/logger.js';
 import { closeAndReport, createShutdown, installSignalHandlers } from './shutdown.js';
 
@@ -53,7 +53,7 @@ logger.info('Avvio', {
   cwd: process.cwd(),
 });
 
-let started;
+let started: StartedServer;
 try {
   started = await startServer(
     { host: config.host, port: config.port, allowFallback: allowPortFallback },

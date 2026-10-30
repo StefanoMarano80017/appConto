@@ -43,7 +43,7 @@ describe('createShutdown', () => {
   it('ferma le attività prima di chiudere il database ed esce con 0', async () => {
     const server = await serverReale();
     const ordine: string[] = [];
-    const { log } = loggerFinto();
+    const { log, righe } = loggerFinto();
 
     const codice = await new Promise<number>((resolve) => {
       const richiedi = createShutdown({
@@ -65,6 +65,7 @@ describe('createShutdown', () => {
     assert.equal(codice, 0);
     assert.deepEqual(ordine, ['stop', 'closeDatabase', 'exit 0']);
     assert.equal(server.listening, false);
+    assert.ok(righe.some(([livello, m]) => livello === 'info' && m === 'Arresto completato'));
   });
 
   it('è idempotente per istanza', async () => {
@@ -127,6 +128,10 @@ describe('createShutdown', () => {
     assert.equal(codice, 1);
     assert.ok(
       righe.some(([livello, m]) => livello === 'error' && m.includes('Impossibile chiudere il database')),
+    );
+    assert.ok(
+      !righe.some(([, m]) => m === 'Arresto completato'),
+      'un arresto fallito non deve dichiararsi completato',
     );
   });
 

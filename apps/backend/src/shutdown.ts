@@ -147,7 +147,9 @@ export function createShutdown(deps: ShutdownDeps): (reason: string) => void {
 
       const result = closeAndReport(closeDatabase, log);
 
-      log.info('Arresto completato');
+      if (result !== 'fallito') {
+        log.info('Arresto completato');
+      }
       exit(result === 'fallito' ? 1 : 0);
     };
 

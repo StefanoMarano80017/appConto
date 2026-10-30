@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { EventEmitter } from 'node:events';
 import { after, describe, it } from 'node:test';
 import Database from 'better-sqlite3';
 

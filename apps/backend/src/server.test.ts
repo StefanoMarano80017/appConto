@@ -1,18 +1,14 @@
-import assert from "node:assert/strict";
-import type { Server } from "node:http";
-import { after, describe, it } from "node:test";
-import {
-  ListenFailedError,
-  listenWithFallback,
-  type ListenRequest,
-} from "./listen.js";
+import assert from 'node:assert/strict';
+import type { Server } from 'node:http';
+import { after, describe, it } from 'node:test';
+import { ListenFailedError, listenWithFallback, type ListenRequest } from './listen.js';
 import {
   startServer,
   StartupFailedError,
   type ServerDeps,
   type StartOptions,
   type StartupPhase,
-} from "./server.js";
+} from './server.js';
 
 /**
  * L'avvio del server.
@@ -22,7 +18,7 @@ import {
  * I server HTTP sono veri, su una porta assegnata dal kernel.
  */
 
-const HOST = "127.0.0.1";
+const HOST = '127.0.0.1';
 const options: StartOptions = { host: HOST, port: 0, allowFallback: false };
 
 /** Ogni server creato nei test, chiuso alla fine anche se il test fallisce. */
@@ -55,7 +51,7 @@ interface Registro {
 
 interface Variazioni {
   readonly bootstrap?: () => void;
-  readonly listen?: ServerDeps["listen"];
+  readonly listen?: ServerDeps['listen'];
   readonly start?: () => void;
   readonly stop?: () => void;
 }
@@ -70,18 +66,18 @@ function nuovoRegistro(variazioni: Variazioni = {}): Registro {
 
   const deps: ServerDeps = {
     bootstrap: () => {
-      ordine.push("bootstrap");
+      ordine.push('bootstrap');
       variazioni.bootstrap?.();
     },
     createApp: () => {
-      ordine.push("createApp");
+      ordine.push('createApp');
 
       return (_req, res) => {
-        res.end("app di prova");
+        res.end('app di prova');
       };
     },
     listen: async (srv, richiesta) => {
-      ordine.push("listen");
+      ordine.push('listen');
       richieste.push(richiesta);
       server.push(srv);
       aperti.push(srv);
@@ -90,11 +86,11 @@ function nuovoRegistro(variazioni: Variazioni = {}): Registro {
     },
     createScheduler: () => ({
       start: () => {
-        ordine.push("scheduler.start");
+        ordine.push('scheduler.start');
         variazioni.start?.();
       },
       stop: () => {
-        ordine.push("scheduler.stop");
+        ordine.push('scheduler.stop');
         variazioni.stop?.();
       },
     }),
@@ -116,51 +112,39 @@ async function fallimento(registro: Registro): Promise<StartupFailedError> {
   try {
     await startServer(options, registro.deps);
   } catch (error) {
-    assert.ok(
-      error instanceof StartupFailedError,
-      "ci si aspetta StartupFailedError",
-    );
+    assert.ok(error instanceof StartupFailedError, 'ci si aspetta StartupFailedError');
 
     return error;
   }
 
-  throw new Error("startServer doveva fallire");
+  throw new Error('startServer doveva fallire');
 }
 
 const fase = (error: StartupFailedError): StartupPhase => error.phase;
 
-describe("avvio del server", () => {
+describe('avvio del server', () => {
   it("esegue bootstrap, app, listen e scheduler in quest'ordine", async () => {
     const registro = nuovoRegistro();
     await startServer(options, registro.deps);
 
-    assert.deepEqual(registro.ordine, [
-      "bootstrap",
-      "createApp",
-      "listen",
-      "scheduler.start",
-    ]);
+    assert.deepEqual(registro.ordine, ['bootstrap', 'createApp', 'listen', 'scheduler.start']);
   });
 
   it("il server serve l'applicazione ricevuta", async () => {
     const registro = nuovoRegistro();
     const avviato = await startServer(options, registro.deps);
 
-    const risposta = await fetch(
-      `http://${HOST}:${String(avviato.listen.actualPort)}/`,
-    );
+    const risposta = await fetch(`http://${HOST}:${String(avviato.listen.actualPort)}/`);
 
-    assert.equal(await risposta.text(), "app di prova");
+    assert.equal(await risposta.text(), 'app di prova');
   });
 
-  it("passa host, porta e permesso di ripiego al listen", async () => {
+  it('passa host, porta e permesso di ripiego al listen', async () => {
     for (const allowFallback of [false, true]) {
       const registro = nuovoRegistro();
       await startServer({ host: HOST, port: 0, allowFallback }, registro.deps);
 
-      assert.deepEqual(registro.richieste, [
-        { host: HOST, port: 0, allowFallback },
-      ]);
+      assert.deepEqual(registro.richieste, [{ host: HOST, port: 0, allowFallback }]);
     }
   });
 
@@ -174,10 +158,10 @@ describe("avvio del server", () => {
 
     avviato.background.stop();
 
-    assert.ok(registro.ordine.includes("scheduler.stop"));
+    assert.ok(registro.ordine.includes('scheduler.stop'));
   });
 
-  it("registra il ripiego", async () => {
+  it('registra il ripiego', async () => {
     const registro = nuovoRegistro({
       listen: async (srv) => {
         const esito = await listenWithFallback(srv, {
@@ -198,71 +182,65 @@ describe("avvio del server", () => {
     );
   });
 
-  it("bootstrap fallito: niente listen", async () => {
+  it('bootstrap fallito: niente listen', async () => {
     const registro = nuovoRegistro({
       bootstrap: () => {
-        throw new Error("archivio rotto");
+        throw new Error('archivio rotto');
       },
     });
     const errore = await fallimento(registro);
 
-    assert.equal(fase(errore), "bootstrap");
-    assert.ok(!registro.ordine.includes("listen"));
-    assert.ok(registro.errori.includes("Avvio interrotto: archivio rotto"));
+    assert.equal(fase(errore), 'bootstrap');
+    assert.ok(!registro.ordine.includes('listen'));
+    assert.ok(registro.errori.includes('Avvio interrotto: archivio rotto'));
   });
 
   it("porta occupata: messaggio per l'utente e niente scheduler", async () => {
-    const errno: NodeJS.ErrnoException = Object.assign(new Error("in uso"), {
-      code: "EADDRINUSE",
+    const errno: NodeJS.ErrnoException = Object.assign(new Error('in uso'), {
+      code: 'EADDRINUSE',
     });
     const registro = nuovoRegistro({
-      listen: () =>
-        Promise.reject(new ListenFailedError("x", 47318, "EADDRINUSE", errno)),
+      listen: () => Promise.reject(new ListenFailedError('x', 47318, 'EADDRINUSE', errno)),
     });
     const errore = await fallimento(registro);
 
-    assert.equal(fase(errore), "listen");
+    assert.equal(fase(errore), 'listen');
     assert.ok(
       registro.errori.some(
         (m) =>
-          m.includes("La porta 47318 è già occupata da un altro programma") &&
-          m.includes("MYFINANCE_PORT"),
+          m.includes('La porta 47318 è già occupata da un altro programma') &&
+          m.includes('MYFINANCE_PORT'),
       ),
     );
-    assert.ok(!registro.ordine.includes("scheduler.start"));
+    assert.ok(!registro.ordine.includes('scheduler.start'));
   });
 
-  it("altro errore di listen: messaggio generico", async () => {
-    const errno: NodeJS.ErrnoException = Object.assign(new Error("negato"), {
-      code: "EACCES",
+  it('altro errore di listen: messaggio generico', async () => {
+    const errno: NodeJS.ErrnoException = Object.assign(new Error('negato'), {
+      code: 'EACCES',
     });
     const registro = nuovoRegistro({
-      listen: () =>
-        Promise.reject(new ListenFailedError("x", 80, "EACCES", errno)),
+      listen: () => Promise.reject(new ListenFailedError('x', 80, 'EACCES', errno)),
     });
     const errore = await fallimento(registro);
 
-    assert.equal(fase(errore), "listen");
+    assert.equal(fase(errore), 'listen');
     assert.ok(
-      registro.errori.some((m) =>
-        m.includes(`Impossibile mettersi in ascolto su ${HOST}:`),
-      ),
+      registro.errori.some((m) => m.includes(`Impossibile mettersi in ascolto su ${HOST}:`)),
     );
   });
 
-  it("scheduler fallito: server chiuso e scheduler fermato", async () => {
+  it('scheduler fallito: server chiuso e scheduler fermato', async () => {
     const registro = nuovoRegistro({
       start: () => {
-        throw new Error("pianificazione non valida");
+        throw new Error('pianificazione non valida');
       },
     });
     const errore = await fallimento(registro);
 
-    assert.equal(fase(errore), "scheduler");
-    assert.ok(registro.ordine.includes("scheduler.stop"));
+    assert.equal(fase(errore), 'scheduler');
+    assert.ok(registro.ordine.includes('scheduler.stop'));
     assert.equal(registro.server[0]?.listening, false);
-    assert.ok(
-      registro.errori.includes("Impossibile avviare i backup automatici"),
-    );
+    assert.ok(registro.errori.includes('Impossibile avviare i backup automatici'));
   });
 });

@@ -147,7 +147,7 @@ export function connectLauncher(
 - `disconnect` → `requestShutdown('launcher disconnesso')`.
 - I duplicati sono assorbiti dall'idempotenza di `createShutdown`, non duplicata qui.
 - *(scelta del progettista)* Canale già chiuso al momento del collegamento (il launcher è morto durante l'attesa del listen, e `disconnect` è già stato emesso): se `proc.connected === false`, oppure se `send` solleva o riporta un errore nella callback, si richiede subito `requestShutdown('launcher disconnesso')`. Così `connectLauncher` non solleva mai, e il problema 5 è coperto anche in quella finestra.
-- *(scelta del progettista)* Un arresto per `disconnect` che si completa regolarmente esce con **0**, come quello chiesto dal launcher: è un arresto ordinato riuscito. Esce con 1 solo per le stesse ragioni di ogni altro arresto (checkpoint fallito, rete di sicurezza).
+- *(scelta del progettista)* Un arresto per `disconnect` che si completa regolarmente esce con **0**, come quello chiesto dal launcher: è un arresto ordinato riuscito. Esce con 1 solo per le stesse ragioni di ogni altro arresto (chiusura del database fallita, cioè `closeDatabase` che solleva; rete di sicurezza).
 
 ### `main.ts`
 

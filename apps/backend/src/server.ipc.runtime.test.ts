@@ -288,5 +288,6 @@ describe('server avviato con canale IPC', () => {
     assert.equal(await attesaUscita, 1);
     assert.match(output(), /è già occupata da un altro programma/);
     assert.match(output(), /MYFINANCE_PORT/);
+    assert.match(output(), /Database chiuso/);
   });
 });
