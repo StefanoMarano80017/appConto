@@ -128,10 +128,11 @@ export const dashboardService = {
 
     // Una sola lettura dei prestiti per tutta la risposta.
     const lentByTransaction = loansService.lentCentsByTransaction();
+    const repaidByTransaction = loansService.repaymentsByTransaction();
     const entries = transactionsService.listByMonthWithMerchant(validMonth);
     const expenses = expensesOnly(entries, lentByTransaction);
 
-    const summary = summarizeEntries(validMonth, entries, lentByTransaction);
+    const summary = summarizeEntries(validMonth, entries, lentByTransaction, repaidByTransaction);
     const withdrawalsCents = entries
       .filter(({ transaction }) => transaction.type === 'WITHDRAWAL')
       // Uscite meno storni: un prelievo positivo (storno di contante) riduce il totale.

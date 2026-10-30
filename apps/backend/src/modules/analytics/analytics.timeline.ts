@@ -159,6 +159,7 @@ export function buildTimeline(
   to: string,
   requested: TimelineGranularity | null,
   lentByTransaction: ReadonlyMap<string, number>,
+  repaidByTransaction: ReadonlyMap<string, number> = new Map(),
 ): Timeline {
   const granularity = requested ?? automaticGranularity(from, to);
 
@@ -177,6 +178,7 @@ export function buildTimeline(
       transaction.type,
       toAmountCents(transaction.amount),
       lentByTransaction.get(transaction.id) ?? 0,
+      repaidByTransaction.get(transaction.id) ?? 0,
     );
   }
 

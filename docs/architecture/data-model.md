@@ -165,7 +165,13 @@ artificiale: il credito scende, la liquidità no.
 
 Quando invece la restituzione è collegata ad una Transaction, quella Transaction
 resta ciò che è — tipicamente una `INCOME`. Il collegamento aggiunge significato
-al movimento, non lo trasforma.
+al movimento, non lo trasforma: il tipo non cambia, il movimento resta nella
+liquidità e nel filtro delle entrate.
+
+Cambia però come lo leggono entrate e patrimonio (D2): la quota collegata a
+restituzioni è credito che rientra, non denaro nuovo. Il prestito non aveva
+ridotto il patrimonio quando era nato, il suo rientro non può aumentarlo. Vedi
+[Restituzioni collegate](#restituzioni-collegate).
 
 ---
 
@@ -355,6 +361,37 @@ Conseguenze:
   e l'intero importo è spesa: la quota non viene sommata due volte;
 - incassare una restituzione non cambia la quota di spesa. Quel denaro è già
   stato speso.
+
+## Restituzioni collegate
+
+La regola speculare vale per il rientro (D2). Un accredito collegato a delle
+restituzioni resta `INCOME`, ma:
+
+```
+quota restituita = min(somma delle restituzioni collegate, importo positivo del movimento)
+entrata          = importo del movimento - quota restituita
+```
+
+Anche qui la regola vive in `transactions` (`incomeCents` e `netWorthCents`,
+che ricevono la quota restituita come parametro) e il valore lo fornisce `loans`
+(`repaymentsByTransaction`): la dipendenza resta `loans → transactions`.
+
+Conseguenze:
+
+- le **entrate** e il **patrimonio** di cash flow, riepilogo, analytics e
+  dashboard non contano la quota restituita; il saldo (`balance`) del
+  riepilogo scende di conseguenza;
+- la **liquidità** non cambia: movimento netto, saldo di chiusura e
+  ripartizione per tipo (`byType`) restano quelli del conto, e la somma di
+  `byType` resta pari al movimento netto;
+- l'esclusione avviene nel mese dell'accredito, non in quello del prestito;
+- prestare X e riceverne X collegati non muove, sull'intero periodo, né
+  entrate né patrimonio;
+- scollegare la restituzione riporta l'accredito fra le entrate per intero;
+- una restituzione arrivata in banca ma **non** collegata resta un'entrata:
+  collegarla è compito di chi usa l'app;
+- l'esclusione vale finché il movimento è un'entrata: se il tipo viene
+  corretto (per esempio in `OTHER`), il movimento conta come conta quel tipo.
 
 ---
 

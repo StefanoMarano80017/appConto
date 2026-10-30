@@ -5,6 +5,7 @@ import {
   expenseCents,
   expenseDistribution,
   hasExpense,
+  incomeCents,
   isIncome,
   toAmountCents,
   transactionsService,
@@ -33,13 +34,16 @@ interface CategoryTotal {
  * @param lentByTransaction quanto di ciascun movimento è stato attribuito a
  *        prestiti. Serve a ripartire un movimento di tipo prestito fra la quota
  *        prestata — che è credito — e il resto, che è spesa propria.
+ * @param repaidByTransaction quanto di ciascun movimento è stato collegato a
+ *        restituzioni di prestiti: è credito che rientra, non un'entrata (D2).
  */
 export function summarizeEntries(
   month: string,
   entries: readonly TransactionWithMerchant[],
   lentByTransaction: ReadonlyMap<string, number> = new Map(),
+  repaidByTransaction: ReadonlyMap<string, number> = new Map(),
 ): SummaryViewModel {
-  let incomeCents = 0;
+  let totalIncomeCents = 0;
   let expensesCents = 0;
   let uncategorizedCents = 0;
   let uncategorizedCount = 0;
@@ -54,7 +58,11 @@ export function summarizeEntries(
     }
 
     if (isIncome(transaction.type)) {
-      incomeCents += amountCents;
+      totalIncomeCents += incomeCents(
+        transaction.type,
+        amountCents,
+        repaidByTransaction.get(transaction.id) ?? 0,
+      );
       continue;
     }
 
@@ -104,9 +112,9 @@ export function summarizeEntries(
 
   return {
     month,
-    income: incomeCents / 100,
+    income: totalIncomeCents / 100,
     expenses: expensesCents / 100,
-    balance: (incomeCents - expensesCents) / 100,
+    balance: (totalIncomeCents - expensesCents) / 100,
     transactionCount: entries.length,
     merchantCount: merchantIds.size,
     amountByCategory,
@@ -142,6 +150,7 @@ export const summaryService = {
       validMonth,
       transactionsService.listByMonthWithMerchant(validMonth),
       loansService.lentCentsByTransaction(),
+      loansService.repaymentsByTransaction(),
     );
   },
 };

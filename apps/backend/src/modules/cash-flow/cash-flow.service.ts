@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors.js';
-import { loansService, type LoanAllocation } from '../loans/index.js';
+import { loansService, type LoanAllocation, type RepaymentAllocation } from '../loans/index.js';
 import { settingsService } from '../settings/index.js';
 import {
   expenseCents,
+  incomeCents,
   isIncome,
   netWorthCents,
   toAmountCents,
@@ -40,6 +41,33 @@ function ownExpenseCents(
     }
 
     return sum + expenseCents(type.data, allocation.amountCents, allocation.lentCents);
+  }, 0);
+}
+
+/**
+ * Quanto delle entrate del periodo è in realtà un credito che rientra (D2).
+ *
+ * È lo specchio di `ownExpenseCents`: i totali per tipo contano per intero un
+ * accredito collegato a restituzioni, ma quella quota non è un'entrata né un
+ * aumento del patrimonio. Il tipo viene ricontrollato per lo stesso motivo:
+ * se l'accredito è stato riclassificato, i totali per tipo non lo contano più
+ * fra le entrate e non c'è nulla da togliere.
+ */
+function repaidIncomeCents(
+  allocations: readonly RepaymentAllocation[],
+  inPeriod: (bookingDate: string) => boolean,
+): number {
+  return allocations.reduce((sum, allocation) => {
+    const type = transactionTypeSchema.safeParse(allocation.type);
+    if (!type.success || !isIncome(type.data) || !inPeriod(allocation.bookingDate)) {
+      return sum;
+    }
+
+    return (
+      sum +
+      allocation.amountCents -
+      incomeCents(type.data, allocation.amountCents, allocation.repaidCents)
+    );
   }, 0);
 }
 
@@ -116,6 +144,15 @@ export const cashFlowService = {
     const ownExpense = ownExpenseCents(loansService.allocations(), inPeriod);
     expensesCents += ownExpense;
     netWorthChangeCents -= ownExpense;
+
+    /*
+     * La quota di un accredito collegata a restituzioni è credito che rientra:
+     * esce da entrate e patrimonio (D2). Anche qui la liquidità non cambia,
+     * e `byType` resta la ripartizione di ciò che è passato sul conto.
+     */
+    const repaidIncome = repaidIncomeCents(loansService.repaymentAllocations(), inPeriod);
+    incomeCents -= repaidIncome;
+    netWorthChangeCents -= repaidIncome;
 
     byType.sort((a, b) => a.amount - b.amount);
 

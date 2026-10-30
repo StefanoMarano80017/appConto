@@ -163,7 +163,8 @@ describe('lo scenario completo: prestare, ricevere indietro, chiudere', () => {
 
     // Cash Flow = cosa è successo al conto.
     assert.equal(flow.netMovement, -30, '-80 + 20 + 30');
-    assert.equal(flow.income, 50, 'i due accrediti sono contati normalmente');
+    // D2: i 20 collegati alla restituzione non sono un'entrata; restano i 30 non ancora collegati.
+    assert.equal(flow.income, 30, 'solo l\'accredito non collegato è un\'entrata');
 
     // Loan = quanto denaro devo ancora ricevere.
     assert.equal(loan.amount, 80, 'prestato');

@@ -15,7 +15,7 @@ export {
   type LoanSortField,
   type LoanStatusFilter,
 } from './loan-query.js';
-export type { LoanAllocation } from './loans.repository.js';
+export type { LoanAllocation, RepaymentAllocation } from './loans.repository.js';
 export { loansService } from './loans.service.js';
 export type {
   LinkedTransaction,

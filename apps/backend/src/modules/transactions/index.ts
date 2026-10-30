@@ -14,6 +14,7 @@ export {
   creditCents,
   expenseCents,
   hasExpense,
+  incomeCents,
   isIncome,
   netWorthCents,
   type TransactionType,

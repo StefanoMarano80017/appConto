@@ -93,6 +93,7 @@ function toTimeline(
   entries: readonly TransactionWithMerchant[],
   query: AnalyticsQuery,
   lentByTransaction: ReadonlyMap<string, number>,
+  repaidByTransaction: ReadonlyMap<string, number>,
 ) {
   if (firstDate === null || lastDate === null) {
     return { granularity: query.granularity ?? "month", buckets: [] };
@@ -104,6 +105,7 @@ function toTimeline(
     lastDate,
     query.granularity,
     lentByTransaction,
+    repaidByTransaction,
   );
 }
 
@@ -152,6 +154,7 @@ export function toAnalyticsViewModel(
   entries: readonly TransactionWithMerchant[],
   aggregation: AnalyticsAggregation,
   lentByTransaction: ReadonlyMap<string, number>,
+  repaidByTransaction: ReadonlyMap<string, number> = new Map(),
 ): AnalyticsViewModel {
   const { totals, firstDate, lastDate } = aggregation;
 
@@ -173,7 +176,14 @@ export function toAnalyticsViewModel(
      * non copre non vale "zero speso", e su una spezzata si leggerebbe come
      * un crollo a zero.
      */
-    timeline: toTimeline(firstDate, lastDate, entries, query, lentByTransaction),
+    timeline: toTimeline(
+      firstDate,
+      lastDate,
+      entries,
+      query,
+      lentByTransaction,
+      repaidByTransaction,
+    ),
     loans: buildLoans(entries, lentByTransaction),
   };
 }

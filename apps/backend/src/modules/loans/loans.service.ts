@@ -19,7 +19,12 @@ import {
   type Loan,
   type LoanRepayment,
 } from './loan.model.js';
-import { loansRepository, type LoanAggregate, type LoanAllocation } from './loans.repository.js';
+import {
+  loansRepository,
+  type LoanAggregate,
+  type LoanAllocation,
+  type RepaymentAllocation,
+} from './loans.repository.js';
 import type {
   LinkedTransaction,
   LoanDetailViewModel,
@@ -338,6 +343,32 @@ export const loansService = {
       loansRepository
         .findAllocations()
         .map((allocation) => [allocation.transactionId, allocation.lentCents]),
+    );
+  },
+
+  /**
+   * I movimenti collegati a restituzioni, con quanto vi è stato collegato.
+   *
+   * Speculare ad `allocations`: il cash flow lavora su totali per tipo e ha
+   * bisogno di tipo, data e importo del movimento per togliere dalle entrate
+   * del periodo la quota che restituisce un credito (D2).
+   */
+  repaymentAllocations(): RepaymentAllocation[] {
+    return loansRepository.findRepaymentAllocations();
+  },
+
+  /**
+   * Quanto è stato collegato a restituzioni, per movimento.
+   *
+   * Speculare a `lentCentsByTransaction`: un movimento assente dalla mappa
+   * non ha restituzioni collegate e vale zero. Come quella quota si traduca
+   * in entrate e patrimonio lo decide la feature `transactions`.
+   */
+  repaymentsByTransaction(): Map<string, number> {
+    return new Map(
+      loansRepository
+        .findRepaymentAllocations()
+        .map((allocation) => [allocation.transactionId, allocation.repaidCents]),
     );
   },
 
