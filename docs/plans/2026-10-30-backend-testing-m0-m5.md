@@ -559,21 +559,21 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   - `modules/transactions/transactions.search.test.ts:240-243`;
   - `modules/loans/loans.service.test.ts:670`.
 - **Interfaccia:** `escapeLike(value: string): string`, dove `%`, `_` e `\` vengono preceduti da `\`.
-- [ ] Unit test:
+- [x] Unit test:
   - `escapeLike('100%_a') === '100\\%\\_a'`;
   - `escapeLike('a\\b') === 'a\\\\b'`;
   - `escapeLike('abc') === 'abc'`.
-- [ ] Integrazione sulle transazioni:
+- [x] Integrazione sulle transazioni:
   - seminare `SCONTO 100%`, `IMPORTO 1000` e `COD_A1`;
   - `'100%'` trova solo la prima;
   - `'_'` trova solo `COD_A1`;
   - `'1000'` trova solo la seconda.
-- [ ] Integrazione sui prestiti: un `borrowerName` con `%` viene trovato; un nome senza `%` non viene trovato cercando `'%'`.
-- [ ] Gate V2. Utilizzatori diretti: tutti i test che importano i repository di transazioni e prestiti.
+- [x] Integrazione sui prestiti: un `borrowerName` con `%` viene trovato; un nome senza `%` non viene trovato cercando `'%'`.
+- [x] Gate V2. Utilizzatori diretti: tutti i test che importano i repository di transazioni e prestiti.
 
 #### T1.2 — `parseCsvDate` / `parseCsvAmount` *(G1-A; D6.1–6.3)*
 - **File:** nuovo `modules/import/csv-values.test.ts`; `csv-values.ts`; `csv-column-detector.test.ts` (un solo test aggiunto).
-- [ ] Tabella `parseCsvDate`:
+- [x] Tabella `parseCsvDate`:
 
   | Input | Atteso |
   |---|---|
@@ -586,7 +586,7 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   | `'01/01/99'` | `'1999-01-01'` |
   | `'01/01/69'` | `'2069-01-01'` |
 
-- [ ] Tabella `parseCsvAmount`:
+- [x] Tabella `parseCsvAmount`:
 
   | Input | Atteso |
   |---|---|
@@ -604,27 +604,27 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   | `'120,00+'`, `'+120,00'` | `120` |
   | `'-120,00-'`, `'(12,50)'`, `''`, `'abc'` | `null` |
 
-- [ ] **Invariante di andata e ritorno:**
+- [x] **Invariante di andata e ritorno:**
   - per ogni importo intero in centesimi `c` da −1.000.000 a +1.000.000, con un passo che includa i valori `±1`, `±99`, `±100`, `±100000`, ecc.;
   - formattato all'italiana con le migliaia (`1.234,56`, `-0,01`);
   - `Math.round(parseCsvAmount(testo)! * 100) === c`.
-- [ ] Rilevatore di colonne: una colonna `Data` con valori `'01/01/2026 10:00'` viene riconosciuta come data.
-- [ ] Gate V3, più gli invarianti. Utilizzatori diretti: `csv-column-detector.test.ts`, `column-mapping.test.ts`, `import.test.ts`.
+- [x] Rilevatore di colonne: una colonna `Data` con valori `'01/01/2026 10:00'` viene riconosciuta come data.
+- [x] Gate V3, più gli invarianti. Utilizzatori diretti: `csv-column-detector.test.ts`, `column-mapping.test.ts`, `import.test.ts`.
 
 #### T1.3 — `parseCsv`: BOM, intestazione, CSV malformato *(G1-B; D6.4, D6.9)*
 - **File:** nuovo `modules/import/csv-parser.test.ts`; `csv-parser.ts`.
-- [ ] Test:
+- [x] Test:
   - BOM iniziale → `headers[0] === 'Data contabile'`;
   - contenuto vuoto o solo spazi → `ValidationError`;
   - virgolette non chiuse alla riga 3 → `ValidationError` con il messaggio che contiene `3`;
   - lo stesso CSV con `;` e con `,` → stesse righe.
-- [ ] Prima di implementare, eseguire `parseCsv` in sola lettura su ogni file di `samples/` e riportare gli errori Papa per tipo. Questo decide l'applicazione di D6.9.
-- [ ] Correzione: leggere `result.errors` secondo D6.9.
-- [ ] Gate V2. Utilizzatori diretti: `import.test.ts`, `import.atomicity.test.ts`.
+- [x] Prima di implementare, eseguire `parseCsv` in sola lettura su ogni file di `samples/` e riportare gli errori Papa per tipo. Questo decide l'applicazione di D6.9.
+- [x] Correzione: leggere `result.errors` secondo D6.9.
+- [x] Gate V2. Utilizzatori diretti: `import.test.ts`, `import.atomicity.test.ts`.
 
 #### T1.4 — Resolver dei tipi *(G1-D)*
 - **File:** nuovo `modules/import/transaction-type-resolver.test.ts`; `transaction-type-resolver.ts`.
-- [ ] Tabella `resolveTransactionType(hint, amount)`:
+- [x] Tabella `resolveTransactionType(hint, amount)`:
 
   | Hint | Importo | Atteso | Nota |
   |---|---|---|---|
@@ -639,20 +639,20 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   | `''` | 0.01 | `INCOME` | |
   | `'POS'` | −1 | `EXPENSE` | |
 
-- [ ] Correzione: radici `preliev`, `prelevament`, `accredit`.
-- [ ] Gate V2.
+- [x] Correzione: radici `preliev`, `prelevament`, `accredit`.
+- [x] Gate V2.
 
 #### T1.5 — Normalizzazione dei merchant *(G1-D)*
 - **File:** nuovo `modules/merchants/merchant-normalizer.test.ts`; `modules/import/import.test.ts` (un test in fondo, con prefisso `S13 `).
-- [ ] `normalizeMerchantName('  Bar   X ')` → `'bar x'`; tabulazioni e a capo diventano uno spazio; `'CAFFÈ'` → `'caffè'`.
-- [ ] Importando `BAR X` e `Bar  x` si ottiene un solo merchant.
-- [ ] Solo test. Se qualcosa fallisce, **riportarlo**.
-- [ ] Gate V1.
+- [x] `normalizeMerchantName('  Bar   X ')` → `'bar x'`; tabulazioni e a capo diventano uno spazio; `'CAFFÈ'` → `'caffè'`.
+- [x] Importando `BAR X` e `Bar  x` si ottiene un solo merchant.
+- [x] Solo test. Se qualcosa fallisce, **riportarlo**.
+- [x] Gate V1.
 
 #### T1.6 — Un solo arrotondamento euro → centesimi *(G1-E; D6.8)*
 - **File:** `transaction.model.ts:56-57`; `cash-flow.service.ts:18`; `settings.repository.ts:25`; nuovo `modules/transactions/transaction.model.test.ts`.
 - **Interfaccia:** `toAmountCents(amount: number): number`, l'unica conversione. Cash-flow e settings la importano.
-- [ ] Tabella:
+- [x] Tabella:
 
   | Input | Atteso |
   |---|---|
@@ -663,21 +663,21 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   | `0.1 + 0.2` | `30` |
   | `-0.004` | `0`, verificato con `Object.is(r, 0)` |
 
-- [ ] **Invariante:** per ogni intero `c` da −1.000.000 a +1.000.000, `toAmountCents(c / 100) === c`. È un ciclo deterministico.
-- [ ] **Simmetria e niente `-0`** (richiesta in fase di approvazione):
+- [x] **Invariante:** per ogni intero `c` da −1.000.000 a +1.000.000, `toAmountCents(c / 100) === c`. È un ciclo deterministico.
+- [x] **Simmetria e niente `-0`** (richiesta in fase di approvazione):
   - per ogni `x` dell'invariante e per i casi a metà `±0.005`, `±1.005`, `±2.675`: `toAmountCents(-x) === -toAmountCents(x)`;
   - quando il risultato è zero, deve essere `Object.is(r, 0)` per `0`, `-0`, `-0.004`, `0.004`, `-0.0049`;
   - `toAmountCents(-0.005) === -1` e `toAmountCents(0.005) === 1`.
-- [ ] Implementazione: spostamento decimale (`Number(`${amount}e2`)`), poi un arrotondamento a metà lontano da zero.
-- [ ] Gate V3, più gli invarianti. Utilizzatori diretti: **tutta la suite**. Nessun valore esistente deve cambiare.
+- [x] Implementazione: spostamento decimale (`Number(`${amount}e2`)`), poi un arrotondamento a metà lontano da zero.
+- [x] Gate V3, più gli invarianti. Utilizzatori diretti: **tutta la suite**. Nessun valore esistente deve cambiare.
 
 #### T1.7 — Vocabolario del rilevatore allineato al resolver *(G1-F, aggiunto su decisione dell'utente il 30/10/2026)*
 Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`preliev`, `prelevament`, `accredit`), ma il rilevatore di colonne riconosce ancora una colonna "tipo" solo dalle parole singolari `prelievo`, `prelevamento`, `accredito` (`csv-column-detector.ts:59-62`, `TYPE_VOCABULARY`). Così una colonna di tipo con valori al plurale e senza un'intestazione indicativa non viene riconosciuta, e la correzione di T1.4 non arriva all'import automatico.
 - **File:** `apps/backend/src/modules/import/csv-column-detector.ts` (solo le voci `prelievo`, `prelevamento`, `accredito` di `TYPE_VOCABULARY`, sostituite dalle radici `preliev`, `prelevament`, `accredit`); `apps/backend/src/modules/import/csv-column-detector.test.ts` (test in fondo).
-- [ ] Test (rosso prima della correzione): un CSV la cui colonna di tipo ha un'intestazione **non** indicativa (verificare nel rilevatore quali intestazioni sono già indizi di tipo e sceglierne una che non lo sia) e valori come `Prelievi contanti`, `Accrediti vari`, `Prelievi ATM` → quella colonna è riconosciuta come `typeHint`.
-- [ ] Test: lo stesso CSV con i valori al singolare continua a essere riconosciuto (fissato, deve passare già prima).
-- [ ] Nessun altro test del file cambia esito; `import.test.ts` e `column-mapping.test.ts` restano verdi senza modifiche.
-- [ ] Gate V2 (rosso dopo aver ripristinato il vecchio file).
+- [x] Test (rosso prima della correzione): un CSV la cui colonna di tipo ha un'intestazione **non** indicativa (verificare nel rilevatore quali intestazioni sono già indizi di tipo e sceglierne una che non lo sia) e valori come `Prelievi contanti`, `Accrediti vari`, `Prelievi ATM` → quella colonna è riconosciuta come `typeHint`.
+- [x] Test: lo stesso CSV con i valori al singolare continua a essere riconosciuto (fissato, deve passare già prima).
+- [x] Nessun altro test del file cambia esito; `import.test.ts` e `column-mapping.test.ts` restano verdi senza modifiche.
+- [x] Gate V2 (rosso dopo aver ripristinato il vecchio file).
 - **Mod.:** `haiku`, revisore `sonnet`. Modifica di una riga, casi già specificati.
 
 ### M2 — Invarianti finanziari e correttezza del dominio
@@ -965,7 +965,7 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 |---|---|---|
 | M0 Stabilizzazione | ✅ completata il 30/10/2026: T0.1 (`8e3b3f5`), T5.5 (`03ee9da`). Merge in `master` da parte dell'utente | — |
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
-| M1 Parsing e funzioni pure | ⏳ | M0, D6.1–6.4, D6.8, D6.9 |
+| M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ⏳ | M1, D1 (con D1.b e D1.c), D2, D4, D5, D7 |
 | M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
 | M4 Contratti HTTP | ⏳ | M3 |
