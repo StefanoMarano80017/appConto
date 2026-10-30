@@ -164,7 +164,7 @@ conto se ne accorga. In quel caso **non** viene creata una Transaction
 artificiale: il credito scende, la liquidità no.
 
 Quando invece la restituzione è collegata ad una Transaction, quella Transaction
-resta ciò che è — tipicamente una `INCOME`. Il collegamento aggiunge significato
+deve essere una `INCOME` con importo positivo (D9). Il collegamento aggiunge significato
 al movimento, non lo trasforma: il tipo non cambia, il movimento resta nella
 liquidità e nel filtro delle entrate.
 
@@ -390,14 +390,16 @@ Conseguenze:
 - scollegare la restituzione riporta l'accredito fra le entrate per intero;
 - una restituzione arrivata in banca ma **non** collegata resta un'entrata:
   collegarla è compito di chi usa l'app;
-- l'esclusione vale **solo** per i movimenti `INCOME`. Una restituzione si
-  può collegare a qualunque movimento positivo, perché il collegamento
-  controlla il segno e non il tipo: un `EXPENSE`, `OTHER` o `TRANSFER`
-  positivo collegato — direttamente, o perché riclassificato dopo il
-  collegamento — conta come conta quel tipo, quota collegata compresa (per
-  esempio un `EXPENSE` di +25 con 20 collegati riduce le uscite di 25 e
-  aumenta il patrimonio di 25). È un punto aperto: se vincolare il tipo dei
-  movimenti collegati, o estendere loro l'esclusione, non è ancora deciso.
+- una restituzione si collega **solo** a un movimento `INCOME` con importo
+  positivo (D9). Collegarla a un `EXPENSE`, `OTHER`, `TRANSFER` o
+  `WITHDRAWAL` è rifiutato, sia in creazione sia in modifica; così
+  l'esclusione D2 copre tutti i movimenti collegati;
+- per lo stesso motivo un movimento collegato a restituzioni non si può
+  riclassificare in un tipo diverso da `INCOME`: altrimenti la regola si
+  aggirerebbe cambiando il tipo dopo il collegamento. `transactions` lo sa
+  tramite la porta `TransactionDependents` (il legame di una restituzione
+  dichiara `requiresIncome`), senza importare `loans`. Il movimento
+  d'origine di un prestito non è toccato da questo vincolo.
 
 ---
 

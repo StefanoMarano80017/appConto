@@ -370,19 +370,26 @@ describe('accredito collegato il cui tipo viene corretto', () => {
     assert.equal(cashFlow(MONTH).netWorthChange, 0);
   });
 
-  it('corretto in OTHER, non è un\'entrata e torna nel patrimonio per intero', () => {
-    // D2 esclude la quota collegata da un'entrata; su un altro tipo non dice
-    // nulla, e il movimento torna a contare come conta quel tipo.
+  it('corretto in OTHER viene rifiutato (D9), e nulla cambia', () => {
+    // D9: un accredito collegato a una restituzione resta un'entrata; prima
+    // questo test lo riclassificava in OTHER e verificava che tornasse nel
+    // patrimonio per intero.
     const before = liquidity();
-    transactionsService.updateType(incomeId, 'OTHER');
+    assert.throws(
+      () =>
+        transactionsService.updateType(incomeId, 'OTHER', {
+          usagesOf: (ids) => loansService.transactionUsages(ids),
+        }),
+      /Deve restare un'entrata/,
+    );
 
+    assert.equal(transactionsService.findById(incomeId)?.type, 'INCOME');
     assert.equal(cashFlow(MONTH).income, 0);
-    assert.equal(cashFlow(MONTH).netWorthChange, 60);
-    assert.equal(summary(MONTH).income, 0);
+    assert.equal(cashFlow(MONTH).netWorthChange, 0);
     assert.deepEqual(liquidity(), before, 'il tipo non cambia la liquidità');
   });
 
-  it('riportato a INCOME, l\'esclusione torna', () => {
+  it('riportato a INCOME, l\'esclusione resta', () => {
     transactionsService.updateType(incomeId, 'INCOME');
 
     assert.equal(cashFlow(MONTH).income, 0);

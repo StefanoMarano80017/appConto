@@ -16,6 +16,13 @@ import { transactionsRepository, type TypeTotalRow } from './transactions.reposi
 export interface TransactionUsage {
   readonly transactionId: string;
   readonly usedBy: string;
+  /**
+   * `true` se il legame regge solo finché il movimento è un'entrata: chi lo
+   * dichiara sa che cambiarne il tipo lo svuoterebbe di significato — una
+   * restituzione non si appoggia a una spesa. Assente significa «il tipo non
+   * conta».
+   */
+  readonly requiresIncome?: boolean;
 }
 
 /**
@@ -192,11 +199,28 @@ export const transactionsService = {
    *
    * È l'unico dato modificabile di una transazione già importata: data,
    * descrizione e importo restano quelli originali della banca.
+   *
+   * Un movimento a cui è collegata una restituzione deve restare un'entrata
+   * (D9): altrimenti la regola che ammette solo accrediti `INCOME` si
+   * aggirerebbe cambiando il tipo dopo il collegamento. `dependents` è
+   * facoltativo perché non tutti i chiamanti hanno dei legami da rispettare;
+   * la rotta lo passa sempre.
    */
-  updateType(id: string, type: TransactionType): Transaction {
+  updateType(id: string, type: TransactionType, dependents?: TransactionDependents): Transaction {
     const transaction = transactionsRepository.findById(id);
     if (transaction === null) {
       throw new NotFoundError(`Transazione "${id}" non trovata.`);
+    }
+
+    if (type !== 'INCOME' && dependents !== undefined) {
+      const vincoli = dependents.usagesOf([id]).filter((usage) => usage.requiresIncome === true);
+      if (vincoli.length > 0) {
+        const elenco = [...new Set(vincoli.map((usage) => usage.usedBy))].join(', ');
+
+        throw new ConflictError(
+          `Il movimento è collegato a: ${elenco}. Deve restare un'entrata: elimina prima quel collegamento, poi correggi il tipo.`,
+        );
+      }
     }
 
     transactionsRepository.updateType(id, type);

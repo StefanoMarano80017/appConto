@@ -136,10 +136,12 @@ function requireLoanTransaction(transactionId: string): Transaction {
 /**
  * La transazione a cui può essere collegata una restituzione.
  *
- * Il tipo non viene vincolato: il collegamento aggiunge significato al
- * movimento, non lo trasforma — un bonifico ricevuto resta un'entrata. Il
- * segno invece conta: una restituzione è denaro rientrato, collegarla ad
- * un'uscita sarebbe un errore di inserimento.
+ * Dev'essere un'entrata (D9): un accredito di tipo `INCOME` con importo
+ * positivo. Il tipo conta perché l'esclusione della quota restituita (D2) vale
+ * per i soli movimenti `INCOME`: ammettere altri tipi lascerebbe collegamenti
+ * che la regola non copre. Il segno conta perché una restituzione è denaro
+ * rientrato, collegarla ad un'uscita sarebbe un errore di inserimento. Per lo
+ * stesso motivo `transactions` non lascia riclassificare un movimento collegato.
  */
 function requireRepaymentTransaction(transactionId: string): Transaction {
   const transaction = transactionsService.findById(transactionId);
@@ -149,6 +151,11 @@ function requireRepaymentTransaction(transactionId: string): Transaction {
   if (toAmountCents(transaction.amount) <= 0) {
     throw new ValidationError(
       'Una restituzione è denaro rientrato: il movimento collegato deve essere un accredito.',
+    );
+  }
+  if (transaction.type !== 'INCOME') {
+    throw new ValidationError(
+      'Una restituzione si collega solo a un movimento di tipo entrata: correggi prima la natura del movimento.',
     );
   }
 
@@ -453,6 +460,8 @@ export const loansService = {
           link.role === 'ORIGIN'
             ? `prestito a ${link.borrowerName}`
             : `restituzione del prestito a ${link.borrowerName}`,
+        // D9: un accredito collegato a una restituzione deve restare un'entrata.
+        requiresIncome: link.role === 'REPAYMENT',
       }));
   },
 
