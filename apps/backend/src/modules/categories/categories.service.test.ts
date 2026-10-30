@@ -188,7 +188,7 @@ describe('eliminazione di una categoria', () => {
     assert.equal(categoriesService.findById(categoria.id), null);
   });
 
-  it('riassegna a «Da classificare» i merchant della categoria eliminata', () => {
+  it('riporta senza categoria (null, cioè «Da classificare») i merchant della categoria eliminata', () => {
     const categoria = categoriesService.create({ name: 'Con merchant da riassegnare', color: null });
     importService.importCsv(
       ['Data contabile,Descrizione,Importo', '02/05/2026,ESERCENTE RIASSEGNATO,-5.00'].join('\r\n'),
@@ -200,7 +200,7 @@ describe('eliminazione di una categoria', () => {
     categoriesService.remove(categoria.id);
 
     const aggiornato = merchantsService.listAll().find((m) => m.id === merchant.id);
-    assert.equal(aggiornato?.categoryId, FALLBACK_CATEGORY_ID);
+    assert.equal(aggiornato?.categoryId, null);
     assert.equal(categoriesService.findById(categoria.id), null);
   });
 

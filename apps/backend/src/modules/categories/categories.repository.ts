@@ -1,4 +1,4 @@
-import { asc, count, eq } from 'drizzle-orm';
+import { asc, count, eq, isNull } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { merchants } from '../merchants/merchants.schema.js';
 import type { Category } from './category.model.js';
@@ -50,12 +50,19 @@ export const categoriesRepository = {
     return row?.total ?? 0;
   },
 
+  /** Quanti merchant non hanno una categoria. */
+  countMerchantsWithoutCategory(): number {
+    const row = db.select({ total: count() }).from(merchants).where(isNull(merchants.categoryId)).get();
+
+    return row?.total ?? 0;
+  },
+
   remove(id: string): void {
     db.delete(categories).where(eq(categories.id, id)).run();
   },
 
-  /** Sposta tutti i merchant di `fromId` su `toId`. */
-  reassignMerchants(fromId: string, toId: string): void {
+  /** Sposta tutti i merchant di `fromId` su `toId` (`null`: senza categoria). */
+  reassignMerchants(fromId: string, toId: string | null): void {
     db.update(merchants).set({ categoryId: toId }).where(eq(merchants.categoryId, fromId)).run();
   },
 };
