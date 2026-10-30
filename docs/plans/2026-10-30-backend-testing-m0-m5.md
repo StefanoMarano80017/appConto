@@ -17,6 +17,12 @@
 
 È autorizzata **solo M0**: ogni milestone successiva richiede un'approvazione esplicita.
 
+**Decisioni prese all'avvio di M0 (30/10/2026):**
+- **T0.2 rimandato.** L'instabilità di `runtime.test.ts:278` ricade nell'area del piano `docs/superpowers/plans/2026-10-30-backend-main-lifecycle.md` (arresto e IPC del server, punto 7 del relativo design), in corso in un'altra sessione. M0 comprende quindi solo T0.1.
+- **Esecuzione in worktree.** Ogni milestone gira in un worktree dedicato, `.claude/worktrees/<branch>` (già escluso da git tramite `.git/info/exclude`), creato con `superpowers:using-git-worktrees`, per non interferire con altre sessioni che usano la cartella principale. Due dettagli:
+  - `node_modules` è una **junction** verso quella della cartella principale. `npm ci` nel worktree fallisce compilando `better-sqlite3`, e `runtime.test.ts:37` cerca `tsx` sotto la radice del worktree. Le dipendenze sono identiche a `master`.
+  - Quando il worktree viene rimosso, la junction va eliminata **prima** e come collegamento (`(Get-Item node_modules).Delete()`), mai con una cancellazione ricorsiva.
+
 ---
 
 ## 0. Modifiche rispetto alla v1
@@ -472,10 +478,10 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 
 ### M0 — Stabilizzazione della suite
 
-**Criteri di accettazione:**
-- `SUITE×5` verde, con l'output nel ledger;
-- `runtime.test.ts` verde in 10 esecuzioni isolate consecutive, e in 3 esecuzioni concorrenti con `SUITE`;
-- `PERIMETRO` = solo `backup.service.test.ts` e `runtime.test.ts`; nessun file di produzione;
+**Criteri di accettazione** (rivisti dopo il rinvio di T0.2):
+- `SUITE×5` eseguita, con l'output nel ledger. **Nessun fallimento di `backup.service.test.ts`.** Un eventuale fallimento di `runtime.test.ts:278` va registrato come noto e rinviato, ma non blocca M0; qualunque altro fallimento sì;
+- `backup.service.test.ts` verde in 20 esecuzioni isolate consecutive;
+- `PERIMETRO` = solo `backup.service.test.ts`; nessun file di produzione;
 - revisione `opus` della milestone senza rilievi Critical o Important aperti.
 
 **Rischi:** la causa di T0.2 potrebbe trovarsi nel consolidamento del WAL su Windows. In quel caso ci si ferma.
@@ -486,7 +492,9 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 - [ ] Nel test "file troncato", aggiungere `assert.match(check.problem, /…/)`, con il messaggio rilevato eseguendo il test.
 - [ ] Gate V1. Per il punto "a": il test passa già; la prova è che `assert.notEqual` rende impossibile il caso in cui l'alterazione non cambia nulla. Nel report va spiegato.
 
-#### T0.2 — `SQLITE_IOERR_TRUNCATE` dopo `process.kill` su Windows *(G0-B, con `systematic-debugging`)*
+#### T0.2 — `SQLITE_IOERR_TRUNCATE` dopo `process.kill` su Windows *(G0-B, con `systematic-debugging`)* — **RIMANDATO**
+
+> Rimandato per decisione dell'utente (30/10/2026): l'area è coperta dal piano `backend-main-lifecycle`. Il testo resta come riferimento per chi lo riprenderà.
 - **File:** `apps/backend/src/runtime.test.ts`. Vietati `shutdown.ts`, `main.ts` e `db/**`.
 - [ ] Riprodurre: 20 esecuzioni del file, di cui 5 concorrenti con `SUITE`. Riportare la frequenza.
 - [ ] Verificare l'ipotesi: `termina()` restituisce il controllo prima che Windows rilasci i file `-wal` e `-shm`, e l'apertura `readonly` tenta un truncate. Verificare che si attenda l'evento `exit`.
@@ -910,7 +918,7 @@ Nessun helper condiviso nuovo, salvo che la revisione di milestone rilevi più d
 
 | Milestone | Stato | Bloccata da |
 |---|---|---|
-| M0 Stabilizzazione | ⏳ | la tua approvazione esplicita |
+| M0 Stabilizzazione | 🔄 in corso (solo T0.1; T0.2 rimandato) | — |
 | M1 Parsing e funzioni pure | ⏳ | M0, D6.1–6.4, D6.8, D6.9 |
 | M2 Invarianti finanziari | ⏳ | M1, D1 (con D1.b e D1.c), D2, D4, D5, D7 |
 | M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
