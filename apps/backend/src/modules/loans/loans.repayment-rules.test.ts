@@ -46,7 +46,7 @@ importService.importCsv(
     '14/02/2040,Accredito,ACCREDITO SPESA,100.00',
     '15/02/2040,Accredito,ACCREDITO TRASFERIMENTO,100.00',
     '16/02/2040,Accredito,ACCREDITO PRELIEVO,100.00',
-    '10/03/2040,Bonifico,ORIGINE DATE,-300.00',
+    '10/03/2040,Bonifico,ORIGINE DATE,-600.00',
   ),
 );
 
@@ -198,5 +198,80 @@ describe('D9: un movimento collegato a una restituzione non esce da INCOME', () 
     const id = transactionId('ENTRATA B');
     assert.equal(transactionsService.updateType(id, 'OTHER', dependents).type, 'OTHER');
     transactionsService.updateType(id, 'INCOME', dependents);
+  });
+});
+
+describe('D10: la restituzione non è anteriore al prestito', () => {
+  const nuovoPrestito = (borrowerName: string): string =>
+    loansService.create({
+      transactionId: transactionId('ORIGINE DATE'),
+      borrowerName,
+      description: null,
+      amount: 100,
+      lentAt: '2040-03-10',
+    }).id;
+
+  it('in creazione rifiuta il giorno prima, accetta lo stesso giorno e il giorno dopo', () => {
+    const id = nuovoPrestito('Elena');
+
+    expectError(
+      'VALIDATION',
+      () => loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-09' }),
+      /anteriore/,
+    );
+    assert.equal(loansService.getById(id).repaymentCount, 0);
+
+    loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-10' });
+    loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-11' });
+    assert.equal(loansService.getById(id).repaymentCount, 2);
+  });
+
+  it('in modifica della data rifiuta il giorno prima, accetta lo stesso giorno e il giorno dopo', () => {
+    const id = nuovoPrestito('Franco');
+    const detail = loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-20' });
+    const repaymentId = detail.repayments[0]?.id;
+    assert.ok(repaymentId);
+
+    expectError(
+      'VALIDATION',
+      () => loansService.updateRepayment(id, repaymentId, { repaymentDate: '2040-03-09' }),
+      /anteriore/,
+    );
+    assert.equal(loansService.getById(id).repayments[0]?.repaymentDate, '2040-03-20');
+
+    loansService.updateRepayment(id, repaymentId, { repaymentDate: '2040-03-10' });
+    assert.equal(loansService.getById(id).repayments[0]?.repaymentDate, '2040-03-10');
+    loansService.updateRepayment(id, repaymentId, { repaymentDate: '2040-03-11' });
+    assert.equal(loansService.getById(id).repayments[0]?.repaymentDate, '2040-03-11');
+  });
+
+  it('la modifica di un altro campo non rifiuta una restituzione già valida', () => {
+    const id = nuovoPrestito('Gina');
+    const repaymentId = loansService.addRepayment(id, {
+      amount: 10,
+      repaymentDate: '2040-03-10',
+    }).repayments[0]?.id;
+    assert.ok(repaymentId);
+
+    const detail = loansService.updateRepayment(id, repaymentId, { note: 'a mano' });
+
+    assert.equal(detail.repayments[0]?.note, 'a mano');
+  });
+
+  it('la data del prestito non si sposta dopo la restituzione più vecchia', () => {
+    const id = nuovoPrestito('Irene');
+    loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-15' });
+    loansService.addRepayment(id, { amount: 10, repaymentDate: '2040-03-12' });
+
+    expectError('VALIDATION', () => loansService.update(id, { lentAt: '2040-03-13' }), /anteriore/);
+    assert.equal(loansService.getById(id).lentAt, '2040-03-10');
+
+    assert.equal(loansService.update(id, { lentAt: '2040-03-12' }).lentAt, '2040-03-12');
+  });
+
+  it('un prestito senza restituzioni si sposta dove si vuole', () => {
+    const id = nuovoPrestito('Luca');
+
+    assert.equal(loansService.update(id, { lentAt: '2040-09-01' }).lentAt, '2040-09-01');
   });
 });

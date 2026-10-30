@@ -399,7 +399,11 @@ Conseguenze:
   aggirerebbe cambiando il tipo dopo il collegamento. `transactions` lo sa
   tramite la porta `TransactionDependents` (il legame di una restituzione
   dichiara `requiresIncome`), senza importare `loans`. Il movimento
-  d'origine di un prestito non è toccato da questo vincolo.
+  d'origine di un prestito non è toccato da questo vincolo;
+- una restituzione non può avere una data anteriore a quella del prestito
+  (D10): la stessa giornata è ammessa. Vale per creazione e modifica della
+  restituzione, e la data del prestito non si può spostare dopo la sua
+  restituzione più vecchia.
 
 ---
 

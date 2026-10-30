@@ -325,9 +325,10 @@ describe('modifica di un prestito con restituzioni e prestiti fratelli', () => {
 });
 
 describe('restituzione anteriore alla data del prestito', () => {
-  // Comportamento attuale, fissato così com'è: nessun controllo sulle date.
-  // Se un giorno diventasse una regola di dominio, questo test va riscritto.
-  it('viene accettata: oggi nessuna regola confronta le due date', () => {
+  // D10: la regola è diventata di dominio. Prima questo test fissava che la
+  // restituzione anteriore venisse accettata; ora è rifiutata, e lo stesso
+  // giorno resta ammesso.
+  it('viene rifiutata: la restituzione non può precedere il prestito', () => {
     const loan = loansService.create({
       transactionId: transactionId('V3 USCITA PER IMPORTI AL CENTESIMO'),
       borrowerName: 'Elena',
@@ -335,13 +336,20 @@ describe('restituzione anteriore alla data del prestito', () => {
       lentAt: '2034-06-10',
     });
 
+    expectError(
+      'VALIDATION',
+      () => loansService.addRepayment(loan.id, { amount: 2, repaymentDate: '2034-06-01' }),
+      /anteriore/,
+    );
+    assert.equal(loansService.getById(loan.id).repaidAmount, 0);
+
     const detail = loansService.addRepayment(loan.id, {
       amount: 2,
-      repaymentDate: '2034-06-01',
+      repaymentDate: '2034-06-10',
     });
 
     assert.equal(detail.repaidAmount, 2);
-    assert.equal(detail.repayments[0]?.repaymentDate, '2034-06-01');
+    assert.equal(detail.repayments[0]?.repaymentDate, '2034-06-10');
   });
 });
 

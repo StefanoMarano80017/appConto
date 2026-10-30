@@ -163,6 +163,20 @@ function requireRepaymentTransaction(transactionId: string): Transaction {
 }
 
 /**
+ * Una restituzione non può precedere il prestito (D10).
+ *
+ * La stessa giornata è ammessa. Le date sono ISO `YYYY-MM-DD`: il confronto fra
+ * stringhe coincide con quello cronologico.
+ */
+function assertNotBeforeLoan(repaymentDate: string, lentAt: string): void {
+  if (repaymentDate < lentAt) {
+    throw new ValidationError(
+      `La restituzione (${repaymentDate}) non può essere anteriore al prestito (${lentAt}).`,
+    );
+  }
+}
+
+/**
  * Il tetto di capienza del movimento d'origine.
  *
  * Una sola transazione può finanziare più prestiti — un pagamento che copre
@@ -509,6 +523,18 @@ export const loansService = {
       );
     }
 
+    if (data.lentAt !== undefined) {
+      const oldest = loansRepository
+        .findRepayments(id)
+        .map((repayment) => repayment.repaymentDate)
+        .sort()[0];
+      if (oldest !== undefined && oldest < data.lentAt) {
+        throw new ValidationError(
+          `Esiste una restituzione del ${oldest}, anteriore alla nuova data del prestito (${data.lentAt}): il prestito non può essere datato dopo la sua prima restituzione.`,
+        );
+      }
+    }
+
     if (amountCents !== aggregate.amountCents) {
       const transaction = transactionsService.findById(aggregate.transactionId);
       if (transaction !== null) {
@@ -556,6 +582,8 @@ export const loansService = {
       assertRepaymentFitsTransaction(requireRepaymentTransaction(data.transactionId), amountCents);
     }
 
+    assertNotBeforeLoan(data.repaymentDate, aggregate.lentAt);
+
     const remaining = remainingCents(aggregate.amountCents, aggregate.repaidCents);
     if (amountCents > remaining) {
       throw new ValidationError(
@@ -594,6 +622,10 @@ export const loansService = {
       data.amount === undefined
         ? repayment.amountCents
         : requirePositiveCents(data.amount, 'della restituzione');
+
+    if (data.repaymentDate !== undefined) {
+      assertNotBeforeLoan(data.repaymentDate, aggregate.lentAt);
+    }
 
     const others = loansRepository.repaidCents(loanId, repaymentId);
     if (others + amountCents > aggregate.amountCents) {
