@@ -242,4 +242,17 @@ describe('colonne dare e avere separate', () => {
       [-54.3, 2450],
     );
   });
+
+  it('riconosce come data una colonna con data e ora', () => {
+    const { headers, rows } = parseCsv(
+      [
+        'Data;Descrizione;Importo',
+        '01/01/2026 10:00;SPESA SUPERMERCATO;-54,30',
+        '02/01/2026 11:15;EDICOLA CENTRALE;-2,00',
+        '05/01/2026 09:30;STIPENDIO GENNAIO;2.450,00',
+      ].join('\n'),
+    );
+
+    assert.deepEqual(detectColumns(headers, rows).bookingDate, ['Data']);
+  });
 });
