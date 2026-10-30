@@ -1,100 +1,137 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { formatMonth } from '../../core/format';
+import { httpResource } from '@angular/common/http';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
+import { formatBookingDate, formatMonth } from '../../core/format';
 import { toErrorMessage } from '../../core/http-error';
 import { Panel } from '@shared/layout/panel/panel';
 import { PageLayout } from '@shared/layout/page-layout/page-layout';
-import { FilterChips } from '@shared/ui/filters/filter-chips/filter-chips';
-import { Select } from '@shared/ui/forms/select/select';
 import { StatCardDelta, StatCardGrid, StatCardItem } from '@shared/layout/stat-card-grid/stat-card-grid';
-import { CashFlowCard } from '../cash-flow/cash-flow-card';
-import { TRANSACTION_TYPE_OPTIONS } from '../transactions/transaction-type-options';
-import {
-  TRANSACTION_TYPE_LABELS,
-  TransactionType
-} from '../transactions/transaction-type';
-import { CategoryBreakdownSection } from './category-breakdown';
-import { DashboardFilterStore } from './dashboard-filter.store';
-import { Dashboard, MonthComparison } from './dashboard.model';
-import { DashboardApi } from './dashboard.api';
-import { MonthComparisonSection } from './month-comparison';
-import { TopMerchantsSection } from './top-merchants';
+import { Amount } from '@shared/ui/data/amount/amount';
+import { ErrorRetry } from '@shared/ui/feedback/error-retry/error-retry';
+import { Dashboard } from './dashboard.model';
+import { dashboardRequest } from './dashboard.api';
+import { comparisonCaption, monthBounds, parseMonthParam, shiftMonth } from './dashboard-month';
+import { AttentionPanel, attentionHasContent } from './attention-panel';
+import { RecentTransactions } from './recent-transactions';
+import { TopCategories } from './top-categories';
 
 /**
- * Home dell'applicazione.
+ * Home dell'applicazione: il riepilogo essenziale di un mese.
  *
- * È l'unico componente che carica i dati: tutte le sezioni ricevono in input
- * porzioni della stessa risposta, quindi non possono mostrare periodi o filtri
- * diversi fra loro.
+ * Il mese vive nell'URL (`/?month=YYYY-MM`): ricaricare o tornare indietro
+ * non lo perde. Senza mese, o con uno non valido, lo sceglie il backend.
+ * Una sola richiesta per tutta la pagina: le sezioni leggono porzioni della
+ * stessa risposta, quindi non possono mostrare mesi diversi fra loro.
+ *
+ * L'orologio è quello del server (`today` nella risposta): mese corrente e
+ * freccia › non leggono la data del browser.
  */
 @Component({
   selector: 'app-dashboard-page',
   imports: [
-    CashFlowCard,
-    CategoryBreakdownSection,
-    FilterChips,
-    MonthComparisonSection,
-    Panel,
+    Amount,
+    AttentionPanel,
+    ErrorRetry,
+    LucideChevronLeft,
+    LucideChevronRight,
     PageLayout,
-    Select,
+    Panel,
+    RecentTransactions,
     StatCardGrid,
-    TopMerchantsSection
+    TopCategories
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss'
 })
 export class DashboardPage {
-  private readonly    api = inject(DashboardApi);
-  protected readonly  filters = inject(DashboardFilterStore);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
-  protected readonly dashboard = signal<Dashboard | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
-
-  protected readonly typeOptions = TRANSACTION_TYPE_OPTIONS;
-  protected readonly formatMonth = formatMonth;
-
-  /** Etichette dei filtri attivi, risolte sui dati appena caricati. */
-  protected readonly activeFilters = computed(() => {
-    const data = this.dashboard();
-    if (data === null) {
-      return [];
-    }
-
-    const chips: { key: 'type' | 'category' | 'merchant'; label: string }[] = [];
-    const { type, categoryId, merchantId } = this.filters.filters();
-
-    if (type !== null) {
-      chips.push({ key: 'type', label: TRANSACTION_TYPE_LABELS[type] });
-    }
-    if (categoryId !== null) {
-      const category = data.categories.find((c) => c.id === categoryId);
-      chips.push({ key: 'category', label: category?.name ?? 'Categoria' });
-    }
-    if (merchantId !== null) {
-      const merchant = data.transactions.find((t) => t.merchant?.id === merchantId)?.merchant;
-      chips.push({ key: 'merchant', label: merchant?.label ?? 'Merchant' });
-    }
-
-    return chips;
+  private readonly params = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap
   });
 
-  protected readonly summaryCards = computed<StatCardItem[]>(() => {
-    const data = this.dashboard();
-    if (data === null) {
+  /** Il mese chiesto dall'URL; `null` se manca o non è valido. */
+  private readonly month = computed(() => parseMonthParam(this.params().get('month')));
+
+  protected readonly dashboard = httpResource<Dashboard>(() => dashboardRequest(this.month()));
+
+  /**
+   * L'ultimo riepilogo caricato, che resta a schermo mentre ne arriva un altro.
+   *
+   * Stessa latch di Analytics: `httpResource` azzera il valore quando la
+   * richiesta cambia, e senza questa cambiare mese svuoterebbe la pagina.
+   * `value()` solleverebbe l'errore di una richiesta fallita: risposta ed
+   * errore restano due stati distinti, entrambi mostrabili.
+   */
+  readonly data = linkedSignal<Dashboard | undefined, Dashboard | undefined>({
+    source: () => (this.dashboard.hasValue() ? this.dashboard.value() : undefined),
+    computation: (caricato, precedente) => caricato ?? precedente?.value
+  });
+
+  /**
+   * Primo e ultimo giorno del mese a schermo, per i collegamenti delle sezioni.
+   *
+   * Ha senso solo con dei dati: chi lo legge sta sotto `@if (data())`, quindi
+   * prima di allora resta un intervallo vuoto che nessuno mostra.
+   */
+  readonly monthRange = computed(() => {
+    const data = this.data();
+
+    return data === undefined ? { from: '', to: '' } : monthBounds(data.month);
+  });
+
+  /**
+   * La colonna «Da sistemare» / «Prestiti» ha qualcosa da mostrare. Se no,
+   * le categorie prendono tutta la riga. Stessa regola del pannello, non una
+   * copia: una sola funzione decide per entrambi.
+   */
+  protected readonly hasAttention = computed(() => {
+    const data = this.data();
+
+    return (
+      data !== undefined &&
+      attentionHasContent(data.attention, data.loans, data.lastTransactionDate, data.today)
+    );
+  });
+
+  protected readonly error = computed(() => {
+    const error = this.dashboard.error();
+
+    return error === undefined ? null : toErrorMessage(error);
+  });
+
+  /** I dati a schermo non sono quelli del mese chiesto: ne stanno arrivando altri, o la richiesta è fallita. */
+  protected readonly isReloading = computed(
+    () => this.dashboard.isLoading() || this.error() !== null
+  );
+
+  /** Non si va nel futuro: il mese in corso è l'ultimo raggiungibile. */
+  protected readonly isCurrentMonth = computed(() => {
+    const data = this.data();
+
+    return data !== undefined && data.month >= data.today.slice(0, 7);
+  });
+
+  protected readonly formatMonth = formatMonth;
+  protected readonly formatBookingDate = formatBookingDate;
+
+  protected readonly cards = computed<StatCardItem[]>(() => {
+    const data = this.data();
+    if (data === undefined) {
       return [];
     }
 
-    const { income, expenses, balance, transactionCount, merchantCount } = data.summary;
+    const { income, expenses, balance } = data.summary;
 
     return [
-      // `income` è una magnitudine positiva (v. summary.view-model.ts): nessuna
-      // negazione, nessun tono. `Amount` ne deduce il verde da sola.
+      // `income` è una magnitudine positiva: nessuna negazione, nessun tono.
       { kind: 'amount', label: 'Entrate', value: income, icon: 'entrate' },
       // `expenses` è una magnitudine positiva ma rappresenta un'uscita: la
-      // neghiamo qui senza forzare il tono, così un totale dominato da rimborsi
-      // (hasExpense è vera prima di guardare il segno) torna verde da solo
-      // invece di restare rosso a forza. Il confronto mensile esiste solo per
-      // le uscite (v. `expensesDelta`): è l'unica card con un chip.
+      // neghiamo senza forzare il tono, così un mese dominato da rimborsi
+      // torna verde da solo invece di restare rosso a forza.
       {
         kind: 'amount',
         label: 'Uscite',
@@ -102,83 +139,38 @@ export class DashboardPage {
         icon: 'uscite',
         delta: this.expensesDelta(data.comparison)
       },
-      // `balance` è già `income - expenses`, con il segno giusto: nessun tono
-      // imposto, nemmeno per lo zero — `Amount` lo tratta già da neutro.
-      { kind: 'amount', label: 'Saldo', value: balance, icon: 'saldo' },
-      { kind: 'text', label: 'Transazioni', value: String(transactionCount), icon: 'conteggio' },
-      // Nessuna icona mappata per i merchant: le quattro ammesse coprono le
-      // altre card, e inventarne una quinta senza un caso reale nel mockup
-      // andrebbe contro la ragione stessa dell'unione chiusa.
-      { kind: 'text', label: 'Merchant', value: String(merchantCount) }
+      // `balance` è già `income - expenses`, con il segno giusto.
+      { kind: 'amount', label: 'Risultato del mese', value: balance, icon: 'saldo' }
     ];
   });
 
   /**
-   * Il chip «vs mese precedente» della card «Uscite».
+   * Il confronto della card «Uscite».
    *
-   * `undefined` quando `percentChange` è `null`: il backend non calcola un
-   * confronto (il mese precedente non ha spese), e mostrare uno `0%` al
-   * posto di "non calcolabile" sarebbe un dato falso, non assente.
-   *
-   * Il tono non segue il segno di `percentChange`: per le uscite crescere
-   * (`percentChange > 0`) è una cattiva notizia, quindi tono `negative`, il
-   * contrario di quanto varrebbe per un'entrata. È la card che dichiara il
-   * tono, non `StatCardGrid` che lo deduce.
+   * Assente quando `percentChange` è `null`: il periodo precedente non ha
+   * spese, e uno `0%` sarebbe un dato falso. Il tono è invertito rispetto al
+   * segno: per le uscite crescere è una cattiva notizia.
    */
-  private expensesDelta(comparison: MonthComparison): StatCardDelta | undefined {
-    const { percentChange, previousMonth } = comparison;
+  private expensesDelta(comparison: Dashboard['comparison']): StatCardDelta | undefined {
+    const { percentChange } = comparison;
     if (percentChange === null) {
       return undefined;
     }
 
     return {
       percent: percentChange,
-      caption: `vs ${this.formatMonth(previousMonth)}`,
+      caption: comparisonCaption(comparison, comparison.previousFrom.slice(0, 7)),
       tone: percentChange > 0 ? 'negative' : percentChange < 0 ? 'positive' : 'neutral'
     };
   }
 
-  constructor() {
-    effect((onCleanup) => {
-      const filters = this.filters.filters();
-
-      this.loading.set(true);
-      this.error.set(null);
-
-      const subscription = this.api.get(filters).subscribe({
-        next: (dashboard) => {
-          this.dashboard.set(dashboard);
-          this.loading.set(false);
-        },
-        error: (error: unknown) => {
-          this.error.set(toErrorMessage(error));
-          this.loading.set(false);
-        }
-      });
-
-      onCleanup(() => subscription.unsubscribe());
-    });
-  }
-
-  protected onMonthChange(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    if (value !== '') {
-      this.filters.setMonth(value);
+  /** Il mese precedente o successivo a quello a schermo, nell'URL. */
+  protected goToMonth(delta: number): void {
+    const data = this.data();
+    if (data === undefined) {
+      return;
     }
-  }
 
-  /** `null` è la voce "Tutti": nessun filtro sul tipo. */
-  protected onTypeChange(value: TransactionType | null): void {
-    this.filters.setType(value);
-  }
-
-  protected removeFilter(key: 'type' | 'category' | 'merchant'): void {
-    if (key === 'type') {
-      this.filters.setType(null);
-    } else if (key === 'category') {
-      this.filters.setCategory(null);
-    } else {
-      this.filters.setMerchant(null);
-    }
+    void this.router.navigate([], { queryParams: { month: shiftMonth(data.month, delta) } });
   }
 }

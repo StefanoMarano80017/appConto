@@ -152,3 +152,41 @@ button.active .label::after {
   transform: scaleX(1);
   opacity: 1;
 }
+
+.count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+button.active .count {
+  color: var(--color-text-secondary);
+}
+
+/*
+ * Misura compatta: stesso blocco con bordo, ma basso e stretto. Sta in fondo
+ * perché `:host(.low) button` ha più specificità delle regole di base e
+ * l'attivo/hover devono riprendere il loro colore dopo il mixin tipografico.
+ * Il trattino resta nel padding verticale del bottone (4px, trattino a -2px).
+ */
+:host(.low) {
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+
+:host(.low) button {
+  @include typography.text('caption');
+  line-height: 2;
+  flex: 1 1 auto;
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+:host(.low) button:hover:not(.active),
+:host(.low) button.active {
+  color: var(--color-text-primary);
+}
+
+:host(.low) button.active {
+  font-weight: 600;
+}

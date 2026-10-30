@@ -232,7 +232,7 @@ describe('AnalyticsPage', () => {
 
     await flush(analytics());
 
-    expect(text()).toContain('Andamento nel tempo');
+    expect(text()).toContain('Flusso nel tempo');
     expect(text()).toContain('Spese per categoria');
     expect(text()).toContain('Merchant principali');
     expect(sectionText('app-analytics-loans')).toContain('Prestiti');
@@ -297,15 +297,22 @@ describe('AnalyticsPage', () => {
       })
     );
 
+    // La scelta della vista mostra solo l'icona: il nome sta nell'aria-label,
+    // non nel testo del pulsante.
     const host = fixture.nativeElement as HTMLElement;
-    [...host.querySelectorAll<HTMLButtonElement>('app-analytics-timeline app-choice-group button')]
-      .find((button) => button.textContent?.trim() === 'Cumulato')
-      ?.click();
+    const cumulative = [
+      ...host.querySelectorAll<HTMLButtonElement>('app-analytics-timeline app-choice-group button')
+    ].find((button) => button.getAttribute('aria-label') === 'Cumulato');
+    expect(cumulative).toBeDefined();
+    cumulative!.click();
     await settle();
 
     const chart = fixture.debugElement.query(By.directive(LineChart))
       .componentInstance as LineChart<TimelineBucket>;
     const [series] = chart.series();
+    // Senza questo controllo, un click finito nel vuoto leggerebbe la prima
+    // serie dei flussi (le entrate) al posto del cumulato.
+    expect(series!.label).toBe('Saldo periodo');
     const last = series!.value(chart.points().at(-1)!);
 
     expect(last).toBe(analytics().overview.balance);
@@ -320,7 +327,7 @@ describe('AnalyticsPage', () => {
     await settle();
     await flush(analytics(), STEP);
 
-    expect(store.selectedPeriodLabel()).toBe('Tutto');
+    expect(store.dateRange()).toEqual({ from: null, to: null });
   });
 
   it('un cambio di filtro aggiorna tutte le sezioni', async () => {
@@ -363,7 +370,7 @@ describe('AnalyticsPage', () => {
     // ma la latch di `data` deve trattenere quello precedente — niente più
     // sparizione del grafico, e il ramo del primo caricamento non deve
     // prendere il suo posto.
-    expect(sectionText('app-analytics-timeline')).toContain('Andamento nel tempo');
+    expect(sectionText('app-analytics-timeline')).toContain('Flusso nel tempo');
     expect(text()).not.toContain('Caricamento in corso');
 
     await flush(analytics(), `${RANGE}&categoryIds=cat-1&${STEP}`);
@@ -374,7 +381,7 @@ describe('AnalyticsPage', () => {
     await flush(empty());
 
     expect(text()).toContain('Nessun dato disponibile per il periodo selezionato');
-    expect(text()).not.toContain('Andamento nel tempo');
+    expect(text()).not.toContain('Flusso nel tempo');
     expect(sectionText('app-stat-card-grid')).toContain('Entrate');
   });
 

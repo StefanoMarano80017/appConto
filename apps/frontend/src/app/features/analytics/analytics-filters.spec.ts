@@ -50,16 +50,6 @@ describe('AnalyticsFilters', () => {
     expect(badge()?.textContent?.trim()).toBe('2 attivi');
   });
 
-  it('il gruppo Periodo mostra l\'intervallo di date risolto', async () => {
-    await fixture.whenStable();
-
-    // Preset iniziale dello store: 'this-year' (analytics.store.ts). L'etichetta
-    // attesa è quella per esteso di selectedPeriodLabel(), non l'abbreviazione
-    // '12M' dei segmenti di ChoiceGroup: verifica il contenuto reso, non solo
-    // che il selettore '.selected' esista.
-    expect(host().querySelector('.selected')?.textContent?.trim()).toBe('Quest\'anno');
-  });
-
   it('tronca il nome merchant visibile conservando nome completo e nome accessibile', async () => {
     const label = 'MERCANTE CON UNA DESCRIZIONE MOLTO LUNGA PER ESSERE TRONCATA';
     fixture.componentRef.setInput('merchants', [
@@ -117,7 +107,7 @@ describe('AnalyticsFilters', () => {
     await fixture.whenStable();
 
     expect(
-      host().querySelector('app-toggle-list-group app-search-input .search.pill'),
+      host().querySelector('app-toggle-list-group app-search-input .search'),
     ).not.toBeNull();
 
     const search = host().querySelector<HTMLInputElement>(

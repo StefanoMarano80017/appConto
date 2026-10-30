@@ -1,0 +1,32 @@
+<app-panel>
+  <app-section-header title="Ultimi movimenti">
+    <a panelActions class="all" routerLink="/transactions">Tutti i movimenti →</a>
+  </app-section-header>
+
+  @if (transactions().length === 0) {
+    <app-empty-state
+      message="Nessun movimento importato"
+      actionLabel="Importa estratto conto"
+      (action)="goToImport()"
+    />
+  } @else {
+    <ul>
+      @for (transaction of transactions(); track transaction.id) {
+        <li>
+          <span class="date">{{ formatBookingDate(transaction.bookingDate) }}</span>
+          <span class="label">{{ transaction.label }}</span>
+          <span class="category">
+            @if (transaction.category; as category) {
+              <app-color-marker [color]="category.color" />
+              {{ category.name }}
+            } @else {
+              Senza categoria
+            }
+          </span>
+          <!-- Con segno, come in banca: il tono lo deduce `app-amount`. -->
+          <app-amount class="amount" [value]="transaction.amount" />
+        </li>
+      }
+    </ul>
+  }
+</app-panel>

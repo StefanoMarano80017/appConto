@@ -9,7 +9,15 @@
     [class.icon-only]="iconOnly"
     [attr.aria-pressed]="active().has(option.id)"
     [attr.title]="option.description ?? (iconOnly ? option.label : null)"
-    [attr.aria-label]="option.description ? option.label + ', ' + option.description : (iconOnly ? option.label : null)"
+    [attr.aria-label]="
+      option.description
+        ? option.label + ', ' + option.description + (option.count !== undefined ? ', ' + option.count : '')
+        : option.count !== undefined
+          ? option.label + ', ' + option.count
+          : iconOnly
+            ? option.label
+            : null
+    "
     (click)="choose(option.id)"
   >
     @if (hasIcon) {
@@ -19,6 +27,9 @@
       <span class="label">
             {{ option.label }}  
       </span>
+    }
+    @if (option.count !== undefined) {
+      <span class="count">{{ option.count }}</span>
     }
   </button>
 }

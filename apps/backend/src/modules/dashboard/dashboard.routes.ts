@@ -1,33 +1,26 @@
 import { Router } from 'express';
 import { ValidationError } from '../../shared/errors.js';
-import { parseFilters } from './dashboard-filters.js';
 import { dashboardService } from './dashboard.service.js';
 
 export const dashboardRouter = Router();
 
-function optional(value: unknown, name: string): string | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  if (typeof value !== 'string') {
-    throw new ValidationError(`Parametro "${name}" non valido.`);
-  }
+/** Data locale del server in `YYYY-MM-DD` (non UTC: "oggi" è quello dell'utente). */
+function localToday(): string {
+  const now = new Date();
 
-  return value;
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
-// GET /dashboard?month=YYYY-MM&type=&categoryId=&merchantId=
+// GET /dashboard?month=YYYY-MM  (senza month: il mese dell'ultimo movimento)
 dashboardRouter.get('/', (req, res) => {
   const month = req.query.month;
-  if (typeof month !== 'string') {
-    throw new ValidationError('Parametro "month" mancante: atteso il formato YYYY-MM.');
+  if (month !== undefined && typeof month !== 'string') {
+    throw new ValidationError('Parametro "month" non valido: atteso il formato YYYY-MM.');
   }
 
-  const filters = parseFilters({
-    type: optional(req.query.type, 'type'),
-    categoryId: optional(req.query.categoryId, 'categoryId'),
-    merchantId: optional(req.query.merchantId, 'merchantId'),
-  });
-
-  res.json(dashboardService.getDashboard(month, filters));
+  res.json(dashboardService.getDashboard(month, localToday()));
 });

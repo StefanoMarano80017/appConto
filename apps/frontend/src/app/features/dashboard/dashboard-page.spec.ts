@@ -1,231 +1,259 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { API_BASE_URL } from '../../core/api';
-import { DashboardFilterStore } from './dashboard-filter.store';
 import { DashboardPage } from './dashboard-page';
 import { Dashboard } from './dashboard.model';
-import { chooseOption } from '@shared/ui/forms/select/select.testing';
-
-const transaction = (id: string, description: string, amount: number) => ({
-  id,
-  bookingDate: '2026-07-10',
-  description,
-  amount,
-  type: 'EXPENSE' as const,
-  merchant: {
-    id: `m-${id}`,
-    name: description,
-    displayName: null,
-    label: description,
-    normalizedName: description.toLowerCase(),
-    category: { id: 'cat-1', name: 'Alimentari', color: '#3f8f4f' }
-  }
-});
 
 const dashboard = (overrides: Partial<Dashboard> = {}): Dashboard => ({
-  month: '2026-07',
-  filters: { type: null, categoryId: null, merchantId: null },
-  summary: {
-    month: '2026-07',
-    income: 1725,
-    expenses: 500,
-    balance: 1225,
-    transactionCount: 2,
-    merchantCount: 2,
-    amountByCategory: [
-      { id: 'cat-1', name: 'Alimentari', color: '#3f8f4f', amount: 500, transactionCount: 2 }
-    ],
-    uncategorized: { amount: 0, transactionCount: 0 }
+  month: '2026-09',
+  today: '2026-10-13',
+  lastTransactionDate: '2026-09-21',
+  summary: { income: 1780.35, expenses: 134.95, balance: 1645.4, withdrawals: 0 },
+  comparison: {
+    previousExpenses: 843.44,
+    percentChange: -84,
+    previousFrom: '2026-08-01',
+    previousTo: '2026-08-31',
+    currentTo: null,
+    partial: false
   },
-  cashFlow: {
-    month: '2026-07',
-    openingBalance: 2000,
-    balanceDate: '2026-06-30',
-    income: 1725,
-    expenses: 500,
-    netMovement: 1225,
-    closingBalance: 3225,
-    netWorthChange: 1225,
-    transactionCount: 2,
-    byType: []
-  },
-  categories: [
+  topCategories: [
     {
       id: 'cat-1',
-      name: 'Alimentari',
+      name: 'Intrattenimento',
       color: '#3f8f4f',
-      amount: 500,
-      transactionCount: 2,
-      merchants: [
-        {
-          id: 'm-1',
-          label: 'ESSELUNGA',
-          amount: 300,
-          transactionCount: 1,
-          transactions: [
-            { id: '1', bookingDate: '2026-07-10', description: 'ESSELUNGA', amount: 300 }
-          ]
-        },
-        {
-          id: 'm-2',
-          label: 'CARREFOUR',
-          amount: 200,
-          transactionCount: 1,
-          transactions: [
-            { id: '2', bookingDate: '2026-07-11', description: 'CARREFOUR', amount: 200 }
-          ]
-        }
-      ]
+      amount: 42.7,
+      percentage: 31.6,
+      difference: 12.3
     }
   ],
-  topMerchants: [
-    { id: 'm-1', label: 'ESSELUNGA', amount: 300, transactionCount: 1, categoryName: 'Alimentari' },
-    { id: 'm-2', label: 'CARREFOUR', amount: 200, transactionCount: 1, categoryName: 'Alimentari' }
+  recentTransactions: [
+    {
+      id: 't-1',
+      bookingDate: '2026-09-21',
+      label: 'HOPPY ENDING NAPOLI',
+      type: 'EXPENSE',
+      category: { id: 'cat-1', name: 'Intrattenimento', color: '#3f8f4f' },
+      amount: -7
+    }
   ],
-  comparison: {
-    previousMonth: '2026-06',
-    currentExpenses: 500,
-    previousExpenses: 400,
-    difference: 100,
-    percentChange: 25,
-    byCategory: [
-      { id: 'cat-1', name: 'Alimentari', color: '#3f8f4f', current: 500, previous: 400, difference: 100 }
-    ]
-  },
-  transactions: [transaction('1', 'ESSELUNGA', -300), transaction('2', 'CARREFOUR', -200)],
+  attention: { unclassifiedMerchants: 17 },
+  loans: { remaining: 1030, openCount: 2, unlinkedTransactions: 0 },
   ...overrides
 });
 
 describe('DashboardPage', () => {
-  let fixture: ComponentFixture<DashboardPage>;
+  let harness: RouterTestingHarness;
   let http: HttpTestingController;
-  let store: DashboardFilterStore;
+  let router: Router;
 
-  const text = (): string =>
-    ((fixture.nativeElement as HTMLElement).textContent ?? '').replace(/\./g, '');
-
-  /**
-   * Risponde alla richiesta della dashboard.
-   *
-   * È l'unica: la tabella dei movimenti qui è in sola lettura e non carica più
-   * le categorie per conto suo — se lo rifacesse, `http.verify()` lo direbbe.
-   */
-  const flush = async (data: Dashboard, url: string): Promise<void> => {
-    http.expectOne(url).flush(data);
-    await fixture.whenStable();
+  const settle = async (): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve));
+    TestBed.tick();
   };
 
+  const element = (): HTMLElement => harness.routeNativeElement as HTMLElement;
+  const text = (): string => (element().textContent ?? '').replace(/\s+/g, ' ');
+
+  /** Risponde all'unica richiesta della pagina e ne restituisce l'indirizzo. */
+  const flush = async (data: Dashboard = dashboard()): Promise<string> => {
+    const request = http.expectOne((candidate) => candidate.url === `${API_BASE_URL}/dashboard`);
+    const url = request.request.urlWithParams;
+    request.flush(data);
+    await settle();
+
+    return url;
+  };
+
+  const open = async (url: string): Promise<void> => {
+    await harness.navigateByUrl(url, DashboardPage);
+    await settle();
+  };
+
+  const arrow = (label: string): HTMLButtonElement =>
+    element().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [DashboardPage],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])]
-    }).compileComponents();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: '', component: DashboardPage }])
+      ]
+    });
 
+    harness = await RouterTestingHarness.create();
     http = TestBed.inject(HttpTestingController);
-    store = TestBed.inject(DashboardFilterStore);
-    store.clearFilters();
-    store.setMonth('2026-07');
-
-    fixture = TestBed.createComponent(DashboardPage);
+    router = TestBed.inject(Router);
   });
 
   afterEach(() => http.verify());
 
-  it('carica la dashboard del mese selezionato', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+  it('senza mese nell\'URL lo sceglie il backend', async () => {
+    await open('/');
 
-    expect(text()).toContain('luglio 2026');
-    expect(text()).toContain('500,00');
+    expect(await flush()).toBe(`${API_BASE_URL}/dashboard`);
   });
 
-  it('ricarica tutte le sezioni quando cambia il mese', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+  it('il mese nell\'URL diventa la richiesta', async () => {
+    await open('/?month=2026-08');
 
-    store.setMonth('2026-08');
-    await fixture.whenStable();
+    expect(await flush()).toBe(`${API_BASE_URL}/dashboard?month=2026-08`);
+  });
+
+  it('un mese non valido nell\'URL si ignora', async () => {
+    await open('/?month=2026-13');
+
+    expect(await flush()).toBe(`${API_BASE_URL}/dashboard`);
+  });
+
+  it('mostra «Caricamento in corso…» al primo caricamento', async () => {
+    await open('/');
+
+    expect(text()).toContain('Caricamento in corso');
+
+    await flush();
+  });
+
+  it('mostra le tre card essenziali, con il confronto sulle uscite', async () => {
+    await open('/');
+    await flush();
+
+    expect(text()).toContain('Entrate');
+    expect(text()).toContain('Uscite');
+    expect(text()).toContain('Risultato del mese');
+    expect(text()).not.toContain('Transazioni');
+    expect(text()).not.toContain('Merchant');
+    expect(element().querySelector('.delta-caption')?.textContent?.trim()).toBe('vs agosto');
+    expect(text()).toContain('settembre 2026');
+  });
+
+  it('senza variazione calcolabile le uscite non hanno confronto', async () => {
+    await open('/');
     await flush(
-      dashboard({
-        month: '2026-08',
-        summary: { ...dashboard().summary, month: '2026-08', expenses: 13.49 },
-        cashFlow: { ...dashboard().cashFlow, month: '2026-08', closingBalance: 1276.45 },
-        transactions: [transaction('3', 'UDEMY', -13.49)]
-      }),
+      dashboard({ comparison: { ...dashboard().comparison, previousExpenses: 0, percentChange: null } })
+    );
+
+    expect(element().querySelector('.delta')).toBeNull();
+  });
+
+  it('i prelievi compaiono solo se ce ne sono', async () => {
+    await open('/');
+    await flush(dashboard({ summary: { ...dashboard().summary, withdrawals: 200 } }));
+
+    expect(text()).toContain('Prelevati in contanti');
+    expect(text()).toContain('non inclusi nelle uscite');
+
+    await open('/?month=2026-08');
+    await flush(dashboard({ month: '2026-08', summary: { ...dashboard().summary, withdrawals: 0 } }));
+
+    expect(text()).not.toContain('Prelevati in contanti');
+  });
+
+  it('dice a quando risalgono i dati', async () => {
+    await open('/');
+    await flush();
+
+    expect(text()).toContain('Dati aggiornati al 21/09/2026');
+  });
+
+  it('senza movimenti non dice a quando risalgono i dati', async () => {
+    await open('/');
+    await flush(dashboard({ lastTransactionDate: null }));
+
+    expect(text()).not.toContain('Dati aggiornati');
+  });
+
+  it('la freccia › è disabilitata sul mese in corso', async () => {
+    await open('/');
+    await flush(dashboard({ month: '2026-10' }));
+
+    expect(arrow('Mese successivo').disabled).toBe(true);
+    expect(arrow('Mese precedente').disabled).toBe(false);
+  });
+
+  it('le frecce portano il mese nell\'URL', async () => {
+    await open('/');
+    await flush();
+
+    expect(arrow('Mese successivo').disabled).toBe(false);
+
+    arrow('Mese precedente').click();
+    await settle();
+
+    expect(router.url).toBe('/?month=2026-08');
+    expect(await flush(dashboard({ month: '2026-08' }))).toBe(
       `${API_BASE_URL}/dashboard?month=2026-08`
     );
 
+    arrow('Mese successivo').click();
+    await settle();
+
+    expect(router.url).toBe('/?month=2026-09');
+    await flush();
+  });
+
+  it('cambiando mese il contenuto precedente resta visibile', async () => {
+    await open('/');
+    await flush();
+
+    arrow('Mese precedente').click();
+    await settle();
+
+    expect(text()).toContain('settembre 2026');
+    expect(text()).not.toContain('Caricamento in corso');
+
+    await flush(dashboard({ month: '2026-08' }));
+
     expect(text()).toContain('agosto 2026');
-    expect(text()).toContain('13,49');
-    expect(text()).toContain('1276,45');
   });
 
-  it('propaga i filtri alla richiesta', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+  it('mostra categorie, attività da sistemare e ultimi movimenti del mese', async () => {
+    await open('/');
+    await flush();
 
-    store.setCategory('cat-1');
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07&categoryId=cat-1`);
+    expect(text()).toContain('Dove sono andati i soldi');
+    expect(text()).toContain('17 merchant da classificare');
+    expect(text()).toContain('Ultimi movimenti');
+    expect(element().querySelector('.columns')?.classList).not.toContain('single');
 
-    store.setType('WITHDRAWAL');
-    await fixture.whenStable();
+    const category = element().querySelector('app-top-categories a.row')?.getAttribute('href') ?? '';
+    expect(category).toContain('from=2026-09-01');
+    expect(category).toContain('to=2026-09-30');
+  });
+
+  it('senza nulla da sistemare le categorie prendono tutta la riga', async () => {
+    await open('/');
     await flush(
-      dashboard(),
-      `${API_BASE_URL}/dashboard?month=2026-07&type=WITHDRAWAL&categoryId=cat-1`
+      dashboard({
+        lastTransactionDate: '2026-10-10',
+        attention: { unclassifiedMerchants: 0 },
+        loans: { remaining: 0, openCount: 0, unlinkedTransactions: 3 }
+      })
     );
 
-    expect(store.activeCount()).toBe(2);
+    expect(element().querySelector('app-attention-panel')).toBeNull();
+    expect(element().querySelector('.columns')?.classList).toContain('single');
   });
 
-  it('filtra per tipo scegliendo dal select', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
+  it('un errore si può riprovare', async () => {
+    await open('/');
+    http
+      .expectOne(`${API_BASE_URL}/dashboard`)
+      .flush('boom', { status: 500, statusText: 'Server Error' });
+    await settle();
 
-    await chooseOption(fixture, fixture.nativeElement, '.control', 'Prelievo');
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07&type=WITHDRAWAL`);
+    const retry = element().querySelector<HTMLButtonElement>('app-error-retry button');
+    expect(retry).not.toBeNull();
 
-    expect(store.filters().type).toBe('WITHDRAWAL');
-  });
+    retry!.click();
+    await settle();
+    await flush();
 
-  // La dashboard è un riepilogo: i movimenti si vedono nel dettaglio di
-  // Analytics e nella pagina dei movimenti, non qui.
-  it('la dashboard è un riepilogo: non mostra la tabella dei movimenti', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
-
-    expect((fixture.nativeElement as HTMLElement).querySelector('app-transactions-table')).toBeNull();
-    expect(text()).not.toContain('nel periodo selezionato');
-  });
-
-  it('mostra drill down, top merchant e confronto', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
-
-    expect(text()).toContain('Spese per categoria');
-    expect(text()).toContain('Top merchant del mese');
-    expect(text()).toContain('Confronto con');
-    expect(text()).toContain('ESSELUNGA');
-    // `difference` è già firmata: il segno stampato segue il valore grezzo
-    // («+» perché la spesa è aumentata), il colore delle uscite viene dalla
-    // classe invertita `.up` in CSS, non da un tono imposto ad `Amount` (che
-    // non può rendere una variazione firmata, v. month-comparison.ts).
-    expect(text()).toContain('+100,00');
-  });
-
-  it('filtra per merchant quando se ne sceglie uno dai top', async () => {
-    await fixture.whenStable();
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07`);
-
-    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'app-top-merchants .link'
-    );
-    button?.click();
-    await fixture.whenStable();
-
-    expect(store.filters().merchantId).toBe('m-1');
-    await flush(dashboard(), `${API_BASE_URL}/dashboard?month=2026-07&merchantId=m-1`);
+    expect(text()).toContain('Risultato del mese');
+    expect(element().querySelector('app-error-retry')).toBeNull();
   });
 });

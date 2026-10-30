@@ -58,8 +58,6 @@ const casa = categoriesService.listAll().find((c) => c.name === 'Casa');
 assert.ok(casa);
 merchantsService.assignCategory(merchant.id, casa.id);
 
-const noFilters = { month: MONTH, type: null, categoryId: null, merchantId: null };
-
 /** Tutte le proiezioni finanziarie, lette nello stesso istante. */
 function measure() {
   const summary = summaryService.getMonthlySummary(MONTH);
@@ -69,7 +67,7 @@ function measure() {
     from: `${MONTH}-01`,
     to: `${MONTH}-30`,
   });
-  const dashboard = dashboardService.getDashboard(MONTH, noFilters);
+  const dashboard = dashboardService.getDashboard(MONTH, '2099-12-31');
 
   return {
     expenses: summary.expenses,
@@ -86,8 +84,7 @@ function measure() {
     timelineExpenses: analytics.timeline.buckets.reduce((sum, b) => sum + b.expenses, 0),
     timelineLoans: analytics.timeline.buckets.reduce((sum, b) => sum + b.loans, 0),
     overview: analytics.overview,
-    dashboardCategory: dashboard.categories.find((c) => c.name === 'Casa')?.amount ?? 0,
-    dashboardTopMerchant: dashboard.topMerchants[0]?.amount ?? 0,
+    dashboardCategory: dashboard.topCategories.find((c) => c.name === 'Casa')?.amount ?? 0,
     dashboardSummaryExpenses: dashboard.summary.expenses,
   };
 }
@@ -143,7 +140,6 @@ describe('registrato il prestito parziale', () => {
     assert.equal(state.analyticsCategory, 890, 'analytics');
     assert.equal(state.dashboardCategory, 890, 'drill down della dashboard');
     assert.equal(state.analyticsMerchant, 890, 'distribuzione per merchant');
-    assert.equal(state.dashboardTopMerchant, 890, 'top merchant');
   });
 
   it('il patrimonio scende degli 890 realmente spesi, non dei 1.920 usciti', () => {

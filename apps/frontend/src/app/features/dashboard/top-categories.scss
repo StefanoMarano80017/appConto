@@ -1,0 +1,106 @@
+@use '../../shared/styles/typography';
+
+:host {
+  display: block;
+  min-width: 0;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li + li {
+  border-top: 1px solid var(--color-row-divider);
+}
+
+/*
+ * Nome a sinistra, cifre a destra; su uno schermo stretto le cifre vanno a
+ * capo sotto il nome invece di schiacciarlo o di sbordare.
+ */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:hover {
+  background: var(--color-surface-hover);
+
+  .name {
+    text-decoration: underline;
+  }
+}
+
+.name {
+  flex: 1 1 10rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-5);
+  margin-left: auto;
+}
+
+/* `<app-amount>` porta già mono e tabular-nums: qui restano solo geometria e allineamento. */
+.amount {
+  min-width: 6rem;
+  text-align: right;
+}
+
+.percentage {
+  @include typography.text('caption');
+
+  min-width: 3rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Un importo anche questo: stessa famiglia mono delle cifre accanto, in taglia
+ * secondaria. Larghezza minima come le altre cifre, perché gli importi restino
+ * in colonna anche quando le variazioni hanno lunghezze diverse.
+ */
+.change {
+  @include typography.text('caption');
+
+  min-width: 6rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.change-positive {
+  color: var(--color-income);
+}
+
+.change-negative {
+  color: var(--color-expense);
+}
+
+.footer {
+  @include typography.text('body');
+
+  margin: var(--space-6) 0 0;
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}

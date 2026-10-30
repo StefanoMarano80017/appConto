@@ -20,6 +20,8 @@ export interface ChoiceOption<T> {
   readonly description?: string;
   /** Icona Lucide passata come dato (es. `LucideX.icon`); si vede solo se il gruppo ha `display` diverso da `label`. */
   readonly icon?: LucideIconData;
+  /** Conteggio mostrato in tono smorzato accanto all'etichetta (fuori dal trattino) e letto dopo di essa. */
+  readonly count?: number;
 }
 
 /**
@@ -46,6 +48,11 @@ export interface ChoiceOption<T> {
  * Resta quindi capace di entrambe le cardinalità (`mode`), ma oggi nessun
  * punto di chiamata usa quella multipla: se non ne comparirà uno, questo
  * componente può semplificarsi accettando solo un id.
+ *
+ * `size="low"` è la versione compatta (circa 28px di altezza, larghezza a
+ * contenuto) per i filtri di una barra strumenti, come la classificazione dei
+ * merchant; `normal` resta per tutti gli altri usi. Con `count` su un'opzione
+ * il numero compare accanto all'etichetta, senza finire sotto il trattino.
  */
 @Component({
   selector: 'app-choice-group',
@@ -54,6 +61,7 @@ export interface ChoiceOption<T> {
   imports: [LucideDynamicIcon],
   host: {
     role: 'group',
+    '[class.low]': "size() === 'low'",
     '[attr.aria-label]': 'ariaLabel()'
   }
 })
@@ -89,6 +97,9 @@ export class ChoiceGroup<T> {
    * perché un bottone vuoto non direbbe a nessuno cosa sceglie.
    */
   readonly display = input<'label' | 'icon' | 'both'>('label');
+
+  /** `low` è il blocco compatto per le barre strumenti; `normal` è la misura di sempre. */
+  readonly size = input<'normal' | 'low'>('normal');
 
   /** L'id su cui si è fatto clic. Che significhi "seleziona" o "inverti" lo decide il chiamante. */
   readonly selected = output<T>();

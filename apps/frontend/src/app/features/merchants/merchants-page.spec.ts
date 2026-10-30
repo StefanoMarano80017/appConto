@@ -145,9 +145,14 @@ describe('MerchantsPage', () => {
     await open('/merchants');
 
     expect(root().querySelectorAll('tbody tr').length).toBe(2);
-    expect(text()).toContain('Tutti (5)');
-    expect(text()).toContain('Classificati (2)');
-    expect(text()).toContain('Da classificare (3)');
+    const segmenti = [...root().querySelectorAll<HTMLButtonElement>('app-choice-group button')];
+    expect(segmenti.map((s) => s.querySelector('.label')?.textContent?.trim())).toEqual([
+      'Tutti',
+      'Classificati',
+      'Da classificare',
+    ]);
+    expect(segmenti.map((s) => s.querySelector('.count')?.textContent?.trim())).toEqual(['5', '2', '3']);
+    expect(segmenti.map((s) => s.getAttribute('aria-label'))).toEqual(['Tutti, 5', 'Classificati, 2', 'Da classificare, 3']);
     expect(text()).toContain('1–2 di 2 merchant');
   });
 

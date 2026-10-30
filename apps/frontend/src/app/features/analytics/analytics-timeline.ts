@@ -34,14 +34,14 @@ const longDay = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long'
 const longMonth = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' });
 const CHART_TRANSITION_MS = 220;
 
-/** L'ordine è anche l'ordine della legenda, del grafico e delle colonne in tabella. */
+/** L'ordine è anche l'ordine della legenda, del grafico e delle righe del riquadro. */
 const SERIES_KEYS = ['income', 'expenses', 'net'] as const;
 
 export type SeriesKey = (typeof SERIES_KEYS)[number];
 
 type SeriesSpec = Omit<LineSeries<TimelineBucket, SeriesKey>, 'key'> & {
   /**
-   * Segno della resa testuale (tooltip e tabella).
+   * Segno della resa testuale (il riquadro).
    *
    * `expenses` è una magnitudine di spesa (v. analytics.service, `hasExpense`
    * corto-circuita a vero per ogni `EXPENSE`, rimborsi inclusi), non un
@@ -50,19 +50,17 @@ type SeriesSpec = Omit<LineSeries<TimelineBucket, SeriesKey>, 'key'> & {
    * `<app-amount>` di dedurre il segno giusto in entrambi i casi. `income` e
    * `net` sono già nella forma corretta e restano invariati.
    *
-   * Il grafico conserva la magnitudine grezza; tooltip e tabella passano da
-   * `rows`, così un rimborso netto mantiene lo stesso segno in entrambi.
+   * Il grafico conserva la magnitudine grezza; il riquadro passa da `rows`,
+   * così un rimborso netto vi mostra il segno di un'entrata.
    */
   readonly sign: 1 | -1;
-  /** La colonna ha il totale in fondo alla tabella; il movimento netto no, come prima. */
-  readonly total: boolean;
 };
 
 /**
  * Le serie disponibili nella vista dei flussi.
  *
- * Entrate e uscite sono attive di partenza; il movimento netto si aggiunge su
- * richiesta. L'ordine di legenda e grafico lo dà `SERIES_KEYS`.
+ * Tutte e tre sono attive di partenza e si spengono dalla legenda. L'ordine di
+ * legenda e grafico lo dà `SERIES_KEYS`.
  *
  * Il movimento netto è `netMovement`: oltre a entrate e uscite conta prelievi,
  * trasferimenti e prestiti, quindi non è il «Saldo netto» del KPI (entrate
@@ -76,21 +74,18 @@ const SERIES = {
     color: 'chart-1',
     value: (bucket) => bucket.income,
     sign: 1,
-    total: true,
   },
   expenses: {
     label: 'Uscite',
     color: 'chart-5',
     value: (bucket) => bucket.expenses,
     sign: -1,
-    total: true,
   },
   net: {
     label: 'Netto',
     color: 'chart-3',
     value: (bucket) => bucket.netMovement,
     sign: 1,
-    total: false,
   },
 } satisfies Record<SeriesKey, SeriesSpec>;
 
@@ -103,8 +98,6 @@ function addUtcDays(date: string, days: number): string {
 /** Tutto ciò che dipende dal passo: come si legge `bucket.period` e che intervallo copre. */
 interface GranularitySpec {
   readonly label: string;
-  /** Il nome dell'intervallo nel sottotitolo. */
-  readonly unit: string;
   /** L'intervallo come complemento, col genere giusto: «+120,00 € in questa settimana». */
   readonly within: string;
   readonly short: (period: string) => string;
@@ -115,7 +108,6 @@ interface GranularitySpec {
 const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   day: {
     label: 'Giorno',
-    unit: 'giorno',
     within: 'in questo giorno',
     short: (period) => shortDay.format(new Date(`${period}T00:00:00`)),
     long: (period) => formatBookingDate(period),
@@ -123,7 +115,6 @@ const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   },
   week: {
     label: 'Settimana',
-    unit: 'settimana',
     within: 'in questa settimana',
     short: (period) => shortDay.format(new Date(`${period}T00:00:00`)),
     long: (period) => `settimana del ${longDay.format(new Date(`${period}T00:00:00`))}`,
@@ -131,7 +122,6 @@ const GRANULARITY: Record<TimelineGranularity, GranularitySpec> = {
   },
   month: {
     label: 'Mese',
-    unit: 'mese',
     within: 'in questo mese',
     short: (period) => shortMonth.format(new Date(`${period}-01T00:00:00`)),
     long: (period) => longMonth.format(new Date(`${period}-01T00:00:00`)),
@@ -180,7 +170,7 @@ function partialMarker(bucket: TimelineBucket): LinePointMarker {
   return bucket.partial ? 'hollow' : 'auto';
 }
 
-/** Una riga di tabella e di riquadro, con i valori già nel segno della resa testuale. */
+/** Una riga del riquadro, con i valori già nel segno della resa testuale. */
 interface TimelineRow {
   readonly bucket: TimelineBucket;
   readonly label: string;
@@ -257,7 +247,6 @@ export class AnalyticsTimeline {
   );
 
   protected readonly hidden = signal<ReadonlySet<SeriesKey>>(new Set([]));
-  protected readonly showTable = signal(false);
 
   protected readonly buckets = computed(() => this.timeline().buckets);
   private readonly bucketIndexes = computed(
@@ -318,7 +307,7 @@ export class AnalyticsTimeline {
     this.series().filter((series) => series.visible && this.nonEmptyKeys().has(series.key)),
   );
 
-  /** Un punto per bucket, nello stesso ordine: la tabella e il riquadro li leggono per indice. */
+  /** Un punto per bucket, nello stesso ordine: il riquadro li legge per indice. */
   private readonly cumulative = computed(() => cumulativeNet(this.buckets()));
 
   /**
@@ -372,10 +361,10 @@ export class AnalyticsTimeline {
 
   protected readonly ariaLabel = computed(
     () =>
-      `Andamento nel tempo su ${this.buckets().length} intervalli. I valori sono disponibili anche nella tabella.`,
+      `Andamento nel tempo su ${this.buckets().length} intervalli.`,
   );
 
-  /** Un solo punto per tabella e riquadro: stessa etichetta, stesso segno. */
+  /** Etichetta e valori col segno della resa testuale, un elemento per bucket. */
   protected readonly rows = computed<readonly TimelineRow[]>(() => {
     const long = this.step().long;
     return this.buckets().map((bucket) => ({
@@ -387,18 +376,6 @@ export class AnalyticsTimeline {
         net: SERIES.net.sign * SERIES.net.value(bucket),
       },
     }));
-  });
-
-  /** Per chiave e già col segno; `null` dove la colonna non ha totale. */
-  protected readonly totals = computed<Readonly<Record<SeriesKey, number | null>>>(() => {
-    const rows = this.rows();
-    return {
-      income: SERIES.income.total ? rows.reduce((sum, row) => sum + row.values.income, 0) : null,
-      expenses: SERIES.expenses.total
-        ? rows.reduce((sum, row) => sum + row.values.expenses, 0)
-        : null,
-      net: SERIES.net.total ? rows.reduce((sum, row) => sum + row.values.net, 0) : null,
-    };
   });
 
   protected readonly hasPartial = computed(() => this.buckets().some((bucket) => bucket.partial));

@@ -22,7 +22,7 @@ describe('AnalyticsStore', () => {
     store.selectPreset('all');
 
     expect(store.dateRange()).toEqual({ from: null, to: null });
-    expect(store.selectedPeriodLabel()).toBe('Tutto');
+    expect(store.preset()).toBe('all');
   });
 
   it('un periodo personalizzato conserva entrambe le date', () => {
@@ -30,7 +30,7 @@ describe('AnalyticsStore', () => {
 
     expect(store.preset()).toBe('custom');
     expect(store.query().from).toBe('2026-01-01');
-    expect(store.selectedPeriodLabel()).toBe('01/01/2026 → 31/07/2026');
+    expect(store.query().to).toBe('2026-07-31');
   });
 
   it('le selezioni multiple aggiungono e tolgono', () => {

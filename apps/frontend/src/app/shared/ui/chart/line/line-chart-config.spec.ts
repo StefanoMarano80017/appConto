@@ -127,10 +127,10 @@ describe('lineChartOptions', () => {
     const callback = ticks?.callback;
 
     expect(callback?.call({} as never, 999, 0, [])).toBe(formatAmount(999));
-    expect(callback?.call({} as never, 1234.5, 0, [])).toBe('1,2 mila €');
-    expect(callback?.call({} as never, 1_234_567, 0, [])).toBe('1,2 mln €');
-    expect(callback?.call({} as never, 1_234_567_890, 0, [])).toBe('1,2 mld €');
-    expect(callback?.call({} as never, -1234.5, 0, [])).toBe('-1,2 mila €');
+    expect(callback?.call({} as never, 1234.5, 0, [])).toBe('1,2k €');
+    expect(callback?.call({} as never, 1_234_567, 0, [])).toBe('1,2M €');
+    expect(callback?.call({} as never, 1_234_567_890, 0, [])).toBe('1,2B €');
+    expect(callback?.call({} as never, -1234.5, 0, [])).toBe('-1,2k €');
   });
 
   it('l’asse Y non scende molto sotto i dati: niente -5000 per un minimo di -69', () => {

@@ -1,0 +1,53 @@
+@if (hasContent()) {
+  <app-panel>
+    @if (showMerchants() || showImport()) {
+      <section class="group">
+        <app-section-header title="Da sistemare" />
+        <ul>
+          @if (showMerchants()) {
+            <li>
+              <a routerLink="/merchants" [queryParams]="{ classification: 'unclassified' }">
+                {{ attention().unclassifiedMerchants }} merchant da classificare →
+              </a>
+            </li>
+          }
+          @if (showImport()) {
+            <li>
+              <a routerLink="/import">
+                @if (lastTransactionDate(); as lastDate) {
+                  Ultimo movimento {{ formatBookingDate(lastDate) }} · Importa estratto conto →
+                } @else {
+                  Nessun movimento · Importa estratto conto →
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (showLoans()) {
+      <section class="group">
+        <app-section-header title="Prestiti" />
+        <ul>
+          <li>
+            <a routerLink="/loans" [queryParams]="{ status: 'open' }">
+              <!-- Credito da riscuotere, non un'entrata né un'uscita: tono neutro, come nei prestiti. -->
+              Da ricevere <app-amount [value]="loans().remaining" tone="neutral" />
+              · {{ loans().openCount === 1 ? '1 aperto' : loans().openCount + ' aperti' }} →
+            </a>
+          </li>
+        </ul>
+        @if (loans().unlinkedTransactions > 0) {
+          <p class="note">
+            @if (loans().unlinkedTransactions === 1) {
+              1 movimento di prestito senza dettaglio, considerato saldato
+            } @else {
+              {{ loans().unlinkedTransactions }} movimenti di prestito senza dettaglio, considerati saldati
+            }
+          </p>
+        }
+      </section>
+    }
+  </app-panel>
+}

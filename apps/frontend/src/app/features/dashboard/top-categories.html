@@ -1,0 +1,39 @@
+<app-panel>
+  <app-section-header title="Dove sono andati i soldi" />
+
+  @if (rows().length === 0) {
+    <app-empty-state message="Nessuna spesa in questo mese" />
+  } @else {
+    <ul>
+      @for (row of rows(); track row.category.id ?? 'none') {
+        <li>
+          <a class="row" routerLink="/transactions" [queryParams]="row.queryParams">
+            <span class="name">
+              <app-color-marker [color]="row.category.color" />
+              {{ row.category.name }}
+            </span>
+            <span class="figures">
+              <!-- `amount` è la magnitudine della spesa: negata, il tono lo deduce `app-amount`. -->
+              <app-amount class="amount" [value]="-row.category.amount" />
+              @if (row.category.percentage !== null) {
+                <span class="percentage">{{ formatPercent(row.category.percentage) }}</span>
+              }
+              @if (row.change; as change) {
+                <span
+                  class="change"
+                  [class.change-positive]="change.tone === 'positive'"
+                  [class.change-negative]="change.tone === 'negative'"
+                >{{ change.text }}</span>
+              } @else {
+                <!-- Spesa invariata: nessuna freccia, ma la colonna resta al suo posto. -->
+                <span class="change" aria-hidden="true"></span>
+              }
+            </span>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+
+  <p class="footer"><a routerLink="/analytics">Analisi completa →</a></p>
+</app-panel>

@@ -13,6 +13,7 @@
           [options]="filterOptions()"
           [value]="query().classification"
           ariaLabel="Filtro merchant"
+          size="low"
           (selected)="apply({ classification: $event })"
         />
       </div>

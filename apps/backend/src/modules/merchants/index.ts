@@ -1,5 +1,6 @@
 /** API pubblica della feature `merchants`. */
 export { merchantLabel, type Merchant } from './merchant.model.js';
+export { DEFAULT_MERCHANT_QUERY } from './merchant-query.js';
 export { merchantResolver, type MerchantResolution } from './merchant-resolver.js';
 export {
   merchantsService,
