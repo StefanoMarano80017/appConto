@@ -106,3 +106,4 @@ export const logger = {
     appendToFile('error', message, details);
   },
 };
+export type Logger = typeof logger;

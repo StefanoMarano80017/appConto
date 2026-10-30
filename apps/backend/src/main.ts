@@ -2,11 +2,12 @@ import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { bootstrap } from './bootstrap.js';
 import { config } from './config.js';
+import { closeDatabase } from './db/client.js';
 import { ListenFailedError, listenWithFallback } from './listen.js';
 import { createAutoBackupScheduler } from './modules/maintenance/index.js';
 import { SETTINGS_PROBLEM } from './paths.js';
 import { logger } from './shared/logger.js';
-import { installShutdownHandlers, shutdown } from './shutdown.js';
+import { createShutdown, installSignalHandlers } from './shutdown.js';
 
 /**
  * L'avvio del server.
@@ -105,7 +106,16 @@ logger.info(`Backend in ascolto su http://${esito.host}:${String(esito.actualPor
 const autoBackup = createAutoBackupScheduler();
 autoBackup.start();
 
-installShutdownHandlers(server, autoBackup);
+const richiedi = createShutdown({
+  server,
+  background: autoBackup,
+  closeDatabase,
+  exit: (code) => {
+    process.exit(code);
+  },
+  log: logger,
+});
+installSignalHandlers(richiedi);
 
 /**
  * Il canale con il launcher.
@@ -132,14 +142,7 @@ if (typeof process.send === 'function') {
     if (typeof message === 'object' && message !== null && 'type' in message) {
       const { type } = message as { type: unknown };
       if (type === 'shutdown') {
-        shutdown(
-          server,
-          'launcher',
-          (code) => {
-            process.exit(code);
-          },
-          autoBackup,
-        );
+        richiedi('launcher');
       }
     }
   });
