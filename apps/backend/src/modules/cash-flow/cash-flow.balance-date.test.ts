@@ -9,7 +9,7 @@ import type { TransactionType } from '../transactions/index.js';
 const databaseDir = mkdtempSync(path.join(tmpdir(), 'appconto-cashflow-balance-date-'));
 process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
-const { runMigrations } = await import('../../db/client.js');
+const { closeDatabase, runMigrations } = await import('../../db/client.js');
 const { importService } = await import('../import/index.js');
 const { transactionsService, toAmountCents } = await import('../transactions/index.js');
 const { settingsService } = await import('../settings/index.js');
@@ -19,6 +19,8 @@ const { cashFlowService } = await import('./cash-flow.service.js');
 runMigrations();
 
 after(() => {
+  // Chiusa la connessione, su Windows il file non resta bloccato.
+  closeDatabase();
   try {
     rmSync(databaseDir, { recursive: true, force: true });
   } catch {
