@@ -257,11 +257,18 @@ describe('importo di un movimento collegato a una restituzione', () => {
 
   // D9: un accredito collegato a restituzioni resta INCOME. Prima il test
   // percorreva anche OTHER ed EXPENSE; ora quei passaggi sono rifiutati.
-  it("cambiare il tipo di un accredito collegato non ne tocca l'importo né l'invariante", () => {
+  it("riclassificare un accredito collegato è rifiutato con il nome del prestito; l'importo e l'invariante restano", () => {
     const dependents = { usagesOf: (ids: readonly string[]) => loansService.transactionUsages(ids) };
+    const borrower = loansService.links().links.find((l) => l.transactionId === credit())
+      ?.borrowerName;
+    assert.ok(borrower);
 
     for (const type of ['OTHER', 'EXPENSE'] as const) {
-      expectError('CONFLICT', () => transactionsService.updateType(credit(), type, dependents));
+      expectError(
+        'CONFLICT',
+        () => transactionsService.updateType(credit(), type, dependents),
+        new RegExp(borrower),
+      );
     }
     const updated = transactionsService.updateType(credit(), 'INCOME', dependents);
 
@@ -271,6 +278,28 @@ describe('importo di un movimento collegato a una restituzione', () => {
     const links = loansService.links().links.filter((l) => l.transactionId === credit());
     assert.equal(links.filter((l) => l.role === 'REPAYMENT').length, 2);
     assertRepaymentsFitTransactions();
+  });
+
+  // D9 sulla rotta: è la rotta a passare la porta a `updateType`.
+  it('PATCH /api/transactions/:id/type: OTHER è 409 con il nome del prestito, INCOME è 200', async () => {
+    const patch = (type: string) =>
+      fetch(`${base}/api/transactions/${credit()}/type`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
+      });
+    const borrower = loansService.links().links.find((l) => l.transactionId === credit())
+      ?.borrowerName;
+    assert.ok(borrower);
+
+    const rifiutata = await patch('OTHER');
+    assert.equal(rifiutata.status, 409);
+    assert.match(JSON.stringify(await rifiutata.json()), new RegExp(borrower));
+    assert.equal(transactionsService.findById(credit())?.type, 'INCOME');
+
+    const accettata = await patch('INCOME');
+    assert.equal(accettata.status, 200);
+    assert.equal(transactionsService.findById(credit())?.type, 'INCOME');
   });
 });
 
