@@ -18,10 +18,17 @@
 È autorizzata **solo M0**: ogni milestone successiva richiede un'approvazione esplicita.
 
 **Decisioni prese all'avvio di M0 (30/10/2026):**
-- **T0.2 rimandato.** L'instabilità di `runtime.test.ts:278` ricade nell'area del piano `docs/superpowers/plans/2026-10-30-backend-main-lifecycle.md` (arresto e IPC del server, punto 7 del relativo design), in corso in un'altra sessione. M0 comprende quindi solo T0.1.
+- **T0.2 resta aperto in questo piano** (decisione dell'utente, 30/10/2026, rivista in chiusura di M0). Il piano `docs/superpowers/plans/2026-10-30-backend-main-lifecycle.md` esclude esplicitamente `runtime.test.ts`: lo mette fra i file da non modificare (riga 16) e, nel design (riga 41), scrive che è "in carico al piano … m0-m5". T0.2 si riprende **dopo il merge di `refactor/backend-main-lifecycle`**, perché il nuovo percorso di arresto potrebbe cambiare la causa.
+  - Fino ad allora un fallimento di `runtime.test.ts:278` (`SQLITE_IOERR_TRUNCATE`) è un **fallimento noto e tollerato** in tutte le verifiche `SUITE×5` di M0–M5 (§2). Va comunque registrato nel ledger a ogni occorrenza.
+- **T5.5 anticipato in M0** (decisione dell'utente). L'instabilità di `backup.scheduler.test.ts:148`, osservata in 1 esecuzione su 5 della suite completa durante la chiusura di M0, è stabilizzazione della suite. M0 comprende quindi T0.1 e T5.5.
 - **Esecuzione in worktree.** Ogni milestone gira in un worktree dedicato, `.claude/worktrees/<branch>` (già escluso da git tramite `.git/info/exclude`), creato con `superpowers:using-git-worktrees`, per non interferire con altre sessioni che usano la cartella principale. Due dettagli:
   - `node_modules` è una **junction** verso quella della cartella principale. `npm ci` nel worktree fallisce compilando `better-sqlite3`, e `runtime.test.ts:37` cerca `tsx` sotto la radice del worktree. Le dipendenze sono identiche a `master`.
-  - Quando il worktree viene rimosso, la junction va eliminata **prima** e come collegamento (`(Get-Item node_modules).Delete()`), mai con una cancellazione ricorsiva.
+  - Quando il worktree viene rimosso, la junction va eliminata **prima** e come collegamento, mai con una cancellazione ricorsiva. Procedura, da ripetere anche al momento di chiudere il branch (`finishing-a-development-branch`), dalla radice del worktree in PowerShell:
+    1. verificare che `(Get-Item node_modules).LinkType -eq 'Junction'` restituisca `True`;
+    2. `(Get-Item node_modules).Delete()`;
+    3. verificare che `node_modules` non esista più nel worktree e che `C:\Users\stefa\Desktop\appConto\node_modules\tsx` esista ancora;
+    4. solo a quel punto `git worktree remove`.
+  - Se la cartella principale reinstalla le dipendenze, va riverificato che `package.json` e `package-lock.json` del branch siano identici a `master` (`git diff --quiet master -- package.json package-lock.json`).
 
 ---
 
@@ -121,7 +128,7 @@
 | `FILE` | `npx tsx --test <file di test…>` | `ℹ fail 0` |
 | `TC` | `npm run typecheck:backend` | exit 0, nessun output di errore |
 | `SUITE` | `npm run test:backend` | `ℹ fail 0` |
-| `SUITE×5` | `for i in 1 2 3 4 5; do npm run test:backend \|\| break; done` | cinque volte `ℹ fail 0` |
+| `SUITE×5` | cinque esecuzioni di `npm run test:backend`, senza interrompersi al primo fallimento | cinque volte `ℹ fail 0`, con una sola eccezione: un fallimento di `runtime.test.ts:278` resta tollerato come noto finché T0.2 non è chiuso, e va registrato nel ledger |
 | `PERIMETRO` | `git diff --name-only <BASE>..HEAD` (o `git status --porcelain` prima del commit) | solo file elencati nel task |
 
 ---
@@ -150,7 +157,8 @@ Legenda:
 |---|---|---|---|---|---|---|
 | **M0** | | | | | | |
 | G0-A | T0.1 | haiku | sonnet | P | V1 | Due modifiche meccaniche e già specificate in un file di test |
-| G0-B | T0.2 | opus | sonnet | P | V1 | Bug intermittente legato alla piattaforma: serve isolare la causa. Il diff atteso è piccolo e solo di test; un sonnet basta a giudicarlo, insieme alle 10 esecuzioni del lead |
+| G0-B | T0.2 | opus | sonnet | — | V1 | **Rimandato** a dopo il merge di `refactor/backend-main-lifecycle`. Bug intermittente legato alla piattaforma: serve isolare la causa. Il diff atteso è piccolo e solo di test; un sonnet basta a giudicarlo, insieme alle 10 esecuzioni del lead |
+| G0-C | T5.5 | sonnet | sonnet | S | V1 | **Anticipato da M5.** Scelta fra `mock.timers` e tolleranze; solo test |
 | **M1** | | | | | | |
 | G1-A | T1.2 | sonnet | **opus** | P | V3 | Importi e segni: un errore qui corrompe i dati importati in modo silenzioso |
 | G1-B | T1.3 | sonnet | sonnet | P | V2 | Correzione circoscritta al parser |
@@ -177,7 +185,7 @@ Legenda:
 | **M5** | | | | | | |
 | G5-A | T5.1 + T5.2 + T5.4 | haiku | sonnet | P | V1 | Modifiche meccaniche già elencate riga per riga |
 | G5-B | T5.3 | sonnet | sonnet | P | V1 | Spostare la preparazione dei dati richiede attenzione all'ordine |
-| G5-C | T5.5 | sonnet | sonnet | P | V1 | Scelta fra `mock.timers` e tolleranze |
+| ~~G5-C~~ | ~~T5.5~~ | | | | | Spostato in M0 come G0-C |
 
 In totale sono **24 implementatori**, 24 revisioni di gruppo e **6 revisioni `opus` di fine milestone**. Delle revisioni di gruppo, 8 sono `opus` (G1-A, G1-E, G2-A, G2-C, G2-D, G2-E, G3-C, G3-E) e le altre `sonnet`. Gli implementatori `opus` sono 5 (G0-B, G2-A, G2-D, G2-E, G3-C).
 
@@ -438,7 +446,8 @@ Questi sono i casi che un utente incontra e che nessun test copre oggi. Ognuno �
 ```
 Legenda: ∥ = in parallelo (stessa ondata)   → = in sequenza   [Dn] = richiede la decisione
 
-M0   G0-A(T0.1) ∥ G0-B(T0.2) ──► chiusura M0 (SUITE×5, revisione opus)
+M0   G0-A(T0.1) → G0-C(T5.5) ──► chiusura M0 (SUITE×5, revisione opus)
+     G0-B(T0.2): rimandato a dopo il merge di refactor/backend-main-lifecycle
                                         │
 M1   G1-A(T1.2)[D6.1-3] ∥ G1-B(T1.3)[D6.4,6.9]      ← moduli puri e disgiunti
         → G1-C(T1.1)                               ← i suoi test passano dall'import
@@ -462,7 +471,7 @@ M4   G4-A(T4.1+T4.6) ∥ G4-B(T4.2+T4.7) ∥ G4-C(T4.3+T4.5)   ← solo test, fi
         → G4-D(T4.4)
         ──► chiusura M4
                                         │
-M5   G5-A(T5.1+T5.2+T5.4)[D6.7] ∥ G5-B(T5.3) ∥ G5-C(T5.5)
+M5   G5-A(T5.1+T5.2+T5.4)[D6.7] ∥ G5-B(T5.3)          (T5.5 spostato in M0)
         ──► chiusura M5
 ```
 
@@ -478,13 +487,14 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 
 ### M0 — Stabilizzazione della suite
 
-**Criteri di accettazione** (rivisti dopo il rinvio di T0.2):
-- `SUITE×5` eseguita, con l'output nel ledger. **Nessun fallimento di `backup.service.test.ts`.** Un eventuale fallimento di `runtime.test.ts:278` va registrato come noto e rinviato, ma non blocca M0; qualunque altro fallimento sì;
+**Criteri di accettazione** (rivisti dopo il rinvio di T0.2 e l'anticipo di T5.5):
+- `SUITE×5` eseguita, con l'output nel ledger, **senza alcun fallimento** tranne l'eventuale `runtime.test.ts:278`, tollerato come noto (§2);
 - `backup.service.test.ts` verde in 20 esecuzioni isolate consecutive;
-- `PERIMETRO` = solo `backup.service.test.ts`; nessun file di produzione;
+- `backup.scheduler.test.ts` verde in 20 esecuzioni isolate consecutive e in 5 esecuzioni concorrenti con `SUITE` (carico reale);
+- `PERIMETRO` = solo `backup.service.test.ts` e `backup.scheduler.test.ts`; nessun file di produzione;
 - revisione `opus` della milestone senza rilievi Critical o Important aperti.
 
-**Rischi:** la causa di T0.2 potrebbe trovarsi nel consolidamento del WAL su Windows. In quel caso ci si ferma.
+**Rischi:** se lo scheduler non accetta timer simulati (per esempio perché usa `Date.now()` insieme ai timer), T5.5 ripiega sulle tolleranze, e queste non devono indebolire ciò che il test verifica. Il rischio di T0.2 (consolidamento del WAL su Windows) appartiene al task rimandato.
 
 #### T0.1 — Impronta del backup sempre diversa *(G0-A)*
 - **File:** `apps/backend/src/modules/maintenance/backup.service.test.ts`
@@ -494,7 +504,29 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 
 #### T0.2 — `SQLITE_IOERR_TRUNCATE` dopo `process.kill` su Windows *(G0-B, con `systematic-debugging`)* — **RIMANDATO**
 
-> Rimandato per decisione dell'utente (30/10/2026): l'area è coperta dal piano `backend-main-lifecycle`. Il testo resta come riferimento per chi lo riprenderà.
+> **Rimandato, ma resta in questo piano** (decisione dell'utente, 30/10/2026). Il piano `backend-main-lifecycle` esclude `runtime.test.ts` e lo rimanda qui. Si riprende dopo il merge di `refactor/backend-main-lifecycle`; fino ad allora il fallimento è tollerato come noto nelle verifiche `SUITE×5` (§2).
+
+#### T5.5 — Scheduler senza tempo reale *(G0-C, anticipato da M5)*
+- **File:** `apps/backend/src/modules/maintenance/backup.scheduler.test.ts`, solo il `describe('lo scheduler in esecuzione', …)` (oggi righe 147-290 circa). Vietato modificare `backup.scheduler.ts` e ogni altro file.
+- **Sintomo:** `backup.scheduler.test.ts:148` ("crea un backup, poi si riarma per l'intervallo pieno") attende 200 ms di tempo reale per vedere almeno due backup (margine 10 ms più intervallo 60 ms). Sotto il carico della suite completa ne vede uno solo: è successo 1 volta su 5, mentre in isolamento è 15/15 verde. Gli altri test del blocco usano lo stesso schema, con attese reali e un'attesa attiva da 40 ms.
+- [ ] Leggere `backup.scheduler.ts` e stabilire quali primitive di tempo usa: `setTimeout`/`setInterval` globali, `unref`, l'orologio iniettato `now`. Riportarlo.
+- [ ] Se usa i timer globali: `mock.timers.enable({ apis: ['setTimeout'] })`, più le altre API effettivamente usate, in un `beforeEach`/`afterEach` del blocco; si avanza il tempo con `mock.timers.tick(ms)`. Le asserzioni diventano **esatte** e non "almeno":
+  - dopo `tick(10)` c'è 1 backup;
+  - dopo `tick(60)` ce ne sono 2;
+  - dopo un altro `tick(60)` ce ne sono 3;
+  - gli eventi `programmato` hanno `delayMs` uguale a 10 e poi a 60, come oggi;
+  - il numero di eventi `creato` è uguale al numero di backup.
+
+  Per gli altri test del blocco, stesse condizioni: si sostituisce ogni attesa reale e l'attesa attiva con `tick`, conservando quello che ogni test afferma (nessuna sovrapposizione, arresto, gestione degli errori, ecc.).
+- [ ] Se lo scheduler non è compatibile con `mock.timers`, ripiegare sulle tolleranze. In quel caso nessuna asserzione può diventare più debole: ci si limita ad allungare le attese o ad aspettare un evento invece di un tempo fisso. Va riportato con la motivazione.
+- [ ] Il numero di test del file resta invariato (oggi verificabile con `ℹ tests` del file); i nomi dei test non cambiano.
+- [ ] Gate V1:
+  - a. Il test passa già: nel report va spiegato perché la nuova forma non dipende più dal carico, cioè quale tempo reale resta, se ne resta;
+  - b. `FILE` verde;
+  - c. `TC`;
+  - d. `PERIMETRO`.
+
+  Il lead esegue poi 20 esecuzioni isolate e 5 concorrenti con `SUITE`.
 - **File:** `apps/backend/src/runtime.test.ts`. Vietati `shutdown.ts`, `main.ts` e `db/**`.
 - [ ] Riprodurre: 20 esecuzioni del file, di cui 5 concorrenti con `SUITE`. Riportare la frequenza.
 - [ ] Verificare l'ipotesi: `termina()` restituisce il controllo prima che Windows rilasci i file `-wal` e `-shm`, e l'apertura `readonly` tenta un truncate. Verificare che si attenda l'evento `exit`.
@@ -891,9 +923,8 @@ Nessun helper condiviso nuovo, salvo che la revisione di milestone rilevi più d
 - **File:** `loans.partial-expense.test.ts:99,121-129`; `loans.service.test.ts` (pulizia in `finally`, e `603-611` con valori letterali al posto del `reduce`).
 - [ ] Numero di test ed esiti invariati, con l'elenco prima e dopo nel report.
 
-#### T5.5 — Scheduler senza busy-wait *(G5-C)*
-- **File:** `backup.scheduler.test.ts:172-290`.
-- [ ] Usare `mock.timers` di `node:test` se lo scheduler usa `setTimeout`/`setInterval` globali; altrimenti allargare le tolleranze. Riportare la scelta.
+#### ~~T5.5 — Scheduler senza busy-wait~~
+Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella sezione M0.
 
 ---
 
@@ -918,7 +949,8 @@ Nessun helper condiviso nuovo, salvo che la revisione di milestone rilevi più d
 
 | Milestone | Stato | Bloccata da |
 |---|---|---|
-| M0 Stabilizzazione | 🔄 in corso (solo T0.1; T0.2 rimandato) | — |
+| M0 Stabilizzazione | 🔄 in corso: T0.1 ✅ (`8e3b3f5`), T5.5 in corso; T0.2 rimandato | — |
+| T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ⏳ | M0, D6.1–6.4, D6.8, D6.9 |
 | M2 Invarianti finanziari | ⏳ | M1, D1 (con D1.b e D1.c), D2, D4, D5, D7 |
 | M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
