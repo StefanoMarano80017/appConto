@@ -238,8 +238,26 @@ describe('ricerca testuale', () => {
   });
 
   it('i caratteri jolly vengono cercati alla lettera', () => {
-    assert.equal(search({ search: '%' }).total, 0);
-    assert.equal(search({ search: '_' }).total, 0);
+    // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+    importService.importCsv(
+      csv(
+        '05/01/2036,Pagamento,SCONTO 100%,-10.00',
+        '06/01/2036,Pagamento,IMPORTO 1000,-20.00',
+        '07/01/2036,Pagamento,COD_A1,-30.00',
+      ),
+    );
+    const periodo = { from: '2036-01-01', to: '2036-01-31' } as const;
+
+    try {
+      assert.deepEqual(descriptions({ ...periodo, search: '100%' }), ['SCONTO 100%']);
+      assert.deepEqual(descriptions({ ...periodo, search: '_' }), ['COD_A1']);
+      assert.deepEqual(descriptions({ ...periodo, search: '1000' }), ['IMPORTO 1000']);
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
   });
 
   it('si combina con gli altri criteri', () => {

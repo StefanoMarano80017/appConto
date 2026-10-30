@@ -667,7 +667,27 @@ describe('elenco, filtri e totali', () => {
       2,
       'e nella descrizione del movimento d\'origine',
     );
-    assert.equal(list({ search: '%' }).items.length, 0, 'i jolly sono cercati alla lettera');
+  });
+
+  it('i caratteri jolly vengono cercati alla lettera', () => {
+    const loan = loansService.create({
+      transactionId: transactionId('L1 ANTICIPO PER UN AMICO'),
+      borrowerName: 'Sconto 50%',
+      amount: 10,
+      lentAt: '2033-03-04',
+    });
+
+    try {
+      assert.deepEqual(
+        list({ search: '%' }).items.map((item) => item.borrowerName),
+        ['Sconto 50%'],
+        'solo chi ha un % nel nome, non tutti i prestiti',
+      );
+    } finally {
+      loansService.remove(loan.id);
+    }
+
+    assert.equal(list({ search: '%' }).items.length, 0, 'tolto il prestito, nessun % resta');
   });
 
   it('espone le persone come vocabolario del filtro', () => {
