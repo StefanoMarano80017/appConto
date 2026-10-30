@@ -38,6 +38,24 @@ export function parseCsv(content: string): ParsedCsv {
     throw new ValidationError(`Il file CSV ha virgolette non chiuse alla riga ${line}.`);
   }
 
+  // Virgolette interne non raddoppiate (`InvalidQuotes`): di norma Papa legge il campo correttamente, ma se
+  // l'apertura non è chiusa fonde la riga con la successiva (il campo contiene un a capo) e una riga si perde.
+  // Il caso con un a capo legittimo e virgolette interne non raddoppiate non è distinguibile e si rifiuta.
+  const invalidQuotes = result.errors.filter((e) => e.code === 'InvalidQuotes');
+  if (invalidQuotes.length > 0) {
+    // `row` di Papa conta i record del testo (intestazione e righe vuote comprese): si rilegge senza saltare nulla.
+    const records = Papa.parse<string[]>(text, { delimiter: result.meta.delimiter }).data;
+    const newlines = (record: string[]) => record.join('').split('\n').length - 1;
+    for (const error of invalidQuotes) {
+      const record = records[error.row ?? -1];
+      if (record && /[\r\n]/.test(record.join(''))) {
+        // La riga del file in cui inizia il record: una per record precedente più gli a capo dentro i loro campi.
+        const line = records.slice(0, error.row).reduce((sum, previous) => sum + 1 + newlines(previous), 1);
+        throw new ValidationError(`Il file CSV ha virgolette non chiuse alla riga ${line}.`);
+      }
+    }
+  }
+
   const headers = (result.meta.fields ?? []).filter((header) => header.length > 0);
   if (headers.length === 0) {
     throw new ValidationError('Il file CSV non contiene una riga di intestazione valida.');

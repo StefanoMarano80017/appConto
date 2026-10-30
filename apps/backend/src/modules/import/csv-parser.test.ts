@@ -80,6 +80,51 @@ describe('CSV malformato', () => {
       ],
     );
   });
+
+  it('rifiuta la riga fusa da una virgoletta non chiusa con virgolette interne in numero pari', () => {
+    // Papa segnala solo `InvalidQuotes` e fonde due righe in una: la riga intermedia andrebbe persa.
+    rifiutaCon('Data;Descrizione;Importo\n02/01/2026;"BAR "SPORT" ROMA;-3,50\n03/01/2026;"PANE";-1,20\n', '2');
+  });
+
+  it('indica la stessa riga della fusione con fine riga Windows', () => {
+    rifiutaCon('Data;Descrizione;Importo\r\n02/01/2026;"BAR "SPORT" ROMA;-3,50\r\n03/01/2026;"PANE";-1,20\r\n', '2');
+  });
+
+  it('indica la riga in cui inizia la fusione dopo BOM, righe vuote e un campo su più righe', () => {
+    // Il campo valido occupa le righe 3-4 e c'è una riga vuota: la riga fusa inizia alla riga 6.
+    rifiutaCon('﻿a;b\n\n1;"prima\nseconda"\n\n2;"BAR "SPORT" ROMA;5\n3;"y";6\n', '6');
+  });
+
+  it('accetta un campo su più righe chiuso correttamente', () => {
+    const { rows } = parseCsv('a,b\n1,"BAR\nSPORT"\n2,x\n');
+
+    assert.deepEqual(
+      rows.map((row) => [row.a, row.b]),
+      [
+        ['1', 'BAR\nSPORT'],
+        ['2', 'x'],
+      ],
+    );
+  });
+
+  it('accetta le virgolette interne in una riga anche se un\'altra ha un campo su più righe', () => {
+    // La regola guarda la riga segnalata, non l'intero file.
+    const { rows } = parseCsv('a;b\n1;"prima\nseconda"\n2;"BAR "SPORT" ROMA"\n3;y\n');
+
+    assert.deepEqual(
+      rows.map((row) => [row.a, row.b]),
+      [
+        ['1', 'prima\nseconda'],
+        ['2', 'BAR "SPORT" ROMA'],
+        ['3', 'y'],
+      ],
+    );
+  });
+
+  it('rifiuta anche un campo su più righe con virgolette interne non raddoppiate, indistinguibile dalla fusione', () => {
+    // Papa lo leggerebbe correttamente, ma non si distingue dalla riga fusa: limite accettato.
+    rifiutaCon('a;b\n1;"BAR\n"SPORT" ROMA"\n2;y\n', '2');
+  });
 });
 
 describe('righe con un numero di campi diverso dall\'intestazione', () => {
