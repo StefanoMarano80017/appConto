@@ -28,10 +28,10 @@ export function parseCsv(content: string): ParsedCsv {
     transformHeader: (header) => header.trim(),
   });
 
-  // Virgolette non chiuse: Papa ingloba le righe successive nel campo senza avvisare, quindi
+  // Virgolette non chiuse (`MissingQuotes`): Papa ingloba le righe successive nel campo senza avvisare, quindi
   // si rifiuta l'intero file. Gli altri errori (campi in più o in meno, delimitatore non
   // rilevabile con una sola colonna) restano ignorati: le righe incomplete le segnala l'import.
-  const quoteError = result.errors.find((e) => e.type === 'Quotes');
+  const quoteError = result.errors.find((e) => e.code === 'MissingQuotes');
   if (quoteError) {
     // `row` di Papa non è la riga del file: si ricava dalla posizione (`index`) nel testo.
     const line = text.slice(0, quoteError.index).split('\n').length;

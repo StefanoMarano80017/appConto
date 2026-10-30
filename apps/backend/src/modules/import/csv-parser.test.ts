@@ -65,6 +65,21 @@ describe('CSV malformato', () => {
     // Il campo valido occupa le righe 2-3: le virgolette rimaste aperte sono alla riga 5.
     rifiutaCon('a,b\n1,"prima\nseconda"\n3,4\n5,"x\n6,7\n', '5');
   });
+
+  it('accetta le virgolette interne non raddoppiate, che Papa legge correttamente', () => {
+    const csv = 'Data;Descrizione;Importo\n02/01/2026;"BAR "SPORT" ROMA";-3,50\n03/01/2026;"PANE";-1,20\n';
+    let parsed: ReturnType<typeof parseCsv> | undefined;
+    assert.doesNotThrow(() => {
+      parsed = parseCsv(csv);
+    });
+    assert.deepEqual(
+      parsed?.rows.map((row) => [row.Descrizione, row.Importo]),
+      [
+        ['BAR "SPORT" ROMA', '-3,50'],
+        ['PANE', '-1,20'],
+      ],
+    );
+  });
 });
 
 describe('righe con un numero di campi diverso dall\'intestazione', () => {

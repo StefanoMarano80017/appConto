@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { toAmountCents } from '../transactions/index.js';
 import { parseCsvAmount, parseCsvDate } from './csv-values.js';
 
 const dateCases: Array<[string, string | null]> = [
@@ -76,7 +77,7 @@ describe('importo: andata e ritorno', () => {
     for (let cents = -1_000_000; cents <= 1_000_000; cents += 1) {
       const text = formatItalian(cents);
       const parsed = parseCsvAmount(text);
-      if (parsed === null || Math.round(parsed * 100) !== cents) {
+      if (parsed === null || Math.round(parsed * 100) !== cents || toAmountCents(parsed) !== cents) {
         failures.push(`${cents} -> ${JSON.stringify(text)} -> ${parsed}`);
         if (failures.length >= 20) break;
       }
