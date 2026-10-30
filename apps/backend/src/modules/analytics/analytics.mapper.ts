@@ -1,6 +1,7 @@
 import { merchantLabel } from "../merchants/index.js";
 import {
   creditCents,
+  expenseDistribution,
   toAmountCents,
   type TransactionWithMerchant,
 } from "../transactions/index.js";
@@ -44,50 +45,46 @@ function toCounts(
   };
 }
 
-/** Quota sul totale delle spese, con un decimale. Senza spese non c'è quota. */
-function percentageOf(amountCents: number, expensesCents: number): number {
-  return expensesCents === 0
-    ? 0
-    : Math.round((amountCents / expensesCents) * 1000) / 10;
-}
-
-/** Le voci di una distribuzione, dalla più consistente. */
-function byAmountDescending<T extends { amountCents: number }>(
-  totals: Map<string | null, T>,
-): [string | null, T][] {
-  return [...totals.entries()].sort(
-    ([, a], [, b]) => b.amountCents - a.amountCents,
-  );
-}
+/*
+ * Categorie e merchant seguono la regola delle distribuzioni: solo le voci con
+ * spesa netta positiva, quote sulla loro somma. Il totale delle uscite
+ * dell'overview resta invece netto.
+ */
 
 function toCategoryDistribution(
   aggregation: AnalyticsAggregation,
 ): CategoryDistribution[] {
-  return byAmountDescending(aggregation.expensesByCategory).map(
-    ([categoryId, total]) => ({
+  return expenseDistribution(
+    [...aggregation.expensesByCategory].map(([categoryId, total]) => ({
       categoryId,
-      name: total.name,
-      color: total.color,
-      amount: total.amountCents / 100,
-      transactionCount: total.transactionCount,
-      percentage: percentageOf(total.amountCents, aggregation.totals.expenses),
-    }),
-  );
+      ...total,
+    })),
+  ).map((share) => ({
+    categoryId: share.categoryId,
+    name: share.name,
+    color: share.color,
+    amount: share.amountCents / 100,
+    transactionCount: share.transactionCount,
+    percentage: share.percentage,
+  }));
 }
 
 function toMerchantDistribution(
   aggregation: AnalyticsAggregation,
 ): MerchantDistribution[] {
-  return byAmountDescending(aggregation.expensesByMerchant).map(
-    ([merchantId, total]) => ({
+  return expenseDistribution(
+    [...aggregation.expensesByMerchant].map(([merchantId, total]) => ({
       merchantId,
-      name: total.name,
-      category: total.categoryName,
-      amount: total.amountCents / 100,
-      transactionCount: total.transactionCount,
-      percentage: percentageOf(total.amountCents, aggregation.totals.expenses),
-    }),
-  );
+      ...total,
+    })),
+  ).map((share) => ({
+    merchantId: share.merchantId,
+    name: share.name,
+    category: share.categoryName,
+    amount: share.amountCents / 100,
+    transactionCount: share.transactionCount,
+    percentage: share.percentage,
+  }));
 }
 
 function toTimeline(

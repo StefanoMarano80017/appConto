@@ -3,6 +3,7 @@ import { ValidationError } from '../../shared/errors.js';
 import { loansService } from '../loans/index.js';
 import {
   expenseCents,
+  expenseDistribution,
   hasExpense,
   isIncome,
   toAmountCents,
@@ -89,9 +90,17 @@ export function summarizeEntries(
     totalsByCategory.set(category.id, total);
   }
 
-  const amountByCategory: CategorySummary[] = [...totalsByCategory.values()]
-    .map(({ amountCents, ...category }) => ({ ...category, amount: amountCents / 100 }))
-    .sort((a, b) => b.amount - a.amount);
+  // Fra le categorie solo quelle con spesa netta positiva: un rimborso riduce
+  // le uscite, ma una categoria di soli rimborsi non ha spesa da mostrare.
+  const amountByCategory: CategorySummary[] = expenseDistribution(totalsByCategory.values()).map(
+    ({ id, name, color, amountCents, transactionCount }) => ({
+      id,
+      name,
+      color,
+      transactionCount,
+      amount: amountCents / 100,
+    }),
+  );
 
   return {
     month,
