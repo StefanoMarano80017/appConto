@@ -39,6 +39,55 @@ async function serverReale(): Promise<Server> {
   return server;
 }
 
+function timerFinto() {
+  const setTimeoutOriginale = globalThis.setTimeout;
+  const clearTimeoutOriginale = globalThis.clearTimeout;
+  const timers: {
+    callback: () => void;
+    delay: number;
+    handle: NodeJS.Timeout;
+    flags: { unrefChiamato: boolean; cancellato: boolean };
+  }[] = [];
+
+  globalThis.setTimeout = ((callback: () => void, delay = 0) => {
+    const timer = {
+      callback,
+      delay,
+      handle: undefined as unknown as NodeJS.Timeout,
+      flags: { unrefChiamato: false, cancellato: false },
+    };
+    timer.handle = {
+      unref() {
+        timer.flags.unrefChiamato = true;
+        return this;
+      },
+    } as unknown as NodeJS.Timeout;
+    timers.push(timer);
+    return timer.handle;
+  }) as typeof globalThis.setTimeout;
+  globalThis.clearTimeout = ((handle: NodeJS.Timeout) => {
+    const timer = timers.find((scheduled) => scheduled.handle === handle);
+    if (timer !== undefined) {
+      timer.flags.cancellato = true;
+    }
+  }) as typeof globalThis.clearTimeout;
+
+  return {
+    timers,
+    run(delay: number) {
+      const timer = timers.find(
+        (scheduled) => scheduled.delay === delay && !scheduled.flags.cancellato,
+      );
+      assert.ok(timer, `timer di ${String(delay)}ms atteso`);
+      timer.callback();
+    },
+    restore() {
+      globalThis.setTimeout = setTimeoutOriginale;
+      globalThis.clearTimeout = clearTimeoutOriginale;
+    },
+  };
+}
+
 describe('createShutdown', () => {
   it('ferma le attività prima di chiudere il database ed esce con 0', async () => {
     const server = await serverReale();
@@ -157,6 +206,7 @@ describe('createShutdown', () => {
   });
 
   it('attende il timeout di grazia prima di chiudere il database', async () => {
+    const timer = timerFinto();
     const ordine: string[] = [];
     let callbackClose: ((error?: Error) => void) | undefined;
     const server = {
@@ -173,78 +223,53 @@ describe('createShutdown', () => {
     } as unknown as Server;
     const { log } = loggerFinto();
 
-    const codice = new Promise<number>((resolve) => {
-      createShutdown({
-        server,
-        background: { stop: () => ordine.push('stop') },
-        closeDatabase: () => {
-          ordine.push('database');
-          return consolidato;
-        },
-        exit: (code) => {
-          ordine.push(`exit ${String(code)}`);
-          resolve(code);
-        },
-        log,
-        graceMs: 5,
-        safetyMs: 500,
-      })('test');
-    });
+    try {
+      const codice = new Promise<number>((resolve) => {
+        createShutdown({
+          server,
+          background: { stop: () => ordine.push('stop') },
+          closeDatabase: () => {
+            ordine.push('database');
+            return consolidato;
+          },
+          exit: (code) => {
+            ordine.push(`exit ${String(code)}`);
+            resolve(code);
+          },
+          log,
+          graceMs: 5,
+          safetyMs: 500,
+        })('test');
+      });
 
-    assert.deepEqual(ordine, ['stop', 'close HTTP', 'chiudi inattive']);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    assert.deepEqual(ordine, [
-      'stop',
-      'close HTTP',
-      'chiudi inattive',
-      'chiudi forzatamente',
-    ]);
+      assert.deepEqual(ordine, ['stop', 'close HTTP', 'chiudi inattive']);
+      timer.run(5);
+      assert.deepEqual(ordine, [
+        'stop',
+        'close HTTP',
+        'chiudi inattive',
+        'chiudi forzatamente',
+      ]);
 
-    callbackClose?.();
-    assert.equal(await codice, 0);
-    assert.deepEqual(ordine, [
-      'stop',
-      'close HTTP',
-      'chiudi inattive',
-      'chiudi forzatamente',
-      'database',
-      'exit 0',
-    ]);
+      callbackClose?.();
+      assert.equal(await codice, 0);
+      assert.deepEqual(ordine, [
+        'stop',
+        'close HTTP',
+        'chiudi inattive',
+        'chiudi forzatamente',
+        'database',
+        'exit 0',
+      ]);
+      assert.ok(timer.timers.every(({ flags }) => flags.cancellato));
+    } finally {
+      timer.restore();
+    }
   });
 
   it('avvia prima la rete di sicurezza e cancella entrambi i timer al completamento', async () => {
-    const timerOriginale = globalThis.setTimeout;
-    const clearTimeoutOriginale = globalThis.clearTimeout;
+    const timer = timerFinto();
     const ordine: string[] = [];
-    const timerCreati: {
-      handle: NodeJS.Timeout;
-      delay: number;
-      flags: { unrefChiamato: boolean; cancellato: boolean };
-    }[] = [];
-    globalThis.setTimeout = ((callback: () => void, delay = 0) => {
-      ordine.push(`timer ${String(delay)}`);
-      const flags = {
-        unrefChiamato: false,
-        cancellato: false,
-      };
-      const timer = {
-        callback,
-        delay,
-        unref() {
-          flags.unrefChiamato = true;
-          return this;
-        },
-      };
-      const handle = timer as unknown as NodeJS.Timeout;
-      timerCreati.push({ handle, delay, flags });
-      return handle;
-    }) as typeof globalThis.setTimeout;
-    globalThis.clearTimeout = ((handle: NodeJS.Timeout) => {
-      const timer = timerCreati.find((scheduled) => scheduled.handle === handle);
-      if (timer !== undefined) {
-        timer.flags.cancellato = true;
-      }
-    }) as typeof globalThis.clearTimeout;
 
     try {
       let callbackClose: ((error?: Error) => void) | undefined;
@@ -265,8 +290,12 @@ describe('createShutdown', () => {
         createShutdown({
           server,
           background: { stop: () => ordine.push('stop') },
-          closeDatabase: () => consolidato,
+          closeDatabase: () => {
+            assert.ok(timer.timers.every(({ flags }) => !flags.cancellato));
+            return consolidato;
+          },
           exit: (code) => {
+            assert.ok(timer.timers.every(({ flags }) => flags.cancellato));
             uscite += 1;
             resolve(code);
           },
@@ -278,17 +307,15 @@ describe('createShutdown', () => {
 
       assert.deepEqual(ordine, [
         'stop',
-        'timer 15000',
         'close HTTP',
         'chiudi inattive',
-        'timer 5000',
       ]);
       assert.deepEqual(
-        timerCreati.map(({ delay }) => delay),
+        timer.timers.map(({ delay }) => delay),
         [15_000, 5_000],
       );
       assert.deepEqual(
-        timerCreati.map(({ flags }) => flags.unrefChiamato),
+        timer.timers.map(({ flags }) => flags.unrefChiamato),
         [false, true],
       );
 
@@ -296,10 +323,87 @@ describe('createShutdown', () => {
       callbackClose?.();
       assert.equal(await codice, 0);
       assert.equal(uscite, 1);
-      assert.ok(timerCreati.every(({ flags }) => flags.cancellato));
+      assert.ok(timer.timers.every(({ flags }) => flags.cancellato));
     } finally {
-      globalThis.setTimeout = timerOriginale;
-      globalThis.clearTimeout = clearTimeoutOriginale;
+      timer.restore();
+    }
+  });
+
+  it('non programma la chiusura forzata se il callback HTTP è immediato', () => {
+    const timer = timerFinto();
+    const { log } = loggerFinto();
+    let closeDatabaseCalls = 0;
+    let exitCalls = 0;
+    let closeAllCalls = 0;
+    const server = {
+      close(callback?: (error?: Error) => void) {
+        callback?.();
+      },
+      closeIdleConnections() {},
+      closeAllConnections() {
+        closeAllCalls += 1;
+      },
+    } as unknown as Server;
+
+    try {
+      createShutdown({
+        server,
+        closeDatabase: () => {
+          closeDatabaseCalls += 1;
+          return consolidato;
+        },
+        exit: () => {
+          exitCalls += 1;
+        },
+        log,
+      })('test');
+
+      assert.deepEqual(timer.timers.map(({ delay }) => delay), [15_000]);
+      assert.equal(timer.timers[0]?.flags.cancellato, true);
+      timer.timers[0]?.callback();
+      assert.equal(closeDatabaseCalls, 1);
+      assert.equal(exitCalls, 1);
+      assert.equal(closeAllCalls, 0);
+    } finally {
+      timer.restore();
+    }
+  });
+
+  it('un errore sincrono in server.close chiude il database e termina una volta con 1', () => {
+    const timer = timerFinto();
+    const { log, righe } = loggerFinto();
+    let closeDatabaseCalls = 0;
+    let exitCalls = 0;
+    const server = {
+      close() {
+        throw new Error('HTTP sincrono');
+      },
+      closeIdleConnections() {},
+      closeAllConnections() {},
+    } as unknown as Server;
+
+    try {
+      createShutdown({
+        server,
+        closeDatabase: () => {
+          closeDatabaseCalls += 1;
+          return consolidato;
+        },
+        exit(code) {
+          assert.equal(code, 1);
+          exitCalls += 1;
+        },
+        log,
+      })('test');
+
+      assert.equal(closeDatabaseCalls, 1);
+      assert.equal(exitCalls, 1);
+      assert.ok(timer.timers.every(({ flags }) => flags.cancellato));
+      assert.ok(
+        righe.some(([level, message]) => level === 'error' && message.includes('server HTTP')),
+      );
+    } finally {
+      timer.restore();
     }
   });
 
@@ -351,6 +455,7 @@ describe('createShutdown', () => {
   });
 
   it('rete di sicurezza', async () => {
+    const timer = timerFinto();
     // Un server che non si chiude mai: `close` non richiama la callback.
     let callbackClose: ((error?: Error) => void) | undefined;
     const server = {
@@ -365,28 +470,34 @@ describe('createShutdown', () => {
     let uscite = 0;
 
     // Il timer di sicurezza non è `unref`: scattando, lascia il ciclo libero.
-    const codice = await new Promise<number>((resolve) => {
-      createShutdown({
-        server,
-        closeDatabase: () => {
-          chiuso = true;
-          return consolidato;
-        },
-        exit: (code) => {
-          uscite += 1;
-          resolve(code);
-        },
-        log,
-        graceMs: 10,
-        safetyMs: 30,
-      })('test');
-    });
+    try {
+      const codice = new Promise<number>((resolve) => {
+        createShutdown({
+          server,
+          closeDatabase: () => {
+            chiuso = true;
+            return consolidato;
+          },
+          exit: (code) => {
+            uscite += 1;
+            resolve(code);
+          },
+          log,
+          graceMs: 10,
+          safetyMs: 30,
+        })('test');
+      });
 
-    assert.equal(codice, 1);
-    assert.equal(chiuso, false);
-    callbackClose?.();
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    assert.equal(uscite, 1);
+      assert.equal(timer.timers.find(({ delay }) => delay === 30)?.flags.unrefChiamato, false);
+      timer.run(30);
+      assert.equal(await codice, 1);
+      assert.equal(chiuso, false);
+      callbackClose?.();
+      timer.timers.find(({ delay }) => delay === 30)?.callback();
+      assert.equal(uscite, 1);
+    } finally {
+      timer.restore();
+    }
   });
 });
 

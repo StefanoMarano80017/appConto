@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -17,7 +18,12 @@ const { config } = await import('./config.js');
 const { closeDatabase, runMigrations } = await import('./db/client.js');
 const { importService } = await import('./modules/import/index.js');
 const { logger } = await import('./shared/logger.js');
-const { createShutdown, installSignalHandlers } = await import('./shutdown.js');
+const {
+  createShutdown,
+  installShutdownHandlers,
+  installSignalHandlers,
+  shutdown,
+} = await import('./shutdown.js');
 
 runMigrations();
 
@@ -155,5 +161,90 @@ describe('arresto ordinato', () => {
     // Le richieste arrivano da sorgenti indipendenti — un segnale, il
     // launcher, la chiusura della finestra — e possono arrivare insieme.
     assert.equal(fermatoDiNuovo, false, 'niente va fermato due volte');
+  });
+});
+
+describe('compatibilità legacy', () => {
+  it('riutilizza sullo stesso server le dipendenze della prima richiesta', () => {
+    const chiamate: string[] = [];
+    let callbackClose: (() => void) | undefined;
+    const server = {
+      close(callback?: () => void) {
+        callbackClose = callback;
+      },
+      closeIdleConnections() {},
+      closeAllConnections() {},
+    } as unknown as Server;
+
+    shutdown(
+      server,
+      'prima',
+      (code) => chiamate.push(`prima exit ${String(code)}`),
+      { stop: () => chiamate.push('primo background') },
+    );
+    shutdown(
+      server,
+      'seconda',
+      (code) => chiamate.push(`seconda exit ${String(code)}`),
+      { stop: () => chiamate.push('secondo background') },
+    );
+
+    assert.deepEqual(chiamate, ['primo background']);
+    callbackClose?.();
+    assert.deepEqual(chiamate, ['primo background', 'prima exit 0']);
+  });
+
+  it('mantiene procedure indipendenti per server differenti', () => {
+    const chiamate: string[] = [];
+    const callbacks: (() => void)[] = [];
+    const creaServerFinto = (): Server =>
+      ({
+        close(callback?: () => void) {
+          if (callback !== undefined) callbacks.push(callback);
+        },
+        closeIdleConnections() {},
+        closeAllConnections() {},
+      }) as unknown as Server;
+
+    shutdown(
+      creaServerFinto(),
+      'server A',
+      (code) => chiamate.push(`A ${String(code)}`),
+      { stop: () => chiamate.push('stop A') },
+    );
+    shutdown(
+      creaServerFinto(),
+      'server B',
+      (code) => chiamate.push(`B ${String(code)}`),
+      { stop: () => chiamate.push('stop B') },
+    );
+
+    assert.deepEqual(chiamate, ['stop A', 'stop B']);
+    callbacks[1]?.();
+    callbacks[0]?.();
+    assert.deepEqual(chiamate, ['stop A', 'stop B', 'B 0', 'A 0']);
+  });
+
+  it('registra i tre signal handler legacy', () => {
+    const segnali = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+    const precedenti = new Map(
+      segnali.map((signal) => [signal, new Set(process.listeners(signal))]),
+    );
+
+    try {
+      installShutdownHandlers({} as Server);
+      for (const signal of segnali) {
+        const aggiunti = process.listeners(signal).filter((listener) => !precedenti.get(signal)?.has(listener));
+        assert.equal(aggiunti.length, 1, `${signal} deve avere un nuovo handler`);
+      }
+    } finally {
+      for (const signal of segnali) {
+        for (const listener of process.listeners(signal)) {
+          if (!precedenti.get(signal)?.has(listener)) {
+            process.removeListener(signal, listener);
+          }
+        }
+      }
+    }
   });
 });

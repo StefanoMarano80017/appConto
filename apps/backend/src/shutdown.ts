@@ -140,13 +140,6 @@ export function createShutdown(deps: ShutdownDeps): (reason: string) => void {
       }
       finished = true;
 
-      if (forceClose !== undefined) {
-        clearTimeout(forceClose);
-      }
-      if (safety !== undefined) {
-        clearTimeout(safety);
-      }
-
       if (httpError !== undefined) {
         log.error('Impossibile chiudere il server HTTP', httpError);
       }
@@ -154,6 +147,12 @@ export function createShutdown(deps: ShutdownDeps): (reason: string) => void {
       const result = closeAndReport(closeDatabase, log);
       if (httpError === undefined && result === 'consolidato') {
         log.info('Arresto completato');
+      }
+      if (forceClose !== undefined) {
+        clearTimeout(forceClose);
+      }
+      if (safety !== undefined) {
+        clearTimeout(safety);
       }
       exit(httpError !== undefined || result !== 'consolidato' ? 1 : 0);
     };
@@ -179,10 +178,7 @@ export function createShutdown(deps: ShutdownDeps): (reason: string) => void {
     try {
       server.close(finish);
     } catch (error) {
-      finished = true;
-      clearTimeout(safety);
-      log.error('Impossibile chiudere il server HTTP', error);
-      exit(1);
+      finish(error instanceof Error ? error : new Error(String(error)));
       return;
     }
     server.closeIdleConnections();
@@ -201,7 +197,9 @@ const legacyShutdowns = new WeakMap<Server, (reason: string) => void>();
 
 /**
  * Compatibilità con l'API precedente: la procedura resta quella creata da
- * `createShutdown`, con stato idempotente legato al server.
+ * `createShutdown`, con stato idempotente legato al server. Per ogni server,
+ * la prima chiamata determina `exit` e `background`; le successive richieste
+ * riusano quella procedura e non possono sostituirne le dipendenze.
  */
 export function shutdown(
   server: Server,
@@ -221,6 +219,24 @@ export function shutdown(
     legacyShutdowns.set(server, request);
   }
   request(reason);
+}
+
+/**
+ * Registra i gestori legacy per i tre segnali di shutdown originali.
+ */
+export function installShutdownHandlers(server: Server, background?: BackgroundWork): void {
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+    process.on(signal, () => {
+      shutdown(
+        server,
+        signal,
+        (code) => {
+          process.exit(code);
+        },
+        background,
+      );
+    });
+  }
 }
 
 export interface SignalSource {
@@ -253,24 +269,6 @@ export function installSignalHandlers(
   for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK'] as const) {
     proc.on(signal, () => {
       request(signal);
-    });
-  }
-}
-
-/**
- * Registra i gestori legacy per i tre segnali di shutdown originali.
- */
-export function installShutdownHandlers(server: Server, background?: BackgroundWork): void {
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
-    process.on(signal, () => {
-      shutdown(
-        server,
-        signal,
-        (code) => {
-          process.exit(code);
-        },
-        background,
-      );
     });
   }
 }
