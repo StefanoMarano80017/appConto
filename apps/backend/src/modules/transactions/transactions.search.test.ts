@@ -416,3 +416,59 @@ describe('interpretazione dei criteri', () => {
     assert.throws(() => parseTransactionQuery({ minAmount: '50', maxAmount: '10' }), /il minimo supera/);
   });
 });
+
+describe('ricerca e ordinamento con le lettere accentate', () => {
+  // SQLite porta in minuscolo solo l'ASCII: «CAFFÈ» resterebbe «cafFÈ».
+  // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+  const periodo = { from: '2037-01-01', to: '2037-01-31' } as const;
+
+  function conDatiProvvisori(verifica: () => void): void {
+    importService.importCsv(
+      csv(
+        '05/01/2037,Pagamento,ZETA,-10.00',
+        '06/01/2037,Pagamento,alfa,-20.00',
+        '07/01/2037,Pagamento,Cassa,-30.00',
+        '08/01/2037,Pagamento,CAFFÈ ROMA,-40.00',
+      ),
+    );
+
+    try {
+      verifica();
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
+  }
+
+  it('cercare in minuscolo trova il testo scritto in maiuscolo', () => {
+    conDatiProvvisori(() => {
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }), ['CAFFÈ ROMA']);
+      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }), ['CAFFÈ ROMA']);
+    });
+  });
+
+  it('ordinando per merchant le minuscole non vengono dopo le maiuscole', () => {
+    conDatiProvvisori(() => {
+      const merchantIds = ['ZETA', 'alfa', 'Cassa'].map(merchantIdOf);
+      const nomi = search({ ...periodo, merchantIds, sortBy: 'merchant', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.merchant.name);
+
+      assert.deepEqual(nomi, ['alfa', 'Cassa', 'ZETA']);
+    });
+  });
+
+  it('ordinando per categoria le minuscole non vengono dopo le maiuscole', () => {
+    conDatiProvvisori(() => {
+      for (const nome of ['ZETA', 'alfa', 'Cassa']) {
+        const categoria = categoriesService.create({ name: `${nome} cat`, color: null });
+        merchantsService.assignCategory(merchantIdOf(nome), categoria.id);
+      }
+      const nomi = search({ ...periodo, classification: 'classified', sortBy: 'category', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.category?.name);
+
+      assert.deepEqual(nomi, ['alfa cat', 'Cassa cat', 'ZETA cat']);
+    });
+  });
+});
