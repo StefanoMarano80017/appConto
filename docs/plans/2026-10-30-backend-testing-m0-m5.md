@@ -319,6 +319,8 @@ Nessun gruppo è chiuso finché il lead non ha l'**output effettivo** dei comand
 | dashboard | `topCategories`: la base delle percentuali diventa la somma delle voci positive (oggi è `summary.expenses`); `percentChange` è `null` se il mese precedente è ≤ 0 | `summary.expenses` resta netto |
 | cash-flow | nulla (non ha distribuzioni) | |
 
+*Nota di esecuzione (M2, T2.3):* in dashboard le quote delle prime cinque categorie sono calcolate sulla somma di **tutte** le categorie positive, come dice la riga qui sopra. Con più di cinque categorie le quote mostrate sommano quindi a meno di 100. Un test lo fissa (7 categorie → 5 voci, somma 86).
+
 **Sottodecisioni:**
 - **D1.b:** in un mese di soli rimborsi, il totale delle uscite resta **netto e negativo** (−30), oppure va fermato a 0? Raccomando di lasciarlo netto: è il dato vero, e fermarlo a 0 renderebbe falsi saldo e patrimonio.
 - **D1.c:** la regola si applica anche a `byMerchant` di analytics. Raccomando sì, per coerenza.
@@ -700,7 +702,7 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 - **Regola (D7, fine giornata):**
   - saldo iniziale(mese) = saldo + Σ(`balanceDate < data < inizio mese`) − Σ(`inizio mese ≤ data ≤ balanceDate`);
   - con `balanceDate = null` resta il comportamento attuale.
-- [ ] Scenario puntuale: saldo 1000 al 2040-05-10; movimenti −5 (04-15), −40 (05-02), −60 (05-20), −10 (06-03).
+- [x] Scenario puntuale: saldo 1000 al 2040-05-10; movimenti −5 (04-15), −40 (05-02), −60 (05-20), −10 (06-03).
 
   | Mese | Saldo iniziale | Saldo finale |
   |---|---|---|
@@ -708,46 +710,46 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   | maggio | 1040 | 940 |
   | giugno | 940 | 930 |
 
-- [ ] **Invariante di continuità:**
+- [x] **Invariante di continuità:**
   - 12 mesi consecutivi, con movimenti deterministici di tutti i tipi, compreso un prestito parziale;
   - `balanceDate` viene fatta variare su: il giorno prima del primo mese, il 1° del mese, il 15, l'ultimo giorno del mese e un giorno dopo l'ultimo movimento;
   - per ogni mese, saldo finale = saldo iniziale del mese successivo;
   - saldo finale di ogni mese = saldo iniziale + `netMovement`.
-- [ ] **Invariante di ancoraggio** (obbligatoria, richiesta in fase di approvazione). Per ogni variante di `balanceDate` dell'invariante di continuità, il saldo a fine giornata di `balanceDate` deve valere esattamente il saldo inserito. Lo si calcola come saldo iniziale del mese di `balanceDate` più Σ dei movimenti con `inizio mese ≤ data ≤ balanceDate`, e lo si verifica con un test dedicato, non come conseguenza di altri.
+- [x] **Invariante di ancoraggio** (obbligatoria, richiesta in fase di approvazione). Per ogni variante di `balanceDate` dell'invariante di continuità, il saldo a fine giornata di `balanceDate` deve valere esattamente il saldo inserito. Lo si calcola come saldo iniziale del mese di `balanceDate` più Σ dei movimenti con `inizio mese ≤ data ≤ balanceDate`, e lo si verifica con un test dedicato, non come conseguenza di altri.
   - Va verificata esplicitamente anche la sensibilità al confine: un movimento **nel giorno stesso** di `balanceDate` è già compreso nel saldo; un movimento del giorno dopo no. Due test separati, uno per lato.
-- [ ] La vista completa resta invariata: i test esistenti vanno lasciati come sono.
-- [ ] Gate V4. Utilizzatori diretti: `cash-flow.service.test.ts`, `loans.cash-flow.test.ts`, `loans.partial-expense.test.ts`.
+- [x] La vista completa resta invariata: i test esistenti vanno lasciati come sono.
+- [x] Gate V4. Utilizzatori diretti: `cash-flow.service.test.ts`, `loans.cash-flow.test.ts`, `loans.partial-expense.test.ts`.
 
 #### T2.7 — Analytics: passaggio d'anno e anno bisestile *(G2-B)*
 - **File:** nuovo `modules/analytics/analytics.timeline.test.ts`.
-- [ ] `startOfWeek('2026-01-01') === '2025-12-29'`; `startOfWeek('2024-02-29') === '2024-02-26'`.
-- [ ] `buildTimeline` mensile da `2025-11-15` a `2026-02-10` → bucket `2025-11, 2025-12, 2026-01, 2026-02`.
-- [ ] Settimanale attraverso il capodanno → nessuna settimana duplicata o mancante.
-- [ ] Solo test. Se qualcosa fallisce, **riportarlo**. Gate V1.
+- [x] `startOfWeek('2026-01-01') === '2025-12-29'`; `startOfWeek('2024-02-29') === '2024-02-26'`.
+- [x] `buildTimeline` mensile da `2025-11-15` a `2026-02-10` → bucket `2025-11, 2025-12, 2026-01, 2026-02`.
+- [x] Settimanale attraverso il capodanno → nessuna settimana duplicata o mancante.
+- [x] Solo test. Se qualcosa fallisce, **riportarlo**. Gate V1.
 
 #### Gruppo G2-C — Prestiti (T2.4 → T2.5 → T2.2, un commit per task)
 
 **File del gruppo:** `modules/loans/loans.service.ts`, `modules/loans/loans.repository.ts` (solo per la somma per `transactionId`), nuovo `modules/loans/loans.validation.test.ts`.
 
 ##### T2.4 — Origine negativa *(D5)*
-- [ ] Movimento `LOAN` +250 → `ValidationError`; −250 → accettato come oggi. Gate V3.
+- [x] Movimento `LOAN` +250 → `ValidationError`; −250 → accettato come oggi. Gate V3.
 
 ##### T2.5 — Capienza del movimento di restituzione *(D4)*
-- [ ] Accredito +100, prestiti A e B da 90:
+- [x] Accredito +100, prestiti A e B da 90:
   - A 60 collegata → ok;
   - B 40 collegata → ok;
   - B 1 collegata → `ValidationError` con il residuo del movimento.
-- [ ] Una modifica che supera la capienza → errore. Ridurre → ok. Una modifica senza cambio di importo → ok, perché la restituzione stessa va esclusa dalla somma.
-- [ ] **Invariante:** dopo ogni operazione accettata, per ogni Transaction Σ restituzioni collegate ≤ importo. Si verifica con una query al termine di ogni sequenza di test.
-- [ ] **Modifica successiva dell'importo della Transaction collegata** (richiesta in fase di approvazione). Oggi l'importo è immutabile: le uniche scritture su `transactions` sono `set({ type })` e `set({ fingerprint })` (`transactions.repository.ts:319,401`), e le rotte espongono solo `GET`, `DELETE` e `PATCH /:id/type`.
+- [x] Una modifica che supera la capienza → errore. Ridurre → ok. Una modifica senza cambio di importo → ok, perché la restituzione stessa va esclusa dalla somma.
+- [x] **Invariante:** dopo ogni operazione accettata, per ogni Transaction Σ restituzioni collegate ≤ importo. Si verifica con una query al termine di ogni sequenza di test.
+- [x] **Modifica successiva dell'importo della Transaction collegata** (richiesta in fase di approvazione). Oggi l'importo è immutabile: le uniche scritture su `transactions` sono `set({ type })` e `set({ fingerprint })` (`transactions.repository.ts:319,401`), e le rotte espongono solo `GET`, `DELETE` e `PATCH /:id/type`.
   - Test: un `PATCH /api/transactions/:id` con `amount` → 404, e l'importo resta invariato.
   - Test: `updateType` su un accredito collegato non cambia l'importo e non viola l'invariante. Va verificato anche il cambio di tipo verso un tipo non `INCOME`: deve restare coerente con D2 e, se non lo è, va riportato.
   - Commento in `loans.service.ts` accanto al controllo di capienza: qualunque percorso futuro che modifichi `amount_cents` deve rieseguire la stessa verifica.
   - Il lead, in chiusura di G2-C, riesegue `grep -n "db.update(transactions)" apps/backend/src -r` e riporta l'esito.
-- [ ] Gate V3.
+- [x] Gate V3.
 
 ##### T2.2 — Vincoli di `update` e casi scoperti
-- [ ] Gli scenari:
+- [x] Gli scenari:
 
   | Scenario | Atteso |
   |---|---|
@@ -759,15 +761,15 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   | 0.005 | 1 centesimo |
   | `parseLoanQuery`: valori validi, non validi e default | come da `loan-query.ts` |
 
-- [ ] Gate V1 (solo test).
+- [x] Gate V1 (solo test).
 
 #### T2.3 — Rimborsi coerenti fra le viste *(G2-D; D1)*
 - **File:** `summary.service.ts`, `analytics.mapper.ts` (e `analytics.aggregation.ts` se necessario), `dashboard.service.ts`, un helper condiviso accanto a `expenseCents` in `transactions/transaction-type.ts` (oppure un nuovo file in `transactions/`, nominato nel report), nuovo `modules/dashboard/refunds.consistency.test.ts`.
-- [ ] Scenario (B): Alimentari −100 e +30; Shopping solo +20. Su summary, analytics e dashboard per lo stesso mese:
+- [x] Scenario (B): Alimentari −100 e +30; Shopping solo +20. Su summary, analytics e dashboard per lo stesso mese:
   - `expenses` = 50;
   - le distribuzioni sono `[Alimentari 70 → 100%]`, senza Shopping;
   - `byMerchant` segue D1.c.
-- [ ] `percentChange` per una coppia (mese precedente, mese attuale):
+- [x] `percentChange` per una coppia (mese precedente, mese attuale):
 
   | Precedente | Attuale | Atteso |
   |---|---|---|
@@ -775,12 +777,12 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   | 0 | 100 | `null` |
   | 50 | 100 | `100` |
 
-- [ ] **Invarianti incrociati**, su tre scenari: solo spese, spese con rimborsi, solo rimborsi.
+- [x] **Invarianti incrociati**, su tre scenari: solo spese, spese con rimborsi, solo rimborsi.
   - `summary.expenses === analytics.overview.expenses === dashboard.summary.expenses`;
-  - le percentuali di ogni distribuzione sommano a 100 ± 0,1, oppure la distribuzione è vuota;
+  - le percentuali di ogni distribuzione sommano a 100 ± 0,1, oppure la distribuzione è vuota (precisato in chiusura di M2: vale per le distribuzioni complete degli scenari del test; con molte voci l'arrotondamento a un decimale di ciascuna quota può superare la tolleranza, es. 6 voci uguali → 100,2);
   - nessuna voce di distribuzione ha importo ≤ 0.
-- [ ] La regola vive in un solo punto e non viene copiata nei servizi.
-- [ ] Gate V4. Utilizzatori diretti: i test di summary, analytics e dashboard.
+- [x] La regola vive in un solo punto e non viene copiata nei servizi.
+- [x] Gate V4. Utilizzatori diretti: i test di summary, analytics e dashboard.
 
 #### T2.6 — Restituzioni fuori da entrate e patrimonio *(G2-E; D2 = B)*
 - **File:**
@@ -791,17 +793,17 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   - `loans.cash-flow.test.ts:89,94,166`;
   - `docs/architecture/data-model.md`;
   - nuovo `modules/loans/loans.repayment-income.test.ts`.
-- [ ] I valori della mappa D2 (§4) per lo scenario 80 / 50 collegati / 10 in contanti, su ogni vista della tabella.
-- [ ] Accredito 70 con 50 collegati → `income` 20. Scollegare → `income` 70.
-- [ ] Accredito in un mese diverso dal prestito → l'esclusione avviene nel mese dell'accredito.
-- [ ] **Invarianti:**
+- [x] I valori della mappa D2 (§4) per lo scenario 80 / 50 collegati / 10 in contanti, su ogni vista della tabella.
+- [x] Accredito 70 con 50 collegati → `income` 20. Scollegare → `income` 70.
+- [x] Accredito in un mese diverso dal prestito → l'esclusione avviene nel mese dell'accredito.
+- [x] **Invarianti:**
   - collegare o scollegare una restituzione non cambia `netMovement` né `closingBalance` di nessun mese;
   - `income(con collegamento) + quota collegata = income(senza collegamento)`;
   - prestare X e ricevere X collegati → il contributo a `netWorthChange` e `income` sull'intero periodo è 0;
   - Σ `byType` = `netMovement`.
-- [ ] `repaidCents` limitato all'importo positivo del movimento.
-- [ ] I test che fissavano il vecchio comportamento si aggiornano **solo** alle righe citate, con un commento che rimanda a D2.
-- [ ] Gate V4. Utilizzatori diretti: cash-flow, summary, analytics, dashboard e loans.
+- [x] `repaidCents` limitato all'importo positivo del movimento.
+- [x] I test che fissavano il vecchio comportamento si aggiornano **solo** alle righe citate, con un commento che rimanda a D2.
+- [x] Gate V4. Utilizzatori diretti: cash-flow, summary, analytics, dashboard e loans.
 
 #### T2.8 — Righe fuse da virgolette malformate *(G2-F; D6.9, aggiunto su decisione dell'utente il 30/10/2026)*
 - **Origine:** osservazione della revisione di fine M1, verificata dal lead. Il caso esiste già su `master`.
@@ -811,14 +813,14 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 - **Regola approvata:** il file si rifiuta anche quando un campo della riga segnalata da `InvalidQuotes` contiene un a capo (`\n` o `\r`).
   - Il messaggio è lo stesso di T1.3: "Il file CSV ha virgolette non chiuse alla riga N.", con N la riga del file in cui inizia la riga fusa, contata da 1 e con l'intestazione compresa.
 - **File:** `modules/import/csv-parser.ts`, `modules/import/csv-parser.test.ts`.
-- [ ] Il caso di fusione qui sopra viene rifiutato con N = 2. Una variante con CRLF dà lo stesso N.
-- [ ] Restano accettati, con le righe attese:
+- [x] Il caso di fusione qui sopra viene rifiutato con N = 2. Una variante con CRLF dà lo stesso N.
+- [x] Restano accettati, con le righe attese:
   - `"BAR "SPORT" ROMA"` (`InvalidQuotes` senza a capo);
   - un campo su più righe chiuso correttamente (`"BAR\nSPORT"`, nessun errore);
   - un file con un campo su più righe corretto in una riga e virgolette interne in **un'altra** riga. La regola guarda la riga segnalata, non l'intero file.
-- [ ] **Effetto collaterale, da fissare con un test:** un campo su più righe che contiene anche virgolette interne non raddoppiate (`"BAR\n"SPORT" ROMA"`) viene rifiutato. Papa lo legge correttamente, ma non è distinguibile dalla fusione.
-- [ ] I test esistenti su `MissingQuotes` restano verdi senza modifiche.
-- [ ] Gate V2. Utilizzatori diretti: `csv-parser.test.ts`, `csv-column-detector.test.ts`, `column-mapping.test.ts`, `import.test.ts`, `import.atomicity.test.ts`. Più la prova sul campione reale, che deve dare lo stesso risultato di `master`.
+- [x] **Effetto collaterale, da fissare con un test:** un campo su più righe che contiene anche virgolette interne non raddoppiate (`"BAR\n"SPORT" ROMA"`) viene rifiutato. Papa lo legge correttamente, ma non è distinguibile dalla fusione.
+- [x] I test esistenti su `MissingQuotes` restano verdi senza modifiche.
+- [x] Gate V2. Utilizzatori diretti: `csv-parser.test.ts`, `csv-column-detector.test.ts`, `column-mapping.test.ts`, `import.test.ts`, `import.atomicity.test.ts`. Più la prova sul campione reale, che deve dare lo stesso risultato di `master`.
 
 ### M3 — Integrità dei dati e vincoli del database
 
@@ -985,7 +987,7 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | M0 Stabilizzazione | ✅ completata il 30/10/2026: T0.1 (`8e3b3f5`), T5.5 (`03ee9da`). Merge in `master` da parte dell'utente | — |
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
-| M2 Invarianti finanziari | 🔄 avviata il 30/10/2026 su approvazione dell'utente, con il nuovo T2.8. Branch `test/m2-dominio`, sopra M1 | — (D1, D2, D4, D5, D7 approvate) |
+| M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
 | M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
