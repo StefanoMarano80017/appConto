@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -13,9 +14,10 @@ process.env.DATABASE_FILE = databaseFile;
 
 const { createApp } = await import('./app.js');
 const { config } = await import('./config.js');
-const { runMigrations } = await import('./db/client.js');
+const { closeDatabase, runMigrations } = await import('./db/client.js');
 const { importService } = await import('./modules/import/index.js');
-const { installShutdownHandlers, shutdown } = await import('./shutdown.js');
+const { logger } = await import('./shared/logger.js');
+const { createShutdown, installSignalHandlers } = await import('./shutdown.js');
 
 runMigrations();
 
@@ -30,6 +32,27 @@ after(() => {
     // su Windows il file può restare bloccato: è comunque una cartella temporanea
   }
 });
+
+// Registrazioni di attività e uscita: la stessa istanza serve a tutti i test
+// del modulo, così "una seconda richiesta" riguarda davvero la prima.
+const ordine: string[] = [];
+let fermatoDiNuovo = false;
+let uscito = false;
+let risolviUscita: ((code: number) => void) | undefined;
+const background = {
+  stop: () => {
+    ordine.push('scheduler fermato');
+    if (uscito) {
+      fermatoDiNuovo = true;
+    }
+  },
+};
+const exit = (code: number): void => {
+  ordine.push('uscita');
+  uscito = true;
+  risolviUscita?.(code);
+};
+const richiedi = createShutdown({ server, background, closeDatabase, exit, log: logger });
 
 const walFile = `${databaseFile}-wal`;
 const sizeOf = (file: string): number | null => (existsSync(file) ? statSync(file).size : null);
@@ -52,19 +75,12 @@ describe('gestori dei segnali', () => {
    * chiudere la finestra sarebbe una terminazione brusca, e il WAL resterebbe
    * da consolidare.
    */
-  it('vengono registrati per SIGINT, SIGTERM e SIGHUP', () => {
-    const prima = (['SIGINT', 'SIGTERM', 'SIGHUP'] as const).map((segnale) => ({
-      segnale,
-      conteggio: process.listenerCount(segnale),
-    }));
+  it('vengono registrati per SIGINT, SIGTERM, SIGHUP e SIGBREAK', () => {
+    const emitter = new EventEmitter();
+    installSignalHandlers(() => {}, emitter);
 
-    installShutdownHandlers(server);
-
-    for (const { segnale, conteggio } of prima) {
-      assert.ok(
-        process.listenerCount(segnale) > conteggio,
-        `${segnale} deve avere un gestore`,
-      );
+    for (const segnale of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) {
+      assert.equal(emitter.listenerCount(segnale), 1, `${segnale} deve avere un gestore`);
     }
   });
 });
@@ -93,25 +109,11 @@ describe('arresto ordinato', () => {
      * mentre il database si sta chiudendo. L'ordine si osserva registrando
      * quando `stop` viene chiamata rispetto all'uscita.
      */
-    const ordine: string[] = [];
-    const background = {
-      stop: () => {
-        ordine.push('scheduler fermato');
-      },
-    };
-
-    // `shutdown` riceve la funzione di uscita: si osserva il codice senza
+    // `richiedi` riceve la funzione di uscita: si osserva il codice senza
     // terminare il processo che esegue i test.
     const codice = await new Promise<number>((resolve) => {
-      shutdown(
-        server,
-        'test',
-        (code) => {
-          ordine.push('uscita');
-          resolve(code);
-        },
-        background,
-      );
+      risolviUscita = resolve;
+      richiedi('test');
     });
 
     assert.equal(codice, 0);
@@ -141,23 +143,15 @@ describe('arresto ordinato', () => {
   });
 
   it('una seconda richiesta di arresto non fa nulla', () => {
-    let chiamato = false;
-    let fermatoDiNuovo = false;
+    const uscite = ordine.filter((voce) => voce === 'uscita').length;
 
-    shutdown(
-      server,
-      'ripetuto',
-      () => {
-        chiamato = true;
-      },
-      {
-        stop: () => {
-          fermatoDiNuovo = true;
-        },
-      },
+    richiedi('ripetuto');
+
+    assert.equal(
+      ordine.filter((voce) => voce === 'uscita').length,
+      uscite,
+      'l’arresto deve avvenire una volta sola',
     );
-
-    assert.equal(chiamato, false, 'l’arresto deve avvenire una volta sola');
     // Le richieste arrivano da sorgenti indipendenti — un segnale, il
     // launcher, la chiusura della finestra — e possono arrivare insieme.
     assert.equal(fermatoDiNuovo, false, 'niente va fermato due volte');
