@@ -1,12 +1,14 @@
-import { createServer } from 'node:http';
 import { createApp } from './app.js';
 import { bootstrap } from './bootstrap.js';
 import { config } from './config.js';
-import { ListenFailedError, listenWithFallback } from './listen.js';
+import { closeDatabase } from './db/client.js';
+import { connectLauncher } from './launcher-ipc.js';
+import { listenWithFallback } from './listen.js';
 import { createAutoBackupScheduler } from './modules/maintenance/index.js';
 import { SETTINGS_PROBLEM } from './paths.js';
+import { startServer, StartupFailedError, type StartedServer } from './server.js';
 import { logger } from './shared/logger.js';
-import { installShutdownHandlers, shutdown } from './shutdown.js';
+import { closeAndReport, createShutdown, installSignalHandlers } from './shutdown.js';
 
 /**
  * L'avvio del server.
@@ -16,6 +18,9 @@ import { installShutdownHandlers, shutdown } from './shutdown.js';
  * forma di due sole cose: il permesso di ripiegare su un'altra porta, e un
  * canale IPC su cui chiedere l'arresto. Senza di esse il comportamento è
  * quello di prima.
+ *
+ * Qui si collegano i pezzi reali; la logica sta in `server.ts`,
+ * `shutdown.ts` e `launcher-ipc.ts`.
  */
 
 if (SETTINGS_PROBLEM !== null) {
@@ -48,99 +53,45 @@ logger.info('Avvio', {
   cwd: process.cwd(),
 });
 
+let started: StartedServer;
 try {
-  bootstrap();
-} catch (error) {
-  // Un avvio che non è sicuro non diventa sicuro proseguendo. Il messaggio è
-  // scritto per essere letto da chi usa l'applicazione, non da chi la scrive:
-  // dice cosa non si può fare e che l'archivio non è stato modificato.
-  logger.error(
-    `Avvio interrotto: ${error instanceof Error ? error.message : 'errore sconosciuto'}`,
+  started = await startServer(
+    { host: config.host, port: config.port, allowFallback: allowPortFallback },
+    {
+      bootstrap: () => {
+        bootstrap();
+      },
+      createApp: () => createApp(),
+      listen: listenWithFallback,
+      createScheduler: createAutoBackupScheduler,
+      log: logger,
+    },
   );
-  process.exit(1);
-}
-
-const server = createServer(createApp());
-
-let esito;
-try {
-  esito = await listenWithFallback(server, {
-    host: config.host,
-    port: config.port,
-    allowFallback: allowPortFallback,
-  });
 } catch (error) {
-  /*
-   * Una porta occupata non è un guasto: è una macchina su cui gira già
-   * qualcosa.
-   *
-   * Senza questo messaggio l'errore uscirebbe come traccia di stack, che su
-   * una cartella portatile — dove non c'è un terminale a cui rivolgersi — non
-   * dice nulla a chi la sta usando. Quando è il launcher ad avviare, questo
-   * ramo non si percorre: lì il ripiego è concesso e la porta si trova.
-   */
-  if (error instanceof ListenFailedError && error.code === 'EADDRINUSE') {
-    logger.error(
-      `La porta ${String(error.port)} è già occupata da un altro programma. Indica una porta diversa con la variabile MYFINANCE_PORT, oppure scrivila in config/settings.json come {"port": 47318}.`,
-    );
+  if (error instanceof StartupFailedError) {
+    // `startServer` ha già spiegato cosa è andato storto. Se il bootstrap non
+    // è riuscito il database non è stato aperto in modo sicuro: non si chiude.
+    if (error.phase !== 'bootstrap') closeAndReport(closeDatabase, logger);
   } else {
-    logger.error(`Impossibile mettersi in ascolto su ${config.host}:${String(config.port)}`, error);
+    logger.error(
+      `Avvio interrotto: ${error instanceof Error ? error.message : 'errore sconosciuto'}`,
+    );
+    closeAndReport(closeDatabase, logger);
   }
-
+  // `process.exit` e non `exitCode`: il canale IPC e il timer di sicurezza
+  // tengono vivo il ciclo di eventi, e il processo non terminerebbe da solo.
   process.exit(1);
 }
 
-if (esito.fellBack) {
-  logger.info(
-    `La porta ${String(esito.configuredPort)} era occupata: il server usa la ${String(esito.actualPort)}`,
-    { configuredPort: esito.configuredPort, actualPort: esito.actualPort },
-  );
-}
-
-logger.info(`Backend in ascolto su http://${esito.host}:${String(esito.actualPort)}`, {
-  configuredPort: esito.configuredPort,
-  actualPort: esito.actualPort,
+const richiedi = createShutdown({
+  server: started.server,
+  background: started.background,
+  closeDatabase,
+  // Stessa ragione dell'uscita sopra: il ciclo di eventi non si svuota da solo.
+  exit: (code) => {
+    process.exit(code);
+  },
+  log: logger,
 });
-
-const autoBackup = createAutoBackupScheduler();
-autoBackup.start();
-
-installShutdownHandlers(server, autoBackup);
-
-/**
- * Il canale con il launcher.
- *
- * Esiste solo se questo processo è stato avviato con un canale IPC. Serve a
- * due cose che su Windows non si possono ottenere altrimenti:
- *
- *  - **dire quale porta si è aperta**, perché è questo processo a saperlo e il
- *    launcher deve aprirvi il browser;
- *  - **ricevere la richiesta di arresto**, perché `process.kill` su Windows
- *    termina il processo invece di avvisarlo, e un processo terminato non
- *    consolida il WAL.
- */
-if (typeof process.send === 'function') {
-  process.send({
-    type: 'ready',
-    host: esito.host,
-    port: esito.actualPort,
-    configuredPort: esito.configuredPort,
-    pid: process.pid,
-  });
-
-  process.on('message', (message: unknown) => {
-    if (typeof message === 'object' && message !== null && 'type' in message) {
-      const { type } = message as { type: unknown };
-      if (type === 'shutdown') {
-        shutdown(
-          server,
-          'launcher',
-          (code) => {
-            process.exit(code);
-          },
-          autoBackup,
-        );
-      }
-    }
-  });
-}
+installSignalHandlers(richiedi);
+connectLauncher(process, started.listen, richiedi);
