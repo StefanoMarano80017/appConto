@@ -21,11 +21,24 @@ function stripBom(content: string): string {
  * Il delimitatore (`,` oppure `;`) viene riconosciuto automaticamente.
  */
 export function parseCsv(content: string): ParsedCsv {
-  const result = Papa.parse<CsvRow>(stripBom(content), {
+  const text = stripBom(content);
+  const result = Papa.parse<CsvRow>(text, {
     header: true,
     skipEmptyLines: 'greedy',
     transformHeader: (header) => header.trim(),
   });
+
+  // Un file malformato si rifiuta per intero: Papa altrimenti ingloba o scarta righe in silenzio.
+  // Si ignora `UndetectableDelimiter` (normale con una sola colonna).
+  const error = result.errors.find((e) => e.type === 'Quotes' || e.type === 'FieldMismatch');
+  if (error) {
+    // `index` è la posizione nel testo; `row` è l'indice 0-based delle righe di dati (+2 = riga del file).
+    const line =
+      error.type === 'Quotes' && error.index !== undefined
+        ? text.slice(0, error.index).split('\n').length
+        : (error.row ?? 0) + 2;
+    throw new ValidationError(`Il file CSV è malformato alla riga ${line}: ${error.message}.`);
+  }
 
   const headers = (result.meta.fields ?? []).filter((header) => header.length > 0);
   if (headers.length === 0) {
