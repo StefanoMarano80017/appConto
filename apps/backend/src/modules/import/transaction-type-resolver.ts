@@ -7,8 +7,9 @@ import type { TransactionType } from '../transactions/index.js';
  * Tutto il resto ricade sul segno dell'importo, e resta correggibile a mano.
  */
 
-const WITHDRAWAL_HINTS = ['prelievo', 'prelevamento'];
-const INCOME_HINTS = ['accredito', 'accreditamento'];
+// Radici, non parole intere: coprono i plurali ('prelievi', 'accrediti') e le varianti.
+const WITHDRAWAL_HINTS = ['preliev', 'prelevament'];
+const INCOME_HINTS = ['accredit'];
 
 export function resolveTransactionType(typeHint: string, amount: number): TransactionType {
   const hint = typeHint.trim().toLowerCase();
