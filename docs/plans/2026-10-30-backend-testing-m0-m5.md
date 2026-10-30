@@ -498,9 +498,9 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 
 #### T0.1 — Impronta del backup sempre diversa *(G0-A)*
 - **File:** `apps/backend/src/modules/maintenance/backup.service.test.ts`
-- [ ] Nel test "un'impronta che non corrisponde…": `const originale = String(manifest.databaseSha256)`. Il primo carattere diventa `'1'` se era `'0'`, altrimenti `'0'`. Poi `assert.notEqual(manifest.databaseSha256, originale)` prima di `verify`.
-- [ ] Nel test "file troncato", aggiungere `assert.match(check.problem, /…/)`, con il messaggio rilevato eseguendo il test.
-- [ ] Gate V1. Per il punto "a": il test passa già; la prova è che `assert.notEqual` rende impossibile il caso in cui l'alterazione non cambia nulla. Nel report va spiegato.
+- [x] Nel test "un'impronta che non corrisponde…": `const originale = String(manifest.databaseSha256)`. Il primo carattere diventa `'1'` se era `'0'`, altrimenti `'0'`. Poi `assert.notEqual(manifest.databaseSha256, originale)` prima di `verify`.
+- [x] Nel test "file troncato", aggiungere `assert.match(check.problem, /…/)`, con il messaggio rilevato eseguendo il test.
+- [x] Gate V1. Per il punto "a": il test passa già; la prova è che `assert.notEqual` rende impossibile il caso in cui l'alterazione non cambia nulla. Nel report va spiegato.
 
 #### T0.2 — `SQLITE_IOERR_TRUNCATE` dopo `process.kill` su Windows *(G0-B, con `systematic-debugging`)* — **RIMANDATO**
 
@@ -518,8 +518,8 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 #### T5.5 — Scheduler senza tempo reale *(G0-C, anticipato da M5)*
 - **File:** `apps/backend/src/modules/maintenance/backup.scheduler.test.ts`, solo il `describe('lo scheduler in esecuzione', …)` (oggi righe 147-290 circa). Vietato modificare `backup.scheduler.ts` e ogni altro file.
 - **Sintomo:** `backup.scheduler.test.ts:148` ("crea un backup, poi si riarma per l'intervallo pieno") attende 200 ms di tempo reale per vedere almeno due backup (margine 10 ms più intervallo 60 ms). Sotto il carico della suite completa ne vede uno solo: è successo 1 volta su 5, mentre in isolamento è 15/15 verde. Gli altri test del blocco usano lo stesso schema, con attese reali e un'attesa attiva da 40 ms.
-- [ ] Leggere `backup.scheduler.ts` e stabilire quali primitive di tempo usa: `setTimeout`/`setInterval` globali, `unref`, l'orologio iniettato `now`. Riportarlo.
-- [ ] Se usa i timer globali: `mock.timers.enable({ apis: ['setTimeout'] })`, più le altre API effettivamente usate, in un `beforeEach`/`afterEach` del blocco; si avanza il tempo con `mock.timers.tick(ms)`. Le asserzioni diventano **esatte** e non "almeno":
+- [x] Leggere `backup.scheduler.ts` e stabilire quali primitive di tempo usa: `setTimeout`/`setInterval` globali, `unref`, l'orologio iniettato `now`. Riportarlo.
+- [x] Se usa i timer globali: `mock.timers.enable({ apis: ['setTimeout'] })`, più le altre API effettivamente usate, in un `beforeEach`/`afterEach` del blocco; si avanza il tempo con `mock.timers.tick(ms)`. Le asserzioni diventano **esatte** e non "almeno":
   - dopo `tick(10)` c'è 1 backup;
   - dopo `tick(60)` ce ne sono 2;
   - dopo un altro `tick(60)` ce ne sono 3;
@@ -527,9 +527,9 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   - il numero di eventi `creato` è uguale al numero di backup.
 
   Per gli altri test del blocco, stesse condizioni: si sostituisce ogni attesa reale e l'attesa attiva con `tick`, conservando quello che ogni test afferma (nessuna sovrapposizione, arresto, gestione degli errori, ecc.).
-- [ ] Se lo scheduler non è compatibile con `mock.timers`, ripiegare sulle tolleranze. In quel caso nessuna asserzione può diventare più debole: ci si limita ad allungare le attese o ad aspettare un evento invece di un tempo fisso. Va riportato con la motivazione.
-- [ ] Il numero di test del file resta invariato (oggi verificabile con `ℹ tests` del file); i nomi dei test non cambiano.
-- [ ] Gate V1:
+- [x] *(non applicabile: mock.timers compatibile)* Se lo scheduler non è compatibile con `mock.timers`, ripiegare sulle tolleranze. In quel caso nessuna asserzione può diventare più debole: ci si limita ad allungare le attese o ad aspettare un evento invece di un tempo fisso. Va riportato con la motivazione.
+- [x] Il numero di test del file resta invariato (oggi verificabile con `ℹ tests` del file); i nomi dei test non cambiano.
+- [x] Gate V1:
   - a. Il test passa già: nel report va spiegato perché la nuova forma non dipende più dal carico, cioè quale tempo reale resta, se ne resta;
   - b. `FILE` verde;
   - c. `TC`;
@@ -933,7 +933,7 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 
 | Milestone | Complessità | Rischio principale | Mitigazione |
 |---|---|---|---|
-| M0 | Bassa | T0.2 nasconde un problema di WAL su Windows | opus più `systematic-debugging`; stop se la causa è nel prodotto |
+| M0 | Bassa | Instabilità dei test che dipendono dal tempo reale o dal contenuto variabile (T0.1, T5.5) | Correzioni solo nei test; esecuzioni ripetute isolate e sotto carico. Il rischio WAL di T0.2 appartiene al task rimandato |
 | M1 | Media | Formati CSV reali che cambiano interpretazione | `import.test.ts` invariato; confronto prima e dopo sui file di `samples/`; invarianti di andata e ritorno |
 | M2 | **Alta** | Saldi storici e significato di entrate e patrimonio | Revisori opus; invarianti incrociati; prova manuale su una copia del DB; D7 confermata prima |
 | M3 | Media | Migrazione sul DB reale | Prova su copia, idempotenza, backup automatico |
@@ -941,7 +941,8 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | M5 | Bassa | Cambiare la preparazione cambia l'ordine dei test | Elenco dei test prima e dopo |
 
 **Parallelismo effettivo:**
-- vero in M0, M4 e M5;
+- vero in M4 e M5;
+- nessuno in M0, che dopo il rinvio di T0.2 è sequenziale (G0-A → G0-C);
 - parziale in M1–M3 (ondate da 2 più sovrapposizione), per i motivi del §3.3.
 
 ---
@@ -950,7 +951,7 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 
 | Milestone | Stato | Bloccata da |
 |---|---|---|
-| M0 Stabilizzazione | 🔄 in corso: T0.1 ✅ (`8e3b3f5`), T5.5 in corso; T0.2 rimandato | — |
+| M0 Stabilizzazione | ✅ completata il 30/10/2026: T0.1 (`8e3b3f5`), T5.5 (`03ee9da`). Merge in `master` da parte dell'utente | — |
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ⏳ | M0, D6.1–6.4, D6.8, D6.9 |
 | M2 Invarianti finanziari | ⏳ | M1, D1 (con D1.b e D1.c), D2, D4, D5, D7 |
