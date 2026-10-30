@@ -8,7 +8,7 @@ const rifiutaCon = (content: string, riga: string) =>
     () => parseCsv(content),
     (error: unknown) => {
       assert.ok(error instanceof ValidationError);
-      assert.match(error.message, new RegExp(`\\b${riga}\\b`));
+      assert.match(error.message, new RegExp(`virgolette non chiuse alla riga ${riga}\\.$`));
 
       return true;
     },
@@ -61,8 +61,43 @@ describe('CSV malformato', () => {
     rifiutaCon('﻿a,b\n1,2\n\n3,"x\n4,5\n', '4');
   });
 
-  it('rifiuta il file con un numero di campi diverso dall\'intestazione', () => {
-    rifiutaCon('a,b\n1,2\n3,4,5\n', '3');
-    rifiutaCon('a,b\n1,2\n3\n', '3');
+  it('indica la riga giusta anche dopo un campo tra virgolette su più righe', () => {
+    // Il campo valido occupa le righe 2-3: le virgolette rimaste aperte sono alla riga 5.
+    rifiutaCon('a,b\n1,"prima\nseconda"\n3,4\n5,"x\n6,7\n', '5');
+  });
+});
+
+describe('righe con un numero di campi diverso dall\'intestazione', () => {
+  it('accetta il punto e virgola finale solo su alcune righe di dati', () => {
+    const { headers, rows } = parseCsv('a;b\n1;2\n3;4;');
+
+    assert.deepEqual(headers, ['a', 'b']);
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0]?.a, '1');
+    assert.equal(rows[1]?.a, '3');
+  });
+
+  it('accetta il punto e virgola finale su ogni riga di dati ma non sull\'intestazione', () => {
+    const { headers, rows } = parseCsv('a;b\n1;2;\n3;4;');
+
+    assert.deepEqual(headers, ['a', 'b']);
+    assert.equal(rows.length, 2);
+    assert.equal(rows[1]?.b, '4');
+  });
+
+  it('accetta un\'intestazione con una colonna vuota in più', () => {
+    const { headers, rows } = parseCsv('a;b;\n1;2\n3;4');
+
+    assert.deepEqual(headers, ['a', 'b']);
+    assert.equal(rows.length, 2);
+    assert.equal(rows[1]?.b, '4');
+  });
+
+  it('accetta una riga finale con meno campi, come "Saldo finale"', () => {
+    const { headers, rows } = parseCsv('Data,Importo\n02/01/2026,10.00\nSaldo finale\n');
+
+    assert.deepEqual(headers, ['Data', 'Importo']);
+    assert.equal(rows.length, 2);
+    assert.equal(rows[1]?.Data, 'Saldo finale');
   });
 });

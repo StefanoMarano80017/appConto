@@ -28,16 +28,14 @@ export function parseCsv(content: string): ParsedCsv {
     transformHeader: (header) => header.trim(),
   });
 
-  // Un file malformato si rifiuta per intero: Papa altrimenti ingloba o scarta righe in silenzio.
-  // Si ignora `UndetectableDelimiter` (normale con una sola colonna).
-  const error = result.errors.find((e) => e.type === 'Quotes' || e.type === 'FieldMismatch');
-  if (error) {
-    // `index` è la posizione nel testo; `row` è l'indice 0-based delle righe di dati (+2 = riga del file).
-    const line =
-      error.type === 'Quotes' && error.index !== undefined
-        ? text.slice(0, error.index).split('\n').length
-        : (error.row ?? 0) + 2;
-    throw new ValidationError(`Il file CSV è malformato alla riga ${line}: ${error.message}.`);
+  // Virgolette non chiuse: Papa ingloba le righe successive nel campo senza avvisare, quindi
+  // si rifiuta l'intero file. Gli altri errori (campi in più o in meno, delimitatore non
+  // rilevabile con una sola colonna) restano ignorati: le righe incomplete le segnala l'import.
+  const quoteError = result.errors.find((e) => e.type === 'Quotes');
+  if (quoteError) {
+    // `row` di Papa non è la riga del file: si ricava dalla posizione (`index`) nel testo.
+    const line = text.slice(0, quoteError.index).split('\n').length;
+    throw new ValidationError(`Il file CSV ha virgolette non chiuse alla riga ${line}.`);
   }
 
   const headers = (result.meta.fields ?? []).filter((header) => header.length > 0);
