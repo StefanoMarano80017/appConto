@@ -19,7 +19,8 @@ process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
 const { createApp } = await import('../../app.js');
 const { config } = await import('../../config.js');
-const { closeDatabase, runMigrations } = await import('../../db/client.js');
+const { closeDatabase, db, runMigrations } = await import('../../db/client.js');
+const { sql } = await import('drizzle-orm');
 const { DomainError } = await import('../../shared/errors.js');
 const { importService } = await import('../import/index.js');
 const { toAmountCents, transactionsService } = await import('../transactions/index.js');
@@ -100,24 +101,18 @@ setType('V3 USCITA PER IMPORTI AL CENTESIMO', 'LOAN');
  * risultato dell'ultima chiamata.
  */
 function assertRepaymentsFitTransactions(): void {
-  const repaid = new Map<string, number>();
-  for (const loan of loansService.list(DEFAULT_LOAN_QUERY).items) {
-    for (const repayment of loansService.getById(loan.id).repayments) {
-      if (repayment.transaction !== null) {
-        const id = repayment.transaction.id;
-        repaid.set(id, (repaid.get(id) ?? 0) + toAmountCents(repayment.amount));
-      }
-    }
-  }
+  const violations = db.all<{ transaction_id: string; repaid: number; capacity: number }>(sql`
+    select r.transaction_id as transaction_id,
+           sum(r.amount_cents) as repaid,
+           t.amount_cents as capacity
+    from loan_repayments r
+    join transactions t on t.id = r.transaction_id
+    where r.transaction_id is not null
+    group by r.transaction_id
+    having sum(r.amount_cents) > t.amount_cents
+  `);
 
-  for (const [id, total] of repaid) {
-    const transaction = transactionsService.listAll().find((t) => t.id === id);
-    assert.ok(transaction, `transazione "${id}" non trovata`);
-    assert.ok(
-      total <= toAmountCents(transaction.amount),
-      `restituzioni per ${String(total)} centesimi su un movimento da ${String(toAmountCents(transaction.amount))}`,
-    );
-  }
+  assert.deepEqual(violations, [], 'restituzioni collegate oltre l\'importo del movimento');
 }
 
 describe('origine del prestito', () => {
@@ -149,6 +144,7 @@ describe('origine del prestito', () => {
 });
 
 describe('capienza del movimento di restituzione', () => {
+  after(assertRepaymentsFitTransactions);
   const origin = () => transactionId('V2 USCITA PER DUE PRESTITI');
   const credit = () => transactionId('V2 BONIFICO RESTITUZIONI');
   const repayment = (loanId: string, amount: number, linked = true) =>
@@ -185,7 +181,7 @@ describe('capienza del movimento di restituzione', () => {
   });
 
   it('rifiuta una restituzione che supera il residuo del movimento e dice quanto resta', () => {
-    expectError('VALIDATION', () => repayment(loanB, 1), /0,00 €/);
+    expectError('VALIDATION', () => repayment(loanB, 1), /restano 0,00 €/);
     assert.equal(loansService.getById(loanB).repaidAmount, 40);
     assertRepaymentsFitTransactions();
   });
@@ -204,7 +200,7 @@ describe('capienza del movimento di restituzione', () => {
     expectError(
       'VALIDATION',
       () => loansService.updateRepayment(loanA, repaymentA, { amount: 61 }),
-      /0,00 €/,
+      /già 40,00 € collegati.*restano 60,00 €/,
     );
     assert.equal(loansService.getById(loanA).repaidAmount, 60);
     assertRepaymentsFitTransactions();
@@ -234,7 +230,7 @@ describe('capienza del movimento di restituzione', () => {
     expectError(
       'VALIDATION',
       () => loansService.updateRepayment(loanA, repaymentA, { transactionId: piccolo }),
-      /5,00 €/,
+      /restano 5,00 €/,
     );
     assert.equal(
       loansService.getById(loanA).repayments.find((r) => r.id === repaymentA)?.transaction?.id,
@@ -245,6 +241,7 @@ describe('capienza del movimento di restituzione', () => {
 });
 
 describe('importo di un movimento collegato a una restituzione', () => {
+  after(assertRepaymentsFitTransactions);
   const credit = () => transactionId('V2 BONIFICO RESTITUZIONI');
 
   it('PATCH /api/transactions/:id con un importo non esiste: 404 e importo invariato', async () => {
@@ -264,12 +261,15 @@ describe('importo di un movimento collegato a una restituzione', () => {
 
       assert.equal(updated.amount, 100);
       assert.equal(transactionsService.findById(credit())?.amount, 100);
+      const links = loansService.links().links.filter((l) => l.transactionId === credit());
+      assert.equal(links.filter((l) => l.role === 'REPAYMENT').length, 2);
       assertRepaymentsFitTransactions();
     }
   });
 });
 
 describe('modifica di un prestito con restituzioni e prestiti fratelli', () => {
+  after(assertRepaymentsFitTransactions);
   const origin = () => transactionId('V3 USCITA PER PIU PRESTITI');
   let loan = '';
   let sibling = '';
@@ -340,6 +340,7 @@ describe('restituzione anteriore alla data del prestito', () => {
 });
 
 describe('arrotondamento al centesimo', () => {
+  after(assertRepaymentsFitTransactions);
   const origin = () => transactionId('V3 USCITA PER IMPORTI AL CENTESIMO');
 
   it('rifiuta 0,004 €: arrotondato vale zero centesimi', () => {
