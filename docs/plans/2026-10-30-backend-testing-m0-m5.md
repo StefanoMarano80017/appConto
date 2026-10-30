@@ -409,6 +409,7 @@ Si rifiuta con `ValidationError` un prestito su un movimento `LOAN` con importo 
 9. ~~**`FieldMismatch` di Papa:** si rifiuta il file solo se non compare nei campioni reali di `samples/`; altrimenti si rifiutano solo gli errori di virgolette.~~ **Rivista dall'utente il 30/10/2026, durante M1:** si rifiuta il file **solo** per errori di virgolette (`Quotes`). Le righe con campi in più o in meno restano accettate come prima: quelle senza data o importo validi finiscono già fra le righe scartate e segnalate dall'import.
    - Motivo: la revisione di T1.3 ha mostrato che rifiutare `FieldMismatch` bloccava file bancari plausibili (`;` finale solo sui dati, riga "Saldo finale", colonna vuota in più nell'intestazione).
    - Il messaggio d'errore è interamente in italiano: "Il file CSV ha virgolette non chiuse alla riga N.", con N contato da 1 e intestazione compresa. *(G1-B)*
+   - **Precisata dall'utente il 30/10/2026, dopo la revisione di fine M1:** "errori di virgolette" significa **virgolette non chiuse**, cioè il codice Papa `MissingQuotes`, che inghiotte le righe successive. Le virgolette interne non raddoppiate (`"BAR "SPORT" ROMA"`, codice `InvalidQuotes`), che Papa legge correttamente e che prima di M1 si importavano, restano accettate.
 
 ### D7 — Significato della data del saldo (nuova) — blocca G2-A
 
@@ -669,6 +670,15 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   - `toAmountCents(-0.005) === -1` e `toAmountCents(0.005) === 1`.
 - [ ] Implementazione: spostamento decimale (`Number(`${amount}e2`)`), poi un arrotondamento a metà lontano da zero.
 - [ ] Gate V3, più gli invarianti. Utilizzatori diretti: **tutta la suite**. Nessun valore esistente deve cambiare.
+
+#### T1.7 — Vocabolario del rilevatore allineato al resolver *(G1-F, aggiunto su decisione dell'utente il 30/10/2026)*
+Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`preliev`, `prelevament`, `accredit`), ma il rilevatore di colonne riconosce ancora una colonna "tipo" solo dalle parole singolari `prelievo`, `prelevamento`, `accredito` (`csv-column-detector.ts:59-62`, `TYPE_VOCABULARY`). Così una colonna di tipo con valori al plurale e senza un'intestazione indicativa non viene riconosciuta, e la correzione di T1.4 non arriva all'import automatico.
+- **File:** `apps/backend/src/modules/import/csv-column-detector.ts` (solo le voci `prelievo`, `prelevamento`, `accredito` di `TYPE_VOCABULARY`, sostituite dalle radici `preliev`, `prelevament`, `accredit`); `apps/backend/src/modules/import/csv-column-detector.test.ts` (test in fondo).
+- [ ] Test (rosso prima della correzione): un CSV la cui colonna di tipo ha un'intestazione **non** indicativa (verificare nel rilevatore quali intestazioni sono già indizi di tipo e sceglierne una che non lo sia) e valori come `Prelievi contanti`, `Accrediti vari`, `Prelievi ATM` → quella colonna è riconosciuta come `typeHint`.
+- [ ] Test: lo stesso CSV con i valori al singolare continua a essere riconosciuto (fissato, deve passare già prima).
+- [ ] Nessun altro test del file cambia esito; `import.test.ts` e `column-mapping.test.ts` restano verdi senza modifiche.
+- [ ] Gate V2 (rosso dopo aver ripristinato il vecchio file).
+- **Mod.:** `haiku`, revisore `sonnet`. Modifica di una riga, casi già specificati.
 
 ### M2 — Invarianti finanziari e correttezza del dominio
 
