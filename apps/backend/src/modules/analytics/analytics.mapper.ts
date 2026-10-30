@@ -90,6 +90,26 @@ function toMerchantDistribution(
   );
 }
 
+function toTimeline(
+  firstDate: string | null,
+  lastDate: string | null,
+  entries: readonly TransactionWithMerchant[],
+  query: AnalyticsQuery,
+  lentByTransaction: ReadonlyMap<string, number>,
+) {
+  if (firstDate === null || lastDate === null) {
+    return { granularity: query.granularity ?? "month", buckets: [] };
+  }
+
+  return buildTimeline(
+    entries,
+    firstDate,
+    lastDate,
+    query.granularity,
+    lentByTransaction,
+  );
+}
+
 function buildLoans(
   entries: readonly TransactionWithMerchant[],
   lentByTransaction: ReadonlyMap<string, number>,
@@ -156,16 +176,7 @@ export function toAnalyticsViewModel(
      * non copre non vale "zero speso", e su una spezzata si leggerebbe come
      * un crollo a zero.
      */
-    timeline:
-      firstDate === null || lastDate === null
-        ? { granularity: query.granularity ?? "month", buckets: [] }
-        : buildTimeline(
-            entries,
-            firstDate,
-            lastDate,
-            query.granularity,
-            lentByTransaction,
-          ),
+    timeline: toTimeline(firstDate, lastDate, entries, query, lentByTransaction),
     loans: buildLoans(entries, lentByTransaction),
   };
 }

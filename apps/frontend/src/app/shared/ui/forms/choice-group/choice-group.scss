@@ -176,7 +176,7 @@ button.active .count {
 
 :host(.low) button {
   @include typography.text('caption');
-  line-height: 1.15;
+  line-height: 2;
   flex: 1 1 auto;
   padding: var(--space-2) var(--space-4);
   color: var(--color-text-muted);
