@@ -6,6 +6,7 @@ import {
   expenseCents,
   isIncome,
   netWorthCents,
+  toAmountCents,
   transactionsService,
   transactionTypeSchema,
   type TypeTotal,
@@ -14,11 +15,8 @@ import type { CashFlowViewModel, TypeBreakdown } from './cash-flow.view-model.js
 
 const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 
-/** Evita di accumulare euro in virgola mobile. */
-const toCents = (amount: number): number => Math.round(amount * 100);
-
 const sumCents = (totals: readonly TypeTotal[]): number =>
-  totals.reduce((sum, total) => sum + toCents(total.total), 0);
+  totals.reduce((sum, total) => sum + toAmountCents(total.total), 0);
 
 /**
  * Quanto dei movimenti di tipo prestito del periodo è in realtà spesa propria.
@@ -88,7 +86,7 @@ export const cashFlowService = {
     const byType: TypeBreakdown[] = [];
 
     for (const total of totals) {
-      const amountCents = toCents(total.total);
+      const amountCents = toAmountCents(total.total);
 
       // Ogni movimento presente in estratto conto ha spostato denaro sul conto.
       netMovementCents += amountCents;
@@ -124,7 +122,7 @@ export const cashFlowService = {
 
     byType.sort((a, b) => a.amount - b.amount);
 
-    const openingBalanceCents = toCents(initialBalance) + carriedCents;
+    const openingBalanceCents = toAmountCents(initialBalance) + carriedCents;
 
     return {
       month: period,

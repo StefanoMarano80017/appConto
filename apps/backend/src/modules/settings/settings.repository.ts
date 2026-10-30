@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
+import { toAmountCents } from '../transactions/index.js';
 import type { Settings } from './settings.model.js';
 import { SETTINGS_ID, settings } from './settings.schema.js';
 
@@ -22,7 +23,7 @@ export const settingsRepository = {
   save({ initialBalance, balanceDate }: Settings): void {
     const values = {
       id: SETTINGS_ID,
-      initialBalanceCents: Math.round(initialBalance * 100),
+      initialBalanceCents: toAmountCents(initialBalance),
       balanceDate,
     };
 
