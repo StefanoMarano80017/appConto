@@ -171,6 +171,7 @@ Legenda:
 | G2-C | T2.4 → T2.5 → T2.2 | sonnet | **opus** | S | V3 | Stesso servizio e stesso file di test. Validazioni semplici, ma con somme fra prestiti e il caso "esclusa la restituzione in modifica" |
 | G2-D | T2.3 | **opus** | **opus** | S | V4 | Una regola di dominio condivisa da 3 servizi |
 | G2-E | T2.6 | **opus** | **opus** | S | V4 | Modifica semantica trasversale, con l'aggiornamento di test esistenti e della documentazione |
+| G2-F | T2.8 | sonnet | sonnet | P | V2 | Aggiunto dall'utente dopo M1. Correzione circoscritta al parser, nella prima ondata con G2-A e G2-B: file disgiunti, e nessuno dei due gruppi importa il parser |
 | **M3** | | | | | | |
 | G3-A | T3.2 | sonnet | sonnet | P | V1 | Test sui vincoli, nessuna modifica di produzione prevista |
 | G3-B | T3.3 + T3.4 | sonnet | sonnet | P | V1 | Due test d'integrazione dello stesso modulo |
@@ -410,6 +411,7 @@ Si rifiuta con `ValidationError` un prestito su un movimento `LOAN` con importo 
    - Motivo: la revisione di T1.3 ha mostrato che rifiutare `FieldMismatch` bloccava file bancari plausibili (`;` finale solo sui dati, riga "Saldo finale", colonna vuota in più nell'intestazione).
    - Il messaggio d'errore è interamente in italiano: "Il file CSV ha virgolette non chiuse alla riga N.", con N contato da 1 e intestazione compresa. *(G1-B)*
    - **Precisata dall'utente il 30/10/2026, dopo la revisione di fine M1:** "errori di virgolette" significa **virgolette non chiuse**, cioè il codice Papa `MissingQuotes`, che inghiotte le righe successive. Le virgolette interne non raddoppiate (`"BAR "SPORT" ROMA"`, codice `InvalidQuotes`), che Papa legge correttamente e che prima di M1 si importavano, restano accettate.
+  - **Estesa dall'utente il 30/10/2026, all'approvazione di M2:** si rifiuta anche un `InvalidQuotes` la cui riga ha un campo con un a capo, perché è il segno di due righe fuse. → T2.8
 
 ### D7 — Significato della data del saldo (nuova) — blocca G2-A
 
@@ -458,7 +460,7 @@ M1   G1-A(T1.2)[D6.1-3] ∥ G1-B(T1.3)[D6.4,6.9]      ← moduli puri e disgiunt
         → G1-E(T1.6)[D6.8]                         ← toAmountCents è usato da tutti
         ──► chiusura M1
                                         │
-M2   G2-A(T2.1)[D7] ∥ G2-B(T2.7)                   ← T2.7 importa solo analytics.timeline
+M2   G2-A(T2.1)[D7] ∥ G2-B(T2.7) ∥ G2-F(T2.8)[D6.9] ← T2.7 importa solo analytics.timeline; T2.8 solo il parser
         → G2-C(T2.4[D5] → T2.5[D4] → T2.2)         ← cash-flow e dashboard importano loans
         → G2-D(T2.3)[D1]
         → G2-E(T2.6)[D2]                           ← dopo T2.1 (stesso file), T2.3 (stessi servizi), T2.5 (vincolo D4)
@@ -801,6 +803,23 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 - [ ] I test che fissavano il vecchio comportamento si aggiornano **solo** alle righe citate, con un commento che rimanda a D2.
 - [ ] Gate V4. Utilizzatori diretti: cash-flow, summary, analytics, dashboard e loans.
 
+#### T2.8 — Righe fuse da virgolette malformate *(G2-F; D6.9, aggiunto su decisione dell'utente il 30/10/2026)*
+- **Origine:** osservazione della revisione di fine M1, verificata dal lead. Il caso esiste già su `master`.
+  - Un campo con virgoletta d'apertura non chiusa ma con un numero pari di virgolette interne produce solo `InvalidQuotes`, non `MissingQuotes`.
+  - Nell'esempio `02/01/2026;"BAR "SPORT" ROMA;-3,50` seguito da `03/01/2026;"PANE";-1,20`, Papa restituisce **una** riga: `Data` 02/01/2026, `Descrizione` che contiene `;-3,50`, un a capo e `03/01/2026;"PANE`, e `Importo` −1,20.
+  - Il risultato è una transazione valida ma sbagliata, e la riga intermedia si perde senza errori.
+- **Regola approvata:** il file si rifiuta anche quando un campo della riga segnalata da `InvalidQuotes` contiene un a capo (`\n` o `\r`).
+  - Il messaggio è lo stesso di T1.3: "Il file CSV ha virgolette non chiuse alla riga N.", con N la riga del file in cui inizia la riga fusa, contata da 1 e con l'intestazione compresa.
+- **File:** `modules/import/csv-parser.ts`, `modules/import/csv-parser.test.ts`.
+- [ ] Il caso di fusione qui sopra viene rifiutato con N = 2. Una variante con CRLF dà lo stesso N.
+- [ ] Restano accettati, con le righe attese:
+  - `"BAR "SPORT" ROMA"` (`InvalidQuotes` senza a capo);
+  - un campo su più righe chiuso correttamente (`"BAR\nSPORT"`, nessun errore);
+  - un file con un campo su più righe corretto in una riga e virgolette interne in **un'altra** riga. La regola guarda la riga segnalata, non l'intero file.
+- [ ] **Effetto collaterale, da fissare con un test:** un campo su più righe che contiene anche virgolette interne non raddoppiate (`"BAR\n"SPORT" ROMA"`) viene rifiutato. Papa lo legge correttamente, ma non è distinguibile dalla fusione.
+- [ ] I test esistenti su `MissingQuotes` restano verdi senza modifiche.
+- [ ] Gate V2. Utilizzatori diretti: `csv-parser.test.ts`, `csv-column-detector.test.ts`, `column-mapping.test.ts`, `import.test.ts`, `import.atomicity.test.ts`. Più la prova sul campione reale, che deve dare lo stesso risultato di `master`.
+
 ### M3 — Integrità dei dati e vincoli del database
 
 **Criteri di accettazione:**
@@ -966,7 +985,7 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | M0 Stabilizzazione | ✅ completata il 30/10/2026: T0.1 (`8e3b3f5`), T5.5 (`03ee9da`). Merge in `master` da parte dell'utente | — |
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
-| M2 Invarianti finanziari | ⏳ | M1, D1 (con D1.b e D1.c), D2, D4, D5, D7 |
+| M2 Invarianti finanziari | 🔄 avviata il 30/10/2026 su approvazione dell'utente, con il nuovo T2.8. Branch `test/m2-dominio`, sopra M1 | — (D1, D2, D4, D5, D7 approvate) |
 | M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
