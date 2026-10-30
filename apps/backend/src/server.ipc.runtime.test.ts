@@ -19,9 +19,8 @@ import Database from 'better-sqlite3';
  * ogni piattaforma, ed è quello che questo file fissa, spawnando `main.ts`
  * esattamente come fa `launcher/run.ts` (stesso `stdio`, stesso ripiego).
  *
- * Caratterizzazione: descrive il comportamento di oggi prima di rifattorizzare
- * `main.ts`. Il solo caso che oggi non regge — la disconnessione del launcher —
- * è marcato `todo` e si attiva quando il server impara a gestirla.
+ * Nato come caratterizzazione prima di rifattorizzare `main.ts`; ora fissa
+ * anche la disconnessione del launcher.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -156,7 +155,8 @@ function pronto(child: ChildProcess): Promise<ReadyMessage> {
  *
  * Alla scadenza il figlio viene ucciso: un processo rimasto in attesa
  * terrebbe aperto il file di test, e con esso l'intera suite. Si attende
- * `close` e non `exit` perché solo allora l'output è stato letto per intero.
+ * `close` (o `exit` più la chiusura dei flussi, vedi sotto) e non solo `exit`
+ * perché solo allora l'output è stato letto per intero.
  * Il rifiuto è già gestito qui: se il test fallisce prima di attenderlo non
  * resta una promessa respinta senza ascoltatori.
  */
@@ -166,9 +166,31 @@ function uscita(child: ChildProcess, ms = 30_000): Promise<number | null> {
       child.kill();
       reject(new Error(`il processo non è uscito entro ${String(ms)} ms`));
     }, ms);
-    child.once('close', (codice) => {
+    const fine = (codice: number | null): void => {
       clearTimeout(timer);
       resolve(codice);
+    };
+    child.once('close', fine);
+    // Se è il genitore a chiudere il canale IPC (`child.disconnect()`), su
+    // Windows `close` non arriva mai anche se il figlio è uscito e i suoi
+    // flussi sono chiusi. Basta allora `exit` più la fine dei due flussi:
+    // è lo stesso momento in cui `close` direbbe che l'output è completo.
+    child.once('exit', (codice) => {
+      const chiusi = [child.stdout, child.stderr].map(
+        (flusso) =>
+          new Promise<void>((chiuso) => {
+            if (flusso === null || flusso.destroyed) {
+              chiuso();
+            } else {
+              flusso.once('close', () => {
+                chiuso();
+              });
+            }
+          }),
+      );
+      void Promise.all(chiusi).then(() => {
+        fine(codice);
+      });
     });
   });
   attesa.catch(() => undefined);
@@ -239,11 +261,9 @@ describe('server avviato con canale IPC', () => {
     assert.equal(riga.c, 432199, 'nessun dato perso');
   });
 
-  // Oggi fallisce per scadenza: se il launcher muore o chiude il canale, il
-  // server resta orfano invece di fermarsi.
+  // Se il launcher muore o chiude il canale, il server non deve restare orfano.
   it(
     'se il launcher si disconnette il server si arresta in ordine',
-    { todo: 'attivato nel Task 4' },
     async () => {
       const { child, output } = avvia(cartellaTemporanea('appconto-ipc-data-'), 0, true);
       const attesaUscita = uscita(child, 10_000);
