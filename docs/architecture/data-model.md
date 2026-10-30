@@ -390,8 +390,14 @@ Conseguenze:
 - scollegare la restituzione riporta l'accredito fra le entrate per intero;
 - una restituzione arrivata in banca ma **non** collegata resta un'entrata:
   collegarla è compito di chi usa l'app;
-- l'esclusione vale finché il movimento è un'entrata: se il tipo viene
-  corretto (per esempio in `OTHER`), il movimento conta come conta quel tipo.
+- l'esclusione vale **solo** per i movimenti `INCOME`. Una restituzione si
+  può collegare a qualunque movimento positivo, perché il collegamento
+  controlla il segno e non il tipo: un `EXPENSE`, `OTHER` o `TRANSFER`
+  positivo collegato — direttamente, o perché riclassificato dopo il
+  collegamento — conta come conta quel tipo, quota collegata compresa (per
+  esempio un `EXPENSE` di +25 con 20 collegati riduce le uscite di 25 e
+  aumenta il patrimonio di 25). È un punto aperto: se vincolare il tipo dei
+  movimenti collegati, o estendere loro l'esclusione, non è ancora deciso.
 
 ---
 
@@ -415,8 +421,10 @@ Perché il denaro non venga contato due volte:
 
 Una restituzione in contanti non ha Transaction, quindi la liquidità non si
 muove. Una restituzione bancaria è collegata ad una Transaction che il Cash Flow
-contava già: il collegamento non la conta una seconda volta, le aggiunge solo un
-significato.
+contava già: il collegamento non la conta una seconda volta nella liquidità, che
+resta invariata. Cambia invece la lettura di entrate e patrimonio: se la
+Transaction è `INCOME`, la quota collegata non vi entra (D2, vedi
+[Restituzioni collegate](#restituzioni-collegate)).
 
 ---
 
