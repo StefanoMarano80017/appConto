@@ -178,6 +178,7 @@ Legenda:
 | G3-C | T3.1 | **opus** | **opus** | S | V4 | Migrazione dati su DB reale più cambio di rappresentazione |
 | G3-D | T3.5 | haiku | sonnet | S | V2 | Specificato; 2 file |
 | G3-E | T3.6 | sonnet | **opus** | S | V3 | Tocca `db/client.ts`, quindi tutte le connessioni |
+| G3-F | T3.7 → T3.8 | sonnet | **opus** | S | V3 | Aggiunto dopo le decisioni D9 e D10. Regole semplici, ma toccano la porta fra `transactions` e `loans` e test esistenti. Va per primo: `transactions.service` è importato dai test di G3-B |
 | **M4** | | | | | | |
 | G4-A | T4.1 + T4.6 | sonnet | sonnet | P | V1 | Errori di richiesta (400, 413, 500) |
 | G4-B | T4.2 + T4.7 | sonnet | sonnet | P | V1 | Rotte che modificano categorie, merchant e transazioni |
@@ -427,6 +428,20 @@ Sul tuo DB i movimenti del 1° agosto 2025 valgono −135,38 €. Se invece il s
 
 Il resolver assegna `INCOME` a ogni importo positivo senza indizi. Un rimborso di un negozio arriva quindi come entrata e non riduce le uscite, salvo correzione a mano del tipo. Lo segnalo perché tocca D1, ma è una funzione nuova (riconoscere i rimborsi) e resta **fuori da questo piano**.
 
+### D9 — Restituzioni solo su movimenti in entrata (decisa dall'utente il 30/10/2026, dopo M2) — G3-F (T3.7)
+
+Una restituzione si può collegare solo a un movimento `INCOME` con importo positivo. Così l'esclusione D2 copre tutti i movimenti collegati, e il punto aperto di `data-model.md` si chiude.
+
+Conseguenza applicata dal lead: un movimento collegato a restituzioni non può essere riclassificato in un tipo diverso da `INCOME`. Altrimenti la regola si aggirerebbe cambiando il tipo dopo il collegamento. L'errore va dato con la stessa porta `TransactionDependents` già usata per l'eliminazione, senza che `transactions` importi `loans`. Sul DB reale non ci sono restituzioni collegate: nessuna migrazione.
+
+### D10 — Restituzione non anteriore al prestito (decisa dall'utente il 30/10/2026, dopo M2) — G3-F (T3.8)
+
+La data di una restituzione non può essere precedente a `lentAt`; la stessa giornata è ammessa. Vale per la creazione e per la modifica di una restituzione.
+
+Conseguenza applicata dal lead: anche la modifica di `lentAt` di un prestito non può spostarlo dopo la sua restituzione più vecchia. Sul DB reale nessuna restituzione è anteriore al prestito: nessuna migrazione.
+
+**Lasciato com'è su decisione dell'utente:** la capienza (D4) si ricontrolla anche quando di una restituzione cambiano solo nota o data.
+
 ### Decisioni che potrebbero emergere durante l'esecuzione (ci si ferma e si riporta)
 
 - Restituzione con data anteriore a `lentAt`: va vietata? *(G2-C, T2.2)*
@@ -468,7 +483,8 @@ M2   G2-A(T2.1)[D7] ∥ G2-B(T2.7) ∥ G2-F(T2.8)[D6.9] ← T2.7 importa solo an
         → G2-E(T2.6)[D2]                           ← dopo T2.1 (stesso file), T2.3 (stessi servizi), T2.5 (vincolo D4)
         ──► chiusura M2 (+ controllo manuale sull'app)
                                         │
-M3   G3-A(T3.2) ∥ G3-B(T3.3+T3.4)                  ← solo test, prima della migrazione
+M3   G3-F(T3.7[D9] → T3.8[D10])                    ← regole delle restituzioni, decise dopo M2
+        → G3-A(T3.2) ∥ G3-B(T3.3+T3.4)             ← solo test, prima della migrazione
         → G3-C(T3.1)[D3]                           ← migrazione 0009
         → G3-D(T3.5)[D6.5]                         ← stessi file di T3.1
         → G3-E(T3.6)[D6.6]                         ← db/client.ts, dopo T3.2
@@ -833,6 +849,22 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 
 **Rischi:** la migrazione gira sul DB reale al primo avvio dopo il merge. Il backup automatico c'è già; va comunque provata prima sulla copia.
 
+#### Gruppo G3-F — Regole delle restituzioni decise dopo M2 (T3.7 → T3.8, un commit per task)
+
+**File del gruppo:** `modules/loans/loans.service.ts`, `modules/transactions/transactions.service.ts` (solo `updateType` e, se serve, la porta `TransactionDependents`), `app.ts` (solo il collegamento della porta), `docs/architecture/data-model.md`, nuovo `modules/loans/loans.repayment-rules.test.ts`. Nei test esistenti si cambiano **solo** quelli che fissavano il comportamento superato, con un commento che rimanda a D9 o D10.
+
+##### T3.7 — Restituzioni solo su movimenti in entrata *(D9)*
+- [ ] Collegare una restituzione a un `EXPENSE`, `OTHER`, `TRANSFER` o `WITHDRAWAL` positivo → `ValidationError`, sia in creazione sia in modifica. A un `INCOME` positivo → ok.
+- [ ] `updateType` verso un tipo non `INCOME` di un movimento collegato a restituzioni → errore con il nome del prestito, tipo invariato. Verso `INCOME` (stesso tipo) → ok. Un movimento non collegato si riclassifica come oggi.
+- [ ] L'errore di `updateType` passa dalla porta `TransactionDependents`; `transactions` non importa `loans`.
+- [ ] `data-model.md`: il punto aperto sui movimenti non `INCOME` diventa la regola D9.
+- [ ] Gate V3.
+
+##### T3.8 — Restituzione non anteriore al prestito *(D10)*
+- [ ] Prestito del 2040-03-10: restituzione del 2040-03-09 → `ValidationError`; del 2040-03-10 → ok; del 2040-03-11 → ok. Stessi casi in modifica della data.
+- [ ] Modifica di `lentAt` dopo la restituzione più vecchia → `ValidationError`; fino al giorno della restituzione → ok; prestito senza restituzioni → ok.
+- [ ] Gate V3.
+
 #### T3.2 — Vincoli a livello di database *(G3-A)*
 - **File:** nuovo `apps/backend/src/db/constraints.test.ts`.
 - [ ] I casi:
@@ -988,6 +1020,6 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
-| M3 Integrità dei dati | ⏳ | M2, D3 (con D3.b), D6.5, D6.6 |
+| M3 Integrità dei dati | 🔄 avviata il 30/10/2026 su approvazione dell'utente, con D9 e D10 (nuovo gruppo G3-F). Branch `test/m3-integrita`, sopra M2 | — (D3, D3.b, D6.5, D6.6, D9, D10 approvate) |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
