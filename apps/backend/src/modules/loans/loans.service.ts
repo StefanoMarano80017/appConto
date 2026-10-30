@@ -117,6 +117,13 @@ function requireLoanTransaction(transactionId: string): Transaction {
       'Un prestito può nascere solo da un movimento di tipo prestito: correggi prima la natura del movimento.',
     );
   }
+  // Un prestito è denaro uscito dal conto: un accredito etichettato `LOAN` è
+  // un errore di classificazione, non l'origine di un credito.
+  if (toAmountCents(transaction.amount) >= 0) {
+    throw new ValidationError(
+      'Un prestito può nascere solo da un movimento in uscita: il movimento indicato è un accredito.',
+    );
+  }
 
   return transaction;
 }
