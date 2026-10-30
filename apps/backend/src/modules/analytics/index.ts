@@ -20,4 +20,4 @@ export type {
   TimelineBucket,
   TimelineGranularity,
 } from './analytics.view-model.js';
-export { analyticsRouter } from './analytics.routes.js';
+export { analyticsRouter, createAnalyticsRouter } from './analytics.routes.js';

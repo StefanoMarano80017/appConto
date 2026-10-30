@@ -46,6 +46,26 @@ export interface BackgroundWork {
   readonly stop: () => void;
 }
 
+function stopBackgroundWork(background?: BackgroundWork): void {
+  try {
+    background?.stop();
+  } catch (error) {
+    logger.error('Impossibile fermare le attività periodiche', error);
+  }
+}
+
+function closeDatabaseAndLogOutcome(): void {
+  const outcome = closeDatabase();
+  if (outcome.checkpointed) {
+    logger.info('Database chiuso, WAL consolidato', outcome);
+  } else {
+    // I dati non sono a rischio — il WAL resta valido e verrà consolidato al
+    // prossimo avvio — ma il database non è un file singolo, e chi copiasse
+    // ora la cartella dovrebbe portarsi anche il `-wal`.
+    logger.error('Database chiuso senza consolidare il WAL', outcome);
+  }
+}
+
 /**
  * Interrompe il servizio e chiude il database.
  *
@@ -84,11 +104,7 @@ export function shutdown(
 
   // Prima di tutto il resto: da qui in poi nessuna attività periodica deve
   // poter iniziare a scrivere.
-  try {
-    background?.stop();
-  } catch (error) {
-    logger.error('Impossibile fermare le attività periodiche', error);
-  }
+  stopBackgroundWork(background);
 
   let forceClose: NodeJS.Timeout | undefined;
   let safety: NodeJS.Timeout | undefined;
@@ -107,16 +123,7 @@ export function shutdown(
       clearTimeout(safety);
     }
 
-    const outcome = closeDatabase();
-    if (outcome.checkpointed) {
-      logger.info('Database chiuso, WAL consolidato', outcome);
-    } else {
-      // I dati non sono a rischio — il WAL resta valido e verrà consolidato al
-      // prossimo avvio — ma il database non è un file singolo, e chi copiasse
-      // ora la cartella dovrebbe portarsi anche il `-wal`.
-      logger.error('Database chiuso senza consolidare il WAL', outcome);
-    }
-
+    closeDatabaseAndLogOutcome();
     logger.info('Arresto completato');
     exit(0);
   };

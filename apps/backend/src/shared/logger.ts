@@ -1,6 +1,6 @@
-import { appendFileSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
-import path from 'node:path';
-import { LOGS_DIR } from '../paths.js';
+import { appendFileSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import path from "node:path";
+import { LOGS_DIR } from "../paths.js";
 
 /**
  * Logger minimale, con una copia persistente.
@@ -23,7 +23,7 @@ import { LOGS_DIR } from '../paths.js';
 /** Per quanti giorni si conservano i file. */
 const RETENTION_DAYS = 14;
 
-type Level = 'info' | 'error';
+type Level = "info" | "error";
 
 /** Diventa `false` al primo errore di scrittura: un log non deve fermare l'app. */
 let fileSinkEnabled = true;
@@ -32,9 +32,8 @@ let prunedOnce = false;
 /** `YYYY-MM-DD` in ora locale: il nome del file segue la giornata dell'utente. */
 function dayStamp(moment: Date): string {
   const year = moment.getFullYear();
-  const month = String(moment.getMonth() + 1).padStart(2, '0');
-  const day = String(moment.getDate()).padStart(2, '0');
-
+  const month = String(moment.getMonth() + 1).padStart(2, "0");
+  const day = String(moment.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -50,7 +49,7 @@ function pruneOldFiles(directory: string, today: Date): void {
   const oldest = `app-${dayStamp(limit)}.log`;
 
   for (const name of readdirSync(directory)) {
-    if (name.startsWith('app-') && name.endsWith('.log') && name < oldest) {
+    if (name.startsWith("app-") && name.endsWith(".log") && name < oldest) {
       rmSync(path.join(directory, name), { force: true });
     }
   }
@@ -59,18 +58,31 @@ function pruneOldFiles(directory: string, today: Date): void {
 /** Il dettaglio in forma leggibile, senza far esplodere il logger. */
 function formatDetails(details: unknown): string {
   if (details === undefined || details === null) {
-    return '';
+    return "";
   }
 
   if (details instanceof Error) {
-    return ` ${details.name}: ${details.message}${details.stack === undefined ? '' : `\n${details.stack}`}`;
+    return ` ${details.name}: ${details.message}${details.stack === undefined ? "" : `\n${details.stack}`}`;
   }
 
   try {
     return ` ${JSON.stringify(details)}`;
   } catch {
-    return ' [dettaglio non serializzabile]';
+    return " [dettaglio non serializzabile]";
   }
+}
+
+function formatLogLine(
+  now: Date,
+  level: Level,
+  message: string,
+  details: unknown,
+): string {
+  return `${now.toISOString()} [${level}] ${message}${formatDetails(details)}\n`;
+}
+
+function logFilePath(moment: Date): string {
+  return path.join(LOGS_DIR, `app-${dayStamp(moment)}.log`);
 }
 
 function appendToFile(level: Level, message: string, details: unknown): void {
@@ -87,8 +99,8 @@ function appendToFile(level: Level, message: string, details: unknown): void {
       pruneOldFiles(LOGS_DIR, now);
     }
 
-    const line = `${now.toISOString()} [${level}] ${message}${formatDetails(details)}\n`;
-    appendFileSync(path.join(LOGS_DIR, `app-${dayStamp(now)}.log`), line, 'utf8');
+    const line = formatLogLine(now, level, message, details);
+    appendFileSync(logFilePath(now), line, "utf8");
   } catch {
     // Un disco pieno o una cartella non scrivibile non devono impedire
     // all'applicazione di funzionare: resta lo stdout.
@@ -98,11 +110,11 @@ function appendToFile(level: Level, message: string, details: unknown): void {
 
 export const logger = {
   info(message: string, details?: unknown): void {
-    console.log(`[info] ${message}`, details ?? '');
-    appendToFile('info', message, details);
+    console.log(`[info] ${message}`, details ?? "");
+    appendToFile("info", message, details);
   },
   error(message: string, details?: unknown): void {
-    console.error(`[error] ${message}`, details ?? '');
-    appendToFile('error', message, details);
+    console.error(`[error] ${message}`, details ?? "");
+    appendToFile("error", message, details);
   },
 };

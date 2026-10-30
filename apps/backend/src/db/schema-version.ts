@@ -85,28 +85,28 @@ export function readDatabaseSchema(sqlite: SqliteDatabase): SchemaVersion {
   }
 
   const row = sqlite
-    .prepare(
+    .prepare<[], { applied: number; latest: number }>(
       `select count(*) as applied, coalesce(max(created_at), 0) as latest from "${MIGRATIONS_TABLE}"`,
     )
-    .get() as { applied: number; latest: number };
+    .get()!;
 
   return { appliedCount: Number(row.applied), latestMillis: Number(row.latest) };
 }
 
 /** La cartella delle migrazioni non è utilizzabile: senza di essa non si può decidere nulla. */
-export class MigrationJournalError extends Error {}
+export class MigrationJournalError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MigrationJournalError';
+  }
+}
 
-/**
- * La versione che l'applicazione porta con sé.
- *
- * Se il journal manca o è illeggibile ci si ferma invece di indovinare: non
- * conoscere la propria versione dello schema significa non poter stabilire se
- * l'archivio dell'utente è più recente, ed è precisamente il caso in cui non
- * si deve procedere.
- */
-export function readAppSchema(migrationsFolder: string): SchemaVersion {
-  const journalFile = path.join(migrationsFolder, 'meta', '_journal.json');
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readJournalEntries(journalFile: string): unknown[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(readFileSync(journalFile, 'utf8'));
@@ -118,32 +118,44 @@ export function readAppSchema(migrationsFolder: string): SchemaVersion {
     );
   }
 
-  const entries =
-    typeof parsed === 'object' && parsed !== null && 'entries' in parsed
-      ? (parsed as { entries: unknown }).entries
-      : undefined;
-
+  const entries = isRecord(parsed) && 'entries' in parsed ? parsed.entries : undefined;
   if (!Array.isArray(entries)) {
     throw new MigrationJournalError(
       `Registro delle migrazioni malformato (${journalFile}): manca l'elenco "entries".`,
     );
   }
 
-  let latestMillis = 0;
-  for (const entry of entries) {
-    const when =
-      typeof entry === 'object' && entry !== null && 'when' in entry
-        ? (entry as { when: unknown }).when
-        : undefined;
+  return entries;
+}
 
+function getLatestMigrationMillis(entries: readonly unknown[], journalFile: string): number {
+  let latestMillis = 0;
+  for (const [index, entry] of entries.entries()) {
+    const when = isRecord(entry) && 'when' in entry ? entry.when : undefined;
     if (typeof when !== 'number' || !Number.isFinite(when)) {
       throw new MigrationJournalError(
-        `Registro delle migrazioni malformato (${journalFile}): una voce non ha un campo "when" valido.`,
+        `Registro delle migrazioni malformato (${journalFile}): la voce ${index} non ha un campo "when" valido.`,
       );
     }
 
     latestMillis = Math.max(latestMillis, when);
   }
+
+  return latestMillis;
+}
+
+/**
+ * La versione che l'applicazione porta con sé.
+ *
+ * Se il journal manca o è illeggibile ci si ferma invece di indovinare: non
+ * conoscere la propria versione dello schema significa non poter stabilire se
+ * l'archivio dell'utente è più recente, ed è precisamente il caso in cui non
+ * si deve procedere.
+ */
+export function readAppSchema(migrationsFolder: string): SchemaVersion {
+  const journalFile = path.join(migrationsFolder, 'meta', '_journal.json');
+  const entries = readJournalEntries(journalFile);
+  const latestMillis = getLatestMigrationMillis(entries, journalFile);
 
   return { appliedCount: entries.length, latestMillis };
 }
