@@ -506,6 +506,15 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
 
 > **Rimandato, ma resta in questo piano** (decisione dell'utente, 30/10/2026). Il piano `backend-main-lifecycle` esclude `runtime.test.ts` e lo rimanda qui. Si riprende dopo il merge di `refactor/backend-main-lifecycle`; fino ad allora il fallimento è tollerato come noto nelle verifiche `SUITE×5` (§2).
 
+- **File:** `apps/backend/src/runtime.test.ts`. Vietati `shutdown.ts`, `main.ts` e `db/**`.
+- [ ] Riprodurre: 20 esecuzioni del file, di cui 5 concorrenti con `SUITE`. Riportare la frequenza.
+- [ ] Verificare l'ipotesi: `termina()` restituisce il controllo prima che Windows rilasci i file `-wal` e `-shm`, e l'apertura `readonly` tenta un truncate. Verificare che si attenda l'evento `exit`.
+- [ ] Correggere **nel test** in uno dei due modi, motivando la scelta in un commento:
+  - riaprire con tentativi limitati (al massimo ~2 s, solo su `SQLITE_IOERR*` e `SQLITE_BUSY`);
+  - leggere il dato con un terzo avvio.
+- [ ] Se la causa è nel prodotto (dato non consolidato o file illeggibile anche dopo il rilascio), **fermarsi e riportare**.
+- [ ] Gate V1, più 10 esecuzioni isolate e 3 concorrenti con `SUITE`, tutte verdi.
+
 #### T5.5 — Scheduler senza tempo reale *(G0-C, anticipato da M5)*
 - **File:** `apps/backend/src/modules/maintenance/backup.scheduler.test.ts`, solo il `describe('lo scheduler in esecuzione', …)` (oggi righe 147-290 circa). Vietato modificare `backup.scheduler.ts` e ogni altro file.
 - **Sintomo:** `backup.scheduler.test.ts:148` ("crea un backup, poi si riarma per l'intervallo pieno") attende 200 ms di tempo reale per vedere almeno due backup (margine 10 ms più intervallo 60 ms). Sotto il carico della suite completa ne vede uno solo: è successo 1 volta su 5, mentre in isolamento è 15/15 verde. Gli altri test del blocco usano lo stesso schema, con attese reali e un'attesa attiva da 40 ms.
@@ -527,14 +536,6 @@ Ogni task indica i file (che sono anche il perimetro), il gruppo e i passi. Mode
   - d. `PERIMETRO`.
 
   Il lead esegue poi 20 esecuzioni isolate e 5 concorrenti con `SUITE`.
-- **File:** `apps/backend/src/runtime.test.ts`. Vietati `shutdown.ts`, `main.ts` e `db/**`.
-- [ ] Riprodurre: 20 esecuzioni del file, di cui 5 concorrenti con `SUITE`. Riportare la frequenza.
-- [ ] Verificare l'ipotesi: `termina()` restituisce il controllo prima che Windows rilasci i file `-wal` e `-shm`, e l'apertura `readonly` tenta un truncate. Verificare che si attenda l'evento `exit`.
-- [ ] Correggere **nel test** in uno dei due modi, motivando la scelta in un commento:
-  - riaprire con tentativi limitati (al massimo ~2 s, solo su `SQLITE_IOERR*` e `SQLITE_BUSY`);
-  - leggere il dato con un terzo avvio.
-- [ ] Se la causa è nel prodotto (dato non consolidato o file illeggibile anche dopo il rilascio), **fermarsi e riportare**.
-- [ ] Gate V1, più 10 esecuzioni isolate e 3 concorrenti con `SUITE`, tutte verdi.
 
 ### M1 — Funzioni pure del parsing e dei dati condivisi
 
