@@ -256,3 +256,39 @@ describe('colonne dare e avere separate', () => {
     assert.deepEqual(detectColumns(headers, rows).bookingDate, ['Data']);
   });
 });
+
+describe('colonna del tipo riconosciuta dai soli valori', () => {
+  // Intestazione "Note": non è un indizio di tipo, quindi conta solo il contenuto.
+  const csvWith = (types: string[]) =>
+    [
+      'Data;Descrizione;Note;Importo',
+      ...types.map(
+        (type, index) =>
+          `${String(index + 1).padStart(2, '0')}/01/2026;MOVIMENTO NUMERO ${index + 1};${type};-${index + 1},00`,
+      ),
+    ].join('\n');
+
+  const typeHintOf = (content: string) => {
+    const { headers, rows } = parseCsv(content);
+
+    return detectColumns(headers, rows).typeHint;
+  };
+
+  it('riconosce la colonna del tipo con valori al plurale', () => {
+    const types = Array.from(
+      { length: 10 },
+      (_, index) => ['Prelievi contanti', 'Accrediti vari', 'Prelievi ATM'][index % 3] ?? '',
+    );
+
+    assert.deepEqual(typeHintOf(csvWith(types)), ['Note']);
+  });
+
+  it('riconosce la colonna del tipo con valori al singolare', () => {
+    const types = Array.from(
+      { length: 10 },
+      (_, index) => ['Prelievo contanti', 'Accredito vari', 'Prelievo ATM'][index % 3] ?? '',
+    );
+
+    assert.deepEqual(typeHintOf(csvWith(types)), ['Note']);
+  });
+});
