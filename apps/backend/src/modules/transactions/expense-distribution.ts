@@ -9,7 +9,8 @@
  * La regola, una sola per tutte le viste:
  * - restano solo le voci con spesa netta positiva;
  * - la quota di ciascuna è calcolata sulla somma di quelle voci, non sul
- *   totale netto delle uscite, così le quote sommano sempre a 100;
+ *   totale netto delle uscite, così le quote sommano a 100 a meno
+ *   dell'arrotondamento a un decimale di ciascuna;
  * - le voci sono ordinate dalla più consistente; a parità d'importo resta
  *   l'ordine di ingresso.
  */

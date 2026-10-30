@@ -64,7 +64,7 @@ export interface CategoryDistribution {
   /** Totale delle spese della categoria, in valore assoluto. */
   amount: number;
   transactionCount: number;
-  /** Quota sul totale delle spese del periodo, in percentuale. */
+  /** Quota sulla somma delle voci con spesa netta positiva (non sul totale delle spese), in percentuale. */
   percentage: number;
 }
 

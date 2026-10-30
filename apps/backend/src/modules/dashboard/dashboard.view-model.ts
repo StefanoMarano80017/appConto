@@ -15,7 +15,7 @@ export interface DashboardCategory {
   color: string | null;
   /** Spesa del mese mostrato, positiva. */
   amount: number;
-  /** Quota sulle uscite del mese, un decimale; `null` se le uscite non sono positive. */
+  /** Quota sulla somma delle categorie con spesa netta positiva, un decimale; mai `null` nei valori prodotti. */
   percentage: number | null;
   /** Spesa nella finestra corrente meno quella della finestra precedente: positivo = si è speso di più. */
   difference: number;
@@ -40,7 +40,7 @@ export interface DashboardViewModel {
   summary: { income: number; expenses: number; balance: number; withdrawals: number };
   comparison: {
     previousExpenses: number;
-    /** `null` quando le spese precedenti sono zero: la variazione non è calcolabile. */
+    /** `null` quando le uscite precedenti sono ≤ 0: la variazione non è calcolabile. */
     percentChange: number | null;
   } & ComparisonWindow;
   /** Al massimo cinque, dalla più spesa. */

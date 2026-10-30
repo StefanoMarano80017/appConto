@@ -154,7 +154,8 @@ export const dashboardService = {
 
     // Importo e percentuale riguardano il mese intero; la variazione, la finestra di confronto.
     // Regola delle distribuzioni: solo categorie con spesa netta positiva, quote sulla loro
-    // somma (non sulle uscite nette). Le quote si calcolano prima di tenere le prime cinque.
+    // somma (non sulle uscite nette). Le quote si calcolano prima di tenere le prime cinque:
+    // con più di cinque categorie le quote mostrate sommano a meno di 100, ed è voluto (D1).
     const topCategories = expenseDistribution(
       [...expenseCentsByCategory(expenses)].map(([id, total]) => ({ id, ...total })),
     )

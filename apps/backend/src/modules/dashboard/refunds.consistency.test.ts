@@ -82,6 +82,14 @@ importService.importCsv(
     '05/08/2040,Pagamento,ESSELUNGA,-60.00',
     '12/08/2040,Pagamento,ZARA,-30.00',
     '20/08/2040,Pagamento,NEGOZIO IGNOTO,-10.00',
+    // settembre: sette categorie con spesa positiva, 1000 in tutto
+    '01/09/2040,Pagamento,ESSELUNGA,-300.00',
+    '02/09/2040,Pagamento,ZARA,-200.00',
+    '03/09/2040,Pagamento,BENZINAIO,-150.00',
+    '04/09/2040,Pagamento,IKEA,-120.00',
+    '05/09/2040,Pagamento,PIZZERIA,-90.00',
+    '06/09/2040,Pagamento,FARMACIA CENTRALE,-80.00',
+    '07/09/2040,Pagamento,HOTEL,-60.00',
   ),
 );
 markAsRefund('2040-01-10', 'CONAD');
@@ -90,6 +98,11 @@ markAsRefund('2040-07-20', 'ZARA');
 classify('ESSELUNGA', 'Alimentari');
 classify('CONAD', 'Alimentari');
 classify('ZARA', 'Shopping');
+classify('BENZINAIO', 'Carburante');
+classify('IKEA', 'Casa');
+classify('PIZZERIA', 'Ristoranti');
+classify('FARMACIA CENTRALE', 'Farmacia');
+classify('HOTEL', 'Viaggi');
 
 const TODAY = '2041-01-10';
 
@@ -149,6 +162,26 @@ describe('spese con rimborsi: Alimentari −100 e +30, Shopping solo +20', () =>
   });
 });
 
+describe('dashboard con più di cinque categorie', () => {
+  it('le prime cinque hanno la quota sulla somma di tutte e sette: insieme fanno meno di 100', () => {
+    const { topCategories } = dashboardService.getDashboard('2040-09', TODAY);
+
+    // Base: 300 + 200 + 150 + 120 + 90 + 80 + 60 = 1000. Farmacia (80) e Viaggi (60) restano fuori.
+    assert.deepEqual(
+      topCategories.map((c) => [c.name, c.amount, c.percentage]),
+      [
+        ['Alimentari', 300, 30],
+        ['Shopping', 200, 20],
+        ['Carburante', 150, 15],
+        ['Casa', 120, 12],
+        ['Ristoranti', 90, 9],
+      ],
+    );
+    const somma = topCategories.reduce((totale, c) => totale + (c.percentage ?? 0), 0);
+    assert.equal(somma, 86);
+  });
+});
+
 describe('variazione rispetto al mese precedente', () => {
   const casi = [
     { mese: '2040-02', precedente: -30, attuale: 100, atteso: null },
@@ -202,7 +235,11 @@ describe('invarianti fra le viste', () => {
             continue;
           }
           const somma = voci.reduce((totale, voce) => totale + (voce.percentage ?? 0), 0);
-          assert.ok(Math.abs(somma - 100) <= 0.1, `${vista}: le percentuali sommano a ${somma}`);
+          // 0,1 di arrotondamento delle quote, più un margine per la virgola mobile (99.89999999999999).
+          assert.ok(
+            Math.abs(somma - 100) <= 0.1 + 1e-9,
+            `${vista}: le percentuali sommano a ${somma}`,
+          );
         }
       });
 
