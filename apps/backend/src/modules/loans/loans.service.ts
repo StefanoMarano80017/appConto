@@ -177,6 +177,35 @@ function assertFitsTransaction(
   );
 }
 
+/**
+ * Il tetto di capienza del movimento di restituzione.
+ *
+ * È la regola speculare a `assertFitsTransaction`: un solo bonifico può
+ * ripagare più prestiti, ma la somma delle restituzioni collegate non può
+ * superarne l'importo, altrimenti lo stesso denaro rientrerebbe due volte.
+ * `exceptRepaymentId` esclude la restituzione che si sta modificando.
+ *
+ * Questo controllo regge perché l'importo di una transazione è immutabile
+ * (oggi si scrivono solo il tipo e il fingerprint): qualunque percorso futuro
+ * che modifichi `amount_cents` deve rieseguire la stessa verifica.
+ */
+function assertRepaymentFitsTransaction(
+  transaction: Transaction,
+  amountCents: number,
+  exceptRepaymentId?: string,
+): void {
+  const capacity = toAmountCents(transaction.amount);
+  const used = loansRepository.repaidCentsByTransaction(transaction.id, exceptRepaymentId);
+
+  if (used + amountCents <= capacity) {
+    return;
+  }
+
+  throw new ValidationError(
+    `Il movimento da ${euro(capacity)} ha già ${euro(used)} collegati ad altre restituzioni: restano ${euro(Math.max(capacity - used, 0))}.`,
+  );
+}
+
 /** L'importo in centesimi di una restituzione o di un prestito, sempre positivo. */
 function requirePositiveCents(amount: number, what: string): number {
   const cents = toAmountCents(amount);
@@ -484,7 +513,7 @@ export const loansService = {
 
     const amountCents = requirePositiveCents(data.amount, 'della restituzione');
     if (data.transactionId !== null) {
-      requireRepaymentTransaction(data.transactionId);
+      assertRepaymentFitsTransaction(requireRepaymentTransaction(data.transactionId), amountCents);
     }
 
     const remaining = remainingCents(aggregate.amountCents, aggregate.repaidCents);
@@ -533,8 +562,18 @@ export const loansService = {
       );
     }
 
-    if (data.transactionId !== undefined && data.transactionId !== null) {
-      requireRepaymentTransaction(data.transactionId);
+    // Il movimento a cui la restituzione resterà collegata: quello nuovo, se
+    // indicato, altrimenti quello di prima. Anche un semplice cambio di
+    // importo va confrontato con la capienza.
+    const linkedId = data.transactionId === undefined ? repayment.transactionId : data.transactionId;
+    if (linkedId !== null) {
+      const linked =
+        data.transactionId === undefined
+          ? transactionsService.findById(linkedId)
+          : requireRepaymentTransaction(linkedId);
+      if (linked !== null) {
+        assertRepaymentFitsTransaction(linked, amountCents, repaymentId);
+      }
     }
 
     loansRepository.updateRepayment(repaymentId, {

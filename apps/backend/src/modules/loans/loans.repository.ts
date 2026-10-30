@@ -257,6 +257,28 @@ export const loansRepository = {
     return Number(row?.total ?? 0);
   },
 
+  /**
+   * Quanto di un movimento è già stato usato da restituzioni, di qualunque prestito.
+   *
+   * Serve al tetto di capienza dell'accredito: un solo bonifico può ripagare
+   * più prestiti, ma la somma non può superarne l'importo. `exceptRepaymentId`
+   * esclude la restituzione che si sta modificando.
+   */
+  repaidCentsByTransaction(transactionId: string, exceptRepaymentId?: string): number {
+    const conditions = [eq(loanRepayments.transactionId, transactionId)];
+    if (exceptRepaymentId !== undefined) {
+      conditions.push(ne(loanRepayments.id, exceptRepaymentId));
+    }
+
+    const row = db
+      .select({ total: sql<number>`coalesce(sum(${loanRepayments.amountCents}), 0)` })
+      .from(loanRepayments)
+      .where(and(...conditions))
+      .get();
+
+    return Number(row?.total ?? 0);
+  },
+
   insertRepayment(repayment: LoanRepayment): void {
     db.insert(loanRepayments).values(repayment).run();
   },
