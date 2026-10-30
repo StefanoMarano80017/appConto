@@ -406,7 +406,9 @@ Si rifiuta con `ValidationError` un prestito su un movimento `LOAN` con importo 
 6. **Ricerca e ordinamento:** funzione SQLite `lower_unicode` registrata in `db/client.ts`. *(G3-E)*
 7. **Script `test:coverage`:** nel `package.json` di root. *(G5-A)*
 8. **Arrotondamento euro → centesimi:** a metà, lontano da zero e simmetrico (`1.005` → 101, `-1.005` → −101). *(G1-E)*
-9. **`FieldMismatch` di Papa** (righe con un numero di campi diverso dall'intestazione): si rifiuta il file solo se **non** compare nei campioni reali di `samples/`; altrimenti si rifiutano solo gli errori di virgolette. *(G1-B)*
+9. ~~**`FieldMismatch` di Papa:** si rifiuta il file solo se non compare nei campioni reali di `samples/`; altrimenti si rifiutano solo gli errori di virgolette.~~ **Rivista dall'utente il 30/10/2026, durante M1:** si rifiuta il file **solo** per errori di virgolette (`Quotes`). Le righe con campi in più o in meno restano accettate come prima: quelle senza data o importo validi finiscono già fra le righe scartate e segnalate dall'import.
+   - Motivo: la revisione di T1.3 ha mostrato che rifiutare `FieldMismatch` bloccava file bancari plausibili (`;` finale solo sui dati, riga "Saldo finale", colonna vuota in più nell'intestazione).
+   - Il messaggio d'errore è interamente in italiano: "Il file CSV ha virgolette non chiuse alla riga N.", con N contato da 1 e intestazione compresa. *(G1-B)*
 
 ### D7 — Significato della data del saldo (nuova) — blocca G2-A
 
