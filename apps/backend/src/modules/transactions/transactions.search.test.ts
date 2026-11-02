@@ -10,7 +10,7 @@ process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
 const { runMigrations } = await import('../../db/client.js');
 const { importService } = await import('../import/index.js');
-const { categoriesService } = await import('../categories/index.js');
+const { categoriesService, FALLBACK_CATEGORY_ID } = await import('../categories/index.js');
 const { merchantsService } = await import('../merchants/index.js');
 const { transactionsService } = await import('./transactions.service.js');
 const { DEFAULT_QUERY, parseTransactionQuery } = await import('./transaction-query.js');
@@ -476,6 +476,115 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
         .transactions.map(({ merchant }) => merchant?.category?.name);
 
       assert.deepEqual(nomi, ['alfa cat', 'caffè a cat', 'CAFFÈ B cat', 'Cassa cat', 'ZETA cat']);
+    });
+  });
+});
+
+describe('filtro per la categoria "Da classificare"', () => {
+  // La riga "Da classificare" ha un id fisso ma nessun merchant lo porta: sceglierla
+  // nel filtro per categoria vale "non classificati" (D12).
+  const ripiego = FALLBACK_CATEGORY_ID;
+  const ids = (query: Partial<typeof DEFAULT_QUERY>): string[] =>
+    search(query).transactions.map(({ transaction }) => transaction.id).sort();
+
+  it('da sola dà gli stessi movimenti di "non classificati"', () => {
+    const attesi = ids({ classification: 'unclassified' });
+
+    assert.equal(attesi.length, 5);
+    assert.deepEqual(ids({ categoryIds: [ripiego] }), attesi);
+  });
+
+  it('con un\'altra categoria dà l\'unione', () => {
+    const attesi = [
+      ...ids({ classification: 'unclassified' }),
+      ...ids({ categoryIds: [categoryId('Alimentari')] }),
+    ].sort();
+
+    assert.equal(attesi.length, 7);
+    assert.deepEqual(ids({ categoryIds: [ripiego, categoryId('Alimentari')] }), attesi);
+  });
+
+  it('senza il ripiego nulla cambia', () => {
+    assert.equal(search({ categoryIds: [categoryId('Alimentari')] }).total, 2);
+    assert.equal(search({ categoryIds: [categoryId('Alimentari'), categoryId('Carburante')] }).total, 4);
+  });
+
+  it('si combina con gli altri criteri', () => {
+    assert.equal(search({ categoryIds: [ripiego], types: ['INCOME'] }).total, 2);
+    assert.equal(search({ categoryIds: [ripiego], classification: 'classified' }).total, 0);
+  });
+});
+
+describe('ricerca senza distinguere gli accenti', () => {
+  // La ricerca ignora maiuscole e accenti, da entrambi i lati: è `fold_search`.
+  // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+  const periodo = { from: '2038-01-01', to: '2038-01-31' } as const;
+
+  function conDatiProvvisori(verifica: () => void): void {
+    importService.importCsv(
+      csv(
+        '05/01/2038,Pagamento,CAFFÈ ROMA,-10.00',
+        '06/01/2038,Pagamento,caffe zeta,-20.00',
+        '07/01/2038,Pagamento,PERCHÉ NO,-30.00',
+        '08/01/2038,Pagamento,SCONTO 100%,-40.00',
+        '09/01/2038,Pagamento,COD_A1,-50.00',
+        '10/01/2038,Pagamento,IMPORTO 1000,-60.00',
+      ),
+    );
+
+    try {
+      verifica();
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
+  }
+
+  it('il termine senza accento trova il testo accentato', () => {
+    conDatiProvvisori(() => {
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffe roma' }), ['CAFFÈ ROMA']);
+      assert.deepEqual(descriptions({ ...periodo, search: 'perche' }), ['PERCHÉ NO']);
+    });
+  });
+
+  it('il termine accentato trova il testo senza accento, in qualunque combinazione di maiuscole', () => {
+    conDatiProvvisori(() => {
+      const attese = ['CAFFÈ ROMA', 'caffe zeta'];
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffe' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'PERCHE' }), ['PERCHÉ NO']);
+    });
+  });
+
+  it('vale anche per il nome del merchant scelto dall\'utente', () => {
+    conDatiProvvisori(() => {
+      merchantsService.updateDisplayName(merchantIdOf('SCONTO 100%'), 'Perché Sì');
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'perche si' }), ['SCONTO 100%']);
+    });
+  });
+
+  it('i caratteri jolly restano letterali anche dopo la normalizzazione', () => {
+    conDatiProvvisori(() => {
+      assert.deepEqual(descriptions({ ...periodo, search: '100%' }), ['SCONTO 100%']);
+      assert.deepEqual(descriptions({ ...periodo, search: '_' }), ['COD_A1']);
+      assert.deepEqual(descriptions({ ...periodo, search: '1000' }), ['IMPORTO 1000']);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè%' }), [], '% non è un jolly');
+    });
+  });
+
+  it('l\'ordinamento non cambia: resta su lower_unicode, gli accenti contano', () => {
+    conDatiProvvisori(() => {
+      const nomi = search({ ...periodo, search: 'caff', sortBy: 'merchant', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.merchant.name);
+
+      // Con gli accenti tolti verrebbe prima «caffe roma» («r» < «z»); con
+      // `lower_unicode` viene prima «caffe zeta» («e» < «è»).
+      assert.deepEqual(nomi, ['caffe zeta', 'CAFFÈ ROMA']);
     });
   });
 });

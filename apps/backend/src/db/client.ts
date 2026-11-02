@@ -3,6 +3,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { config } from '../config.js';
 import { applyPendingRestore } from '../modules/maintenance/restore-pending.js';
 import { ensureDataDirectories } from '../paths.js';
+import { foldSearchText } from '../shared/text.js';
 import { readDatabaseSchema, type SchemaVersion } from './schema-version.js';
 import { openSqlite } from './sqlite.js';
 
@@ -48,6 +49,16 @@ sqlite.pragma('foreign_keys = ON');
  */
 sqlite.function('lower_unicode', { deterministic: true }, (value: unknown) =>
   typeof value === 'string' ? value.toLowerCase() : null,
+);
+
+/**
+ * Il testo per la ricerca: minuscolo e senza accenti, così «caffe» trova
+ * «CAFFÈ ROMA» e «caffè» trova «CAFFE». La normalizzazione è la stessa che i
+ * repository applicano al termine cercato (`foldSearchText`). Si usa solo nelle
+ * condizioni di ricerca: gli ordinamenti restano su `lower_unicode`.
+ */
+sqlite.function('fold_search', { deterministic: true }, (value: unknown) =>
+  typeof value === 'string' ? foldSearchText(value) : null,
 );
 
 /**

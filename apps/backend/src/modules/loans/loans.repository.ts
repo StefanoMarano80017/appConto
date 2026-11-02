@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, isNotNull, ne, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { escapeLike } from '../../shared/sql.js';
+import { foldSearchText } from '../../shared/text.js';
 import { transactions } from '../transactions/transactions.schema.js';
 import type { LoanQuery } from './loan-query.js';
 import type { Loan, LoanRepayment } from './loan.model.js';
@@ -121,11 +122,12 @@ function loanConditions(query: LoanQuery): SQL | undefined {
   }
 
   if (query.search !== null) {
-    const pattern = `%${escapeLike(query.search.toLowerCase())}%`;
+    // Prima si normalizza, poi si protegge: `escapeLike` vede il testo già definitivo.
+    const pattern = `%${escapeLike(foldSearchText(query.search))}%`;
     const matches = or(
-      sql`lower_unicode(${loans.borrowerName}) like ${pattern} escape '\\'`,
-      sql`lower_unicode(${loans.description}) like ${pattern} escape '\\'`,
-      sql`lower_unicode(${transactions.description}) like ${pattern} escape '\\'`,
+      sql`fold_search(${loans.borrowerName}) like ${pattern} escape '\\'`,
+      sql`fold_search(${loans.description}) like ${pattern} escape '\\'`,
+      sql`fold_search(${transactions.description}) like ${pattern} escape '\\'`,
     );
     if (matches !== undefined) {
       conditions.push(matches);

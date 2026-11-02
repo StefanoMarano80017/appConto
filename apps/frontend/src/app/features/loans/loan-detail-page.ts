@@ -224,7 +224,7 @@ export class LoanDetailPage {
    */
   private loadCandidates(from: string): void {
     this.transactionsApi
-      .search({ ...EMPTY_QUERY, from, pageSize: CANDIDATE_PAGE_SIZE })
+      .search({ ...EMPTY_QUERY, from, types: ['INCOME'], pageSize: CANDIDATE_PAGE_SIZE })
       .subscribe({
         next: (page) =>
           this.repaymentCandidates.set(page.items.filter((item) => item.amount > 0)),

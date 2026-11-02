@@ -10,7 +10,7 @@ process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
 const { runMigrations } = await import('../../db/client.js');
 const { importService } = await import('../import/index.js');
-const { categoriesService } = await import('../categories/index.js');
+const { categoriesService, FALLBACK_CATEGORY_ID } = await import('../categories/index.js');
 const { merchantsService } = await import('../merchants/index.js');
 const { transactionsService } = await import('../transactions/index.js');
 const { analyticsService, automaticGranularity, startOfWeek } = await import(
@@ -273,6 +273,39 @@ describe('filtro per categoria', () => {
       analytics.byCategory.every((c) => c.categoryId !== null),
       'nessuna voce senza categoria',
     );
+  });
+});
+
+describe('filtro per la categoria "Da classificare"', () => {
+  // Sceglierla nel filtro per categoria vale "non classificati" (D12).
+  it('da sola dà la stessa analisi di "non classificati"', () => {
+    const attesa = analyze({ classification: 'unclassified' });
+    const analytics = analyze({ categoryIds: [FALLBACK_CATEGORY_ID] });
+
+    assert.equal(analytics.counts.transactions, attesa.counts.transactions);
+    assert.equal(analytics.overview.expenses, 40);
+    assert.deepEqual(analytics.byCategory, attesa.byCategory);
+  });
+
+  it('con un\'altra categoria dà l\'unione', () => {
+    const analytics = analyze({
+      categoryIds: [FALLBACK_CATEGORY_ID, categoryId('Carburante')],
+    });
+
+    assert.equal(analytics.overview.expenses, 90, '40 non classificati + 50 carburante');
+    assert.deepEqual(
+      analytics.byCategory.map((c) => [c.categoryId, c.amount]),
+      [
+        [categoryId('Carburante'), 50],
+        [null, 40],
+      ],
+      'dalla voce più alta alla più bassa',
+    );
+  });
+
+  it('senza il ripiego nulla cambia', () => {
+    assert.equal(analyze({ categoryIds: [categoryId('Alimentari')] }).counts.transactions, 4);
+    assert.equal(analyze({ categoryIds: [categoryId('Alimentari')] }).overview.expenses, 530);
   });
 });
 

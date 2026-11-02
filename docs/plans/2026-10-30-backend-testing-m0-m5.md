@@ -178,6 +178,8 @@ Legenda:
 | G3-C | T3.1 | **opus** | **opus** | S | V4 | Migrazione dati su DB reale più cambio di rappresentazione |
 | G3-D | T3.5 | haiku | sonnet | S | V2 | Specificato; 2 file |
 | G3-E | T3.6 | sonnet | **opus** | S | V3 | Tocca `db/client.ts`, quindi tutte le connessioni |
+| G3-G | T3.9 → T3.10 | sonnet | **opus** | S | V3 | Coda di M3: D11 e D12. Toccano entrambi `transactions.repository.ts`, quindi in sequenza |
+| G3-H | T3.11 + T3.12 | haiku | sonnet | P | V2 | Coda di M3: modifiche piccole e già specificate, file disgiunti da G3-G |
 | G3-F | T3.7 → T3.8 | sonnet | **opus** | S | V3 | Aggiunto dopo le decisioni D9 e D10. Regole semplici, ma toccano la porta fra `transactions` e `loans` e test esistenti. Va per primo: `transactions.service` è importato dai test di G3-B |
 | **M4** | | | | | | |
 | G4-A | T4.1 + T4.6 | sonnet | sonnet | P | V1 | Errori di richiesta (400, 413, 500) |
@@ -441,6 +443,21 @@ La data di una restituzione non può essere precedente a `lentAt`; la stessa gio
 Conseguenza applicata dal lead: anche la modifica di `lentAt` di un prestito non può spostarlo dopo la sua restituzione più vecchia. Sul DB reale nessuna restituzione è anteriore al prestito: nessuna migrazione.
 
 **Lasciato com'è su decisione dell'utente:** la capienza (D4) si ricontrolla anche quando di una restituzione cambiano solo nota o data.
+
+### D11 — Ricerca senza accenti (decisa dall'utente il 02/11/2026, dopo M3) — G3-G (T3.9)
+
+La ricerca testuale di movimenti e prestiti ignora gli accenti oltre alle maiuscole: «caffe» trova «CAFFÈ ROMA», «caffè» trova «CAFFE». Il termine e la colonna passano dalla stessa funzione di normalizzazione (minuscolo, scomposizione NFD, rimozione dei segni diacritici), registrata in `db/client.ts` accanto a `lower_unicode`.
+
+Ruling del lead: la decisione riguarda la ricerca. Ordinamento (`lower_unicode`, T3.6) e unicità del nome categoria (D6.5) restano come sono.
+
+### D12 — Filtro per "Da classificare" = non classificati (deciso dall'utente il 02/11/2026, dopo M3) — G3-G (T3.10)
+
+Un filtro per categoria che contiene l'id della riga "Da classificare" include i movimenti non classificati, con la stessa definizione del filtro `classification: 'unclassified'`, nei movimenti e nelle analisi. Con altri id nello stesso filtro le condizioni si sommano (OR).
+
+### Frontend (autorizzato dall'utente il 02/11/2026, perché di piccola entità) — G3-H (T3.11)
+
+- I candidati per collegare una restituzione sono solo movimenti `INCOME` positivi, coerentemente con D9.
+- I due commenti superati da D1 in `dashboard.model.ts` vengono eliminati.
 
 ### Decisioni che potrebbero emergere durante l'esecuzione (ci si ferma e si riporta)
 
@@ -930,6 +947,28 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 - [x] Verificare quali altre connessioni (restore, backup) eseguono queste query e riportarlo.
 - [x] Gate V3. Utilizzatori diretti: tutti i test che importano `db/client`, cioè la suite.
 
+#### Coda di M3 — decisioni dell'utente dopo la chiusura (02/11/2026)
+
+##### T3.9 — Ricerca senza accenti *(G3-G; D11)*
+- **File:** `db/client.ts` (registrazione della funzione), un aiutante JS condiviso per il termine (in `shared/`), `transactions.repository.ts` e `loans.repository.ts` (solo le condizioni di ricerca), un `describe` in fondo a `transactions.search.test.ts` e a `loans.service.test.ts`.
+- [x] «caffe» trova «CAFFÈ ROMA»; «CAFFÈ» trova «caffe bar»; «perche» trova «PERCHÉ NO»; i prestiti con lo stesso schema (nome, descrizione, movimento).
+- [x] `%` e `_` restano letterali (T1.1); l'ordinamento non cambia.
+- [x] Gate V3.
+
+##### T3.10 — Filtro per "Da classificare" *(G3-G; D12)*
+- **File:** i punti in cui `transactions` e `analytics` applicano `categoryIds`, più un `describe` nei rispettivi test di ricerca e di servizio.
+- [x] `categoryIds=[ripiego]` dà gli stessi movimenti di `classification: 'unclassified'`; `[ripiego, Alimentari]` dà l'unione; senza ripiego nulla cambia. Stessi casi in analytics.
+- [x] Gate V3.
+
+##### T3.11 — Frontend: candidati solo in entrata e commenti superati *(G3-H)*
+- **File:** `apps/frontend/src/app/features/loans/loan-detail-page.ts` e il suo `.spec.ts`; `apps/frontend/src/app/features/dashboard/dashboard.model.ts`.
+- [x] La ricerca dei candidati chiede `types: ['INCOME']`; il filtro `amount > 0` resta. Il test del componente verifica il parametro nella richiesta.
+- [x] Eliminati i commenti delle righe 25 e 52 di `dashboard.model.ts`.
+- [x] `ng test` verde.
+
+##### T3.12 — `csv-values.test.ts` non apre il DB *(G3-H)*
+- [x] `toAmountCents` importato da `transactions/transaction.model.ts`, non dal barrel. Verifica: con `DATABASE_FILE` su un file inesistente, il test non lo crea.
+
 ### M4 — Contratti HTTP dei router
 
 **Criteri di accettazione:**
@@ -1020,6 +1059,6 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
-| M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3 | — |
+| M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3. ✅ Coda chiusa il 02/11/2026: D11, D12, frontend (T3.9–T3.12); revisione opus "Ready", suite 939/939 ×5, `ng test` 77 file verdi | — |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
