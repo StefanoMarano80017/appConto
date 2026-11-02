@@ -971,6 +971,8 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 
 ### M4 — Contratti HTTP dei router
 
+> **Sostituita il 02/11/2026** dal lavoro sui router: design `docs/superpowers/specs/2026-11-02-router-di-design.md`, piano `docs/superpowers/plans/2026-11-02-router-di.md` (branch `refactor/router`). I contratti HTTP sono la sua fase 1; la regola "niente mock" non vale più per router e servizi. Il testo qui sotto resta come storia.
+
 **Criteri di accettazione:**
 - un file di test HTTP per analytics, cash-flow, summary, dashboard, categories, import, loans, settings;
 - per ognuno: un caso positivo con le **chiavi del view-model** verificate, un 400, e il 404 o 409 dove esiste;
@@ -1060,5 +1062,5 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
 | M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3. ✅ Coda chiusa il 02/11/2026: D11, D12, frontend (T3.9–T3.12); revisione opus "Ready", suite 939/939 ×5, `ng test` 77 file verdi | — |
-| M4 Contratti HTTP | ⏳ | M3 |
-| M5 Igiene | ⏳ | M4, D6.7 |
+| M4 Contratti HTTP | ↪ sostituita dal piano `docs/superpowers/plans/2026-11-02-router-di.md` (fasi 0–4, branch `refactor/router`) | — |
+| M5 Igiene | ⏳ | piano dei router, D6.7 |
