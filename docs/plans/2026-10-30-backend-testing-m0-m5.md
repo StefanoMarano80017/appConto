@@ -951,23 +951,23 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 
 ##### T3.9 — Ricerca senza accenti *(G3-G; D11)*
 - **File:** `db/client.ts` (registrazione della funzione), un aiutante JS condiviso per il termine (in `shared/`), `transactions.repository.ts` e `loans.repository.ts` (solo le condizioni di ricerca), un `describe` in fondo a `transactions.search.test.ts` e a `loans.service.test.ts`.
-- [ ] «caffe» trova «CAFFÈ ROMA»; «CAFFÈ» trova «caffe bar»; «perche» trova «PERCHÉ NO»; i prestiti con lo stesso schema (nome, descrizione, movimento).
-- [ ] `%` e `_` restano letterali (T1.1); l'ordinamento non cambia.
-- [ ] Gate V3.
+- [x] «caffe» trova «CAFFÈ ROMA»; «CAFFÈ» trova «caffe bar»; «perche» trova «PERCHÉ NO»; i prestiti con lo stesso schema (nome, descrizione, movimento).
+- [x] `%` e `_` restano letterali (T1.1); l'ordinamento non cambia.
+- [x] Gate V3.
 
 ##### T3.10 — Filtro per "Da classificare" *(G3-G; D12)*
 - **File:** i punti in cui `transactions` e `analytics` applicano `categoryIds`, più un `describe` nei rispettivi test di ricerca e di servizio.
-- [ ] `categoryIds=[ripiego]` dà gli stessi movimenti di `classification: 'unclassified'`; `[ripiego, Alimentari]` dà l'unione; senza ripiego nulla cambia. Stessi casi in analytics.
-- [ ] Gate V3.
+- [x] `categoryIds=[ripiego]` dà gli stessi movimenti di `classification: 'unclassified'`; `[ripiego, Alimentari]` dà l'unione; senza ripiego nulla cambia. Stessi casi in analytics.
+- [x] Gate V3.
 
 ##### T3.11 — Frontend: candidati solo in entrata e commenti superati *(G3-H)*
 - **File:** `apps/frontend/src/app/features/loans/loan-detail-page.ts` e il suo `.spec.ts`; `apps/frontend/src/app/features/dashboard/dashboard.model.ts`.
-- [ ] La ricerca dei candidati chiede `types: ['INCOME']`; il filtro `amount > 0` resta. Il test del componente verifica il parametro nella richiesta.
-- [ ] Eliminati i commenti delle righe 25 e 52 di `dashboard.model.ts`.
-- [ ] `ng test` verde.
+- [x] La ricerca dei candidati chiede `types: ['INCOME']`; il filtro `amount > 0` resta. Il test del componente verifica il parametro nella richiesta.
+- [x] Eliminati i commenti delle righe 25 e 52 di `dashboard.model.ts`.
+- [x] `ng test` verde.
 
 ##### T3.12 — `csv-values.test.ts` non apre il DB *(G3-H)*
-- [ ] `toAmountCents` importato da `transactions/transaction.model.ts`, non dal barrel. Verifica: con `DATABASE_FILE` su un file inesistente, il test non lo crea.
+- [x] `toAmountCents` importato da `transactions/transaction.model.ts`, non dal barrel. Verifica: con `DATABASE_FILE` su un file inesistente, il test non lo crea.
 
 ### M4 — Contratti HTTP dei router
 
@@ -1059,6 +1059,6 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
-| M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3. 🔄 Coda avviata il 02/11/2026: D11, D12, frontend (T3.9–T3.12) | — |
+| M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3. ✅ Coda chiusa il 02/11/2026: D11, D12, frontend (T3.9–T3.12); revisione opus "Ready", suite 939/939 ×5, `ng test` 77 file verdi | — |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
