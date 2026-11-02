@@ -479,3 +479,75 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
     });
   });
 });
+
+describe('ricerca senza distinguere gli accenti', () => {
+  // La ricerca ignora maiuscole e accenti, da entrambi i lati: è `fold_search`.
+  // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+  const periodo = { from: '2038-01-01', to: '2038-01-31' } as const;
+
+  function conDatiProvvisori(verifica: () => void): void {
+    importService.importCsv(
+      csv(
+        '05/01/2038,Pagamento,CAFFÈ ROMA,-10.00',
+        '06/01/2038,Pagamento,caffe bar,-20.00',
+        '07/01/2038,Pagamento,PERCHÉ NO,-30.00',
+        '08/01/2038,Pagamento,SCONTO 100%,-40.00',
+        '09/01/2038,Pagamento,COD_A1,-50.00',
+        '10/01/2038,Pagamento,IMPORTO 1000,-60.00',
+      ),
+    );
+
+    try {
+      verifica();
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
+  }
+
+  it('il termine senza accento trova il testo accentato', () => {
+    conDatiProvvisori(() => {
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffe roma' }), ['CAFFÈ ROMA']);
+      assert.deepEqual(descriptions({ ...periodo, search: 'perche' }), ['PERCHÉ NO']);
+    });
+  });
+
+  it('il termine accentato trova il testo senza accento, in qualunque combinazione di maiuscole', () => {
+    conDatiProvvisori(() => {
+      const attese = ['CAFFÈ ROMA', 'caffe bar'];
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffe' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'PERCHE' }), ['PERCHÉ NO']);
+    });
+  });
+
+  it('vale anche per il nome del merchant scelto dall\'utente', () => {
+    conDatiProvvisori(() => {
+      merchantsService.updateDisplayName(merchantIdOf('SCONTO 100%'), 'Perché Sì');
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'perche si' }), ['SCONTO 100%']);
+    });
+  });
+
+  it('i caratteri jolly restano letterali anche dopo la normalizzazione', () => {
+    conDatiProvvisori(() => {
+      assert.deepEqual(descriptions({ ...periodo, search: '100%' }), ['SCONTO 100%']);
+      assert.deepEqual(descriptions({ ...periodo, search: '_' }), ['COD_A1']);
+      assert.deepEqual(descriptions({ ...periodo, search: '1000' }), ['IMPORTO 1000']);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè%' }), [], '% non è un jolly');
+    });
+  });
+
+  it('l\'ordinamento non cambia: resta su lower_unicode, gli accenti contano', () => {
+    conDatiProvvisori(() => {
+      const nomi = search({ ...periodo, search: 'caff', sortBy: 'merchant', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.merchant.name);
+
+      assert.deepEqual(nomi, ['caffe bar', 'CAFFÈ ROMA']);
+    });
+  });
+});

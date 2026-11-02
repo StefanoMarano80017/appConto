@@ -833,3 +833,83 @@ describe('persone con le lettere accentate e minuscole', () => {
     });
   });
 });
+
+describe('ricerca dei prestiti senza distinguere gli accenti', () => {
+  const NOMI = ['CAFFÈ ROMA', 'caffe bar', 'Altro'];
+
+  function conPrestitiProvvisori(verifica: () => void): void {
+    importService.importCsv(csv('10/03/2033,Bonifico,L1 PERCHÉ NO,-7.00'));
+    setType('L1 PERCHÉ NO', 'LOAN');
+
+    const ids = [
+      ...NOMI.map(
+        (borrowerName) =>
+          loansService.create({
+            transactionId: transactionId('L1 ANTICIPO PER UN AMICO'),
+            borrowerName,
+            amount: 5,
+            lentAt: '2033-03-04',
+            description: borrowerName === 'Altro' ? 'Sconto 100% _x' : undefined,
+          }).id,
+      ),
+      loansService.create({
+        transactionId: transactionId('L1 PERCHÉ NO'),
+        borrowerName: 'Persona Terza',
+        amount: 7,
+        lentAt: '2033-03-10',
+        description: 'Per il caffè di lunedì',
+      }).id,
+    ];
+
+    try {
+      verifica();
+    } finally {
+      for (const id of ids) {
+        loansService.remove(id);
+      }
+      transactionsService.remove([transactionId('L1 PERCHÉ NO')], { usagesOf: () => [] });
+    }
+  }
+
+  const nomi = (search: string): string[] =>
+    list({ search }).items.map((item) => item.borrowerName).sort();
+
+  it('il nome della persona si trova con o senza accento', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(nomi('caffe roma'), ['CAFFÈ ROMA']);
+      assert.deepEqual(nomi('CAFFÈ BAR'), ['caffe bar']);
+    });
+  });
+
+  it('la descrizione del prestito si trova con o senza accento', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(nomi('caffe di lunedi'), ['Persona Terza']);
+      assert.deepEqual(nomi('LUNEDÌ'), ['Persona Terza']);
+    });
+  });
+
+  it('la descrizione del movimento d\'origine si trova con o senza accento', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(nomi('perche'), ['Persona Terza']);
+      assert.deepEqual(nomi('perché no'), ['Persona Terza']);
+    });
+  });
+
+  it('i caratteri jolly restano letterali', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(nomi('100%'), ['Altro']);
+      assert.deepEqual(nomi('_x'), ['Altro']);
+      assert.deepEqual(nomi('caffè%'), []);
+    });
+  });
+
+  it('il filtro per persona resta esatto: un\'altra grafia è un\'altra persona', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(
+        list({ borrower: 'caffè roma' }).items.map((item) => item.borrowerName),
+        ['CAFFÈ ROMA'],
+      );
+      assert.deepEqual(list({ borrower: 'caffe roma' }).items, []);
+    });
+  });
+});

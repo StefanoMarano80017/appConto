@@ -18,6 +18,7 @@ import {
 } from 'drizzle-orm';
 import { atomically, db } from '../../db/client.js';
 import { escapeLike } from '../../shared/sql.js';
+import { foldSearchText } from '../../shared/text.js';
 import { categories } from '../categories/categories.schema.js';
 import { merchants } from '../merchants/merchants.schema.js';
 import type { TransactionQuery } from './transaction-query.js';
@@ -112,11 +113,12 @@ function searchConditions(query: TransactionQuery): SQL | undefined {
   }
 
   if (query.search !== null) {
-    const pattern = `%${escapeLike(query.search.toLowerCase())}%`;
+    // Prima si normalizza, poi si protegge: `escapeLike` vede il testo già definitivo.
+    const pattern = `%${escapeLike(foldSearchText(query.search))}%`;
     const matches = or(
-      sql`lower_unicode(${transactions.description}) like ${pattern} escape '\\'`,
-      sql`lower_unicode(${merchants.name}) like ${pattern} escape '\\'`,
-      sql`lower_unicode(${merchants.displayName}) like ${pattern} escape '\\'`,
+      sql`fold_search(${transactions.description}) like ${pattern} escape '\\'`,
+      sql`fold_search(${merchants.name}) like ${pattern} escape '\\'`,
+      sql`fold_search(${merchants.displayName}) like ${pattern} escape '\\'`,
     );
     if (matches !== undefined) {
       conditions.push(matches);
