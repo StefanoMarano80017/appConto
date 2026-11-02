@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { toAmountCents } from '../transactions/index.js';
+import { toAmountCents } from '../transactions/transaction.model.js';
 import { parseCsvAmount, parseCsvDate } from './csv-values.js';
 
 const dateCases: Array<[string, string | null]> = [

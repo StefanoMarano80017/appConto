@@ -177,6 +177,22 @@ describe('LoanDetailPage', () => {
     expect(text()).not.toContain('Contanti');
   });
 
+  it('i candidati alla restituzione chiedono solo movimenti in entrata', async () => {
+    await open();
+    await click('.header button');
+
+    const request = http.expectOne((candidate) =>
+      candidate.url.startsWith(`${API_BASE_URL}/transactions`)
+    );
+    expect(request.request.params.get('types')).toBe('INCOME');
+
+    request.flush({
+      items: [],
+      pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 }
+    });
+    await settle();
+  });
+
   it('il modulo di restituzione parte dal credito residuo', async () => {
     await open();
 
