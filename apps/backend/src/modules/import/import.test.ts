@@ -271,3 +271,20 @@ describe('backfill dei fingerprint', () => {
     assert.equal(transactionsService.backfillFingerprints(), 0);
   });
 });
+
+describe('merchant dall\'import', () => {
+  it('importando S13 BAR X e S13 Bar  x ottiene un solo merchant', () => {
+    const file = csv('20/11/2026,S13 BAR X,-1.20', '21/11/2026,S13 Bar  x,-1.50');
+
+    const result = importService.importCsv(file);
+
+    assert.equal(result.imported, 2);
+    assert.equal(result.merchantsCreated, 1, 'le due grafie sono un solo merchant');
+
+    const movimenti = transactionsService
+      .listAll()
+      .filter((t) => t.description.startsWith('S13 '));
+    assert.equal(movimenti.length, 2);
+    assert.equal(new Set(movimenti.map((t) => t.merchantId)).size, 1);
+  });
+});

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { creditCents, expenseCents, hasExpense, netWorthCents } from './transaction-type.js';
+import {
+  creditCents,
+  expenseCents,
+  hasExpense,
+  incomeCents,
+  netWorthCents,
+} from './transaction-type.js';
 
 /**
  * Ripartizione di un movimento fra spesa propria e credito.
@@ -98,5 +104,53 @@ describe('effetto sul patrimonio', () => {
   it('un prestito lo riduce solo per la quota realmente spesa', () => {
     assert.equal(netWorthCents('LOAN', PAGAMENTO, PRESTATO), -PROPRIO);
     assert.equal(netWorthCents('LOAN', PAGAMENTO, 192000), 0, 'prestato tutto: solo un credito');
+  });
+});
+
+/**
+ * Restituzioni collegate ad un accredito (D2).
+ *
+ * L'accredito resta `INCOME`, ma la quota che restituisce un credito non è
+ * un'entrata né un aumento del patrimonio: il credito non aveva ridotto il
+ * patrimonio quando era nato, il suo rientro non può aumentarlo.
+ */
+describe('restituzioni collegate ad un accredito', () => {
+  it('senza restituzioni collegate un\'entrata vale per intero', () => {
+    assert.equal(incomeCents('INCOME', 7000, 0), 7000);
+    assert.equal(netWorthCents('INCOME', 7000, 0, 0), 7000);
+  });
+
+  it('la quota collegata esce da entrate e patrimonio: 70 con 50 collegati valgono 20', () => {
+    assert.equal(incomeCents('INCOME', 7000, 5000), 2000);
+    assert.equal(netWorthCents('INCOME', 7000, 0, 5000), 2000);
+  });
+
+  it('un accredito interamente collegato non è entrata né patrimonio', () => {
+    assert.equal(incomeCents('INCOME', 5000, 5000), 0);
+    assert.equal(netWorthCents('INCOME', 5000, 0, 5000), 0);
+  });
+
+  it('la quota collegata è limitata all\'importo positivo del movimento', () => {
+    assert.equal(incomeCents('INCOME', 5000, 8000), 0, 'mai sotto zero');
+    assert.equal(netWorthCents('INCOME', 5000, 0, 8000), 0);
+    assert.equal(
+      incomeCents('INCOME', -3000, 1000),
+      -3000,
+      'uno storno di entrata non ha quota collegata',
+    );
+    assert.equal(netWorthCents('INCOME', -3000, 0, 1000), -3000);
+    assert.equal(incomeCents('INCOME', 5000, -1000), 5000, 'una quota negativa non conta');
+  });
+
+  it('gli altri tipi non sono entrate, e la quota collegata non li tocca', () => {
+    assert.equal(incomeCents('EXPENSE', 5000, 5000), 0);
+    assert.equal(incomeCents('OTHER', 5000, 5000), 0);
+    // L'esclusione vale finché il movimento è un'entrata: D2 non dice altro.
+    assert.equal(netWorthCents('OTHER', 5000, 0, 5000), 5000);
+    assert.equal(netWorthCents('EXPENSE', 5000, 0, 5000), 5000);
+  });
+
+  it('i prestiti non leggono la quota restituita', () => {
+    assert.equal(netWorthCents('LOAN', PAGAMENTO, PRESTATO, 5000), -PROPRIO);
   });
 });

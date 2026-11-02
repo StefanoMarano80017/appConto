@@ -52,7 +52,19 @@ export function createTransaction(input: NewTransaction): Transaction {
  * È la rappresentazione esatta dell'importo: viene usata sia per la
  * persistenza sia per il calcolo del fingerprint, così le due non possono
  * divergere.
+ *
+ * Sposta la virgola sulla rappresentazione decimale (non con `* 100`, che in
+ * virgola mobile dà 100.49999 per 1.005) e arrotonda a metà lontano da zero,
+ * in modo simmetrico: 1.005 dà 101 e -1.005 dà -101. Non restituisce mai -0.
+ * L'esponente si somma a parte perché `String(1e-7)` è '1e-7' e '1e-7e2' non
+ * è un numero.
  */
 export function toAmountCents(amount: number): number {
-  return Math.round(amount * 100);
+  const [mantissa = '0', exponent = '0'] = String(Math.abs(amount)).split('e');
+  const cents = Math.round(Number(`${mantissa}e${Number(exponent) + 2}`));
+  if (cents === 0) {
+    return 0;
+  }
+
+  return amount < 0 ? -cents : cents;
 }

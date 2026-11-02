@@ -4,9 +4,11 @@ import { type Category, type CategoryWithUsage, type NewCategory, createCategory
 import { categoriesRepository } from './categories.repository.js';
 
 /**
- * L'id fisso di "Da classificare": il ripiego usato dalla riassegnazione
- * quando una categoria viene eliminata. Non può essere rinominata né
- * eliminata (vedi `update` e `remove` più sotto).
+ * L'id fisso della riga "Da classificare".
+ *
+ * È soltanto un'etichetta: un merchant non classificato ha `categoryId`
+ * null, mai questo id (vedi `remove` qui sotto, `assignCategory` nei merchant
+ * e la migrazione 0009). Non può essere rinominata né eliminata.
  */
 export const FALLBACK_CATEGORY_ID = 'c9bfcd74-e342-4a3f-8b0c-116f89236d51';
 
@@ -29,13 +31,19 @@ export const categoriesService = {
     return categoriesRepository.findById(id);
   },
 
-  /** Le categorie con il numero di merchant assegnati a ciascuna. */
+  /**
+   * Le categorie con il numero di merchant assegnati a ciascuna.
+   *
+   * Per "Da classificare" il numero è quello dei merchant senza categoria:
+   * nessun merchant punta alla sua riga.
+   */
   listAllWithUsage(): CategoryWithUsage[] {
     const counts = categoriesRepository.countMerchantsByCategory();
+    const unclassified = categoriesRepository.countMerchantsWithoutCategory();
 
     return categoriesRepository.findAll().map((category) => ({
       ...category,
-      merchantCount: counts.get(category.id) ?? 0,
+      merchantCount: category.id === FALLBACK_CATEGORY_ID ? unclassified : (counts.get(category.id) ?? 0),
     }));
   },
 
@@ -54,9 +62,13 @@ export const categoriesService = {
     return category;
   },
 
-  /** Quanti merchant sono assegnati a una categoria. */
+  /** Quanti merchant sono assegnati a una categoria: per "Da classificare", quelli senza. */
   usage(id: string): number {
     requireCategory(id);
+
+    if (id === FALLBACK_CATEGORY_ID) {
+      return categoriesRepository.countMerchantsWithoutCategory();
+    }
 
     return categoriesRepository.countMerchantsForCategory(id);
   },
@@ -73,7 +85,9 @@ export const categoriesService = {
       throw new ConflictError('«Da classificare» non può essere rinominata.');
     }
 
-    if (name !== undefined && name !== category.name && categoriesRepository.findByName(name) !== null) {
+    // Si ignora la categoria stessa: rinominare «Spesa» in «SPESA» è consentito.
+    const sameName = name === undefined ? null : categoriesRepository.findByName(name);
+    if (sameName !== null && sameName.id !== id) {
       throw new ConflictError(`Esiste già una categoria con il nome "${name}".`);
     }
 
@@ -90,8 +104,9 @@ export const categoriesService = {
       throw new ConflictError('«Da classificare» non può essere eliminata.');
     }
 
+    // I merchant tornano senza categoria: null è l'unica forma di "Da classificare".
     atomically(() => {
-      categoriesRepository.reassignMerchants(id, FALLBACK_CATEGORY_ID);
+      categoriesRepository.reassignMerchants(id, null);
       categoriesRepository.remove(id);
     });
   },

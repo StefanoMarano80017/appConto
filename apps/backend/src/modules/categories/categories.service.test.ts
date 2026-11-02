@@ -188,7 +188,7 @@ describe('eliminazione di una categoria', () => {
     assert.equal(categoriesService.findById(categoria.id), null);
   });
 
-  it('riassegna a «Da classificare» i merchant della categoria eliminata', () => {
+  it('riporta senza categoria (null, cioè «Da classificare») i merchant della categoria eliminata', () => {
     const categoria = categoriesService.create({ name: 'Con merchant da riassegnare', color: null });
     importService.importCsv(
       ['Data contabile,Descrizione,Importo', '02/05/2026,ESERCENTE RIASSEGNATO,-5.00'].join('\r\n'),
@@ -200,7 +200,7 @@ describe('eliminazione di una categoria', () => {
     categoriesService.remove(categoria.id);
 
     const aggiornato = merchantsService.listAll().find((m) => m.id === merchant.id);
-    assert.equal(aggiornato?.categoryId, FALLBACK_CATEGORY_ID);
+    assert.equal(aggiornato?.categoryId, null);
     assert.equal(categoriesService.findById(categoria.id), null);
   });
 
@@ -219,6 +219,59 @@ describe('eliminazione di una categoria', () => {
       () => categoriesService.remove('id-che-non-esiste'),
       (error: unknown) => {
         assert.ok(error instanceof NotFoundError);
+        return true;
+      },
+    );
+  });
+});
+
+describe('unicità del nome senza distinzione fra maiuscole e minuscole', () => {
+  it('rifiuta la creazione di un nome uguale a un altro solo nelle maiuscole', () => {
+    const spesa = categoriesService.create({ name: 'Spesa', color: null });
+
+    try {
+      assert.throws(
+        () => categoriesService.create({ name: 'spesa', color: null }),
+        (error: unknown) => {
+          assert.ok(error instanceof ConflictError);
+          return true;
+        },
+      );
+    } finally {
+      categoriesService.remove(spesa.id);
+    }
+  });
+
+  it('rifiuta una rinomina verso il nome di altra categoria, salvo le maiuscole', () => {
+    categoriesService.create({ name: 'Lavanderia', color: null });
+    const parrucchiere = categoriesService.create({ name: 'Parrucchiere', color: null });
+
+    assert.throws(
+      () => categoriesService.update(parrucchiere.id, { name: 'LAVANDERIA' }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+
+  it('permette di rinominare una categoria cambiando solo le maiuscole del suo nome', () => {
+    const categoria = categoriesService.create({ name: 'Spesa', color: null });
+
+    const aggiornata = categoriesService.update(categoria.id, { name: 'SPESA' });
+
+    assert.equal(aggiornata.name, 'SPESA');
+    assert.equal(categoriesService.findById(categoria.id)?.name, 'SPESA');
+  });
+
+  it('confronta anche le lettere accentate, oltre il set ASCII', () => {
+    // Con `lower()` di SQLite `CAFFÈ` diventa `cafFÈ` e non coinciderebbe con `caffè`.
+    categoriesService.create({ name: 'CAFFÈ', color: null });
+
+    assert.throws(
+      () => categoriesService.create({ name: 'caffè', color: null }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
         return true;
       },
     );

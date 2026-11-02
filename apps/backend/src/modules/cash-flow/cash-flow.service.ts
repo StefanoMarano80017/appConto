@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { ValidationError } from '../../shared/errors.js';
-import { loansService, type LoanAllocation } from '../loans/index.js';
+import { loansService, type LoanAllocation, type RepaymentAllocation } from '../loans/index.js';
 import { settingsService } from '../settings/index.js';
 import {
   expenseCents,
+  incomeCents,
   isIncome,
   netWorthCents,
+  toAmountCents,
   transactionsService,
   transactionTypeSchema,
   type TypeTotal,
@@ -14,11 +16,8 @@ import type { CashFlowViewModel, TypeBreakdown } from './cash-flow.view-model.js
 
 const monthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 
-/** Evita di accumulare euro in virgola mobile. */
-const toCents = (amount: number): number => Math.round(amount * 100);
-
 const sumCents = (totals: readonly TypeTotal[]): number =>
-  totals.reduce((sum, total) => sum + toCents(total.total), 0);
+  totals.reduce((sum, total) => sum + toAmountCents(total.total), 0);
 
 /**
  * Quanto dei movimenti di tipo prestito del periodo è in realtà spesa propria.
@@ -42,6 +41,33 @@ function ownExpenseCents(
     }
 
     return sum + expenseCents(type.data, allocation.amountCents, allocation.lentCents);
+  }, 0);
+}
+
+/**
+ * Quanto delle entrate del periodo è in realtà un credito che rientra (D2).
+ *
+ * È lo specchio di `ownExpenseCents`: i totali per tipo contano per intero un
+ * accredito collegato a restituzioni, ma quella quota non è un'entrata né un
+ * aumento del patrimonio. Il tipo viene ricontrollato per lo stesso motivo:
+ * se l'accredito è stato riclassificato, i totali per tipo non lo contano più
+ * fra le entrate e non c'è nulla da togliere.
+ */
+function repaidIncomeCents(
+  allocations: readonly RepaymentAllocation[],
+  inPeriod: (bookingDate: string) => boolean,
+): number {
+  return allocations.reduce((sum, allocation) => {
+    const type = transactionTypeSchema.safeParse(allocation.type);
+    if (!type.success || !isIncome(type.data) || !inPeriod(allocation.bookingDate)) {
+      return sum;
+    }
+
+    return (
+      sum +
+      allocation.amountCents -
+      incomeCents(type.data, allocation.amountCents, allocation.repaidCents)
+    );
   }, 0);
 }
 
@@ -75,10 +101,7 @@ export const cashFlowService = {
         : (date: string): boolean => date.startsWith(`${period}-`);
 
     // Quanto è già accaduto fra il saldo noto e l'inizio del periodo.
-    const carriedCents =
-      period === null
-        ? 0
-        : sumCents(transactionsService.totalsByTypeInRange(balanceDate, `${period}-01`));
+    const carriedCents = period === null ? 0 : carriedCentsTo(`${period}-01`, balanceDate);
 
     let netMovementCents = 0;
     let netWorthChangeCents = 0;
@@ -88,7 +111,7 @@ export const cashFlowService = {
     const byType: TypeBreakdown[] = [];
 
     for (const total of totals) {
-      const amountCents = toCents(total.total);
+      const amountCents = toAmountCents(total.total);
 
       // Ogni movimento presente in estratto conto ha spostato denaro sul conto.
       netMovementCents += amountCents;
@@ -122,9 +145,18 @@ export const cashFlowService = {
     expensesCents += ownExpense;
     netWorthChangeCents -= ownExpense;
 
+    /*
+     * La quota di un accredito collegata a restituzioni è credito che rientra:
+     * esce da entrate e patrimonio (D2). Anche qui la liquidità non cambia,
+     * e `byType` resta la ripartizione di ciò che è passato sul conto.
+     */
+    const repaidIncome = repaidIncomeCents(loansService.repaymentAllocations(), inPeriod);
+    incomeCents -= repaidIncome;
+    netWorthChangeCents -= repaidIncome;
+
     byType.sort((a, b) => a.amount - b.amount);
 
-    const openingBalanceCents = toCents(initialBalance) + carriedCents;
+    const openingBalanceCents = toAmountCents(initialBalance) + carriedCents;
 
     return {
       month: period,
@@ -140,6 +172,32 @@ export const cashFlowService = {
     };
   },
 };
+
+/**
+ * Di quanto il saldo a inizio mese differisce dal saldo noto.
+ *
+ * Il saldo noto vale a fine giornata di `balanceDate`: i movimenti di quel
+ * giorno sono già compresi. Se il mese viene dopo, i movimenti fra le due date
+ * si sommano; se il mese contiene la data del saldo o la precede, i movimenti
+ * da inizio mese a `balanceDate` compresa vanno tolti, perché a inizio mese
+ * non erano ancora avvenuti.
+ */
+function carriedCentsTo(monthStart: string, balanceDate: string | null): number {
+  if (balanceDate === null || balanceDate < monthStart) {
+    return sumCents(transactionsService.totalsByTypeInRange(balanceDate, monthStart));
+  }
+
+  // Gli estremi della lettura sono esclusi: si allargano di un giorno per lato.
+  return -sumCents(
+    transactionsService.totalsByTypeInRange(addDays(monthStart, -1), addDays(balanceDate, 1)),
+  );
+}
+
+function addDays(date: string, days: number): string {
+  const next = new Date(`${date}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
 
 function parseMonth(month: string | undefined): string | null {
   if (month === undefined) {

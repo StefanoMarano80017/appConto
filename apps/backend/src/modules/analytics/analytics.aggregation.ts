@@ -4,6 +4,7 @@ import {
   creditCents,
   expenseCents,
   hasExpense,
+  incomeCents,
   toAmountCents,
   type TransactionType,
   type TransactionWithMerchant,
@@ -69,12 +70,14 @@ export function accumulate(
   type: TransactionType,
   amountCents: number,
   lentCents: number,
+  repaidCents = 0,
 ): void {
   totals.netMovement += amountCents;
 
   switch (type) {
     case "INCOME":
-      totals.income += amountCents;
+      // La quota collegata a restituzioni è credito che rientra (D2).
+      totals.income += incomeCents(type, amountCents, repaidCents);
       return;
     case "EXPENSE":
       totals.expenses += expenseCents(type, amountCents, lentCents);
@@ -161,6 +164,7 @@ function accumulateExpense(
 export function aggregateEntries(
   entries: readonly TransactionWithMerchant[],
   lentByTransaction: ReadonlyMap<string, number>,
+  repaidByTransaction: ReadonlyMap<string, number> = new Map(),
 ): AnalyticsAggregation {
   const aggregation = emptyAnalyticsAggregation();
 
@@ -169,7 +173,13 @@ export function aggregateEntries(
     const amountCents = toAmountCents(transaction.amount);
     const lentCents = lentByTransaction.get(transaction.id) ?? 0;
 
-    accumulate(aggregation.totals, transaction.type, amountCents, lentCents);
+    accumulate(
+      aggregation.totals,
+      transaction.type,
+      amountCents,
+      lentCents,
+      repaidByTransaction.get(transaction.id) ?? 0,
+    );
     updateDateRange(aggregation, transaction.bookingDate);
 
     if (transaction.merchantId !== null) {

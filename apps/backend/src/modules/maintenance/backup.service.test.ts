@@ -233,8 +233,13 @@ describe('verifica di un backup', () => {
     const manifestFile = path.join(config.backupsDir, info.name.replace('.sqlite', '.json'));
     const manifest = JSON.parse(readFileSync(manifestFile, 'utf8')) as Record<string, unknown>;
 
-    manifest.databaseSha256 = `0${String(manifest.databaseSha256).slice(1)}`;
+    // L'alterazione cambia sempre il primo carattere: se lo SHA-256 comincia già
+    // per '0', si mette '1', altrimenti '0'. Così l'impronta è diversa per ogni
+    // backup, e il test non dipende dal contenuto che varia a ogni esecuzione.
+    const originale = String(manifest.databaseSha256);
+    manifest.databaseSha256 = `${originale.startsWith('0') ? '1' : '0'}${originale.slice(1)}`;
     writeFileSync(manifestFile, JSON.stringify(manifest), 'utf8');
+    assert.notEqual(manifest.databaseSha256, originale);
 
     const check = backupService.verify(info.name);
 
@@ -273,6 +278,7 @@ describe('verifica di un backup', () => {
 
     const check = backupService.verify(info.name);
     assert.ok(!check.ok);
+    assert.match(check.problem, /non è integro/);
   });
 
   it('un manifest illeggibile viene rifiutato', () => {

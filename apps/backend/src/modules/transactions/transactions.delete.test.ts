@@ -276,3 +276,67 @@ describe('il vincolo di integrità è la rete sotto la porta', () => {
     assert.deepEqual(loansService.transactionUsages(['qualunque-altro']), []);
   });
 });
+
+describe('eliminare un movimento collegato a una restituzione', () => {
+  /** La porta reale, come la collega `app.ts`. */
+  const portaReale = { usagesOf: (ids: readonly string[]) => loansService.transactionUsages(ids) };
+
+  /** Un prestito di 500 € e un'entrata di 200 € collegata come restituzione, più un movimento libero. */
+  function preparaRestituzione(): { entrata: string; libero: string; prestito: string } {
+    importa([
+      '10/01/2031,RIMBORSO ORIGINE PRESTITO,-500.00',
+      '10/02/2031,RIMBORSO ENTRATA,200.00',
+      '11/02/2031,RIMBORSO MOVIMENTO LIBERO,-5.00',
+    ]);
+    const idDi = (descrizione: string): string => {
+      const trovato = transactionsService.listAll().find((t) => t.description === descrizione);
+      assert.ok(trovato !== undefined, `movimento "${descrizione}" non trovato`);
+
+      return trovato.id;
+    };
+
+    transactionsService.updateType(idDi('RIMBORSO ORIGINE PRESTITO'), 'LOAN');
+    transactionsService.updateType(idDi('RIMBORSO ENTRATA'), 'INCOME');
+    const prestito = loansService.create({
+      transactionId: idDi('RIMBORSO ORIGINE PRESTITO'),
+      borrowerName: 'Paola',
+      amount: 500,
+      lentAt: '2031-01-10',
+    });
+    loansService.addRepayment(prestito.id, {
+      amount: 200,
+      repaymentDate: '2031-02-10',
+      transactionId: idDi('RIMBORSO ENTRATA'),
+    });
+
+    return {
+      entrata: idDi('RIMBORSO ENTRATA'),
+      libero: idDi('RIMBORSO MOVIMENTO LIBERO'),
+      prestito: prestito.id,
+    };
+  }
+
+  it('la porta reale lo rifiuta con un conflitto che nomina la restituzione, senza eliminare nulla', () => {
+    const { entrata, libero, prestito } = preparaRestituzione();
+    const prima = transactionsService.listAll().length;
+
+    assert.throws(
+      () => transactionsService.remove([libero, entrata], portaReale),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        assert.match(error.message, /restituzione del prestito a Paola/);
+
+        return true;
+      },
+    );
+
+    // Tutti o nessuno: nemmeno il movimento libero è stato eliminato.
+    assert.equal(transactionsService.listAll().length, prima);
+    assert.notEqual(transactionsService.findById(libero), null);
+    assert.notEqual(transactionsService.findById(entrata), null);
+    // La restituzione resta collegata al suo movimento.
+    const restituzioni = loansService.getById(prestito).repayments;
+    assert.equal(restituzioni.length, 1);
+    assert.equal(restituzioni[0]?.transaction?.id, entrata);
+  });
+});

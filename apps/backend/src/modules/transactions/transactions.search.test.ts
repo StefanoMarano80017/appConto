@@ -238,8 +238,26 @@ describe('ricerca testuale', () => {
   });
 
   it('i caratteri jolly vengono cercati alla lettera', () => {
-    assert.equal(search({ search: '%' }).total, 0);
-    assert.equal(search({ search: '_' }).total, 0);
+    // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+    importService.importCsv(
+      csv(
+        '05/01/2036,Pagamento,SCONTO 100%,-10.00',
+        '06/01/2036,Pagamento,IMPORTO 1000,-20.00',
+        '07/01/2036,Pagamento,COD_A1,-30.00',
+      ),
+    );
+    const periodo = { from: '2036-01-01', to: '2036-01-31' } as const;
+
+    try {
+      assert.deepEqual(descriptions({ ...periodo, search: '100%' }), ['SCONTO 100%']);
+      assert.deepEqual(descriptions({ ...periodo, search: '_' }), ['COD_A1']);
+      assert.deepEqual(descriptions({ ...periodo, search: '1000' }), ['IMPORTO 1000']);
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
   });
 
   it('si combina con gli altri criteri', () => {
@@ -396,5 +414,68 @@ describe('interpretazione dei criteri', () => {
     assert.throws(() => parseTransactionQuery({ pageSize: '7' }), /25, 50, 100/);
     assert.throws(() => parseTransactionQuery({ minAmount: '-5' }), /non negativo/);
     assert.throws(() => parseTransactionQuery({ minAmount: '50', maxAmount: '10' }), /il minimo supera/);
+  });
+});
+
+describe('ricerca e ordinamento con le lettere accentate', () => {
+  // SQLite porta in minuscolo solo l'ASCII: «CAFFÈ» resterebbe «cafFÈ».
+  // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
+  const periodo = { from: '2037-01-01', to: '2037-01-31' } as const;
+  // «CAFFÈ B» e «caffè a»: il lower() di SQLite li ordinerebbe al contrario (F maiuscola prima di f).
+  const DA_ORDINARE = ['ZETA', 'alfa', 'Cassa', 'CAFFÈ B', 'caffè a'];
+
+  function conDatiProvvisori(verifica: () => void): void {
+    importService.importCsv(
+      csv(
+        '05/01/2037,Pagamento,ZETA,-10.00',
+        '06/01/2037,Pagamento,alfa,-20.00',
+        '07/01/2037,Pagamento,Cassa,-30.00',
+        '08/01/2037,Pagamento,CAFFÈ ROMA,-40.00',
+        '09/01/2037,Pagamento,CAFFÈ B,-50.00',
+        '10/01/2037,Pagamento,caffè a,-60.00',
+      ),
+    );
+
+    try {
+      verifica();
+    } finally {
+      const daEliminare = search(periodo).transactions.map(({ transaction }) => transaction.id);
+      transactionsService.remove(daEliminare, { usagesOf: () => [] });
+    }
+
+    assert.equal(search().total, 12, 'tolti i dati del test, il resto è com\'era');
+  }
+
+  it('cercare in minuscolo trova il testo scritto in maiuscolo', () => {
+    conDatiProvvisori(() => {
+      const attese = ['CAFFÈ B', 'CAFFÈ ROMA', 'caffè a'];
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè ro' }), ['CAFFÈ ROMA']);
+    });
+  });
+
+  it('ordinando per merchant le minuscole non vengono dopo le maiuscole', () => {
+    conDatiProvvisori(() => {
+      const merchantIds = DA_ORDINARE.map(merchantIdOf);
+      const nomi = search({ ...periodo, merchantIds, sortBy: 'merchant', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.merchant.name);
+
+      assert.deepEqual(nomi, ['alfa', 'caffè a', 'CAFFÈ B', 'Cassa', 'ZETA']);
+    });
+  });
+
+  it('ordinando per categoria le minuscole non vengono dopo le maiuscole', () => {
+    conDatiProvvisori(() => {
+      for (const nome of DA_ORDINARE) {
+        const categoria = categoriesService.create({ name: `${nome} cat`, color: null });
+        merchantsService.assignCategory(merchantIdOf(nome), categoria.id);
+      }
+      const nomi = search({ ...periodo, classification: 'classified', sortBy: 'category', sortDirection: 'asc' })
+        .transactions.map(({ merchant }) => merchant?.category?.name);
+
+      assert.deepEqual(nomi, ['alfa cat', 'caffè a cat', 'CAFFÈ B cat', 'Cassa cat', 'ZETA cat']);
+    });
   });
 });

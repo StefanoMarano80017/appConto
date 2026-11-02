@@ -108,6 +108,20 @@ Una categoria identifica una tipologia di spesa.
 - Altro
 - Da classificare
 
+### Regole
+
+**Merchant non classificato (D3).** Un merchant non classificato ha
+`category_id` nullo: è l'unica rappresentazione di "non classificato". La riga
+"Da classificare" esiste solo come etichetta: non si rinomina e non si elimina,
+e scegliere quella categoria equivale a impostare `null`. Il suo conteggio di
+merchant è il numero di merchant senza categoria (D3.b). La migrazione 0009
+riporta a `null` i merchant che erano associati a quella riga.
+
+**Nome unico (D6.5).** Il nome di una categoria è unico senza distinzione fra
+maiuscole e minuscole, anche oltre l'ASCII (`CAFFÈ` e `caffè` sono lo stesso
+nome). Il controllo è nel service; l'indice unico del database resta sensibile
+alle maiuscole.
+
 ---
 
 ## Loan
@@ -164,8 +178,14 @@ conto se ne accorga. In quel caso **non** viene creata una Transaction
 artificiale: il credito scende, la liquidità no.
 
 Quando invece la restituzione è collegata ad una Transaction, quella Transaction
-resta ciò che è — tipicamente una `INCOME`. Il collegamento aggiunge significato
-al movimento, non lo trasforma.
+deve essere una `INCOME` con importo positivo (D9). Il collegamento aggiunge significato
+al movimento, non lo trasforma: il tipo non cambia, il movimento resta nella
+liquidità e nel filtro delle entrate.
+
+Cambia però come lo leggono entrate e patrimonio (D2): la quota collegata a
+restituzioni è credito che rientra, non denaro nuovo. Il prestito non aveva
+ridotto il patrimonio quando era nato, il suo rientro non può aumentarlo. Vedi
+[Restituzioni collegate](#restituzioni-collegate).
 
 ---
 
@@ -356,6 +376,49 @@ Conseguenze:
 - incassare una restituzione non cambia la quota di spesa. Quel denaro è già
   stato speso.
 
+## Restituzioni collegate
+
+La regola speculare vale per il rientro (D2). Un accredito collegato a delle
+restituzioni resta `INCOME`, ma:
+
+```
+quota restituita = min(somma delle restituzioni collegate, importo positivo del movimento)
+entrata          = importo del movimento - quota restituita
+```
+
+Anche qui la regola vive in `transactions` (`incomeCents` e `netWorthCents`,
+che ricevono la quota restituita come parametro) e il valore lo fornisce `loans`
+(`repaymentsByTransaction`): la dipendenza resta `loans → transactions`.
+
+Conseguenze:
+
+- le **entrate** e il **patrimonio** di cash flow, riepilogo, analytics e
+  dashboard non contano la quota restituita; il saldo (`balance`) del
+  riepilogo scende di conseguenza;
+- la **liquidità** non cambia: movimento netto, saldo di chiusura e
+  ripartizione per tipo (`byType`) restano quelli del conto, e la somma di
+  `byType` resta pari al movimento netto;
+- l'esclusione avviene nel mese dell'accredito, non in quello del prestito;
+- prestare X e riceverne X collegati non muove, sull'intero periodo, né
+  entrate né patrimonio;
+- scollegare la restituzione riporta l'accredito fra le entrate per intero;
+- una restituzione arrivata in banca ma **non** collegata resta un'entrata:
+  collegarla è compito di chi usa l'app;
+- una restituzione si collega **solo** a un movimento `INCOME` con importo
+  positivo (D9). Collegarla a un `EXPENSE`, `OTHER`, `TRANSFER` o
+  `WITHDRAWAL` è rifiutato, sia in creazione sia in modifica; così
+  l'esclusione D2 copre tutti i movimenti collegati;
+- per lo stesso motivo un movimento collegato a restituzioni non si può
+  riclassificare in un tipo diverso da `INCOME`: altrimenti la regola si
+  aggirerebbe cambiando il tipo dopo il collegamento. `transactions` lo sa
+  tramite la porta `TransactionDependents` (il legame di una restituzione
+  dichiara `requiresIncome`), senza importare `loans`. Il movimento
+  d'origine di un prestito non è toccato da questo vincolo;
+- una restituzione non può avere una data anteriore a quella del prestito
+  (D10): la stessa giornata è ammessa. Vale per creazione e modifica della
+  restituzione, e la data del prestito non si può spostare dopo la sua
+  restituzione più vecchia.
+
 ---
 
 # Liquidità e credito
@@ -378,8 +441,10 @@ Perché il denaro non venga contato due volte:
 
 Una restituzione in contanti non ha Transaction, quindi la liquidità non si
 muove. Una restituzione bancaria è collegata ad una Transaction che il Cash Flow
-contava già: il collegamento non la conta una seconda volta, le aggiunge solo un
-significato.
+contava già: il collegamento non la conta una seconda volta nella liquidità, che
+resta invariata. Cambia invece la lettura di entrate e patrimonio: se la
+Transaction è `INCOME`, la quota collegata non vi entra (D2, vedi
+[Restituzioni collegate](#restituzioni-collegate)).
 
 ---
 
