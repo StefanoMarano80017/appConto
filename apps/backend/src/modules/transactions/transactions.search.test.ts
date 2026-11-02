@@ -421,6 +421,8 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
   // SQLite porta in minuscolo solo l'ASCII: «CAFFÈ» resterebbe «cafFÈ».
   // Dati propri in un periodo che nessun altro test usa, tolti a fine test.
   const periodo = { from: '2037-01-01', to: '2037-01-31' } as const;
+  // «CAFFÈ B» e «caffè a»: il lower() di SQLite li ordinerebbe al contrario (F maiuscola prima di f).
+  const DA_ORDINARE = ['ZETA', 'alfa', 'Cassa', 'CAFFÈ B', 'caffè a'];
 
   function conDatiProvvisori(verifica: () => void): void {
     importService.importCsv(
@@ -429,6 +431,8 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
         '06/01/2037,Pagamento,alfa,-20.00',
         '07/01/2037,Pagamento,Cassa,-30.00',
         '08/01/2037,Pagamento,CAFFÈ ROMA,-40.00',
+        '09/01/2037,Pagamento,CAFFÈ B,-50.00',
+        '10/01/2037,Pagamento,caffè a,-60.00',
       ),
     );
 
@@ -444,31 +448,34 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
 
   it('cercare in minuscolo trova il testo scritto in maiuscolo', () => {
     conDatiProvvisori(() => {
-      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }), ['CAFFÈ ROMA']);
-      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }), ['CAFFÈ ROMA']);
+      const attese = ['CAFFÈ B', 'CAFFÈ ROMA', 'caffè a'];
+
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'CAFFÈ' }).sort(), attese);
+      assert.deepEqual(descriptions({ ...periodo, search: 'caffè ro' }), ['CAFFÈ ROMA']);
     });
   });
 
   it('ordinando per merchant le minuscole non vengono dopo le maiuscole', () => {
     conDatiProvvisori(() => {
-      const merchantIds = ['ZETA', 'alfa', 'Cassa'].map(merchantIdOf);
+      const merchantIds = DA_ORDINARE.map(merchantIdOf);
       const nomi = search({ ...periodo, merchantIds, sortBy: 'merchant', sortDirection: 'asc' })
         .transactions.map(({ merchant }) => merchant?.merchant.name);
 
-      assert.deepEqual(nomi, ['alfa', 'Cassa', 'ZETA']);
+      assert.deepEqual(nomi, ['alfa', 'caffè a', 'CAFFÈ B', 'Cassa', 'ZETA']);
     });
   });
 
   it('ordinando per categoria le minuscole non vengono dopo le maiuscole', () => {
     conDatiProvvisori(() => {
-      for (const nome of ['ZETA', 'alfa', 'Cassa']) {
+      for (const nome of DA_ORDINARE) {
         const categoria = categoriesService.create({ name: `${nome} cat`, color: null });
         merchantsService.assignCategory(merchantIdOf(nome), categoria.id);
       }
       const nomi = search({ ...periodo, classification: 'classified', sortBy: 'category', sortDirection: 'asc' })
         .transactions.map(({ merchant }) => merchant?.category?.name);
 
-      assert.deepEqual(nomi, ['alfa cat', 'Cassa cat', 'ZETA cat']);
+      assert.deepEqual(nomi, ['alfa cat', 'caffè a cat', 'CAFFÈ B cat', 'Cassa cat', 'ZETA cat']);
     });
   });
 });
