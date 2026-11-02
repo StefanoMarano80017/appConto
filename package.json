@@ -19,7 +19,7 @@
     "verify:package": "node scripts/verify-package.mjs",
     "typecheck:backend": "tsc -p apps/backend/tsconfig.json --noEmit",
     "test": "npm run test:backend && npm run test:frontend",
-    "test:backend": "tsx --test \"apps/backend/src/**/*.test.ts\"",
+    "test:backend": "tsx --import ./apps/backend/src/test-support/isolate-data.ts --test \"apps/backend/src/**/*.test.ts\"",
     "test:frontend": "npm test --prefix apps/frontend -- --watch=false",
     "db:generate": "drizzle-kit generate --config apps/backend/drizzle.config.ts"
   },
