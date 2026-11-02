@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { Server } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { after, describe, it } from 'node:test';
 import { ListenFailedError, listenWithFallback, type ListenRequest } from './listen.js';
 import {
@@ -76,6 +76,7 @@ function nuovoRegistro(variazioni: Variazioni = {}): Registro {
         res.end('app di prova');
       };
     },
+    createServer: (app) => createServer(app),
     listen: async (srv, richiesta) => {
       ordine.push('listen');
       richieste.push(richiesta);
