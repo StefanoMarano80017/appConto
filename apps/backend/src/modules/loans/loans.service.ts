@@ -523,7 +523,7 @@ export const loansService = {
       );
     }
 
-    if (data.lentAt !== undefined) {
+    if (data.lentAt !== undefined && data.lentAt !== aggregate.lentAt) {
       const oldest = loansRepository
         .findRepayments(id)
         .map((repayment) => repayment.repaymentDate)

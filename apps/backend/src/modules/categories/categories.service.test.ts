@@ -265,10 +265,11 @@ describe('unicità del nome senza distinzione fra maiuscole e minuscole', () => 
   });
 
   it('confronta anche le lettere accentate, oltre il set ASCII', () => {
-    categoriesService.create({ name: 'Caffè', color: null });
+    // Con `lower()` di SQLite `CAFFÈ` diventa `cafFÈ` e non coinciderebbe con `caffè`.
+    categoriesService.create({ name: 'CAFFÈ', color: null });
 
     assert.throws(
-      () => categoriesService.create({ name: 'CAFFÈ', color: null }),
+      () => categoriesService.create({ name: 'caffè', color: null }),
       (error: unknown) => {
         assert.ok(error instanceof ConflictError);
         return true;

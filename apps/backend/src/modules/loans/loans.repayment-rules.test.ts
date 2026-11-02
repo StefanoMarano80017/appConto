@@ -8,7 +8,8 @@ import { after, describe, it } from 'node:test';
 const databaseDir = mkdtempSync(path.join(tmpdir(), 'appconto-loans-repayment-rules-'));
 process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
-const { closeDatabase, runMigrations } = await import('../../db/client.js');
+const { closeDatabase, db, runMigrations } = await import('../../db/client.js');
+const { loanRepayments } = await import('./loans.schema.js');
 const { DomainError } = await import('../../shared/errors.js');
 const { importService } = await import('../import/index.js');
 const { transactionsService } = await import('../transactions/index.js');
@@ -273,5 +274,29 @@ describe('D10: la restituzione non è anteriore al prestito', () => {
     const id = nuovoPrestito('Luca');
 
     assert.equal(loansService.update(id, { lentAt: '2040-09-01' }).lentAt, '2040-09-01');
+  });
+
+  it('con una restituzione anteriore già presente, la data si controlla solo se cambia', () => {
+    const id = nuovoPrestito('Marta');
+    // Dato preesistente (es. da un backup precedente a D10): il servizio non lo permetterebbe più.
+    db.insert(loanRepayments)
+      .values({
+        id: 'rimborso-anteriore-marta',
+        loanId: id,
+        transactionId: null,
+        amountCents: 1000,
+        repaymentDate: '2040-03-01',
+        note: null,
+        createdAt: '2040-03-01T00:00:00.000Z',
+      })
+      .run();
+
+    const detail = loansService.update(id, { description: 'rata', lentAt: '2040-03-10' });
+
+    assert.equal(detail.description, 'rata');
+    assert.equal(detail.lentAt, '2040-03-10');
+
+    expectError('VALIDATION', () => loansService.update(id, { lentAt: '2040-03-11' }), /anteriore/);
+    assert.equal(loansService.getById(id).lentAt, '2040-03-10');
   });
 });

@@ -108,6 +108,20 @@ Una categoria identifica una tipologia di spesa.
 - Altro
 - Da classificare
 
+### Regole
+
+**Merchant non classificato (D3).** Un merchant non classificato ha
+`category_id` nullo: è l'unica rappresentazione di "non classificato". La riga
+"Da classificare" esiste solo come etichetta: non si rinomina e non si elimina,
+e scegliere quella categoria equivale a impostare `null`. Il suo conteggio di
+merchant è il numero di merchant senza categoria (D3.b). La migrazione 0009
+riporta a `null` i merchant che erano associati a quella riga.
+
+**Nome unico (D6.5).** Il nome di una categoria è unico senza distinzione fra
+maiuscole e minuscole, anche oltre l'ASCII (`CAFFÈ` e `caffè` sono lo stesso
+nome). Il controllo è nel service; l'indice unico del database resta sensibile
+alle maiuscole.
+
 ---
 
 ## Loan
