@@ -3,7 +3,9 @@ import { ValidationError } from '../../shared/errors.js';
 import { loansService } from '../loans/index.js';
 import {
   expenseCents,
+  expenseDistribution,
   hasExpense,
+  incomeCents,
   isIncome,
   toAmountCents,
   transactionsService,
@@ -32,13 +34,16 @@ interface CategoryTotal {
  * @param lentByTransaction quanto di ciascun movimento è stato attribuito a
  *        prestiti. Serve a ripartire un movimento di tipo prestito fra la quota
  *        prestata — che è credito — e il resto, che è spesa propria.
+ * @param repaidByTransaction quanto di ciascun movimento è stato collegato a
+ *        restituzioni di prestiti: è credito che rientra, non un'entrata (D2).
  */
 export function summarizeEntries(
   month: string,
   entries: readonly TransactionWithMerchant[],
   lentByTransaction: ReadonlyMap<string, number> = new Map(),
+  repaidByTransaction: ReadonlyMap<string, number> = new Map(),
 ): SummaryViewModel {
-  let incomeCents = 0;
+  let totalIncomeCents = 0;
   let expensesCents = 0;
   let uncategorizedCents = 0;
   let uncategorizedCount = 0;
@@ -53,7 +58,11 @@ export function summarizeEntries(
     }
 
     if (isIncome(transaction.type)) {
-      incomeCents += amountCents;
+      totalIncomeCents += incomeCents(
+        transaction.type,
+        amountCents,
+        repaidByTransaction.get(transaction.id) ?? 0,
+      );
       continue;
     }
 
@@ -89,15 +98,23 @@ export function summarizeEntries(
     totalsByCategory.set(category.id, total);
   }
 
-  const amountByCategory: CategorySummary[] = [...totalsByCategory.values()]
-    .map(({ amountCents, ...category }) => ({ ...category, amount: amountCents / 100 }))
-    .sort((a, b) => b.amount - a.amount);
+  // Fra le categorie solo quelle con spesa netta positiva: un rimborso riduce
+  // le uscite, ma una categoria di soli rimborsi non ha spesa da mostrare.
+  const amountByCategory: CategorySummary[] = expenseDistribution(totalsByCategory.values()).map(
+    ({ id, name, color, amountCents, transactionCount }) => ({
+      id,
+      name,
+      color,
+      transactionCount,
+      amount: amountCents / 100,
+    }),
+  );
 
   return {
     month,
-    income: incomeCents / 100,
+    income: totalIncomeCents / 100,
     expenses: expensesCents / 100,
-    balance: (incomeCents - expensesCents) / 100,
+    balance: (totalIncomeCents - expensesCents) / 100,
     transactionCount: entries.length,
     merchantCount: merchantIds.size,
     amountByCategory,
@@ -133,6 +150,7 @@ export const summaryService = {
       validMonth,
       transactionsService.listByMonthWithMerchant(validMonth),
       loansService.lentCentsByTransaction(),
+      loansService.repaymentsByTransaction(),
     );
   },
 };

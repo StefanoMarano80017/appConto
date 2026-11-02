@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { after, describe, it } from 'node:test';
+import { after, afterEach, beforeEach, describe, it, mock } from 'node:test';
 import {
   createBackupScheduler,
   momentOf,
@@ -145,7 +145,23 @@ describe('quando fare il prossimo backup', () => {
 });
 
 describe('lo scheduler in esecuzione', () => {
-  it('crea un backup, poi si riarma per l-intervallo pieno', async () => {
+  // Il tempo è simulato: lo scheduler usa solo `setTimeout`, `clearTimeout` e
+  // `unref` (l'orologio `now` è iniettato). Si avanza con `tick`, quindi il
+  // carico della macchina non cambia l'esito. `create` è sincrona: dopo ogni
+  // `tick` i suoi effetti sono già visibili, senza attese di microtask.
+  beforeEach(() => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+  });
+
+  afterEach(() => {
+    // Anche se un'asserzione fallisce, nessun timer simulato resta armato.
+    for (const scheduler of avviati) {
+      scheduler.stop();
+    }
+    mock.timers.reset();
+  });
+
+  it('crea un backup, poi si riarma per l-intervallo pieno', () => {
     const eventi: SchedulerEvent[] = [];
     const creati: string[] = [];
     let numero = 0;
@@ -169,10 +185,18 @@ describe('lo scheduler in esecuzione', () => {
     avviati.push(scheduler);
 
     scheduler.start();
-    await new Promise((r) => setTimeout(r, 200));
-    scheduler.stop();
+    assert.equal(creati.length, 0, 'prima del margine non c-è nessun backup');
 
-    assert.ok(creati.length >= 2, `attesi almeno due backup, creati ${String(creati.length)}`);
+    mock.timers.tick(10);
+    assert.equal(creati.length, 1);
+
+    mock.timers.tick(60);
+    assert.equal(creati.length, 2);
+
+    mock.timers.tick(60);
+    assert.equal(creati.length, 3);
+
+    scheduler.stop();
 
     // Il primo dopo il margine, i successivi ogni intervallo.
     const programmazioni = eventi.filter((e) => e.kind === 'programmato');
@@ -183,7 +207,7 @@ describe('lo scheduler in esecuzione', () => {
     assert.equal(eventi.filter((e) => e.kind === 'creato').length, creati.length);
   });
 
-  it('non si sovrappone a sé stesso', async () => {
+  it('non si sovrappone a sé stesso', () => {
     const attivi: number[] = [];
     let contemporanei = 0;
 
@@ -196,11 +220,9 @@ describe('lo scheduler in esecuzione', () => {
         attivi.push(contemporanei);
         // Una creazione lunga: `VACUUM INTO` su un archivio grande può durare
         // più dell'intervallo. Essendo sincrona, il timer successivo non
-        // esiste ancora — non c'è nulla da accodare.
-        const fino = Date.now() + 40;
-        while (Date.now() < fino) {
-          // occupato
-        }
+        // esiste ancora — non c'è nulla da accodare. Il tempo simulato non può
+        // scorrere dentro una callback, quindi la durata qui non si riproduce:
+        // si verifica che ogni scadenza produca una sola creazione, mai due.
         contemporanei -= 1;
 
         return backup('auto-20260902-000001.sqlite');
@@ -213,10 +235,12 @@ describe('lo scheduler in esecuzione', () => {
     avviati.push(scheduler);
 
     scheduler.start();
-    await new Promise((r) => setTimeout(r, 250));
+    mock.timers.tick(5);
+    mock.timers.tick(20);
+    mock.timers.tick(20);
     scheduler.stop();
 
-    assert.ok(attivi.length >= 2, 'devono essere avvenute più creazioni');
+    assert.equal(attivi.length, 3, 'una creazione per scadenza: al margine e poi a ogni intervallo');
     assert.deepEqual(
       [...new Set(attivi)],
       [1],
@@ -224,7 +248,7 @@ describe('lo scheduler in esecuzione', () => {
     );
   });
 
-  it('un backup fallito non ferma lo scheduler', async () => {
+  it('un backup fallito non ferma lo scheduler', () => {
     const eventi: SchedulerEvent[] = [];
     let tentativi = 0;
 
@@ -248,7 +272,9 @@ describe('lo scheduler in esecuzione', () => {
     avviati.push(scheduler);
 
     scheduler.start();
-    await new Promise((r) => setTimeout(r, 200));
+    mock.timers.tick(5);
+    mock.timers.tick(30);
+    mock.timers.tick(30);
     scheduler.stop();
 
     const falliti = eventi.filter((e) => e.kind === 'fallito');
@@ -259,7 +285,7 @@ describe('lo scheduler in esecuzione', () => {
     assert.ok(eventi.some((e) => e.kind === 'creato'));
   });
 
-  it('fermato prima della scadenza non crea niente', async () => {
+  it('fermato prima della scadenza non crea niente', () => {
     let creati = 0;
     const eventi: SchedulerEvent[] = [];
 
@@ -283,7 +309,7 @@ describe('lo scheduler in esecuzione', () => {
     scheduler.stop();
     assert.equal(scheduler.running(), false);
 
-    await new Promise((r) => setTimeout(r, 700));
+    mock.timers.tick(700);
 
     assert.equal(creati, 0, 'un backup non deve partire durante l-arresto');
     assert.ok(eventi.some((e) => e.kind === 'fermato'));
@@ -309,7 +335,7 @@ describe('lo scheduler in esecuzione', () => {
     assert.equal(eventi.filter((e) => e.kind === 'fermato').length, 1);
   });
 
-  it('dopo l-arresto non si riavvia', async () => {
+  it('dopo l-arresto non si riavvia', () => {
     let creati = 0;
     const scheduler = createBackupScheduler({
       intervalMs: 30,
@@ -329,13 +355,13 @@ describe('lo scheduler in esecuzione', () => {
     scheduler.stop();
     scheduler.start();
 
-    await new Promise((r) => setTimeout(r, 100));
+    mock.timers.tick(100);
 
     assert.equal(creati, 0);
     assert.equal(scheduler.running(), false);
   });
 
-  it('due start non raddoppiano i timer', async () => {
+  it('due start non raddoppiano i timer', () => {
     let creati = 0;
     const scheduler = createBackupScheduler({
       intervalMs: 10_000,
@@ -355,13 +381,13 @@ describe('lo scheduler in esecuzione', () => {
 
     scheduler.start();
     scheduler.start();
-    await new Promise((r) => setTimeout(r, 120));
+    mock.timers.tick(120);
     scheduler.stop();
 
     assert.equal(creati, 1, 'un solo timer, quindi un solo backup');
   });
 
-  it('con l-intervallo a zero non fa niente e lo dichiara', async () => {
+  it('con l-intervallo a zero non fa niente e lo dichiara', () => {
     const eventi: SchedulerEvent[] = [];
     let creati = 0;
 
@@ -381,7 +407,7 @@ describe('lo scheduler in esecuzione', () => {
     });
 
     scheduler.start();
-    await new Promise((r) => setTimeout(r, 60));
+    mock.timers.tick(60);
 
     assert.equal(creati, 0);
     assert.deepEqual(eventi, [{ kind: 'disattivato' }]);

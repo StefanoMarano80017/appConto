@@ -22,8 +22,15 @@ export const analyticsService = {
       query,
     );
     const lentByTransaction = loansService.lentCentsByTransaction();
-    const aggregation = aggregateEntries(entries, lentByTransaction);
+    const repaidByTransaction = loansService.repaymentsByTransaction();
+    const aggregation = aggregateEntries(entries, lentByTransaction, repaidByTransaction);
 
-    return toAnalyticsViewModel(query, entries, aggregation, lentByTransaction);
+    return toAnalyticsViewModel(
+      query,
+      entries,
+      aggregation,
+      lentByTransaction,
+      repaidByTransaction,
+    );
   },
 };

@@ -32,6 +32,46 @@ export function isIncome(type: TransactionType): boolean {
 }
 
 /**
+ * La parte di un accredito che restituisce un credito, in centesimi positivi.
+ *
+ * `repaidCents` è quanto del movimento è stato collegato a restituzioni di
+ * prestiti: lo conosce la feature `loans`, che lo passa qui, come fa con
+ * `lentCents`. Vale solo finché il movimento è un'entrata (D2: il tipo resta
+ * `INCOME`, la quota collegata no) ed è limitata all'importo positivo del
+ * movimento: un rientro non può valere più del denaro arrivato.
+ */
+function repaidIncomeCents(
+  type: TransactionType,
+  amountCents: number,
+  repaidCents: number,
+): number {
+  if (!isIncome(type)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(repaidCents, 0), Math.max(amountCents, 0));
+}
+
+/**
+ * Quanto del movimento è entrata reale, con segno.
+ *
+ * Un'entrata vale il suo importo meno la quota che restituisce un credito: il
+ * prestito non aveva ridotto il patrimonio quando era nato, il suo rientro non
+ * è un guadagno. Gli altri tipi non sono entrate.
+ */
+export function incomeCents(
+  type: TransactionType,
+  amountCents: number,
+  repaidCents: number,
+): number {
+  if (!isIncome(type)) {
+    return 0;
+  }
+
+  return amountCents - repaidIncomeCents(type, amountCents, repaidCents);
+}
+
+/**
  * Ogni riga di un estratto conto ha spostato denaro sul conto: tutti i tipi
  * concorrono quindi al saldo. La funzione esiste per renderlo esplicito.
  */
@@ -122,14 +162,22 @@ export function hasExpense(
  * Prelievi e trasferimenti non lo cambiano: il contante prelevato resta
  * proprio, un giroconto cambia solo conto. Un prestito non lo cambia per la
  * quota diventata credito, ma lo riduce per la quota realmente spesa.
+ *
+ * Specularmente, un'entrata non lo aumenta per la quota collegata a
+ * restituzioni (`repaidCents`): è il credito che rientra, non denaro nuovo.
+ * Assente, vale zero — un movimento senza restituzioni collegate.
  */
 export function netWorthCents(
   type: TransactionType,
   amountCents: number,
   lentCents: number,
+  repaidCents = 0,
 ): number {
   if (type === 'WITHDRAWAL' || type === 'TRANSFER') {
     return 0;
+  }
+  if (isIncome(type)) {
+    return incomeCents(type, amountCents, repaidCents);
   }
   if (type === 'LOAN') {
     // Lo zero resta zero: `-0` sopravvive ai confronti e si porta dietro sorprese.

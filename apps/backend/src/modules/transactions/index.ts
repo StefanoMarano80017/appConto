@@ -14,10 +14,12 @@ export {
   creditCents,
   expenseCents,
   hasExpense,
+  incomeCents,
   isIncome,
   netWorthCents,
   type TransactionType,
 } from './transaction-type.js';
+export { expenseDistribution, type DistributionShare } from './expense-distribution.js';
 export {
   CLASSIFICATION_FILTERS,
   DEFAULT_PAGE_SIZE,

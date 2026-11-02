@@ -12,5 +12,5 @@
  * carattere qualunque": una ricerca restituirebbe più di quanto è stato chiesto.
  */
 export function escapeLike(value: string): string {
-  return value.replace(/[\%_]/g, (character) => `\${character}`);
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
 }

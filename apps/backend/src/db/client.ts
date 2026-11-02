@@ -40,6 +40,17 @@ sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 
 /**
+ * `lower()` di SQLite porta in minuscolo soltanto l'ASCII: `lower('CAFFÈ')`
+ * dà `cafFÈ`, e una ricerca di «caffè» non trova «CAFFÈ ROMA». Questa funzione
+ * usa lo stesso `toLowerCase()` con cui il termine cercato viene preparato in
+ * JavaScript, così i due lati del confronto concordano. Serve anche agli
+ * ordinamenti, che altrimenti metterebbero le maiuscole prima delle minuscole.
+ */
+sqlite.function('lower_unicode', { deterministic: true }, (value: unknown) =>
+  typeof value === 'string' ? value.toLowerCase() : null,
+);
+
+/**
  * Unica istanza Drizzle dell'applicazione.
  * Solo i repository delle feature devono utilizzarla.
  */

@@ -114,9 +114,9 @@ function searchConditions(query: TransactionQuery): SQL | undefined {
   if (query.search !== null) {
     const pattern = `%${escapeLike(query.search.toLowerCase())}%`;
     const matches = or(
-      sql`lower(${transactions.description}) like ${pattern} escape '\\'`,
-      sql`lower(${merchants.name}) like ${pattern} escape '\\'`,
-      sql`lower(${merchants.displayName}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${transactions.description}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${merchants.name}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${merchants.displayName}) like ${pattern} escape '\\'`,
     );
     if (matches !== undefined) {
       conditions.push(matches);
@@ -133,8 +133,8 @@ function searchOrder(query: TransactionQuery): SQL[] {
   const column = {
     bookingDate: sql`${transactions.bookingDate}`,
     amount: sql`${transactions.amountCents}`,
-    merchant: sql`coalesce(${merchants.displayName}, ${merchants.name})`,
-    category: sql`${categories.name}`,
+    merchant: sql`lower_unicode(coalesce(${merchants.displayName}, ${merchants.name}))`,
+    category: sql`lower_unicode(${categories.name})`,
     type: sql`${transactions.type}`,
   }[query.sortBy];
 

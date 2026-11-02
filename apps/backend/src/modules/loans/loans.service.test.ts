@@ -667,7 +667,27 @@ describe('elenco, filtri e totali', () => {
       2,
       'e nella descrizione del movimento d\'origine',
     );
-    assert.equal(list({ search: '%' }).items.length, 0, 'i jolly sono cercati alla lettera');
+  });
+
+  it('i caratteri jolly vengono cercati alla lettera', () => {
+    const loan = loansService.create({
+      transactionId: transactionId('L1 ANTICIPO PER UN AMICO'),
+      borrowerName: 'Sconto 50%',
+      amount: 10,
+      lentAt: '2033-03-04',
+    });
+
+    try {
+      assert.deepEqual(
+        list({ search: '%' }).items.map((item) => item.borrowerName),
+        ['Sconto 50%'],
+        'solo chi ha un % nel nome, non tutti i prestiti',
+      );
+    } finally {
+      loansService.remove(loan.id);
+    }
+
+    assert.equal(list({ search: '%' }).items.length, 0, 'tolto il prestito, nessun % resta');
   });
 
   it('espone le persone come vocabolario del filtro', () => {
@@ -748,5 +768,68 @@ describe('legami con i movimenti', () => {
 
     setType('L1 PRESTITO DA CANCELLARE', 'LOAN');
     loansService.remove(loan.id);
+  });
+});
+
+describe('persone con le lettere accentate e minuscole', () => {
+  // SQLite porta in minuscolo solo l'ASCII: «CAFFÈ» resterebbe «cafFÈ».
+  const NOMI = ['ZETA', 'alfa', 'Cassa', 'CAFFÈ ROMA', 'CAFFÈ B', 'caffè a'];
+  const DA_ORDINARE = ['ZETA', 'alfa', 'Cassa', 'CAFFÈ B', 'caffè a'];
+  const ATTESI = ['alfa', 'caffè a', 'CAFFÈ B', 'Cassa', 'ZETA'];
+
+  function conPrestitiProvvisori(verifica: () => void): void {
+    const ids = NOMI.map(
+      (borrowerName) =>
+        loansService.create({
+          transactionId: transactionId('L1 ANTICIPO PER UN AMICO'),
+          borrowerName,
+          amount: 5,
+          lentAt: '2033-03-04',
+        }).id,
+    );
+
+    try {
+      verifica();
+    } finally {
+      for (const id of ids) {
+        loansService.remove(id);
+      }
+    }
+  }
+
+  it('la ricerca in minuscolo trova il nome scritto in maiuscolo', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(
+        list({ search: 'caffè' }).items.map((item) => item.borrowerName).sort(),
+        ['CAFFÈ B', 'CAFFÈ ROMA', 'caffè a'],
+      );
+    });
+  });
+
+  it('il filtro per persona non distingue le lettere accentate', () => {
+    conPrestitiProvvisori(() => {
+      assert.deepEqual(
+        list({ borrower: 'caffè roma' }).items.map((item) => item.borrowerName),
+        ['CAFFÈ ROMA'],
+      );
+    });
+  });
+
+  it('ordinando per persona le minuscole non vengono dopo le maiuscole', () => {
+    conPrestitiProvvisori(() => {
+      const nomi = list({ sortBy: 'borrower', sortDirection: 'asc' })
+        .items.map((item) => item.borrowerName)
+        .filter((nome) => DA_ORDINARE.includes(nome));
+
+      assert.deepEqual(nomi, ATTESI);
+    });
+  });
+
+  it('il vocabolario delle persone è in ordine alfabetico senza badare alle maiuscole', () => {
+    conPrestitiProvvisori(() => {
+      const nomi = list().borrowers.filter((nome) => DA_ORDINARE.includes(nome));
+
+      assert.deepEqual(nomi, ATTESI);
+    });
   });
 });

@@ -105,7 +105,7 @@ export function createTransactionsRouter(dependents: TransactionDependents): Rou
       );
     }
 
-    const updated = transactionsService.updateType(id, body.data.type);
+    const updated = transactionsService.updateType(id, body.data.type, dependents);
 
     res.json({ id: updated.id, type: updated.type });
   });

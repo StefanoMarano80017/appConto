@@ -41,6 +41,22 @@ export interface LoanAllocation {
   lentCents: number;
 }
 
+/**
+ * Quanto di un movimento è stato collegato a restituzioni di prestiti.
+ *
+ * Speculare a `LoanAllocation`: serve a togliere dalle entrate e dal
+ * patrimonio il credito che rientra (D2).
+ */
+export interface RepaymentAllocation {
+  transactionId: string;
+  type: string;
+  bookingDate: string;
+  /** Importo del movimento in centesimi, con segno. */
+  amountCents: number;
+  /** Somma delle restituzioni collegate a questo movimento. */
+  repaidCents: number;
+}
+
 const REPAID_CENTS = sql<number>`coalesce(sum(${loanRepayments.amountCents}), 0)`;
 const REMAINING_CENTS = sql<number>`${loans.amountCents} - coalesce(sum(${loanRepayments.amountCents}), 0)`;
 const REPAYMENT_COUNT = sql<number>`count(${loanRepayments.id})`;
@@ -101,15 +117,15 @@ function loanConditions(query: LoanQuery): SQL | undefined {
   const conditions: SQL[] = [];
 
   if (query.borrower !== null) {
-    conditions.push(sql`lower(${loans.borrowerName}) = ${query.borrower.toLowerCase()}`);
+    conditions.push(sql`lower_unicode(${loans.borrowerName}) = ${query.borrower.toLowerCase()}`);
   }
 
   if (query.search !== null) {
     const pattern = `%${escapeLike(query.search.toLowerCase())}%`;
     const matches = or(
-      sql`lower(${loans.borrowerName}) like ${pattern} escape '\\'`,
-      sql`lower(${loans.description}) like ${pattern} escape '\\'`,
-      sql`lower(${transactions.description}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${loans.borrowerName}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${loans.description}) like ${pattern} escape '\\'`,
+      sql`lower_unicode(${transactions.description}) like ${pattern} escape '\\'`,
     );
     if (matches !== undefined) {
       conditions.push(matches);
@@ -142,7 +158,7 @@ function loanOrder(query: LoanQuery): SQL[] {
     remainingAmount: REMAINING_CENTS,
     lentAt: sql`${loans.lentAt}`,
     amount: sql`${loans.amountCents}`,
-    borrower: sql`lower(${loans.borrowerName})`,
+    borrower: sql`lower_unicode(${loans.borrowerName})`,
   }[query.sortBy];
 
   return [direction(column), desc(loans.lentAt), asc(loans.id)];
@@ -187,7 +203,7 @@ export const loansRepository = {
     return db
       .selectDistinct({ borrowerName: loans.borrowerName })
       .from(loans)
-      .orderBy(asc(sql`lower(${loans.borrowerName})`))
+      .orderBy(asc(sql`lower_unicode(${loans.borrowerName})`))
       .all()
       .map((row) => row.borrowerName);
   },
@@ -257,6 +273,28 @@ export const loansRepository = {
     return Number(row?.total ?? 0);
   },
 
+  /**
+   * Quanto di un movimento è già stato usato da restituzioni, di qualunque prestito.
+   *
+   * Serve al tetto di capienza dell'accredito: un solo bonifico può ripagare
+   * più prestiti, ma la somma non può superarne l'importo. `exceptRepaymentId`
+   * esclude la restituzione che si sta modificando.
+   */
+  repaidCentsByTransaction(transactionId: string, exceptRepaymentId?: string): number {
+    const conditions = [eq(loanRepayments.transactionId, transactionId)];
+    if (exceptRepaymentId !== undefined) {
+      conditions.push(ne(loanRepayments.id, exceptRepaymentId));
+    }
+
+    const row = db
+      .select({ total: sql<number>`coalesce(sum(${loanRepayments.amountCents}), 0)` })
+      .from(loanRepayments)
+      .where(and(...conditions))
+      .get();
+
+    return Number(row?.total ?? 0);
+  },
+
   insertRepayment(repayment: LoanRepayment): void {
     db.insert(loanRepayments).values(repayment).run();
   },
@@ -298,6 +336,35 @@ export const loansRepository = {
         bookingDate: row.bookingDate,
         amountCents: Number(row.amountCents),
         lentCents: Number(row.lentCents),
+      }));
+  },
+
+  /**
+   * I movimenti collegati a restituzioni, con quanto vi è stato collegato.
+   *
+   * È lo specchio di `findAllocations` per il lato del rientro: porta tipo,
+   * data e importo del movimento perché il cash flow, che lavora su totali
+   * per tipo, possa togliere la quota collegata dalle entrate del periodo.
+   */
+  findRepaymentAllocations(): RepaymentAllocation[] {
+    return db
+      .select({
+        transactionId: transactions.id,
+        type: transactions.type,
+        bookingDate: transactions.bookingDate,
+        amountCents: transactions.amountCents,
+        repaidCents: sql<number>`coalesce(sum(${loanRepayments.amountCents}), 0)`,
+      })
+      .from(loanRepayments)
+      .innerJoin(transactions, eq(transactions.id, loanRepayments.transactionId))
+      .groupBy(transactions.id)
+      .all()
+      .map((row) => ({
+        transactionId: row.transactionId,
+        type: row.type,
+        bookingDate: row.bookingDate,
+        amountCents: Number(row.amountCents),
+        repaidCents: Number(row.repaidCents),
       }));
   },
 

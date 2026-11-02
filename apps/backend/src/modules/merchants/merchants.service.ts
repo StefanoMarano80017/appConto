@@ -1,5 +1,5 @@
 import { NotFoundError, ValidationError } from '../../shared/errors.js';
-import { categoriesService, type Category } from '../categories/index.js';
+import { categoriesService, FALLBACK_CATEGORY_ID, type Category } from '../categories/index.js';
 import { transactionsService } from '../transactions/index.js';
 import { merchantLabel, type Merchant } from './merchant.model.js';
 import type { MerchantQuery, MerchantSortField } from './merchant-query.js';
@@ -185,9 +185,13 @@ export const merchantsService = {
    * Assegna (o rimuove, con `null`) la categoria di un merchant.
    *
    * Le transazioni non vengono toccate: ereditano la categoria dal merchant.
+   *
+   * Scegliere "Da classificare" equivale a `null`: è l'unica forma con cui un
+   * merchant risulta non classificato.
    */
-  assignCategory(merchantId: string, categoryId: string | null): MerchantWithCategory {
+  assignCategory(merchantId: string, requestedCategoryId: string | null): MerchantWithCategory {
     const merchant = requireMerchant(merchantId);
+    const categoryId = requestedCategoryId === FALLBACK_CATEGORY_ID ? null : requestedCategoryId;
 
     let category: Category | null = null;
     if (categoryId !== null) {

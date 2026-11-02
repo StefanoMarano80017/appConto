@@ -57,9 +57,9 @@ const CREDIT_HINTS = ['avere', 'entrate', 'entrata', 'accrediti', 'accredito', '
 
 /** Parole con cui le banche indicano la natura del movimento. */
 const TYPE_VOCABULARY = [
-  'prelievo',
-  'prelevamento',
-  'accredito',
+  'preliev',
+  'prelevament',
+  'accredit',
   'addebito',
   'bonifico',
   'pagamento',

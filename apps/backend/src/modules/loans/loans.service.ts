@@ -19,7 +19,12 @@ import {
   type Loan,
   type LoanRepayment,
 } from './loan.model.js';
-import { loansRepository, type LoanAggregate, type LoanAllocation } from './loans.repository.js';
+import {
+  loansRepository,
+  type LoanAggregate,
+  type LoanAllocation,
+  type RepaymentAllocation,
+} from './loans.repository.js';
 import type {
   LinkedTransaction,
   LoanDetailViewModel,
@@ -117,6 +122,13 @@ function requireLoanTransaction(transactionId: string): Transaction {
       'Un prestito può nascere solo da un movimento di tipo prestito: correggi prima la natura del movimento.',
     );
   }
+  // Un prestito è denaro uscito dal conto: un accredito etichettato `LOAN` è
+  // un errore di classificazione, non l'origine di un credito.
+  if (toAmountCents(transaction.amount) >= 0) {
+    throw new ValidationError(
+      'Un prestito può nascere solo da un movimento in uscita: il movimento indicato è un accredito.',
+    );
+  }
 
   return transaction;
 }
@@ -124,10 +136,12 @@ function requireLoanTransaction(transactionId: string): Transaction {
 /**
  * La transazione a cui può essere collegata una restituzione.
  *
- * Il tipo non viene vincolato: il collegamento aggiunge significato al
- * movimento, non lo trasforma — un bonifico ricevuto resta un'entrata. Il
- * segno invece conta: una restituzione è denaro rientrato, collegarla ad
- * un'uscita sarebbe un errore di inserimento.
+ * Dev'essere un'entrata (D9): un accredito di tipo `INCOME` con importo
+ * positivo. Il tipo conta perché l'esclusione della quota restituita (D2) vale
+ * per i soli movimenti `INCOME`: ammettere altri tipi lascerebbe collegamenti
+ * che la regola non copre. Il segno conta perché una restituzione è denaro
+ * rientrato, collegarla ad un'uscita sarebbe un errore di inserimento. Per lo
+ * stesso motivo `transactions` non lascia riclassificare un movimento collegato.
  */
 function requireRepaymentTransaction(transactionId: string): Transaction {
   const transaction = transactionsService.findById(transactionId);
@@ -139,8 +153,27 @@ function requireRepaymentTransaction(transactionId: string): Transaction {
       'Una restituzione è denaro rientrato: il movimento collegato deve essere un accredito.',
     );
   }
+  if (transaction.type !== 'INCOME') {
+    throw new ValidationError(
+      'Una restituzione si collega solo a un movimento di tipo entrata: correggi prima la natura del movimento.',
+    );
+  }
 
   return transaction;
+}
+
+/**
+ * Una restituzione non può precedere il prestito (D10).
+ *
+ * La stessa giornata è ammessa. Le date sono ISO `YYYY-MM-DD`: il confronto fra
+ * stringhe coincide con quello cronologico.
+ */
+function assertNotBeforeLoan(repaymentDate: string, lentAt: string): void {
+  if (repaymentDate < lentAt) {
+    throw new ValidationError(
+      `La restituzione (${repaymentDate}) non può essere anteriore al prestito (${lentAt}).`,
+    );
+  }
 }
 
 /**
@@ -167,6 +200,35 @@ function assertFitsTransaction(
     allocated === 0
       ? `L'importo del prestito (${euro(amountCents)}) supera quello del movimento (${euro(capacity)}).`
       : `Del movimento da ${euro(capacity)} sono già attribuiti ${euro(allocated)} ad altri prestiti: restano ${euro(capacity - allocated)}.`,
+  );
+}
+
+/**
+ * Il tetto di capienza del movimento di restituzione.
+ *
+ * È la regola speculare a `assertFitsTransaction`: un solo bonifico può
+ * ripagare più prestiti, ma la somma delle restituzioni collegate non può
+ * superarne l'importo, altrimenti lo stesso denaro rientrerebbe due volte.
+ * `exceptRepaymentId` esclude la restituzione che si sta modificando.
+ *
+ * Questo controllo regge perché l'importo di una transazione è immutabile
+ * (oggi si scrivono solo il tipo e il fingerprint): qualunque percorso futuro
+ * che modifichi `amount_cents` deve rieseguire la stessa verifica.
+ */
+function assertRepaymentFitsTransaction(
+  transaction: Transaction,
+  amountCents: number,
+  exceptRepaymentId?: string,
+): void {
+  const capacity = toAmountCents(transaction.amount);
+  const used = loansRepository.repaidCentsByTransaction(transaction.id, exceptRepaymentId);
+
+  if (used + amountCents <= capacity) {
+    return;
+  }
+
+  throw new ValidationError(
+    `Il movimento da ${euro(capacity)} ha già ${euro(used)} collegati ad altre restituzioni: restano ${euro(Math.max(capacity - used, 0))}.`,
   );
 }
 
@@ -306,6 +368,32 @@ export const loansService = {
   },
 
   /**
+   * I movimenti collegati a restituzioni, con quanto vi è stato collegato.
+   *
+   * Speculare ad `allocations`: il cash flow lavora su totali per tipo e ha
+   * bisogno di tipo, data e importo del movimento per togliere dalle entrate
+   * del periodo la quota che restituisce un credito (D2).
+   */
+  repaymentAllocations(): RepaymentAllocation[] {
+    return loansRepository.findRepaymentAllocations();
+  },
+
+  /**
+   * Quanto è stato collegato a restituzioni, per movimento.
+   *
+   * Speculare a `lentCentsByTransaction`: un movimento assente dalla mappa
+   * non ha restituzioni collegate e vale zero. Come quella quota si traduca
+   * in entrate e patrimonio lo decide la feature `transactions`.
+   */
+  repaymentsByTransaction(): Map<string, number> {
+    return new Map(
+      loansRepository
+        .findRepaymentAllocations()
+        .map((allocation) => [allocation.transactionId, allocation.repaidCents]),
+    );
+  },
+
+  /**
    * I prestiti che soddisfano i criteri, con i totali della posizione.
    *
    * I totali derivano dallo stesso insieme filtrato dell'elenco: i numeri in
@@ -386,6 +474,8 @@ export const loansService = {
           link.role === 'ORIGIN'
             ? `prestito a ${link.borrowerName}`
             : `restituzione del prestito a ${link.borrowerName}`,
+        // D9: un accredito collegato a una restituzione deve restare un'entrata.
+        requiresIncome: link.role === 'REPAYMENT',
       }));
   },
 
@@ -433,6 +523,18 @@ export const loansService = {
       );
     }
 
+    if (data.lentAt !== undefined && data.lentAt !== aggregate.lentAt) {
+      const oldest = loansRepository
+        .findRepayments(id)
+        .map((repayment) => repayment.repaymentDate)
+        .sort()[0];
+      if (oldest !== undefined && oldest < data.lentAt) {
+        throw new ValidationError(
+          `Esiste una restituzione del ${oldest}, anteriore alla nuova data del prestito (${data.lentAt}): il prestito non può essere datato dopo la sua prima restituzione.`,
+        );
+      }
+    }
+
     if (amountCents !== aggregate.amountCents) {
       const transaction = transactionsService.findById(aggregate.transactionId);
       if (transaction !== null) {
@@ -477,8 +579,10 @@ export const loansService = {
 
     const amountCents = requirePositiveCents(data.amount, 'della restituzione');
     if (data.transactionId !== null) {
-      requireRepaymentTransaction(data.transactionId);
+      assertRepaymentFitsTransaction(requireRepaymentTransaction(data.transactionId), amountCents);
     }
+
+    assertNotBeforeLoan(data.repaymentDate, aggregate.lentAt);
 
     const remaining = remainingCents(aggregate.amountCents, aggregate.repaidCents);
     if (amountCents > remaining) {
@@ -519,6 +623,10 @@ export const loansService = {
         ? repayment.amountCents
         : requirePositiveCents(data.amount, 'della restituzione');
 
+    if (data.repaymentDate !== undefined) {
+      assertNotBeforeLoan(data.repaymentDate, aggregate.lentAt);
+    }
+
     const others = loansRepository.repaidCents(loanId, repaymentId);
     if (others + amountCents > aggregate.amountCents) {
       throw new ValidationError(
@@ -526,8 +634,18 @@ export const loansService = {
       );
     }
 
-    if (data.transactionId !== undefined && data.transactionId !== null) {
-      requireRepaymentTransaction(data.transactionId);
+    // Il movimento a cui la restituzione resterà collegata: quello nuovo, se
+    // indicato, altrimenti quello di prima. Anche un semplice cambio di
+    // importo va confrontato con la capienza.
+    const linkedId = data.transactionId === undefined ? repayment.transactionId : data.transactionId;
+    if (linkedId !== null) {
+      const linked =
+        data.transactionId === undefined
+          ? transactionsService.findById(linkedId)
+          : requireRepaymentTransaction(linkedId);
+      if (linked !== null) {
+        assertRepaymentFitsTransaction(linked, amountCents, repaymentId);
+      }
     }
 
     loansRepository.updateRepayment(repaymentId, {

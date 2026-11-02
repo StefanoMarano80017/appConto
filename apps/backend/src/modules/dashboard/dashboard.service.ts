@@ -4,6 +4,7 @@ import { requireMonth, summarizeEntries } from '../summary/index.js';
 import {
   DEFAULT_QUERY,
   expenseCents,
+  expenseDistribution,
   hasExpense,
   toAmountCents,
   transactionsService,
@@ -127,10 +128,11 @@ export const dashboardService = {
 
     // Una sola lettura dei prestiti per tutta la risposta.
     const lentByTransaction = loansService.lentCentsByTransaction();
+    const repaidByTransaction = loansService.repaymentsByTransaction();
     const entries = transactionsService.listByMonthWithMerchant(validMonth);
     const expenses = expensesOnly(entries, lentByTransaction);
 
-    const summary = summarizeEntries(validMonth, entries, lentByTransaction);
+    const summary = summarizeEntries(validMonth, entries, lentByTransaction, repaidByTransaction);
     const withdrawalsCents = entries
       .filter(({ transaction }) => transaction.type === 'WITHDRAWAL')
       // Uscite meno storni: un prelievo positivo (storno di contante) riduce il totale.
@@ -152,25 +154,26 @@ export const dashboardService = {
     const previousCents = sumCents(previousCategories.values());
 
     // Importo e percentuale riguardano il mese intero; la variazione, la finestra di confronto.
-    // Solo categorie con spesa netta positiva: un mese di soli rimborsi non ne ha.
-    const topCategories = [...expenseCentsByCategory(expenses).entries()]
-      .filter(([, total]) => total.amountCents > 0)
+    // Regola delle distribuzioni: solo categorie con spesa netta positiva, quote sulla loro
+    // somma (non sulle uscite nette). Le quote si calcolano prima di tenere le prime cinque:
+    // con più di cinque categorie le quote mostrate sommano a meno di 100, ed è voluto (D1).
+    const topCategories = expenseDistribution(
+      [...expenseCentsByCategory(expenses)].map(([id, total]) => ({ id, ...total })),
+    )
+      .slice(0, TOP_CATEGORIES_LIMIT)
       .map(
-        ([id, total]): DashboardCategory => ({
-          id,
-          name: total.name,
-          color: total.color,
-          amount: total.amountCents / 100,
-          percentage:
-            summary.expenses > 0 ? percentOf(total.amountCents / 100 / summary.expenses) : null,
+        (share): DashboardCategory => ({
+          id: share.id,
+          name: share.name,
+          color: share.color,
+          amount: share.amountCents / 100,
+          percentage: share.percentage,
           difference:
-            ((currentCategories.get(id)?.amountCents ?? 0) -
-              (previousCategories.get(id)?.amountCents ?? 0)) /
+            ((currentCategories.get(share.id)?.amountCents ?? 0) -
+              (previousCategories.get(share.id)?.amountCents ?? 0)) /
             100,
         }),
-      )
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, TOP_CATEGORIES_LIMIT);
+      );
 
     // Movimenti LOAN dell'archivio per cui non è registrato alcun prestito.
     const linkedLoanTransactions = new Set(
@@ -198,8 +201,9 @@ export const dashboardService = {
       },
       comparison: {
         previousExpenses: previousCents / 100,
+        // Su uscite precedenti nulle o negative (soli rimborsi) la variazione non è calcolabile.
         percentChange:
-          previousCents === 0 ? null : percentOf((currentCents - previousCents) / previousCents),
+          previousCents <= 0 ? null : percentOf((currentCents - previousCents) / previousCents),
         ...window,
       },
       topCategories,
