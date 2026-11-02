@@ -524,7 +524,7 @@ describe('ricerca senza distinguere gli accenti', () => {
     importService.importCsv(
       csv(
         '05/01/2038,Pagamento,CAFFÈ ROMA,-10.00',
-        '06/01/2038,Pagamento,caffe bar,-20.00',
+        '06/01/2038,Pagamento,caffe zeta,-20.00',
         '07/01/2038,Pagamento,PERCHÉ NO,-30.00',
         '08/01/2038,Pagamento,SCONTO 100%,-40.00',
         '09/01/2038,Pagamento,COD_A1,-50.00',
@@ -551,7 +551,7 @@ describe('ricerca senza distinguere gli accenti', () => {
 
   it('il termine accentato trova il testo senza accento, in qualunque combinazione di maiuscole', () => {
     conDatiProvvisori(() => {
-      const attese = ['CAFFÈ ROMA', 'caffe bar'];
+      const attese = ['CAFFÈ ROMA', 'caffe zeta'];
 
       assert.deepEqual(descriptions({ ...periodo, search: 'caffe' }).sort(), attese);
       assert.deepEqual(descriptions({ ...periodo, search: 'caffè' }).sort(), attese);
@@ -582,7 +582,9 @@ describe('ricerca senza distinguere gli accenti', () => {
       const nomi = search({ ...periodo, search: 'caff', sortBy: 'merchant', sortDirection: 'asc' })
         .transactions.map(({ merchant }) => merchant?.merchant.name);
 
-      assert.deepEqual(nomi, ['caffe bar', 'CAFFÈ ROMA']);
+      // Con gli accenti tolti verrebbe prima «caffe roma» («r» < «z»); con
+      // `lower_unicode` viene prima «caffe zeta» («e» < «è»).
+      assert.deepEqual(nomi, ['caffe zeta', 'CAFFÈ ROMA']);
     });
   });
 });
