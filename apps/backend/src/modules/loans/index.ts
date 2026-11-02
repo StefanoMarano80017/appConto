@@ -29,4 +29,4 @@ export type {
   LoanTotals,
   OriginSplit,
 } from './loans.view-model.js';
-export { loansRouter } from './loans.routes.js';
+export { createLoansRouter, loansRouter } from './loans.routes.js';

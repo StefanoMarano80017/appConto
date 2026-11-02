@@ -1,0 +1,15 @@
+{
+  // Test Explorer per i test del backend (node:test eseguito tramite tsx).
+  // I test del frontend (Angular + Vitest) restano fuori: si lanciano con `npm run test:frontend`.
+  "nodejs-testing.include": ["./apps/backend/src"],
+  "nodejs-testing.exclude": ["**/node_modules/**", "**/dist/**"],
+  "nodejs-testing.extensions": [
+    { "extensions": ["ts", "mts"], "parameters": ["--import", "tsx"] }
+  ],
+
+  // Coverage nell'editor dopo "Run with Coverage": righe coperte/scoperte a margine,
+  // barra in cima all'editor (dettaglio inline, riga scoperta successiva), minimappa e percentuali nell'Explorer.
+  "testing.coverageToolbarEnabled": true,
+  "testing.coverageMinimapEnabled": true,
+  "testing.showCoverageInExplorer": true
+}

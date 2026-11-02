@@ -1,14 +1,23 @@
-import { createApp } from './app.js';
-import { bootstrap } from './bootstrap.js';
-import { config } from './config.js';
-import { closeDatabase } from './db/client.js';
-import { connectLauncher } from './launcher-ipc.js';
-import { listenWithFallback } from './listen.js';
-import { createAutoBackupScheduler } from './modules/maintenance/index.js';
-import { SETTINGS_PROBLEM } from './paths.js';
-import { startServer, StartupFailedError, type StartedServer } from './server.js';
-import { logger } from './shared/logger.js';
-import { closeAndReport, createShutdown, installSignalHandlers } from './shutdown.js';
+import { createServer } from "node:http";
+import { createApp } from "./app.js";
+import { bootstrap } from "./bootstrap.js";
+import { config } from "./config.js";
+import { closeDatabase } from "./db/client.js";
+import { connectLauncher } from "./launcher-ipc.js";
+import { listenWithFallback } from "./listen.js";
+import { createAutoBackupScheduler } from "./modules/maintenance/index.js";
+import { SETTINGS_PROBLEM } from "./paths.js";
+import {
+  startServer,
+  StartupFailedError,
+  type StartedServer,
+} from "./server.js";
+import { logger } from "./shared/logger.js";
+import {
+  closeAndReport,
+  createShutdown,
+  installSignalHandlers,
+} from "./shutdown.js";
 
 /**
  * L'avvio del server.
@@ -24,7 +33,9 @@ import { closeAndReport, createShutdown, installSignalHandlers } from './shutdow
  */
 
 if (SETTINGS_PROBLEM !== null) {
-  logger.error(`Configurazione ignorata, si usano i valori predefiniti: ${SETTINGS_PROBLEM}`);
+  logger.error(
+    `Configurazione ignorata, si usano i valori predefiniti: ${SETTINGS_PROBLEM}`,
+  );
 }
 
 /**
@@ -36,32 +47,35 @@ if (SETTINGS_PROBLEM !== null) {
  * non la impone perché in sviluppo una porta diversa da quella chiesta
  * significa non accorgersi di avere due server accesi.
  */
-const allowPortFallback = process.env.MYFINANCE_PORT_FALLBACK === '1';
+const allowPortFallback = process.env.MYFINANCE_PORT_FALLBACK === "1";
 
 // I percorsi effettivi vanno registrati all'avvio: sono la prima cosa da
 // guardare quando l'applicazione non trova i dati che l'utente si aspetta.
-logger.info('Avvio', {
-  layout: config.layout,
-  appRoot: config.appRoot,
-  dataRoot: config.dataRoot,
-  database: config.databaseFile,
-  migrations: config.migrationsFolder,
-  frontend: config.frontendDir,
-  sqlite: config.nativeBindingFile ?? 'risolto da node_modules',
-  configuredPort: config.port,
-  portFallback: allowPortFallback,
-  cwd: process.cwd(),
+logger.info("Avvio", {
+  layout:           config.layout,
+  appRoot:          config.appRoot,
+  dataRoot:         config.dataRoot,
+  database:         config.databaseFile,
+  migrations:       config.migrationsFolder,
+  frontend:         config.frontendDir,
+  sqlite:           config.nativeBindingFile ?? "risolto da node_modules",
+  configuredPort:   config.port,
+  portFallback:     allowPortFallback,
+  cwd:              process.cwd(),
 });
 
 let started: StartedServer;
 try {
   started = await startServer(
-    { host: config.host, port: config.port, allowFallback: allowPortFallback },
     {
-      bootstrap: () => {
-        bootstrap();
-      },
+      host: config.host,
+      port: config.port,
+      allowFallback: allowPortFallback,
+    },
+    {
+      bootstrap: () => bootstrap(),
       createApp: () => createApp(),
+      createServer,
       listen: listenWithFallback,
       createScheduler: createAutoBackupScheduler,
       log: logger,
@@ -71,10 +85,10 @@ try {
   if (error instanceof StartupFailedError) {
     // `startServer` ha già spiegato cosa è andato storto. Se il bootstrap non
     // è riuscito il database non è stato aperto in modo sicuro: non si chiude.
-    if (error.phase !== 'bootstrap') closeAndReport(closeDatabase, logger);
+    if (error.phase !== "bootstrap") closeAndReport(closeDatabase, logger);
   } else {
     logger.error(
-      `Avvio interrotto: ${error instanceof Error ? error.message : 'errore sconosciuto'}`,
+      `Avvio interrotto: ${error instanceof Error ? error.message : "errore sconosciuto"}`,
     );
     closeAndReport(closeDatabase, logger);
   }
