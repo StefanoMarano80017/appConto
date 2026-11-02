@@ -20,6 +20,7 @@ import { atomically, db } from '../../db/client.js';
 import { escapeLike } from '../../shared/sql.js';
 import { foldSearchText } from '../../shared/text.js';
 import { categories } from '../categories/categories.schema.js';
+import { FALLBACK_CATEGORY_ID } from '../categories/index.js';
 import { merchants } from '../merchants/merchants.schema.js';
 import type { TransactionQuery } from './transaction-query.js';
 import { transactionTypeSchema, type TransactionType } from './transaction-type.js';
@@ -74,6 +75,9 @@ function toDomain(row: TransactionRow): Transaction {
   };
 }
 
+/** "Non classificato": il merchant non ha categoria (o la transazione non ha merchant). */
+const UNCLASSIFIED = isNull(merchants.categoryId);
+
 /**
  * Le condizioni della ricerca.
  *
@@ -96,13 +100,21 @@ function searchConditions(query: TransactionQuery): SQL | undefined {
     conditions.push(inArray(transactions.merchantId, [...query.merchantIds]));
   }
   if (query.categoryIds.length > 0) {
-    conditions.push(inArray(merchants.categoryId, [...query.categoryIds]));
+    // La riga "Da classificare" non è una categoria assegnata a qualcuno: scegliere
+    // il suo id significa "non classificati", e si somma alle altre categorie (D12).
+    const realIds = query.categoryIds.filter((id) => id !== FALLBACK_CATEGORY_ID);
+    const chosen = realIds.length > 0 ? inArray(merchants.categoryId, realIds) : undefined;
+    const includesFallback = realIds.length < query.categoryIds.length;
+    const categoryMatches = includesFallback ? or(UNCLASSIFIED, chosen) : chosen;
+    if (categoryMatches !== undefined) {
+      conditions.push(categoryMatches);
+    }
   }
   if (query.classification === 'classified') {
     conditions.push(isNotNull(merchants.categoryId));
   }
   if (query.classification === 'unclassified') {
-    conditions.push(isNull(merchants.categoryId));
+    conditions.push(UNCLASSIFIED);
   }
   // Il confronto è sul valore assoluto: "almeno 100 €" vale per entrate e uscite.
   if (query.minAmountCents !== null) {

@@ -10,7 +10,7 @@ process.env.DATABASE_FILE = path.join(databaseDir, 'test.db');
 
 const { runMigrations } = await import('../../db/client.js');
 const { importService } = await import('../import/index.js');
-const { categoriesService } = await import('../categories/index.js');
+const { categoriesService, FALLBACK_CATEGORY_ID } = await import('../categories/index.js');
 const { merchantsService } = await import('../merchants/index.js');
 const { transactionsService } = await import('./transactions.service.js');
 const { DEFAULT_QUERY, parseTransactionQuery } = await import('./transaction-query.js');
@@ -477,6 +477,41 @@ describe('ricerca e ordinamento con le lettere accentate', () => {
 
       assert.deepEqual(nomi, ['alfa cat', 'caffè a cat', 'CAFFÈ B cat', 'Cassa cat', 'ZETA cat']);
     });
+  });
+});
+
+describe('filtro per la categoria "Da classificare"', () => {
+  // La riga "Da classificare" ha un id fisso ma nessun merchant lo porta: sceglierla
+  // nel filtro per categoria vale "non classificati" (D12).
+  const ripiego = FALLBACK_CATEGORY_ID;
+  const ids = (query: Partial<typeof DEFAULT_QUERY>): string[] =>
+    search(query).transactions.map(({ transaction }) => transaction.id).sort();
+
+  it('da sola dà gli stessi movimenti di "non classificati"', () => {
+    const attesi = ids({ classification: 'unclassified' });
+
+    assert.equal(attesi.length, 5);
+    assert.deepEqual(ids({ categoryIds: [ripiego] }), attesi);
+  });
+
+  it('con un\'altra categoria dà l\'unione', () => {
+    const attesi = [
+      ...ids({ classification: 'unclassified' }),
+      ...ids({ categoryIds: [categoryId('Alimentari')] }),
+    ].sort();
+
+    assert.equal(attesi.length, 7);
+    assert.deepEqual(ids({ categoryIds: [ripiego, categoryId('Alimentari')] }), attesi);
+  });
+
+  it('senza il ripiego nulla cambia', () => {
+    assert.equal(search({ categoryIds: [categoryId('Alimentari')] }).total, 2);
+    assert.equal(search({ categoryIds: [categoryId('Alimentari'), categoryId('Carburante')] }).total, 4);
+  });
+
+  it('si combina con gli altri criteri', () => {
+    assert.equal(search({ categoryIds: [ripiego], types: ['INCOME'] }).total, 2);
+    assert.equal(search({ categoryIds: [ripiego], classification: 'classified' }).total, 0);
   });
 });
 

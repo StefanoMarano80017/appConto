@@ -5,6 +5,7 @@ import {
   toSingle,
   type QueryParam,
 } from "../../shared/http/query-params.js";
+import { FALLBACK_CATEGORY_ID } from "../categories/index.js";
 import {
   CLASSIFICATION_FILTERS,
   transactionTypeSchema,
@@ -173,16 +174,24 @@ export function selectEntries(
     }
 
     const categoryId = merchant?.category?.id ?? null;
+    // "Non classificato" ha una sola definizione, usata anche da `classification`.
+    const isUnclassified = categoryId === null;
+    // Scegliere la riga "Da classificare" include i non classificati, e si somma
+    // alle altre categorie scelte (D12).
     if (
       wantedCategories.size > 0 &&
-      (categoryId === null || !wantedCategories.has(categoryId))
+      !(
+        isUnclassified
+          ? wantedCategories.has(FALLBACK_CATEGORY_ID)
+          : wantedCategories.has(categoryId)
+      )
     ) {
       return false;
     }
-    if (classification === "classified" && categoryId === null) {
+    if (classification === "classified" && isUnclassified) {
       return false;
     }
-    if (classification === "unclassified" && categoryId !== null) {
+    if (classification === "unclassified" && !isUnclassified) {
       return false;
     }
 
