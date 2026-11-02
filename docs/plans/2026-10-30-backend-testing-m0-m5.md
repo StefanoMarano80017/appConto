@@ -854,20 +854,20 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
 **File del gruppo:** `modules/loans/loans.service.ts`, `modules/transactions/transactions.service.ts` (solo `updateType` e, se serve, la porta `TransactionDependents`), `app.ts` (solo il collegamento della porta), `docs/architecture/data-model.md`, nuovo `modules/loans/loans.repayment-rules.test.ts`. Nei test esistenti si cambiano **solo** quelli che fissavano il comportamento superato, con un commento che rimanda a D9 o D10.
 
 ##### T3.7 — Restituzioni solo su movimenti in entrata *(D9)*
-- [ ] Collegare una restituzione a un `EXPENSE`, `OTHER`, `TRANSFER` o `WITHDRAWAL` positivo → `ValidationError`, sia in creazione sia in modifica. A un `INCOME` positivo → ok.
-- [ ] `updateType` verso un tipo non `INCOME` di un movimento collegato a restituzioni → errore con il nome del prestito, tipo invariato. Verso `INCOME` (stesso tipo) → ok. Un movimento non collegato si riclassifica come oggi.
-- [ ] L'errore di `updateType` passa dalla porta `TransactionDependents`; `transactions` non importa `loans`.
-- [ ] `data-model.md`: il punto aperto sui movimenti non `INCOME` diventa la regola D9.
-- [ ] Gate V3.
+- [x] Collegare una restituzione a un `EXPENSE`, `OTHER`, `TRANSFER` o `WITHDRAWAL` positivo → `ValidationError`, sia in creazione sia in modifica. A un `INCOME` positivo → ok.
+- [x] `updateType` verso un tipo non `INCOME` di un movimento collegato a restituzioni → errore con il nome del prestito, tipo invariato. Verso `INCOME` (stesso tipo) → ok. Un movimento non collegato si riclassifica come oggi.
+- [x] L'errore di `updateType` passa dalla porta `TransactionDependents`; `transactions` non importa `loans`.
+- [x] `data-model.md`: il punto aperto sui movimenti non `INCOME` diventa la regola D9.
+- [x] Gate V3.
 
 ##### T3.8 — Restituzione non anteriore al prestito *(D10)*
-- [ ] Prestito del 2040-03-10: restituzione del 2040-03-09 → `ValidationError`; del 2040-03-10 → ok; del 2040-03-11 → ok. Stessi casi in modifica della data.
-- [ ] Modifica di `lentAt` dopo la restituzione più vecchia → `ValidationError`; fino al giorno della restituzione → ok; prestito senza restituzioni → ok.
-- [ ] Gate V3.
+- [x] Prestito del 2040-03-10: restituzione del 2040-03-09 → `ValidationError`; del 2040-03-10 → ok; del 2040-03-11 → ok. Stessi casi in modifica della data.
+- [x] Modifica di `lentAt` dopo la restituzione più vecchia → `ValidationError`; fino al giorno della restituzione → ok; prestito senza restituzioni → ok.
+- [x] Gate V3.
 
 #### T3.2 — Vincoli a livello di database *(G3-A)*
 - **File:** nuovo `apps/backend/src/db/constraints.test.ts`.
-- [ ] I casi:
+- [x] I casi:
 
   | Caso | Atteso |
   |---|---|
@@ -880,17 +880,17 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   | `vacuum()` dentro `atomically` | errore |
 
   Gli indici unici da testare si ricavano da `apps/backend/drizzle/*.sql`; quelli attesi ma assenti vanno riportati.
-- [ ] Gate V1.
+- [x] Gate V1.
 
 #### T3.3 — `backfillFingerprints` con righe reali *(G3-B)*
 - **File:** nuovo `modules/transactions/fingerprint.backfill.test.ts`.
-- [ ] 3 righe senza fingerprint, di cui 2 identiche nello stesso giorno → `backfillFingerprints() === 3`. Fingerprint distinti, uguali a quelli dell'import, quindi il re-import non duplica. La seconda chiamata → `0`.
-- [ ] Gate V1.
+- [x] 3 righe senza fingerprint, di cui 2 identiche nello stesso giorno → `backfillFingerprints() === 3`. Fingerprint distinti, uguali a quelli dell'import, quindi il re-import non duplica. La seconda chiamata → `0`.
+- [x] Gate V1.
 
 #### T3.4 — Eliminare un movimento collegato a una restituzione *(G3-B)*
 - **File:** `modules/transactions/transactions.delete.test.ts` (un `describe` in fondo).
-- [ ] Rilevare prima il comportamento attuale. Se è `ConflictError` senza eliminazioni, si fissa. Se è un 500 o un'eliminazione riuscita, **fermarsi e riportare**.
-- [ ] Gate V1.
+- [x] Rilevare prima il comportamento attuale. Se è `ConflictError` senza eliminazioni, si fissa. Se è un 500 o un'eliminazione riuscita, **fermarsi e riportare**.
+- [x] Gate V1.
 
 #### T3.1 — Una sola rappresentazione di "Da classificare" *(G3-C; D3 = A, D3.b)*
 - **File:**
@@ -898,27 +898,27 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   - `merchants.service.ts` (`assignCategory`);
   - nuova migrazione `apps/backend/drizzle/0009_*.sql` più `meta/_journal.json` e lo snapshot (con `npm run db:generate`, oppure a mano sul formato di `0003_seed_categories.sql`);
   - nuovo `modules/categories/unclassified.test.ts`.
-- [ ] Eliminare una categoria con 2 merchant:
+- [x] Eliminare una categoria con 2 merchant:
   - entrambi passano a `categoryId === null`;
   - `counts.unclassified` aumenta di 2;
   - il filtro transazioni `'unclassified'` li include.
-- [ ] `assignCategory(id, FALLBACK_CATEGORY_ID)` → `null`.
-- [ ] D3.b: `merchantCount` della riga "Da classificare" = numero di merchant con `null`.
-- [ ] Migrazione su un DB di test con un merchant sul fallback → `null`. Seconda esecuzione → no-op.
-- [ ] **Prova su una copia del DB reale** (gate "k"), eseguita dal lead:
+- [x] `assignCategory(id, FALLBACK_CATEGORY_ID)` → `null`.
+- [x] D3.b: `merchantCount` della riga "Da classificare" = numero di merchant con `null`.
+- [x] Migrazione su un DB di test con un merchant sul fallback → `null`. Seconda esecuzione → no-op.
+- [x] **Prova su una copia del DB reale** (gate "k"), eseguita dal lead:
   1. copia di `data/database.sqlite` in `os.tmpdir()`;
   2. `runMigrations()` con `DATABASE_FILE` sulla copia;
   3. riportare prima e dopo: numero di merchant, quanti con `null`, quanti sul fallback, numero di transazioni, numero di righe in `__drizzle_migrations`, esito di `PRAGMA integrity_check`;
   4. seconda esecuzione: nessuna differenza.
-- [ ] Gate V4.
+- [x] Gate V4.
 
 #### T3.5 — Unicità del nome categoria senza maiuscole e minuscole *(G3-D; D6.5)*
 - **File:** `categories.service.ts`, `categories.repository.ts`, `categories.service.test.ts` (un `describe` in fondo).
-- [ ] I casi:
+- [x] I casi:
   - `create('spesa')` con `Spesa` esistente → `ConflictError`;
   - `rename` verso un nome uguale a meno delle maiuscole a quello di un'altra categoria → `ConflictError`;
   - rinominare `Spesa` in `SPESA` (stessa categoria) → ok.
-- [ ] Gate V2.
+- [x] Gate V2.
 
 #### T3.6 — Ricerca e ordinamento con lettere accentate *(G3-E; D6.6)*
 - **File:**
@@ -926,9 +926,9 @@ Emerso dalla revisione di fine M1: T1.4 ha allargato le radici del resolver (`pr
   - `transactions.repository.ts:115-119,136`;
   - `loans.repository.ts` (ricerca e ordinamento);
   - in fondo a `transactions.search.test.ts` e `loans.service.test.ts`.
-- [ ] `'caffè'` trova `CAFFÈ ROMA`. L'ordinamento per merchant di `ZETA`, `alfa`, `Cassa` dà `alfa, Cassa, ZETA`. Stessi casi sui prestiti.
-- [ ] Verificare quali altre connessioni (restore, backup) eseguono queste query e riportarlo.
-- [ ] Gate V3. Utilizzatori diretti: tutti i test che importano `db/client`, cioè la suite.
+- [x] `'caffè'` trova `CAFFÈ ROMA`. L'ordinamento per merchant di `ZETA`, `alfa`, `Cassa` dà `alfa, Cassa, ZETA`. Stessi casi sui prestiti.
+- [x] Verificare quali altre connessioni (restore, backup) eseguono queste query e riportarlo.
+- [x] Gate V3. Utilizzatori diretti: tutti i test che importano `db/client`, cioè la suite.
 
 ### M4 — Contratti HTTP dei router
 
@@ -950,7 +950,7 @@ Nessun helper condiviso nuovo, salvo che la revisione di milestone rilevi più d
 |---|---|---|---|
 | T4.1 | G4-A | nuovo `modules/import/import.routes.test.ts` | `POST /api/import/csv` `text/csv` → 200 con conteggi; `Content-Type` JSON → 400; corpo oltre il limite → 413; `/csv/analysis` → colonne proposte; `/csv/mapped` con mapping non valido → 400 |
 | T4.6 | G4-A | nuovo `shared/http/error-handler.test.ts` | errore generico → 500, "Errore interno del server.", nessuno stack o messaggio interno; `DomainError` → 400/404/409; JSON malformato → 400 |
-| T4.2 | G4-B | nuovo `modules/categories/categories.routes.test.ts` | `POST` → 201; nome vuoto → 400; duplicato, anche a meno delle maiuscole → 409; `PATCH` → 200; `DELETE` → 204; `DELETE` del fallback → 409; `merchantCount` del fallback (D3.b) |
+| T4.2 | G4-B | nuovo `modules/categories/categories.routes.test.ts` | `POST` → 201; nome vuoto → 400; duplicato, anche a meno delle maiuscole → 409; `PATCH` → 200; `DELETE` → 204; `DELETE` del fallback → 409; `merchantCount` del fallback (D3.b) nelle risposte di `GET` e `PATCH`; `PATCH` di un merchant verso l'id del fallback → 200 con `category: null` (rimandato dalla revisione di fine M3) |
 | T4.7 | G4-B | `merchants.routes.test.ts`, `transactions.routes.test.ts` (in fondo) | `PATCH /merchants/:id` e `/:id/category` (200, 404, categoria inesistente 400, fallback → `category: null`); `GET /transactions/:id` (200, 404); `PATCH /transactions/:id/type` (200, 400, 404); rafforzare `merchants.routes.test.ts:119-142` con valori esatti |
 | T4.3 | G4-C | nuovo `modules/loans/loans.routes.test.ts` | creazione → 201; importo non valido → 400; inesistente → 404; `DELETE` con restituzioni → 409; restituzione oltre la capienza (D4) → 400; origine positiva (D5) → 400; lista con `search`, `status`, `sort` |
 | T4.5 | G4-C | nuovo `modules/settings/settings.routes.test.ts` | `GET` → forma; `PATCH` parziale; `balanceDate` non valida → 400; `initialBalance` `NaN`, `"abc"` o `Infinity` → 400; `1.005` → riletto `1.01` |
@@ -1020,6 +1020,6 @@ Spostato in M0 come G0-C (decisione dell'utente, 30/10/2026). Vedi T5.5 nella se
 | T0.2 (fuori milestone) | ⏸ aperto | merge di `refactor/backend-main-lifecycle`; poi va ripianificato con una tua approvazione |
 | M1 Parsing e funzioni pure | ✅ completata il 30/10/2026 (T1.1–T1.7; D6.9 rivista e precisata). Branch `test/m1-parsing`, sopra M0: merge di M0 prima di M1 | — |
 | M2 Invarianti finanziari | ✅ completata il 30/10/2026 (T2.1–T2.8, compreso il nuovo T2.8). Branch `test/m2-dominio`, sopra M1: ordine di merge M0 → M1 → M2. Restano da decidere: restituzioni collegate a movimenti non `INCOME`, restituzione anteriore a `lentAt` | — |
-| M3 Integrità dei dati | 🔄 avviata il 30/10/2026 su approvazione dell'utente, con D9 e D10 (nuovo gruppo G3-F). Branch `test/m3-integrita`, sopra M2 | — (D3, D3.b, D6.5, D6.6, D9, D10 approvate) |
+| M3 Integrità dei dati | ✅ completata il 02/11/2026 (T3.1–T3.8, con D9 e D10; migrazione 0009 provata su una copia del DB reale). Branch `test/m3-integrita`, sopra M2: ordine di merge M0 → M1 → M2 → M3 | — |
 | M4 Contratti HTTP | ⏳ | M3 |
 | M5 Igiene | ⏳ | M4, D6.7 |
