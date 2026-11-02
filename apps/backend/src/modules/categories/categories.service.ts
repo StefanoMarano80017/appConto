@@ -85,7 +85,9 @@ export const categoriesService = {
       throw new ConflictError('«Da classificare» non può essere rinominata.');
     }
 
-    if (name !== undefined && name !== category.name && categoriesRepository.findByName(name) !== null) {
+    // Si ignora la categoria stessa: rinominare «Spesa» in «SPESA» è consentito.
+    const sameName = name === undefined ? null : categoriesRepository.findByName(name);
+    if (sameName !== null && sameName.id !== id) {
       throw new ConflictError(`Esiste già una categoria con il nome "${name}".`);
     }
 

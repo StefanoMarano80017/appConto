@@ -224,3 +224,55 @@ describe('eliminazione di una categoria', () => {
     );
   });
 });
+
+describe('unicità del nome senza distinzione fra maiuscole e minuscole', () => {
+  it('rifiuta la creazione di un nome uguale a un altro solo nelle maiuscole', () => {
+    const spesa = categoriesService.create({ name: 'Spesa', color: null });
+
+    try {
+      assert.throws(
+        () => categoriesService.create({ name: 'spesa', color: null }),
+        (error: unknown) => {
+          assert.ok(error instanceof ConflictError);
+          return true;
+        },
+      );
+    } finally {
+      categoriesService.remove(spesa.id);
+    }
+  });
+
+  it('rifiuta una rinomina verso il nome di altra categoria, salvo le maiuscole', () => {
+    categoriesService.create({ name: 'Lavanderia', color: null });
+    const parrucchiere = categoriesService.create({ name: 'Parrucchiere', color: null });
+
+    assert.throws(
+      () => categoriesService.update(parrucchiere.id, { name: 'LAVANDERIA' }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+
+  it('permette di rinominare una categoria cambiando solo le maiuscole del suo nome', () => {
+    const categoria = categoriesService.create({ name: 'Spesa', color: null });
+
+    const aggiornata = categoriesService.update(categoria.id, { name: 'SPESA' });
+
+    assert.equal(aggiornata.name, 'SPESA');
+    assert.equal(categoriesService.findById(categoria.id)?.name, 'SPESA');
+  });
+
+  it('confronta anche le lettere accentate, oltre il set ASCII', () => {
+    categoriesService.create({ name: 'Caffè', color: null });
+
+    assert.throws(
+      () => categoriesService.create({ name: 'CAFFÈ', color: null }),
+      (error: unknown) => {
+        assert.ok(error instanceof ConflictError);
+        return true;
+      },
+    );
+  });
+});

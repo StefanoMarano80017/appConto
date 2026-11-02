@@ -1,4 +1,4 @@
-import { asc, count, eq, isNull } from 'drizzle-orm';
+import { asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { merchants } from '../merchants/merchants.schema.js';
 import type { Category } from './category.model.js';
@@ -13,8 +13,15 @@ export const categoriesRepository = {
     return db.select().from(categories).where(eq(categories.id, id)).get() ?? null;
   },
 
+  /** Confronto senza distinzione fra maiuscole e minuscole, anche oltre l'ASCII (vedi `lower_unicode`). */
   findByName(name: string): Category | null {
-    return db.select().from(categories).where(eq(categories.name, name)).get() ?? null;
+    return (
+      db
+        .select()
+        .from(categories)
+        .where(sql`lower_unicode(${categories.name}) = ${name.toLowerCase()}`)
+        .get() ?? null
+    );
   },
 
   insert(category: Category): void {
